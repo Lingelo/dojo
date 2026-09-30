@@ -111,6 +111,18 @@ pilotage (lancement de Chromium + session CDP) ; il est remplaçable par Puppete
 au principe. Le cœur, c'est l'horloge virtuelle. Les alternatives sans navigateur (node-canvas, resvg, ffmpeg
 `drawtext`) ne couvrent qu'une technique chacune et perdent le CSS.
 
+### Exemple 3D
+
+`examples/sketch-3d.html` — Three.js (WebGL) : cristal, coque filaire, onde de choc à l'impact, anneau de 72 barres
+piloté par la musique (basses + niveau), bloom qui respire sur les beats, caméra en vol puis en orbite, titres HTML
+superposés avec tics spatialisés. Three.js est importé depuis jsDelivr ; au rendu, ces URLs (jsDelivr, unpkg, esm.sh)
+sont servies depuis un cache npm local → rendu hors ligne, version figée, page toujours ouvrable dans un navigateur.
+
+```bash
+node ../scripts/render.mjs sketch-3d.html --audio bed.wav --beats bed.json --motion-blur 2
+# WebGL headless = CPU : ~2.4 captures/s en 1080p avec bloom (≈ 7 min pour 8 s @60 fps, blur ×2)
+```
+
 ## Écosystème (état de l'art, sept. 2026)
 
 | Projet | Approche | Ce qu'on en retient |

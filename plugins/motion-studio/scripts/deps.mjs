@@ -114,6 +114,52 @@ export function findFfmpeg() {
   return c.find(hasX264) || null;
 }
 
+// ---------------------------------------------------------------- CDN libraries → local npm cache
+const CDN = /^https:\/\/(?:cdn\.jsdelivr\.net\/npm|unpkg\.com|esm\.sh)\/((?:@[^/]+\/)?[^/@?#]+)(?:@([^/?#]+))?(\/[^?#]*)?/;
+const MIME = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.cjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css',
+  '.wasm': 'application/wasm', '.png': 'image/png', '.jpg': 'image/jpeg', '.hdr': 'application/octet-stream', '.glb': 'model/gltf-binary',
+  '.gltf': 'model/gltf+json', '.bin': 'application/octet-stream', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.ktx2': 'image/ktx2' };
+
+/** npm-install `name@version` once into <home>/libs, return the package directory. */
+function localPackage(name, version = 'latest', log) {
+  const dir = path.join(home(), 'libs', `${name.replace('/', '__')}@${version}`);
+  const pkgDir = path.join(dir, 'node_modules', name);
+  if (!fs.existsSync(path.join(pkgDir, 'package.json'))) {
+    if (process.env.MOTION_STUDIO_NO_INSTALL === '1') return null;
+    log(`📦 ${name}@${version} → cache local (npm)`);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'package.json'), '{"private":true}');
+    const isWin = process.platform === 'win32';
+    const r = spawnSync(isWin ? 'npm.cmd' : 'npm', ['install', '--no-audit', '--no-fund', '--ignore-scripts', '--loglevel=error', `${name}@${version}`], { cwd: dir, stdio: ['ignore', 'ignore', 'inherit'], shell: isWin });
+    if (r.status !== 0) return null;
+  }
+  return pkgDir;
+}
+
+/**
+ * Serve jsDelivr / unpkg / esm.sh `npm/<pkg>@<ver>/<file>` URLs from a local npm cache, so a
+ * composition written against a CDN (and viewable as-is in any browser) renders offline,
+ * deterministically, with pinned versions. Unknown URLs go to the network untouched.
+ */
+export async function routeCdnToLocal(context, log = (m) => process.stderr.write(m + '\n')) {
+  await context.route(CDN, async (route) => {
+    const m = route.request().url().match(CDN);
+    const [, name, version = 'latest', sub = ''] = m;
+    const pkgDir = localPackage(name, decodeURIComponent(version), log);
+    if (!pkgDir) return route.continue();
+    let file = path.join(pkgDir, sub);
+    if (!sub || sub === '/') {
+      const pj = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8'));
+      file = path.join(pkgDir, pj.module || pj.main || 'index.js');
+    }
+    if (!file.startsWith(pkgDir) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return route.continue();
+    await route.fulfill({
+      status: 200, body: fs.readFileSync(file),
+      headers: { 'content-type': MIME[path.extname(file)] || 'application/octet-stream', 'access-control-allow-origin': '*' },
+    });
+  });
+}
+
 // ---------------------------------------------------------------- one call for the renderer
 /**
  * Resolve everything render.mjs needs. Uses the cached env.json when still valid,

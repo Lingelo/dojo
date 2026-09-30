@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { analyze, mix } from './audio.mjs';
-import { LAUNCH_ARGS, ensureDeps } from './deps.mjs';
+import { LAUNCH_ARGS, ensureDeps, routeCdnToLocal } from './deps.mjs';
 
 const HELP = `
 motion-studio render — HTML animation → video (deterministic, frame by frame)
@@ -262,10 +262,12 @@ const browser = await chromium.launch({ ...deps.browser.opts, args: LAUNCH_ARGS 
 
 try {
   // 1. read composition config from <body data-*> / <html data-*>
-  const probe = await browser.newPage();
+  const probeCtx = await browser.newContext();
+  await routeCdnToLocal(probeCtx, log);
+  const probe = await probeCtx.newPage();
   await probe.goto(url, { waitUntil: 'domcontentloaded' });
   const meta = await probe.evaluate(() => ({ ...document.documentElement.dataset, ...document.body.dataset }));
-  await probe.close();
+  await probeCtx.close();
 
   const num = (v, d) => (v === undefined || v === true ? d : Number(v));
   const cfg = {
@@ -285,6 +287,7 @@ try {
     content: `globalThis.__realSetTimeout = setTimeout;\n` + VIRTUAL_TIME.replace('__SEED__', String(cfg.seed)) +
       (audioData ? AUDIO_API.replace('__DATA__', JSON.stringify(audioData)) : ''),
   });
+  await routeCdnToLocal(context, log);
   const page = await context.newPage();
   page.on('pageerror', (e) => log(`⚠ page error: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') log(`⚠ console: ${m.text()}`); });

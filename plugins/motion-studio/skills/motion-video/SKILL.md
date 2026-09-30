@@ -17,6 +17,7 @@ Références à charger au besoin :
 - `references/sound-design.md` — son synchronisé : `data-sfx`, `__sfx()`, `window.__audio` (beats/énergie), sons synthétisés, grammaire sonore.
 - `assets/starter.html` — squelette de composition à copier.
 - `${CLAUDE_PLUGIN_ROOT}/examples/sketch-intro.html` — exemple complet (Canvas + SVG + CSS + WAAPI + son synchronisé).
+- `${CLAUDE_PLUGIN_ROOT}/examples/sketch-3d.html` — exemple 3D (Three.js via CDN servi en local, bloom, égaliseur piloté par la musique, titres HTML superposés).
 
 ## 0. Dépendances — automatique (seul prérequis : Node ≥ 18 + npm)
 
@@ -60,6 +61,8 @@ Créer `video/<nom>.html` (ou dossier demandé) à partir de `assets/starter.htm
 - **Tout est fonction du temps.** CSS : `animation` + `animation-delay` absolus. JS : lire `performance.now()`
   ou implémenter `window.__seek = (t) => {…}`. Canvas : `draw(t)` sans état accumulé.
 - Aléatoire : `Math.random()` est seedé → reproductible.
+- **Bibliothèques** (Three.js, GSAP, p5, pixi, lottie…) : import depuis jsDelivr/unpkg/esm.sh **avec version épinglée** —
+  le renderer les sert depuis un cache npm local (rendu hors ligne). 3D : voir `references/composition-contract.md` (perf ~2–3 img/s).
 - Pas de réseau pendant le rendu si possible (polices locales/système ou Google Fonts préchargées).
 - **Son** : `data-sfx="whoosh"` sur chaque élément animé qui mérite un bruitage (il part au démarrage
   de son animation), `window.__sfx?.('riser', { at: 2.1, align: 'end' })` pour les cues libres,

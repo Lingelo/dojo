@@ -60,8 +60,33 @@ window.__seek = (t) => tl.seek(t, false);
 
 **Lottie** — `lottie.loadAnimation({ autoplay: false, … })` puis `window.__seek = t => anim.goToAndStop(t * 1000, false)`.
 
-**Three.js** — `renderer.render(scene, camera)` dans le rAF ou dans `__seek` ; pour la capture, ajouter
-`preserveDrawingBuffer: true` si des frames sortent noires.
+**Three.js / 3D** — exemple complet : `examples/sketch-3d.html` (égaliseur 3D, bloom, caméra, son).
+```html
+<script type="importmap">{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }</script>
+<script type="module">
+  import * as THREE from 'three';
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(devicePixelRatio);            // --scale 2 = supersampling
+  function draw(ms) { const t = ms / 1000; /* caméra, objets = f(t) */ renderer.render(scene, camera); requestAnimationFrame(draw); }
+  requestAnimationFrame(draw);
+</script>
+```
+- **Bibliothèques via CDN, rendu hors ligne** : toute URL `cdn.jsdelivr.net/npm/…`, `unpkg.com/…` ou `esm.sh/…`
+  est servie par le renderer depuis un cache npm local (`<home>/libs`, installé au 1er usage). La page reste
+  visible telle quelle dans un navigateur ; le rendu ne dépend pas du réseau. **Toujours épingler la version** (`three@0.170.0`).
+  Vaut aussi pour GSAP, p5, pixi.js, lottie-web, d3, anime.js…
+- **Performance** : le WebGL headless est calculé par le CPU (SwiftShader) : ~2–3 images/s en 1080p avec bloom
+  (vs ~9 en 2D). Brouillons en `--fps 30 --jpeg --from/--to`, `--motion-blur 2` max au final, pas d'ombres temps réel
+  ni de géométrie énorme. Lancer les rendus 3D en arrière-plan.
+- **Bloom** (`UnrealBloomPass`) : le seuil s'applique en linéaire — une couleur sRGB 0.6 vaut ~0.3. Seuil 0.1–0.2,
+  force 0.4–0.6 ; vérifier par stills (le bloom brûle vite l'image). Les éléments « lumineux » en
+  `MeshBasicMaterial({ toneMapped: false })`.
+- **Cadrage** : `camera.setViewOffset(W, H, dx, dy, W, H)` décale le sujet pour laisser la place aux titres HTML
+  superposés (plus net que du texte 3D, et `data-sfx` fonctionne dessus).
+- **Déterminisme** : positions aléatoires via `Math.random()` (seedé) ; pas de `THREE.Clock` (lire `t`).
+- `preserveDrawingBuffer: true` évite des frames noires à la capture.
 
 **Vidéo embarquée** — `<video src="clip.mp4" data-start="2.5" muted playsinline preload="auto">` : jamais `autoplay`.
 
