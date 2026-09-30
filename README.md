@@ -14,6 +14,7 @@ Marketplace de plugins pour Claude Code, fournissant des outils et workflows de 
 | [**experts**](plugins/experts/README.md) | Agent architecte pour analyse de code et évolutions | Agent |
 | [**claude-factory**](plugins/claude-factory/README.md) | Meta-plugin pour créer des outils Claude Code + dream consolidation | Skills |
 | [**frustration-detector**](plugins/frustration-detector/README.md) | Détecte la frustration et adapte le style de Claude (moins de blabla, plus d'action) | Hook |
+| [**motion-studio**](plugins/motion-studio/README.md) | Motion design en code : HTML/CSS/SVG/Canvas → MP4/WebM/GIF image par image (Playwright + ffmpeg) | Skill, Script |
 
 ## Installation
 
@@ -48,6 +49,7 @@ Ou via le mode interactif :
 /plugin install experts@angelo-plugins
 /plugin install claude-factory@angelo-plugins
 /plugin install frustration-detector@angelo-plugins
+/plugin install motion-studio@angelo-plugins
 ```
 
 ## Configuration équipe
@@ -134,6 +136,13 @@ Détecte automatiquement la frustration dans vos prompts et adapte le style de C
 
 Fonctionne en FR et EN (~200 termes détectés). Aucune commande nécessaire.
 
+### Motion Studio
+```bash
+/motion-video Teaser 8s 16:9 pour le lancement de notre API, style sombre, accent orange
+```
+Storyboard → composition HTML/CSS/SVG/Canvas → stills de contrôle → rendu MP4 image par image
+(horloge virtuelle, motion blur, supersampling). Nécessite Playwright + ffmpeg.
+
 ### Claude Factory — Dream Consolidation
 ```bash
 /factory:dream              # Consolide les CLAUDE.md et rules/
@@ -155,7 +164,8 @@ marketplace-claude-code/
 │   ├── statusline/           # Statusline personnalisée
 │   ├── experts/              # Agent architecte
 │   ├── claude-factory/       # Meta-plugin creation outils + dream consolidation
-│   └── frustration-detector/ # Détection frustration + adaptation style
+│   ├── frustration-detector/ # Détection frustration + adaptation style
+│   └── motion-studio/        # Vidéos motion design depuis HTML (Playwright + ffmpeg)
 └── README.md
 ```
 

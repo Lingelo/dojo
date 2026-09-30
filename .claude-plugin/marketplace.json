@@ -53,6 +53,12 @@
             "source": "./plugins/frustration-detector",
             "description": "Detects developer frustration and adapts Claude's response style (less talk, more action)",
             "category": "productivity"
+        },
+        {
+            "name": "motion-studio",
+            "source": "./plugins/motion-studio",
+            "description": "Motion design as code: HTML/CSS/SVG/Canvas animations rendered frame by frame to MP4/WebM/GIF via Playwright + ffmpeg",
+            "category": "creative"
         }
     ]
 }
