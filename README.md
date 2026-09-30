@@ -14,7 +14,7 @@ Marketplace de plugins pour Claude Code, fournissant des outils et workflows de 
 | [**experts**](plugins/experts/README.md) | Agent architecte pour analyse de code et évolutions | Agent |
 | [**claude-factory**](plugins/claude-factory/README.md) | Meta-plugin pour créer des outils Claude Code + dream consolidation | Skills |
 | [**frustration-detector**](plugins/frustration-detector/README.md) | Détecte la frustration et adapte le style de Claude (moins de blabla, plus d'action) | Hook |
-| [**motion-studio**](plugins/motion-studio/README.md) | Motion design en code : HTML/CSS/SVG/Canvas → MP4/WebM/GIF image par image (Playwright + ffmpeg) | Skill, Script |
+| [**motion-studio**](plugins/motion-studio/README.md) | Motion design en code : HTML/CSS/SVG/Canvas → MP4/WebM/GIF image par image, son synchronisé (Playwright + ffmpeg) | Skill, Script |
 
 ## Installation
 
@@ -141,7 +141,7 @@ Fonctionne en FR et EN (~200 termes détectés). Aucune commande nécessaire.
 /motion-video Teaser 8s 16:9 pour le lancement de notre API, style sombre, accent orange
 ```
 Storyboard → composition HTML/CSS/SVG/Canvas → stills de contrôle → rendu MP4 image par image
-(horloge virtuelle, motion blur, supersampling). Nécessite Playwright + ffmpeg.
+(horloge virtuelle, motion blur, supersampling) avec bruitages et musique synchronisés. Nécessite Playwright + ffmpeg.
 
 ### Claude Factory — Dream Consolidation
 ```bash

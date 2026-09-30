@@ -1,6 +1,6 @@
 ---
 name: motion-video
-description: Crée des vidéos motion design (intro, teaser produit, explainer, animation de logo, data-viz animée, réseaux sociaux) en écrivant une composition HTML/CSS/SVG/Canvas puis en la rendant image par image en MP4/WebM/GIF/MOV via Playwright + ffmpeg, de façon déterministe. Utiliser quand l'utilisateur demande /motion-video, veut « générer une vidéo », « faire une animation », « exporter une animation CSS en MP4 », un teaser, une intro ou un GIF animé.
+description: Crée des vidéos motion design sonorisées (intro, teaser produit, explainer, animation de logo, data-viz animée, réseaux sociaux) en écrivant une composition HTML/CSS/SVG/Canvas puis en la rendant image par image en MP4/WebM/GIF/MOV via Playwright + ffmpeg, de façon déterministe, avec bruitages synthétisés et musique synchronisés à l'image. Utiliser quand l'utilisateur demande /motion-video, veut « générer une vidéo », « faire une animation », « exporter une animation CSS en MP4 », un teaser, une intro ou un GIF animé.
 allowed-tools: Bash(node:*), Bash(python3:*), Bash(ffmpeg:*), Bash(ffprobe:*), Bash(mkdir:*), Bash(ls:*), Read, Write, Edit, Glob
 argument-hint: "[brief de la vidéo]"
 ---
@@ -14,8 +14,9 @@ aucune frame perdue, aucune saccade, rendu identique à chaque exécution.
 Références à charger au besoin :
 - `references/composition-contract.md` — ce que le renderer virtualise, attributs `data-*`, hook `__seek`, GSAP/Lottie/Three.js, pièges.
 - `references/motion-design.md` — timing, easings, ressorts, typographie, formats, rythme narratif.
+- `references/sound-design.md` — son synchronisé : `data-sfx`, `__sfx()`, `window.__audio` (beats/énergie), sons synthétisés, grammaire sonore.
 - `assets/starter.html` — squelette de composition à copier.
-- `${CLAUDE_PLUGIN_ROOT}/examples/sketch-intro.html` — exemple complet (Canvas + SVG + CSS + WAAPI).
+- `${CLAUDE_PLUGIN_ROOT}/examples/sketch-intro.html` — exemple complet (Canvas + SVG + CSS + WAAPI + son synchronisé).
 
 ## Prérequis (vérifier une fois)
 
@@ -30,16 +31,17 @@ Le renderer trouve seul Playwright (local ou global) et ffmpeg (`FFMPEG_PATH`, P
 ### 1. Brief (court)
 Déduire du message, ne demander que ce qui manque vraiment :
 objectif & public · durée (défaut 6–10 s) · format (16:9 1920×1080, 9:16 1080×1920, 1:1 1080×1080) ·
-textes exacts · identité visuelle (couleurs, police, logo) · audio éventuel.
+textes exacts · identité visuelle (couleurs, police, logo) · **son** : musique fournie, musique générée (`sfx.mjs bed`) ou bruitages seuls (défaut : bruitages + bed généré).
 
 ### 2. Storyboard
 Écrire un tableau de beats **avant** le code, avec des temps absolus :
 
-| t (s) | Scène | Ce qui bouge | Technique |
-|-------|-------|--------------|-----------|
-| 0.0–1.2 | Ouverture | particules convergent | Canvas |
-| 1.2–2.6 | Logo | tracé du contour, pop | SVG + CSS |
+| t (s) | Scène | Ce qui bouge | Technique | Son |
+|-------|-------|--------------|-----------|-----|
+| 0.0–2.1 | Ouverture | particules convergent | Canvas | pad + `riser` (fin à 2.1) |
+| 2.1–2.8 | Logo | pop du logo, lettres | SVG + CSS | `impact`, `tick` ×n, drums entrent |
 
+Si musique : caler les temps forts visuels sur `beats` (tempo 100–128 BPM → beat = 0.47–0.6 s).
 Règles : un message par scène, texte tenu ≥ temps de lecture (~3 mots/s + 0.5 s), 0.3–0.6 s d'ouverture
 et de respiration finale, transitions qui se chevauchent (pas de trou noir).
 
@@ -50,6 +52,9 @@ Créer `video/<nom>.html` (ou dossier demandé) à partir de `assets/starter.htm
   ou implémenter `window.__seek = (t) => {…}`. Canvas : `draw(t)` sans état accumulé.
 - Aléatoire : `Math.random()` est seedé → reproductible.
 - Pas de réseau pendant le rendu si possible (polices locales/système ou Google Fonts préchargées).
+- **Son** : `data-sfx="whoosh"` sur chaque élément animé qui mérite un bruitage (il part au démarrage
+  de son animation), `window.__sfx?.('riser', { at: 2.1, align: 'end' })` pour les cues libres,
+  `window.__audio` pour caler l'image sur la musique (voir `references/sound-design.md`).
 
 ### 4. Preview par stills (boucle rapide)
 ```bash
@@ -61,18 +66,24 @@ Montrer les stills clés à l'utilisateur avant un rendu long.
 
 ### 5. Rendu
 ```bash
+# (optionnel) musique générée sur grille de tempo — beats exacts dans bed.json
+node ${CLAUDE_PLUGIN_ROOT}/scripts/sfx.mjs bed --bpm 120 --duration 8 --start 2.1 -o video/bed.wav > video/bed.json
 # brouillon rapide d'une scène
 node ${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs video/intro.html --from 2 --to 5 --fps 30 --jpeg -o video/draft.mp4
 # final
-node ${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs video/intro.html --motion-blur 4 -o video/intro.mp4
+node ${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs video/intro.html --audio video/bed.wav --beats video/bed.json --motion-blur 4 -o video/intro.mp4 --cues video/cues.json
 ```
+Les bruitages (`data-sfx`, `__sfx`, `<audio data-start>`) sont toujours mixés ; `--no-sfx` pour les couper.
 | Option | Usage |
 |--------|-------|
 | `--motion-blur 4..8` | Flou de mouvement cinéma (sous-frames fusionnées, coût ×N) |
 | `--scale 2` | Supersampling (texte fin, traits SVG), coût ×4 pixels |
 | `--format webm\|gif\|mov` / extension de `-o` | VP9, GIF palette optimisée, ProRes 4444 |
 | `--transparent` | Fond alpha (webm/mov) pour incrustation |
-| `--audio music.mp3` | Mux audio (AAC/Opus), coupé à la durée |
+| `--audio music.mp3` | Musique mixée **et** analysée → `window.__audio` (beats, basses) |
+| `--beats beats.json` | Grille de beats exacte (sinon détectée, ±10 ms) |
+| `--lufs -14` / `off` | Loudness finale (standard streaming) |
+| `--cues cues.json` | Exporter la liste horodatée des sons (contrôle) |
 | `--crf 12..23` | Qualité H.264 (défaut 16) |
 
 Ordre de grandeur : ~9 captures/s en 1080p PNG, ~13 en `--jpeg` → 8 s @60 fps sans blur ≈ 50 s, avec `--motion-blur 4` ≈ 3–4 min.
@@ -83,11 +94,14 @@ Lancer les rendus longs en arrière-plan.
 ffprobe -hide_banner video/intro.mp4        # durée, fps, bt709
 ffmpeg -ss 3.2 -i video/intro.mp4 -frames:v 1 -y video/check.png   # puis Read
 ```
-Contrôler 2–3 frames en plein mouvement. Livrer le chemin du fichier + le storyboard final.
+Contrôler 2–3 frames en plein mouvement. Relire `cues.json` : chaque son doit tomber sur l'événement
+visuel voulu (et, avec musique, sur un beat). Vérifier la synchro réelle dans le fichier :
+`node ${CLAUDE_PLUGIN_ROOT}/scripts/audio.mjs analyze video/intro.mp4` (onsets). Livrer le chemin du fichier + le storyboard final.
 
 ## Règles d'or
 1. **Déterminisme** : jamais de `Date` réel, d'`fetch` tardif, de `:hover`, d'`autoplay` ; tout piloté par le temps.
 2. **Stills avant rendu** : un rendu complet ne sert qu'à valider le mouvement, pas la mise en page.
 3. **Easing partout** : aucun `linear` sauf rotations continues / défilements. Préférer out-expo et ressorts.
 4. **Stagger** 30–80 ms entre éléments d'un même groupe ; 1 seul point focal à la fois.
-5. **Safe area** : garder texte et logo à ≥ 5 % des bords (≥ 10 % en 9:16 pour l'UI des réseaux).
+5. **Le son fait 50 % de la perception** : chaque mouvement important a son bruitage, les entrées tombent sur les beats.
+6. **Safe area** : garder texte et logo à ≥ 5 % des bords (≥ 10 % en 9:16 pour l'UI des réseaux).

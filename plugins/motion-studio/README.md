@@ -1,7 +1,8 @@
 # Motion Studio Plugin
 
 Motion design en code pour Claude Code : Claude écrit la vidéo comme une page web (HTML, CSS, SVG, Canvas 2D/WebGL,
-WAAPI, GSAP…), puis un renderer la filme **image par image** dans Chromium headless et l'encode avec ffmpeg.
+WAAPI, GSAP…), puis un renderer la filme **image par image** dans Chromium headless et l'encode avec ffmpeg,
+avec un **son synchronisé à l'échantillon près** (bruitages synthétisés + musique analysée).
 
 Pas de capture temps réel (`recordVideo` de Playwright = 25 fps variables, WebM compressé) : le temps est
 **virtualisé**, chaque frame est calculée exactement, le rendu est reproductible au pixel près.
@@ -39,6 +40,10 @@ node plugins/motion-studio/scripts/render.mjs composition.html [options]
   -o out.mp4 | .webm | .gif | .mov     --fps 60      --duration 8
   --motion-blur 4    --scale 2    --transparent    --audio music.mp3
   --stills 0.5,2,4   --from 2 --to 5   --jpeg      --crf 16    --seed 42
+  --beats beats.json --lufs -14 --cues cues.json   --no-sfx
+
+node plugins/motion-studio/scripts/sfx.mjs list | <son> -o x.wav | bed --bpm 120 --duration 8
+node plugins/motion-studio/scripts/audio.mjs analyze music.mp3     # tempo, beats, onsets
 ```
 
 Comment ça marche, pour chaque frame :
@@ -50,15 +55,39 @@ Comment ça marche, pour chaque frame :
 4. capture CDP `Page.captureScreenshot` → pipe PNG → ffmpeg (H.264 bt709 `crf 16`, VP9, GIF palette, ProRes 4444) ;
 5. motion blur = N sous-frames fusionnées (`tmix`), supersampling = `deviceScaleFactor` + downscale Lanczos.
 
+## Son synchronisé
+
+| Direction | Mécanisme |
+|-----------|-----------|
+| **Le son suit l'image** | `data-sfx="whoosh"` sur un élément animé → cue au démarrage exact de son animation ; `window.__sfx('riser', {at: 2.1, align: 'end'})` ; `<audio data-start>` |
+| **L'image suit le son** | `--audio music.mp3` est analysé (tempo, beats, onsets, énergie basses) et exposé en `window.__audio` : `nextBeat(t)`, `beat(t).pulse`, `bass(t)` |
+
+Les cues sont horodatés en temps virtuel pendant le rendu, puis mixés en JS à l'échantillon près (48 kHz),
+normalisés à −14 LUFS et muxés (AAC / Opus / PCM). Les bruitages sont **synthétisés en code** (`sfx.mjs` :
+pop, tick, click, whoosh, swoosh, riser, impact, chime, glitch, kick, hat, pad + générateur de musique `bed`),
+donc sans banque de sons ni licence. Détails : `skills/motion-video/references/sound-design.md`.
+
 ## Exemple
 
 `examples/sketch-intro.html` — 8 s, 1920×1080, 60 fps, mélange Canvas (particules), SVG (tracé + SMIL),
-CSS keyframes (ressort `linear()`), WAAPI déclenché par timer.
+CSS keyframes (ressort `linear()`), WAAPI déclenché par timer, et 21 sons synchronisés : riser → impact
+sur le logo, tic par lettre (spatialisé), pop par carte **calé sur les croches de la musique**, carillon
+sur un temps fort ; le halo respire avec la basse et le logo pulse sur chaque beat.
 
 ```bash
-node plugins/motion-studio/scripts/render.mjs plugins/motion-studio/examples/sketch-intro.html --motion-blur 4 -o sketch-intro.mp4
-# → 1920×1080 60 fps, 8 s, ~4.8 Mo, ≈ 3.5 min de rendu (1920 captures)
+cd plugins/motion-studio/examples
+node ../scripts/sfx.mjs bed --bpm 120 --duration 8 --start 2.1 -o bed.wav > bed.json
+node ../scripts/render.mjs sketch-intro.html --audio bed.wav --beats bed.json --motion-blur 4
+# → 1920×1080 60 fps + AAC stéréo −14 LUFS, 8 s, ≈ 3.5 min de rendu (1920 captures)
 ```
+
+## Pourquoi un navigateur (Playwright) ?
+
+C'est l'approche de tout l'écosystème (HyperFrames, Remotion, claude-motion-design) : seul un vrai moteur
+de rendu calcule fidèlement CSS, SVG, polices, filtres et Canvas. Playwright n'est qu'une fine couche de
+pilotage (lancement de Chromium + session CDP) ; il est remplaçable par Puppeteer ou CDP brut sans rien changer
+au principe. Le cœur, c'est l'horloge virtuelle. Les alternatives sans navigateur (node-canvas, resvg, ffmpeg
+`drawtext`) ne couvrent qu'une technique chacune et perdent le CSS.
 
 ## Écosystème (état de l'art, sept. 2026)
 

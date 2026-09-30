@@ -14,7 +14,8 @@ import { createRequire } from 'node:module';
 import { spawn, spawnSync, execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { analyze, findFfmpeg, mix } from './audio.mjs';
 
 const HELP = `
 motion-studio render — HTML animation → video (deterministic, frame by frame)
@@ -32,8 +33,14 @@ Options (CLI overrides the <body data-*> attributes of the composition):
       --scale <n>         Supersampling factor: render at n× then downscale (default 1)
       --motion-blur <n>   Sub-frames blended per frame (default 1 = off, 4-8 = cinematic)
       --crf <n>           Quality (mp4 default 16, webm default 20; lower = better)
-      --audio <file>      Mux an audio track (trimmed to video length)
-      --transparent       Transparent background (use with --format webm|mov)
+      --audio <file>      Music / voice track: mixed in, AND analyzed (tempo, beats, energy)
+                          and exposed to the page as window.__audio (image follows sound)
+      --audio-gain <g>    Gain of --audio in the mix (default 1)
+      --beats <json>      Exact beat grid {bpm, beats[]} (e.g. from sfx.mjs bed) overriding analysis
+      --no-sfx            Ignore sound cues (data-sfx, __sfx(), <audio data-start>)
+      --lufs <n|off>      Loudness target of the final mix (default -14, streaming standard)
+      --cues <file.json>  Also write the collected sound cues (debug / external DAW)
+      --transparent      Transparent background (use with --format webm|mov)
       --seed <n>          Seed for Math.random (default 42)
       --stills <t,t,...>  Only export PNG stills at these times (seconds) — preview mode
       --from <s> --to <s> Render only a time range (fast iteration on one scene)
@@ -54,7 +61,7 @@ function parseArgs(argv) {
       key = alias[key] || key;
       if (val === undefined) {
         const next = argv[i + 1];
-        if (next !== undefined && !next.startsWith('--') && !['help', 'transparent', 'jpeg'].includes(key)) {
+        if (next !== undefined && !next.startsWith('--') && !['help', 'transparent', 'jpeg', 'no-sfx'].includes(key)) {
           val = next; i++;
         } else val = true;
       }
@@ -82,21 +89,35 @@ function loadPlaywright() {
   die('Playwright not found. Install it: npm i -D playwright  (or npm i -g playwright) then npx playwright install chromium');
 }
 
-function findFfmpeg() {
-  const candidates = [process.env.FFMPEG_PATH, 'ffmpeg'].filter(Boolean);
-  try {
-    const p = execSync('python3 -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())"', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-    if (p) candidates.push(p);
-  } catch {}
-  for (const base of [path.join(process.cwd(), 'noop.js'), import.meta.url]) {
-    try { candidates.push(createRequire(base)('ffmpeg-static')); } catch {}
-  }
-  for (const c of candidates) {
-    const r = spawnSync(c, ['-hide_banner', '-encoders'], { encoding: 'utf8' });
-    if (r.status === 0 && r.stdout.includes('libx264')) return c;
-  }
-  die('ffmpeg with libx264 not found. Install one of: brew/apt install ffmpeg | pip install imageio-ffmpeg | npm i ffmpeg-static  (or set FFMPEG_PATH)');
+function requireFfmpeg() {
+  return findFfmpeg() || die('ffmpeg with libx264 not found. Install one of: brew/apt install ffmpeg | pip install imageio-ffmpeg | npm i ffmpeg-static  (or set FFMPEG_PATH)');
 }
+
+// Injected before page scripts when a music track is given: the image can follow the sound.
+const AUDIO_API = String.raw`
+window.__audio = (() => {
+  const d = __DATA__;
+  const at = (arr, t) => {
+    const x = t * d.rate, i = Math.floor(x);
+    if (!arr.length) return 0;
+    if (i < 0) return arr[0];
+    if (i >= arr.length - 1) return arr[arr.length - 1];
+    return arr[i] + (arr[i + 1] - arr[i]) * (x - i);
+  };
+  return {
+    ...d,
+    level: (t) => at(d.level, t),
+    bass: (t) => at(d.bass, t),
+    beat(t) {
+      let i = -1;
+      for (let k = 0; k < d.beats.length && d.beats[k] <= t + 1e-6; k++) i = k;
+      const since = i < 0 ? Infinity : t - d.beats[i];
+      return { index: i, since, phase: i < 0 ? 0 : Math.min(1, since / (60 / d.bpm)), pulse: i < 0 ? 0 : Math.exp(-since * 8) };
+    },
+    nextBeat: (t) => d.beats.find((b) => b >= t - 1e-6) ?? t,
+  };
+})();
+`;
 
 // ---------------------------------------------------------------- virtual clock (injected before page scripts)
 const VIRTUAL_TIME = String.raw`
@@ -134,14 +155,39 @@ const VIRTUAL_TIME = String.raw`
   window.requestIdleCallback = (fn) => window.setTimeout(() => fn({ didTimeout: false, timeRemaining: () => 50 }), 1);
   window.cancelIdleCallback = window.clearTimeout;
 
+  // --- sound cues, stamped with the exact virtual time → audio is in sync by construction
+  const cues = [], cueKeys = new Set();
+  window.__sfx = (src, o = {}) => {
+    const at = o.at ?? now / 1000;
+    const key = o.id ?? src + '@' + at.toFixed(4);
+    if (cueKeys.has(key)) return;           // idempotent: safe to call from __seek / rAF every frame
+    cueKeys.add(key);
+    cues.push({ src: String(src), at, gain: o.gain ?? 1, pan: o.pan ?? 0, align: o.align });
+  };
+  const autoPan = (el) => { const r = el.getBoundingClientRect(); return +((((r.left + r.width / 2) / innerWidth) * 2 - 1) * 0.6).toFixed(2); };
+  // data-sfx="whoosh" on an animated element → cue at the moment its animation starts (birth + delay)
+  const sfxDone = new WeakSet();
+  const sfxFor = (an) => {
+    const el = an.effect && an.effect.target;
+    if (!el || !el.dataset || !el.dataset.sfx) return;
+    const name = an.animationName || an.transitionProperty || an.id || '';
+    const on = el.dataset.sfxOn;
+    if (on ? !on.split(',').map((x) => x.trim()).includes(name) : sfxDone.has(el)) return;
+    sfxDone.add(el);
+    const delay = an.effect.getTiming().delay || 0;
+    const pan = el.dataset.sfxPan === 'auto' ? autoPan(el) : parseFloat(el.dataset.sfxPan || '0');
+    window.__sfx(el.dataset.sfx, { at: (now + delay) / 1000 + parseFloat(el.dataset.sfxOffset || '0'), gain: parseFloat(el.dataset.sfxGain || '1'), pan, id: 'anim:' + cues.length + ':' + now });
+  };
+
   // --- animation bookkeeping: remember the virtual time each animation was born at
   const born = new WeakMap();
+  const birth = (an) => { born.set(an, now); sfxFor(an); };
   const nativeAnimate = Element.prototype.animate;
-  Element.prototype.animate = function (...a) { const an = nativeAnimate.apply(this, a); born.set(an, now); return an; };
+  Element.prototype.animate = function (...a) { const an = nativeAnimate.apply(this, a); birth(an); return an; };
   // SMIL timelines start with their <svg> document; inline <svg> present at load are born at 0.
   const svgBorn = new WeakMap();
   const register = () => {
-    for (const an of document.getAnimations()) if (!born.has(an)) born.set(an, now);
+    for (const an of document.getAnimations()) if (!born.has(an)) birth(an);
     for (const svg of document.querySelectorAll('svg')) if (!svg.ownerSVGElement && !svgBorn.has(svg)) svgBorn.set(svg, now);
   };
 
@@ -164,7 +210,7 @@ const VIRTUAL_TIME = String.raw`
 
   function sync() {
     for (const an of document.getAnimations()) {
-      if (!born.has(an)) born.set(an, now);
+      if (!born.has(an)) birth(an);
       an.pause();
       an.currentTime = Math.max(0, now - born.get(an));
     }
@@ -196,6 +242,14 @@ const VIRTUAL_TIME = String.raw`
       return now;
     },
     get now() { return now; },
+    // all cues + <audio src data-start> elements, for the final mix
+    cues() {
+      const media = [...document.querySelectorAll('audio[src]')].map((a) => ({
+        src: a.currentSrc || a.src, at: parseFloat(a.dataset.start || '0'),
+        gain: parseFloat(a.dataset.volume ?? a.volume ?? 1), pan: parseFloat(a.dataset.pan || '0'),
+      }));
+      return [...cues, ...media].sort((x, y) => x.at - y.at);
+    },
   };
 })();
 `;
@@ -206,7 +260,17 @@ const url = /^(https?|file|data):/.test(input) ? input : pathToFileURL(path.reso
 if (!/^(https?|data):/.test(url) && !fs.existsSync(new URL(url))) die(`Input not found: ${input}`);
 
 const { chromium } = loadPlaywright();
-const ffmpeg = args.stills ? null : findFfmpeg();
+const ffmpeg = args.stills && !args.audio ? null : requireFfmpeg();
+
+// Image follows sound: analyze the music once, expose it to the page as window.__audio.
+let audioData = null;
+if (args.audio) {
+  const file = path.resolve(args.audio);
+  if (!fs.existsSync(file)) die(`Audio not found: ${args.audio}`);
+  audioData = analyze(ffmpeg, file);
+  if (args.beats) Object.assign(audioData, JSON.parse(fs.readFileSync(path.resolve(args.beats), 'utf8')));
+  log(`♪ ${path.basename(file)}  ${audioData.bpm} BPM  ${audioData.beats.length} beats  ${audioData.onsets.length} onsets  → window.__audio`);
+}
 
 const launchOpts = { args: ['--force-color-profile=srgb', '--disable-lcd-text', '--font-render-hinting=none', '--hide-scrollbars', '--autoplay-policy=no-user-gesture-required'] };
 if (process.env.CHROMIUM_PATH) launchOpts.executablePath = process.env.CHROMIUM_PATH;
@@ -233,7 +297,10 @@ try {
 
   // 2. real page, virtual time installed before any script
   const context = await browser.newContext({ viewport: { width: cfg.width, height: cfg.height }, deviceScaleFactor: cfg.scale, reducedMotion: 'no-preference' });
-  await context.addInitScript({ content: `globalThis.__realSetTimeout = setTimeout;\n` + VIRTUAL_TIME.replace('__SEED__', String(cfg.seed)) });
+  await context.addInitScript({
+    content: `globalThis.__realSetTimeout = setTimeout;\n` + VIRTUAL_TIME.replace('__SEED__', String(cfg.seed)) +
+      (audioData ? AUDIO_API.replace('__DATA__', JSON.stringify(audioData)) : ''),
+  });
   const page = await context.newPage();
   page.on('pageerror', (e) => log(`⚠ page error: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') log(`⚠ console: ${m.text()}`); });
@@ -282,13 +349,13 @@ try {
     if (!enc) die(`Unknown format: ${format}`);
     const codecArgs = enc();
 
+    // video goes to a temp file first; audio is mixed once all cues are known, then muxed
+    const videoOnly = out.replace(/(\.[^.]+)$/, '.video$1');
     const ff = ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(captureFps), '-i', '-'];
-    if (args.audio) ff.push('-ss', String(from), '-i', path.resolve(args.audio));
     if (format === 'gif') ff.push('-filter_complex', `${vf.join(',')},split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=sierra2_4a`);
     else if (vf.length) ff.push('-vf', vf.join(','));
     ff.push(...codecArgs, '-r', String(format === 'gif' ? Math.min(cfg.fps, 30) : cfg.fps));
-    if (args.audio) ff.push('-map', '0:v', '-map', '1:a', '-c:a', format === 'webm' ? 'libopus' : 'aac', '-b:a', '192k', '-shortest');
-    ff.push(out);
+    ff.push(videoOnly);
 
     fs.mkdirSync(path.dirname(out), { recursive: true });
     const proc = spawn(ffmpeg, ff, { stdio: ['pipe', 'inherit', 'inherit'] });
@@ -309,6 +376,28 @@ try {
     }
     proc.stdin.end();
     await done;
+
+    // Sound follows image: every cue was stamped with its exact virtual time during the render.
+    const cues = args.noSfx ? [] : await page.evaluate(() => window.__vt.cues());
+    if (args.cues) fs.writeFileSync(path.resolve(args.cues), JSON.stringify(cues, null, 1));
+    const beds = args.audio ? [{ src: path.resolve(args.audio), at: 0, gain: num(args.audioGain, 1) }] : [];
+    const wav = format === 'gif' ? null : mix({
+      ffmpeg, duration: to - from, from, beds,
+      cues: cues.filter((c) => c.at < to),
+      baseDir: /^file:/.test(url) ? path.dirname(fileURLToPath(url)) : process.cwd(),
+      out: out.replace(/(\.[^.]+)$/, '.mix.wav'),
+    });
+    if (wav) {
+      const lufs = args.lufs === 'off' ? null : num(args.lufs, -14);
+      const mux = ['-y', '-hide_banner', '-loglevel', 'error', '-i', videoOnly, '-i', wav, '-map', '0:v', '-map', '1:a', '-c:v', 'copy'];
+      if (lufs !== null) mux.push('-af', `loudnorm=I=${lufs}:TP=-1.5:LRA=11,aresample=48000`);
+      mux.push('-c:a', { webm: 'libopus', mov: 'pcm_s16le' }[format] || 'aac', '-b:a', '192k', '-t', String(to - from), out);
+      const r = spawnSync(ffmpeg, mux, { stdio: 'inherit' });
+      if (r.status !== 0) die('ffmpeg audio mux failed');
+      fs.rmSync(videoOnly); fs.rmSync(wav);
+      log(`♪ ${cues.length} sound cue(s)${beds.length ? ' + music' : ''} mixed${lufs !== null ? ` @ ${lufs} LUFS` : ''}`);
+    } else fs.renameSync(videoOnly, out);
+
     const size = (fs.statSync(out).size / 1024 / 1024).toFixed(2);
     log(`✔ ${out}  (${size} MB, ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
     console.log(out);
