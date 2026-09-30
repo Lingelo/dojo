@@ -1,0 +1,8 @@
+# render outputs
+*.mp4
+*.webm
+*.gif
+*.mov
+*.wav
+examples/*.json
+node_modules/

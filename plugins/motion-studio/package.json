@@ -1,0 +1,10 @@
+{
+  "name": "motion-studio-runtime",
+  "private": true,
+  "description": "Runtime dependencies of the motion-studio plugin, installed on demand into ${CLAUDE_PLUGIN_DATA} by scripts/setup.mjs",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "^1.56.0",
+    "ffmpeg-static": "^5.2.0"
+  }
+}
