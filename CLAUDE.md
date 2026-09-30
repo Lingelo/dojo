@@ -42,7 +42,7 @@ plugins/<name>/
 - **experts** — Architect agent (Opus + ultrathink) for deep code analysis.
 - **claude-factory** — Meta-plugin for creating Claude Code tools (skills, hooks, agents, commands, rules), CLAUDE.md maintenance, audit, dream consolidation, and docs reference.
 - **frustration-detector** — UserPromptSubmit hook detecting developer frustration (FR/EN, ~200 terms) and injecting context for adapted responses.
-- **motion-studio** — `/motion-video` skill: motion design as code. `scripts/render.mjs` renders HTML/CSS/SVG/Canvas compositions frame by frame (virtual clock + WAAPI/SMIL seeking, Playwright CDP capture → ffmpeg) to MP4/WebM/GIF/MOV, with sample-accurate synced sound (`data-sfx` / `__sfx()` cues, procedural SFX + music bed in `sfx.mjs`, beat/energy analysis in `audio.mjs` exposed as `window.__audio`). Requires Playwright + ffmpeg (this plugin's script is the one exception to "no package deps").
+- **motion-studio** — `/motion-video` skill: motion design as code. `scripts/render.mjs` renders HTML/CSS/SVG/Canvas compositions frame by frame (virtual clock + WAAPI/SMIL seeking, Playwright CDP capture → ffmpeg) to MP4/WebM/GIF/MOV, with sample-accurate synced sound (`data-sfx` / `__sfx()` cues, procedural SFX + music bed in `sfx.mjs`, beat/energy analysis in `audio.mjs` exposed as `window.__audio`). Self-sufficient: `scripts/setup.mjs` reuses or auto-installs playwright-core, ffmpeg-static and Chrome Headless Shell into `${CLAUDE_PLUGIN_DATA}` (the one plugin with npm deps, declared in its `package.json`).
 
 ## Adding a New Plugin
 

@@ -141,7 +141,7 @@ Fonctionne en FR et EN (~200 termes détectés). Aucune commande nécessaire.
 /motion-video Teaser 8s 16:9 pour le lancement de notre API, style sombre, accent orange
 ```
 Storyboard → composition HTML/CSS/SVG/Canvas → stills de contrôle → rendu MP4 image par image
-(horloge virtuelle, motion blur, supersampling) avec bruitages et musique synchronisés. Nécessite Playwright + ffmpeg.
+(horloge virtuelle, motion blur, supersampling) avec bruitages et musique synchronisés. Dépendances (Playwright, Chromium, ffmpeg) installées automatiquement au premier usage.
 
 ### Claude Factory — Dream Consolidation
 ```bash

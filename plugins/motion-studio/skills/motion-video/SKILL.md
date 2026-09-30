@@ -1,7 +1,7 @@
 ---
 name: motion-video
 description: Crée des vidéos motion design sonorisées (intro, teaser produit, explainer, animation de logo, data-viz animée, réseaux sociaux) en écrivant une composition HTML/CSS/SVG/Canvas puis en la rendant image par image en MP4/WebM/GIF/MOV via Playwright + ffmpeg, de façon déterministe, avec bruitages synthétisés et musique synchronisés à l'image. Utiliser quand l'utilisateur demande /motion-video, veut « générer une vidéo », « faire une animation », « exporter une animation CSS en MP4 », un teaser, une intro ou un GIF animé.
-allowed-tools: Bash(node:*), Bash(python3:*), Bash(ffmpeg:*), Bash(ffprobe:*), Bash(mkdir:*), Bash(ls:*), Read, Write, Edit, Glob
+allowed-tools: Bash(node:*), Bash(mkdir:*), Bash(ls:*), Read, Write, Edit, Glob
 argument-hint: "[brief de la vidéo]"
 ---
 
@@ -18,13 +18,22 @@ Références à charger au besoin :
 - `assets/starter.html` — squelette de composition à copier.
 - `${CLAUDE_PLUGIN_ROOT}/examples/sketch-intro.html` — exemple complet (Canvas + SVG + CSS + WAAPI + son synchronisé).
 
-## Prérequis (vérifier une fois)
+## 0. Dépendances — automatique (seul prérequis : Node ≥ 18 + npm)
 
+Toujours lancer en premier (idempotent, < 1 s quand tout est prêt) :
 ```bash
-node -e "require.resolve('playwright')" 2>/dev/null || npm ls -g playwright   # sinon: npm i -D playwright && npx playwright install chromium
-ffmpeg -hide_banner -encoders | grep libx264  # sinon: brew/apt install ffmpeg | pip install imageio-ffmpeg | npm i ffmpeg-static
+node "${CLAUDE_PLUGIN_ROOT}/scripts/setup.mjs" --home "${CLAUDE_PLUGIN_DATA}"
 ```
-Le renderer trouve seul Playwright (local ou global) et ffmpeg (`FFMPEG_PATH`, PATH, imageio-ffmpeg, ffmpeg-static).
+Il **réutilise** ce qui existe (Playwright local/global, Chromium de Playwright ou Chrome/Edge installés,
+ffmpeg du système) et **installe seulement ce qui manque** dans `${CLAUDE_PLUGIN_DATA}` :
+`playwright-core` (~10 Mo), `ffmpeg-static` (binaire ffmpeg avec libx264, ~70 Mo),
+Chrome Headless Shell (~100 Mo, cache partagé `~/.cache/ms-playwright`). Première fois : ~20 s.
+Prévenir l'utilisateur avant ce premier téléchargement. Si le setup échoue, relayer son message (il donne
+la commande exacte : `sudo npx playwright install-deps chromium` sur Linux sans bibliothèques, etc.).
+
+**Toutes les commandes ci-dessous prennent `--home "${CLAUDE_PLUGIN_DATA}"`** (les variables du plugin
+ne sont pas exportées au Bash). `render.mjs` relance le setup de lui-même si l'environnement a changé.
+Aucun `ffmpeg`/`ffprobe` système n'est nécessaire : utiliser `inspect.mjs`.
 
 ## Workflow
 
@@ -58,7 +67,7 @@ Créer `video/<nom>.html` (ou dossier demandé) à partir de `assets/starter.htm
 
 ### 4. Preview par stills (boucle rapide)
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs video/intro.html --stills 0.5,1.8,3.2,5.5 -o video/stills
+node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.html --stills 0.5,1.8,3.2,5.5 -o video/stills
 ```
 **Lire chaque PNG** (outil Read) et critiquer comme un directeur artistique : lisibilité, alignements,
 hiérarchie, contraste, collisions, éléments hors cadre, états intermédiaires moches. Corriger, recommencer.
@@ -67,11 +76,11 @@ Montrer les stills clés à l'utilisateur avant un rendu long.
 ### 5. Rendu
 ```bash
 # (optionnel) musique générée sur grille de tempo — beats exacts dans bed.json
-node ${CLAUDE_PLUGIN_ROOT}/scripts/sfx.mjs bed --bpm 120 --duration 8 --start 2.1 -o video/bed.wav > video/bed.json
+node "${CLAUDE_PLUGIN_ROOT}/scripts/sfx.mjs" bed --bpm 120 --duration 8 --start 2.1 -o video/bed.wav > video/bed.json
 # brouillon rapide d'une scène
-node ${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs video/intro.html --from 2 --to 5 --fps 30 --jpeg -o video/draft.mp4
+node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.html --from 2 --to 5 --fps 30 --jpeg -o video/draft.mp4
 # final
-node ${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs video/intro.html --audio video/bed.wav --beats video/bed.json --motion-blur 4 -o video/intro.mp4 --cues video/cues.json
+node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.html --audio video/bed.wav --beats video/bed.json --motion-blur 4 -o video/intro.mp4 --cues video/cues.json
 ```
 Les bruitages (`data-sfx`, `__sfx`, `<audio data-start>`) sont toujours mixés ; `--no-sfx` pour les couper.
 | Option | Usage |
@@ -91,12 +100,12 @@ Lancer les rendus longs en arrière-plan.
 
 ### 6. Vérification
 ```bash
-ffprobe -hide_banner video/intro.mp4        # durée, fps, bt709
-ffmpeg -ss 3.2 -i video/intro.mp4 -frames:v 1 -y video/check.png   # puis Read
+node "${CLAUDE_PLUGIN_ROOT}/scripts/inspect.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.mp4            # durée, fps, bt709, LUFS
+node "${CLAUDE_PLUGIN_ROOT}/scripts/inspect.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.mp4 --frames 2.1,3.6 -o video/check   # puis Read
 ```
 Contrôler 2–3 frames en plein mouvement. Relire `cues.json` : chaque son doit tomber sur l'événement
 visuel voulu (et, avec musique, sur un beat). Vérifier la synchro réelle dans le fichier :
-`node ${CLAUDE_PLUGIN_ROOT}/scripts/audio.mjs analyze video/intro.mp4` (onsets). Livrer le chemin du fichier + le storyboard final.
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/audio.mjs" analyze video/intro.mp4 --home "${CLAUDE_PLUGIN_DATA}"` (onsets). Livrer le chemin du fichier + le storyboard final.
 
 ## Règles d'or
 1. **Déterminisme** : jamais de `Date` réel, d'`fetch` tardif, de `:hover`, d'`autoplay` ; tout piloté par le temps.

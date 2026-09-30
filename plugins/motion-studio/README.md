@@ -17,9 +17,31 @@ Pas de capture temps réel (`recordVideo` de Playwright = 25 fps variables, WebM
 }
 ```
 
-Dépendances (non fournies) :
-- **Playwright** + Chromium : `npm i -D playwright && npx playwright install chromium` (ou installation globale)
-- **ffmpeg** avec libx264 : `brew install ffmpeg` / `apt install ffmpeg` / `pip install imageio-ffmpeg` / `npm i ffmpeg-static` (ou `FFMPEG_PATH`)
+### Dépendances : automatiques
+
+Seul prérequis : **Node ≥ 18 + npm**. Au premier `/motion-video` (ou premier rendu), `scripts/setup.mjs`
+détecte ce qui existe et installe **uniquement ce qui manque** dans `${CLAUDE_PLUGIN_DATA}`
+(`~/.claude/plugins/data/motion-studio-…`, conservé entre mises à jour, supprimé à la désinstallation) :
+
+| Besoin | Réutilisé si présent | Sinon installé automatiquement |
+|--------|----------------------|--------------------------------|
+| Pilotage navigateur | `playwright` / `playwright-core` du projet ou global | `playwright-core` (npm, ~10 Mo) |
+| Navigateur | Chromium de Playwright (cache partagé avec le MCP Playwright), Chrome ou Edge installés | Chrome Headless Shell (~100 Mo) |
+| Encodage vidéo/audio | `ffmpeg` du PATH, `imageio-ffmpeg`, `FFMPEG_PATH` | `ffmpeg-static` (binaire statique libx264/AAC/VP9/Opus, macOS/Linux/Windows, ~70 Mo) |
+
+Premier lancement sur machine vierge : ~20 s. Ensuite < 1 s (résultat mémorisé dans `env.json`, revalidé à chaque rendu).
+
+```bash
+node plugins/motion-studio/scripts/setup.mjs            # installer / réparer
+node plugins/motion-studio/scripts/setup.mjs --check    # diagnostic seul
+```
+Variables : `MOTION_STUDIO_HOME` (dossier des deps), `MOTION_STUDIO_NO_INSTALL=1` (jamais d'installation auto),
+`MOTION_STUDIO_ISOLATED=1` (ignorer les installations système), `CHROMIUM_PATH`, `FFMPEG_PATH`.
+Seul cas non automatisable : Linux sans les bibliothèques système de Chromium → `sudo npx playwright install-deps chromium` (le setup l'indique).
+
+> **Et le MCP Playwright ?** Il n'est pas adapté au rendu : chaque frame serait un appel d'outil passant par
+> le modèle (1 920 appels pour 8 s), sans script d'initialisation pour l'horloge virtuelle ni flux vers ffmpeg.
+> Il reste utile pour *explorer* une page ; et s'il a déjà téléchargé Chromium, `setup.mjs` le réutilise.
 
 ## Skill
 

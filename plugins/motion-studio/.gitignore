@@ -5,3 +5,4 @@
 *.mov
 *.wav
 examples/*.json
+node_modules/

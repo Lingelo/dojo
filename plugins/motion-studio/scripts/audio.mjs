@@ -7,29 +7,12 @@
  *
  * Library use (render.mjs): analyze(), mix().
  */
-import { spawnSync, execSync } from 'node:child_process';
-import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SR, SOUNDS, parseSpec, synth, writeWav } from './sfx.mjs';
-
-/** Locate an ffmpeg binary with libx264: FFMPEG_PATH, PATH, imageio-ffmpeg, ffmpeg-static. */
-export function findFfmpeg() {
-  const candidates = [process.env.FFMPEG_PATH, 'ffmpeg'].filter(Boolean);
-  try {
-    const p = execSync('python3 -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())"', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-    if (p) candidates.push(p);
-  } catch {}
-  for (const base of [path.join(process.cwd(), 'noop.js'), import.meta.url]) {
-    try { candidates.push(createRequire(base)('ffmpeg-static')); } catch {}
-  }
-  for (const c of candidates) {
-    const r = spawnSync(c, ['-hide_banner', '-encoders'], { encoding: 'utf8' });
-    if (r.status === 0 && r.stdout.includes('libx264')) return c;
-  }
-  return null;
-}
+import { ensureDeps } from './deps.mjs';
 
 /** Decode any audio/video file to float32 PCM via ffmpeg. */
 export function decode(ffmpeg, file, { sr = SR, channels = 2 } = {}) {
@@ -153,8 +136,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const [cmd, file, ...rest] = process.argv.slice(2);
   if (cmd !== 'analyze' || !file) { console.log('usage: node audio.mjs analyze <music> [--ffmpeg path]'); process.exit(1); }
   const i = rest.indexOf('--ffmpeg');
-  const ffmpeg = i >= 0 ? rest[i + 1] : findFfmpeg();
-  if (!ffmpeg) { console.error('ffmpeg not found (set FFMPEG_PATH)'); process.exit(1); }
+  const ffmpeg = i >= 0 ? rest[i + 1] : (await ensureDeps({ needBrowser: false })).ffmpeg;
   if (!fs.existsSync(file)) { console.error(`not found: ${file}`); process.exit(1); }
   const r = analyze(ffmpeg, file);
   console.log(JSON.stringify({ ...r, level: `[${r.level.length} values @${r.rate}Hz]`, bass: `[${r.bass.length} values @${r.rate}Hz]` }, null, 1));

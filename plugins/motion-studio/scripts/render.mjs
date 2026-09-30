@@ -10,12 +10,12 @@
  *
  * Usage: node render.mjs <file.html|url> [options]   (see --help)
  */
-import { createRequire } from 'node:module';
-import { spawn, spawnSync, execSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { analyze, findFfmpeg, mix } from './audio.mjs';
+import { analyze, mix } from './audio.mjs';
+import { LAUNCH_ARGS, ensureDeps } from './deps.mjs';
 
 const HELP = `
 motion-studio render — HTML animation → video (deterministic, frame by frame)
@@ -77,22 +77,7 @@ if (args.help || !args._[0]) { console.log(HELP); process.exit(args.help ? 0 : 1
 const log = (...m) => process.stderr.write(m.join(' ') + '\n');
 const die = (m) => { log(`✖ ${m}`); process.exit(1); };
 
-// ---------------------------------------------------------------- dependencies
-function loadPlaywright() {
-  const bases = [path.join(process.cwd(), 'noop.js'), import.meta.url];
-  try { bases.push(path.join(execSync('npm root -g', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(), 'noop.js')); } catch {}
-  for (const base of bases) {
-    for (const name of ['playwright', 'playwright-core', '@playwright/test']) {
-      try { return createRequire(base)(name); } catch {}
-    }
-  }
-  die('Playwright not found. Install it: npm i -D playwright  (or npm i -g playwright) then npx playwright install chromium');
-}
-
-function requireFfmpeg() {
-  return findFfmpeg() || die('ffmpeg with libx264 not found. Install one of: brew/apt install ffmpeg | pip install imageio-ffmpeg | npm i ffmpeg-static  (or set FFMPEG_PATH)');
-}
-
+// ---------------------------------------------------------------- dependencies (auto-installed on first run, see setup.mjs)
 // Injected before page scripts when a music track is given: the image can follow the sound.
 const AUDIO_API = String.raw`
 window.__audio = (() => {
@@ -259,8 +244,9 @@ const input = args._[0];
 const url = /^(https?|file|data):/.test(input) ? input : pathToFileURL(path.resolve(input)).href;
 if (!/^(https?|data):/.test(url) && !fs.existsSync(new URL(url))) die(`Input not found: ${input}`);
 
-const { chromium } = loadPlaywright();
-const ffmpeg = args.stills && !args.audio ? null : requireFfmpeg();
+let deps;
+try { deps = await ensureDeps({ needFfmpeg: !args.stills || !!args.audio }); } catch (e) { die(e.message); }
+const { chromium, ffmpeg } = deps;
 
 // Image follows sound: analyze the music once, expose it to the page as window.__audio.
 let audioData = null;
@@ -272,9 +258,7 @@ if (args.audio) {
   log(`♪ ${path.basename(file)}  ${audioData.bpm} BPM  ${audioData.beats.length} beats  ${audioData.onsets.length} onsets  → window.__audio`);
 }
 
-const launchOpts = { args: ['--force-color-profile=srgb', '--disable-lcd-text', '--font-render-hinting=none', '--hide-scrollbars', '--autoplay-policy=no-user-gesture-required'] };
-if (process.env.CHROMIUM_PATH) launchOpts.executablePath = process.env.CHROMIUM_PATH;
-const browser = await chromium.launch(launchOpts);
+const browser = await chromium.launch({ ...deps.browser.opts, args: LAUNCH_ARGS });
 
 try {
   // 1. read composition config from <body data-*> / <html data-*>
