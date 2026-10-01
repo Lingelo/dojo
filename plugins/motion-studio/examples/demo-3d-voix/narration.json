@@ -1,0 +1,15 @@
+{
+  "lang": "fr",
+  "start": 0.8,
+  "gap": 0.3,
+  "lines": [
+    { "id": "intro", "text": "Voici Motion Studio." },
+    { "id": "web", "text": "Une vidéo s'écrit comme une page web, puis elle est filmée image par image." },
+    { "id": "three", "text": "Ici, une scène en trois dimensions, calculée avec Three.js." },
+    { "id": "time", "text": "Chaque mouvement dépend uniquement du temps, donc le résultat est toujours identique." },
+    { "id": "music", "text": "La musique pilote l'image : les barres suivent les basses, et le cristal pulse sur chaque temps." },
+    { "id": "sfx", "text": "Les bruitages tombent exactement sur les impacts." },
+    { "id": "sync", "text": "Voix off, sous-titres et son sont synchronisés à l'image près." },
+    { "id": "cta", "text": "À vous de jouer.", "pause": 1 }
+  ]
+}

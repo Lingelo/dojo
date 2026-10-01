@@ -97,16 +97,20 @@ function resolveSrc(src, baseDir) {
 /**
  * Mix beds (whole files) and cues (synth names or files) sample-accurately.
  * cue = { src, at (s, composition time), gain, pan, align: 'start'|'end' }.
+ * voices = narration tracks (same shape as beds). They sit on top of the mix and DUCK the beds
+ * (music) by `duck` dB while speech is present (set duck = 0 to disable).
  * Returns the written WAV path, or null when there is nothing to mix.
  */
-export function mix({ ffmpeg, duration, from = 0, beds = [], cues = [], baseDir = process.cwd(), out }) {
-  if (!beds.length && !cues.length) return null;
+export function mix({ ffmpeg, duration, from = 0, beds = [], cues = [], voices = [], duck = -9, baseDir = process.cwd(), out }) {
+  if (!beds.length && !cues.length && !voices.length) return null;
   const n = Math.round(duration * SR), L = new Float32Array(n), R = new Float32Array(n);
+  const VL = new Float32Array(n), VR = new Float32Array(n);
+  let target = [L, R];
   const place = (chans, at, gain, pan) => {
     const [gl, gr] = panGains(Math.max(-1, Math.min(1, pan || 0)));
     const left = chans[0], right = chans[1] || chans[0];
     const off = Math.round((at - from) * SR);
-    for (let i = Math.max(0, -off); i < left.length && off + i < n; i++) { L[off + i] += left[i] * gain * gl * Math.SQRT2; R[off + i] += right[i] * gain * gr * Math.SQRT2; }
+    for (let i = Math.max(0, -off); i < left.length && off + i < n; i++) { target[0][off + i] += left[i] * gain * gl * Math.SQRT2; target[1][off + i] += right[i] * gain * gr * Math.SQRT2; }
   };
   const cache = new Map();
   const load = (src) => {
@@ -123,6 +127,19 @@ export function mix({ ffmpeg, duration, from = 0, beds = [], cues = [], baseDir 
     const align = c.align || params.align || 'start';
     const at = align === 'end' ? c.at - chans[0].length / SR : c.at;
     place(chans, at, (c.gain ?? 1) * Number(params.gain ?? 1), c.pan ?? Number(params.pan ?? 0));
+  }
+  if (voices.length) {
+    target = [VL, VR];
+    for (const v of voices) place(load(v.src), v.at || 0, v.gain ?? 1, v.pan ?? 0);
+    // sidechain-style ducking: speech envelope (fast attack, slow release) lowers music + sfx
+    const floor = Math.pow(10, duck / 20), atk = Math.exp(-1 / (0.03 * SR)), rel = Math.exp(-1 / (0.35 * SR));
+    let env = 0;
+    for (let i = 0; i < n; i++) {
+      const x = Math.min(1, Math.max(Math.abs(VL[i]), Math.abs(VR[i])) * 6);
+      env = x > env ? x + (env - x) * atk : x + (env - x) * rel;
+      const g = 1 - (1 - floor) * env;
+      L[i] = L[i] * g + VL[i]; R[i] = R[i] * g + VR[i];
+    }
   }
   let peak = 0;
   for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));

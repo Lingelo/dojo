@@ -57,7 +57,7 @@
         {
             "name": "motion-studio",
             "source": "./plugins/motion-studio",
-            "description": "Motion design as code: HTML/CSS/SVG/Canvas animations rendered frame by frame to MP4/WebM/GIF via Playwright + ffmpeg",
+            "description": "Motion design as code: HTML/CSS/SVG/Canvas animations rendered frame by frame to MP4/WebM/GIF via Playwright + ffmpeg, with synced sound, voice-over and subtitles",
             "category": "creative"
         }
     ]
