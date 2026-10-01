@@ -67,7 +67,8 @@ node plugins/motion-studio/scripts/render.mjs composition.html [options]
 
 node plugins/motion-studio/scripts/sfx.mjs list | <son> -o x.wav | bed --bpm 120 --duration 8
 node plugins/motion-studio/scripts/audio.mjs analyze music.mp3     # tempo, beats, onsets
-node plugins/motion-studio/scripts/voice.mjs engines | narration.json -o voice/   # voix off + sous-titres
+node plugins/motion-studio/scripts/voice-setup.mjs [install piper|edge]   # moteurs de voix
+node plugins/motion-studio/scripts/voice.mjs narration.json -o voice/       # voix off + sous-titres
 ```
 
 Comment ça marche, pour chaque frame :
@@ -99,9 +100,10 @@ donc sans banque de sons ni licence. Détails : `skills/motion-video/references/
 | Mixer la voix (musique baissée dessous) + sous-titres incrustés | `node scripts/render.mjs comp.html --voice voice/voice.json` |
 | Sous-titres d'un `.srt/.vtt` existant, style karaoké, piste souple | `--subs fr.srt --captions karaoke --embed-subs` |
 
-La voix est synthétisée **localement, sans clé API** : `say` (macOS), SAPI (Windows), Piper (`PIPER_MODEL`, voix neuronale,
-recommandé sous Linux) ou eSpeak NG (`apt install espeak-ng`, robotique). Une ligne peut aussi référencer un enregistrement
-existant (`"file"`). Les durées de chaque phrase sont **mesurées** sur l'audio : le storyboard se cale dessus, les sous-titres
+Moteurs de voix : `say` (macOS), SAPI (Windows), **Piper** (neuronal, local, gratuit — recommandé), **Edge TTS** (neuronal,
+en ligne, gratuit sans clé, le texte part chez Microsoft : jamais choisi automatiquement) et eSpeak NG (robotique). Installation guidée :
+`node scripts/voice-setup.mjs` (état), `... install piper|edge|espeak` (venv Python privé + voix, sans sudo ; prérequis : Python ≥ 3.8).
+Une ligne peut aussi référencer un enregistrement existant (`"file"`). Les durées de chaque phrase sont **mesurées** sur l'audio : le storyboard se cale dessus, les sous-titres
 suivent (temps par mot estimés pour le karaoké). Les `.srt`/`.vtt` sont écrits à côté de la vidéo.
 `window.__captions` expose cues, mot actif et `speaking(t)` aux compositions. Détails : `skills/motion-video/references/voice-and-subtitles.md`.
 

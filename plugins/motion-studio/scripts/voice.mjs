@@ -3,7 +3,7 @@
  * motion-studio voice — narration (text-to-speech) + subtitles, timed.
  *
  *   node voice.mjs engines
- *   node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|say|sapi|piper|espeak|file]
+ *   node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|say|sapi|piper|edge|espeak]
  *                  [--lang fr] [--voice name] [--rate 1] [--gap 0.35] [--start 0.4] [--max-chars 42]
  *
  * script.json : { "lang": "fr", "voice": "Thomas", "rate": 1, "gap": 0.35, "start": 0.4,
@@ -14,7 +14,9 @@
  * timeline), voice.json (timeline + subtitle cues), subs.srt, subs.vtt. The line timings are the
  * REAL durations of the audio → build the storyboard on them, then render with `--voice voice.json`.
  *
- * Engines are local (no API, no key): macOS `say`, Windows SAPI, Piper (PIPER_MODEL), eSpeak NG.
+ * Local engines (no API, no key; installed by voice-setup.mjs): macOS `say`, Windows SAPI, Piper (PIPER_MODEL), eSpeak NG.
+ * Online, free, no key: `edge` (Edge neural voices via `pip install edge-tts`) — never chosen by `auto`:
+ * pass --engine edge (or "engine": "edge" in the script) since the text leaves the machine.
  * A line with "file" uses your own recording (any voice / service) instead of synthesizing.
  */
 import { spawnSync } from 'node:child_process';
@@ -27,9 +29,11 @@ import { SR, writeWav } from './sfx.mjs';
 import { decode } from './audio.mjs';
 import { cuesFromLine, toSrt, toVtt } from './captions.mjs';
 import { ensureDeps } from './deps.mjs';
+import { piperModel, venvBin } from './voice-env.mjs';
 
 const probe = (cmd, args) => { const r = spawnSync(cmd, args, { stdio: 'ignore' }); return !r.error; };
 
+const EDGE_VOICES = { fr: 'fr-FR-DeniseNeural', en: 'en-US-AriaNeural', es: 'es-ES-ElviraNeural', de: 'de-DE-KatjaNeural', it: 'it-IT-ElsaNeural', pt: 'pt-PT-RaquelNeural', nl: 'nl-NL-ColetteNeural' };
 const SAY_VOICES = { fr: 'Thomas', en: 'Samantha', es: 'Monica', de: 'Anna', it: 'Alice', pt: 'Joana', nl: 'Xander' };
 const POWERSHELL = String.raw`Add-Type -AssemblyName System.Speech
 $s = New-Object System.Speech.Synthesis.SpeechSynthesizer
@@ -66,13 +70,29 @@ const ENGINES = {
     ext: 'wav',
   },
   piper: {
-    label: 'Piper (neural, PIPER_MODEL)',
-    available: () => !!process.env.PIPER_MODEL && fs.existsSync(process.env.PIPER_MODEL) && probe(process.env.PIPER_BIN || 'piper', ['--help']),
-    speak({ text, rate, out }) {
-      const r = spawnSync(process.env.PIPER_BIN || 'piper', ['--model', process.env.PIPER_MODEL, '--length_scale', String(1 / rate), '--output_file', out], { input: text, encoding: 'utf8' });
+    label: 'Piper (neural, local — node scripts/voice-setup.mjs install piper)',
+    bin: () => process.env.PIPER_BIN || venvBin('piper') || (probe('piper', ['--help']) ? 'piper' : null),
+    available(lang = 'fr') { return !!this.bin() && !!piperModel(lang); },
+    speak({ text, lang, rate, out }) {
+      const r = spawnSync(this.bin(), ['--model', piperModel(lang), '--length_scale', String(1 / rate), '--output_file', out], { input: text, encoding: 'utf8' });
       return r.status === 0 ? null : r.stderr || 'piper failed';
     },
     ext: 'wav',
+  },
+  edge: {
+    label: 'Edge TTS (neuronal, EN LIGNE — le texte est envoyé à Microsoft ; pip install edge-tts)',
+    online: true,
+    // `edge-tts` CLI, or `python -m edge_tts`
+    cmd: () => [...(venvBin('edge-tts') ? [[venvBin('edge-tts'), []]] : []), ['edge-tts', []], ['python3', ['-m', 'edge_tts']], ['python', ['-m', 'edge_tts']]].find(([c, a]) => probe(c, [...a, '--help'])),
+    available() { return !!this.cmd(); },
+    speak({ text, lang, voice, rate, out, tmp }) {
+      const f = path.join(tmp, 'text.txt'); fs.writeFileSync(f, text);
+      const [c, pre] = this.cmd();
+      const pct = Math.round((rate - 1) * 100);
+      const r = spawnSync(c, [...pre, '--voice', voice || EDGE_VOICES[lang] || `${lang}-${lang.toUpperCase()}`, `--rate=${pct >= 0 ? '+' : ''}${pct}%`, '--file', f, '--write-media', out], { encoding: 'utf8', timeout: 90000 });
+      return r.status === 0 ? null : `${(r.stderr || '').trim().split('\n').slice(-2).join(' ') || 'edge-tts failed'} (connexion Internet requise)`;
+    },
+    ext: 'mp3',
   },
   espeak: {
     label: 'eSpeak NG (robotique, solution de repli)',
@@ -87,13 +107,16 @@ const ENGINES = {
   },
 };
 
-export const detectEngines = () => Object.entries(ENGINES).filter(([, e]) => e.available()).map(([k]) => k);
+export const detectEngines = (lang = 'fr') => Object.entries(ENGINES).filter(([, e]) => e.available(lang)).map(([k]) => k);
+/** `auto` only picks local engines — an online one (edge) must be asked for explicitly. */
+const autoEngine = (lang) => detectEngines(lang).find((k) => !ENGINES[k].online);
 
-const INSTALL_HINT = `Aucun moteur de synthèse vocale local détecté.
-  • Linux   : sudo apt install espeak-ng      (qualité robotique)   ou  Piper + PIPER_MODEL=/chemin/voix.onnx  (voix neuronale, recommandé)
-  • macOS   : « say » est préinstallé
-  • Windows : SAPI est préinstallé (PowerShell)
-  • Sinon   : enregistrer la voix soi-même ou avec n'importe quel service, puis la référencer avec "file" dans le script.`;
+const INSTALL_HINT = `Aucun moteur de synthèse vocale utilisable détecté. Installer (automatique, sans sudo sauf eSpeak) :
+  • node voice-setup.mjs install piper    voix neuronale LOCALE gratuite, bonne qualité (recommandé)
+  • node voice-setup.mjs install edge     voix neuronale en ligne gratuite sans clé (le texte part chez Microsoft)
+  • node voice-setup.mjs install espeak   dépannage Linux, voix robotique
+  • macOS : « say » et Windows : SAPI sont préinstallés
+  • Sinon : enregistrer la voix soi-même ou avec n'importe quel service, puis la référencer avec "file" dans le script.`;
 
 /** Trim near-silence at both ends (TTS engines pad their output) so line timings are tight. */
 function trim(x, { lead = 0.03, tail = 0.08, thr = 0.01 } = {}) {
@@ -108,6 +131,7 @@ function trim(x, { lead = 0.03, tail = 0.08, thr = 0.01 } = {}) {
  * `ffmpeg` decodes whatever the engine produced (aiff, wav, user recordings).
  */
 export function buildVoice({ script, outDir, ffmpeg, baseDir = process.cwd(), engine = 'auto', log = () => {} }) {
+  if (engine === 'auto' && script.engine) engine = script.engine;
   const lang = script.lang || 'fr';
   const rate = Number(script.rate ?? 1);
   const gap = Number(script.gap ?? 0.35);
@@ -118,12 +142,13 @@ export function buildVoice({ script, outDir, ffmpeg, baseDir = process.cwd(), en
   const needSynth = lines.some((l) => !l.file);
   let eng = null;
   if (needSynth) {
-    const found = detectEngines();
-    const name = engine === 'auto' ? found[0] : engine;
+    const found = detectEngines(lang);
+    const name = engine === 'auto' ? autoEngine(lang) : engine;
     if (!name || !ENGINES[name]) throw new Error(INSTALL_HINT);
-    if (!ENGINES[name].available()) throw new Error(`Moteur « ${name} » indisponible sur cette machine.\n${INSTALL_HINT}`);
+    if (!ENGINES[name].available(lang)) throw new Error(`Moteur « ${name} » indisponible sur cette machine.\n${INSTALL_HINT}`);
     eng = name;
     log(`🎙 moteur : ${ENGINES[name].label}${found.length > 1 ? `  (autres : ${found.filter((f) => f !== name).join(', ')})` : ''}`);
+    if (ENGINES[name].online) log('⚠ moteur en ligne : le texte de la narration est envoyé à un service externe');
   }
 
   fs.mkdirSync(outDir, { recursive: true });
@@ -185,13 +210,14 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     if (argv[i].startsWith('-')) opt[argv[i].replace(/^--?/, '')] = argv[++i]; else pos.push(argv[i]);
   }
   if (pos[0] === 'engines') {
-    const found = detectEngines();
+    const found = detectEngines(opt.lang || 'fr');
     for (const [k, e] of Object.entries(ENGINES)) console.log(`${found.includes(k) ? '✔' : '✖'} ${k.padEnd(7)} ${e.label}`);
     if (!found.length) console.log('\n' + INSTALL_HINT);
+    console.log('\nInstaller un moteur : node voice-setup.mjs install <edge|piper|espeak> [--lang fr]');
     process.exit(found.length ? 0 : 1);
   }
   if (!pos[0] || !fs.existsSync(pos[0])) {
-    console.error('usage: node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|say|sapi|piper|espeak] [--lang fr] [--voice v] [--rate 1] [--gap .35] [--start .4] [--max-chars 42]\n       node voice.mjs engines');
+    console.error('usage: node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|say|sapi|piper|edge|espeak] [--lang fr] [--voice v] [--rate 1] [--gap .35] [--start .4] [--max-chars 42]\n       node voice.mjs engines');
     process.exit(1);
   }
   const raw = fs.readFileSync(pos[0], 'utf8');

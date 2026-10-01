@@ -39,18 +39,25 @@ l'inverse) : la scène « logo » commence quand la phrase « voici… » commen
 cache (hash du texte + voix) : relancer est instantané tant que le texte ne change pas.
 Un fichier texte brut (une ligne = une phrase) est aussi accepté à la place du JSON.
 
-### Moteurs (tous locaux, sans clé API)
+### Moteurs et installation guidée
 
-| Moteur | Plateforme | Qualité |
-|--------|-----------|---------|
-| `say` | macOS (préinstallé) | bonne (`Thomas`, `Amelie` pour le français) |
-| `sapi` | Windows (préinstallé) | correcte |
-| `piper` | tous — `PIPER_MODEL=/chemin/voix.onnx` (+ `PIPER_BIN`) | **très bonne** (neuronal) — à recommander sur Linux |
-| `espeak` | Linux : `sudo apt install espeak-ng` | robotique, dépannage |
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" --lang fr                 # état + recommandation
+node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install piper --lang fr   # puis edge | espeak
+```
+| Moteur | Où | Qualité | Prérequis / installation |
+|--------|----|---------|--------------------------|
+| `say` | macOS | bonne (`Thomas`, `Amelie`) | préinstallé |
+| `sapi` | Windows | correcte | préinstallé |
+| `piper` | **local**, gratuit, tous OS | **très bonne** (neuronal) | Python ≥ 3.8 ; `install piper` crée un venv privé, `pip install piper-tts`, télécharge la voix (~60 Mo : fr, en, es, de, it). Sans sudo. |
+| `edge` | **en ligne**, gratuit, sans clé | très bonne (`fr-FR-DeniseNeural`, `fr-FR-HenriNeural`, `en-US-AriaNeural`…) | Python ≥ 3.8 ; `install edge`. Le **texte part chez Microsoft**, service non officiel (peut changer). Jamais choisi en `auto` : `--engine edge` ou `"engine": "edge"` dans le script. |
+| `espeak` | Linux | robotique, dépannage | `sudo apt install espeak-ng` (le script le fait seul si root/sudo sans mot de passe, sinon donne la commande) |
 
-Choix auto dans cet ordre ; forcer avec `--engine`. Si rien n'est disponible, le script explique quoi
-installer. Pour une voix de qualité sans moteur local : l'utilisateur fournit un enregistrement (champ `file`).
-**Prévenir l'utilisateur** quand le moteur est `espeak` : la voix sera mécanique.
+Choix `auto` (moteurs locaux uniquement) : piper > say > sapi > espeak. Forcer avec `--engine`. Les paquets Python sont dans
+`${CLAUDE_PLUGIN_DATA}/voice-venv`, les voix Piper dans `${CLAUDE_PLUGIN_DATA}/voices` (désinstallés avec le plugin).
+Autre voix Piper : poser un `.onnx` (+ `.onnx.json`) dans `voices/` ou `PIPER_MODEL=/chemin/voix.onnx`.
+Avec `espeak` seul, **prévenir** que la voix sera mécanique et proposer Piper. Pour une voix de qualité « studio » :
+l'utilisateur fournit un enregistrement (champ `file`).
 
 ## 2. Sous-titres
 

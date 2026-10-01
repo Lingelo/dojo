@@ -1,7 +1,7 @@
 ---
 name: motion-video
 description: Crée des vidéos motion design sonorisées (intro, teaser produit, explainer, animation de logo, data-viz animée, réseaux sociaux) en écrivant une composition HTML/CSS/SVG/Canvas puis en la rendant image par image en MP4/WebM/GIF/MOV via Playwright + ffmpeg, de façon déterministe, avec bruitages synthétisés, musique, voix off (synthèse vocale locale ou enregistrement) et sous-titres incrustés/exportés (SRT/VTT) synchronisés à l'image. Utiliser quand l'utilisateur demande /motion-video, veut « générer une vidéo », « faire une animation », « exporter une animation CSS en MP4 », un teaser, une intro, un GIF animé, une voix off, « lire » un texte ou des sous-titres.
-allowed-tools: Bash(node:*), Bash(mkdir:*), Bash(ls:*), Read, Write, Edit, Glob
+allowed-tools: Bash(node:*), Bash(mkdir:*), Bash(ls:*), Read, Write, Edit, Glob, AskUserQuestion
 argument-hint: "[brief de la vidéo]"
 ---
 
@@ -37,6 +37,16 @@ la commande exacte : `sudo npx playwright install-deps chromium` sur Linux sans 
 ne sont pas exportées au Bash). `render.mjs` relance le setup de lui-même si l'environnement a changé.
 Aucun `ffmpeg`/`ffprobe` système n'est nécessaire : utiliser `inspect.mjs`.
 
+## Guider l'utilisateur (priorité)
+
+L'utilisateur peut découvrir l'outil : à chaque étape, dire en une phrase **ce qui va se passer et ce qui suit**
+(brief → storyboard → stills à valider → rendu → livraison). Poser les questions de brief avec `AskUserQuestion`
+(format, durée, son, voix off, sous-titres) plutôt qu'en texte libre, en proposant un choix recommandé.
+**Prérequis : ne jamais laisser un échec technique sans issue** — annoncer ce qui manque (nom, taille, local ou en ligne),
+l'installer avec le script prévu dès que l'utilisateur est d'accord, vérifier, puis continuer. Ce qui ne peut pas
+être installé sans droits administrateur (ex. `sudo apt install …`, Python absent) : donner la commande exacte à copier.
+Fin de livraison : chemin des fichiers + comment modifier (« changer le texte », « autre voix », « sans sous-titres »).
+
 ## Workflow
 
 ### 1. Brief (court)
@@ -45,12 +55,22 @@ objectif & public · durée (défaut 6–10 s) · format (16:9 1920×1080, 9:16 
 textes exacts · identité visuelle (couleurs, police, logo) · **son** : musique fournie, musique générée (`sfx.mjs bed`) ou bruitages seuls (défaut : bruitages + bed généré) · **voix off** (texte à lire ? langue ? voix fournie ?) · **sous-titres** (oui/non, style, langue).
 Voix off ou sous-titres demandés → lire `references/voice-and-subtitles.md` ; la narration se rédige et se génère **avant** le storyboard.
 
-### 1 bis. Voix off (si demandée)
+### 1 bis. Voix off (si demandée) — préparation guidée
+1. **Diagnostic** : `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" --lang fr --home "${CLAUDE_PLUGIN_DATA}"` (✔/✖ par moteur + recommandation).
+2. **Moteur** — si `piper`, `say` ou `sapi` est ✔, l'utiliser sans rien demander. Sinon (ou seulement `espeak`, robotique),
+   proposer avec `AskUserQuestion` :
+   - **Piper** (recommandé) : voix neuronale locale gratuite, texte qui reste sur la machine. Prérequis : Python ≥ 3.8 ; télécharge ~60 Mo.
+   - **Edge TTS** : voix neuronale en ligne gratuite sans clé ; le texte est envoyé à Microsoft ; service non officiel.
+   - **Mon propre enregistrement** : l'utilisateur fournit un audio par phrase (`"file"`).
+   Après accord : `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install piper --lang fr --home "${CLAUDE_PLUGIN_DATA}"` (ou `edge`).
+   Python absent ou `venv` manquant → le script le dit : relayer la commande exacte. Piper se choisit tout seul ensuite ;
+   Edge **jamais en automatique** (texte hors machine) : passer `--engine edge`.
+3. **Narration** : écrire `video/narration.json` (voir `references/voice-and-subtitles.md`), puis
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" engines                   # moteur local disponible ? (espeak = robotique → prévenir)
 node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" video/narration.json -o video/voice --home "${CLAUDE_PLUGIN_DATA}"
 ```
 Une phrase par ligne ; le script affiche le début/fin **réels** de chaque phrase → c'est la base des temps du storyboard.
+Faire écouter/valider la voix (fichier `video/voice/narration.wav`) avant de construire l'image : changer de voix après coup oblige à recaler.
 
 ### 2. Storyboard
 Écrire un tableau de beats **avant** le code, avec des temps absolus (si voix : caler les scènes sur les phrases) :
