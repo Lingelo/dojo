@@ -1,6 +1,6 @@
 ---
 name: motion-video
-description: Crée des vidéos motion design sonorisées (intro, teaser produit, explainer, animation de logo, data-viz animée, réseaux sociaux) en écrivant une composition HTML/CSS/SVG/Canvas puis en la rendant image par image en MP4/WebM/GIF/MOV via Playwright + ffmpeg, de façon déterministe, avec bruitages synthétisés et musique synchronisés à l'image. Utiliser quand l'utilisateur demande /motion-video, veut « générer une vidéo », « faire une animation », « exporter une animation CSS en MP4 », un teaser, une intro ou un GIF animé.
+description: Crée des vidéos motion design sonorisées (intro, teaser produit, explainer, animation de logo, data-viz animée, réseaux sociaux) en écrivant une composition HTML/CSS/SVG/Canvas puis en la rendant image par image en MP4/WebM/GIF/MOV via Playwright + ffmpeg, de façon déterministe, avec bruitages synthétisés, musique, voix off (synthèse vocale locale ou enregistrement) et sous-titres incrustés/exportés (SRT/VTT) synchronisés à l'image. Utiliser quand l'utilisateur demande /motion-video, veut « générer une vidéo », « faire une animation », « exporter une animation CSS en MP4 », un teaser, une intro, un GIF animé, une voix off, « lire » un texte ou des sous-titres.
 allowed-tools: Bash(node:*), Bash(mkdir:*), Bash(ls:*), Read, Write, Edit, Glob
 argument-hint: "[brief de la vidéo]"
 ---
@@ -15,6 +15,7 @@ Références à charger au besoin :
 - `references/composition-contract.md` — ce que le renderer virtualise, attributs `data-*`, hook `__seek`, GSAP/Lottie/Three.js, pièges.
 - `references/motion-design.md` — timing, easings, ressorts, typographie, formats, rythme narratif.
 - `references/sound-design.md` — son synchronisé : `data-sfx`, `__sfx()`, `window.__audio` (beats/énergie), sons synthétisés, grammaire sonore.
+- `references/voice-and-subtitles.md` — voix off (`voice.mjs`), sous-titres incrustés/SRT/VTT/karaoké, `window.__captions`, ducking de la musique.
 - `assets/starter.html` — squelette de composition à copier.
 - `${CLAUDE_PLUGIN_ROOT}/examples/sketch-intro.html` — exemple complet (Canvas + SVG + CSS + WAAPI + son synchronisé).
 - `${CLAUDE_PLUGIN_ROOT}/examples/sketch-3d.html` — exemple 3D (Three.js via CDN servi en local, bloom, égaliseur piloté par la musique, titres HTML superposés).
@@ -41,10 +42,18 @@ Aucun `ffmpeg`/`ffprobe` système n'est nécessaire : utiliser `inspect.mjs`.
 ### 1. Brief (court)
 Déduire du message, ne demander que ce qui manque vraiment :
 objectif & public · durée (défaut 6–10 s) · format (16:9 1920×1080, 9:16 1080×1920, 1:1 1080×1080) ·
-textes exacts · identité visuelle (couleurs, police, logo) · **son** : musique fournie, musique générée (`sfx.mjs bed`) ou bruitages seuls (défaut : bruitages + bed généré).
+textes exacts · identité visuelle (couleurs, police, logo) · **son** : musique fournie, musique générée (`sfx.mjs bed`) ou bruitages seuls (défaut : bruitages + bed généré) · **voix off** (texte à lire ? langue ? voix fournie ?) · **sous-titres** (oui/non, style, langue).
+Voix off ou sous-titres demandés → lire `references/voice-and-subtitles.md` ; la narration se rédige et se génère **avant** le storyboard.
+
+### 1 bis. Voix off (si demandée)
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" engines                   # moteur local disponible ? (espeak = robotique → prévenir)
+node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" video/narration.json -o video/voice --home "${CLAUDE_PLUGIN_DATA}"
+```
+Une phrase par ligne ; le script affiche le début/fin **réels** de chaque phrase → c'est la base des temps du storyboard.
 
 ### 2. Storyboard
-Écrire un tableau de beats **avant** le code, avec des temps absolus :
+Écrire un tableau de beats **avant** le code, avec des temps absolus (si voix : caler les scènes sur les phrases) :
 
 | t (s) | Scène | Ce qui bouge | Technique | Son |
 |-------|-------|--------------|-----------|-----|
@@ -96,6 +105,8 @@ Les bruitages (`data-sfx`, `__sfx`, `<audio data-start>`) sont toujours mixés ;
 | `--beats beats.json` | Grille de beats exacte (sinon détectée, ±10 ms) |
 | `--lufs -14` / `off` | Loudness finale (standard streaming) |
 | `--cues cues.json` | Exporter la liste horodatée des sons (contrôle) |
+| `--voice voice/voice.json` | Voix off mixée, musique baissée dessous (`--duck -9`), sous-titres incrustés + `.srt/.vtt` à côté de la vidéo |
+| `--subs f.srt` · `--captions bottom\|karaoke\|center\|off` · `--embed-subs` | Sous-titres externes · style · piste souple (mp4/webm) |
 | `--crf 12..23` | Qualité H.264 (défaut 16) |
 
 Ordre de grandeur : ~9 captures/s en 1080p PNG, ~13 en `--jpeg` → 8 s @60 fps sans blur ≈ 50 s, avec `--motion-blur 4` ≈ 3–4 min.
@@ -106,7 +117,7 @@ Lancer les rendus longs en arrière-plan.
 node "${CLAUDE_PLUGIN_ROOT}/scripts/inspect.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.mp4            # durée, fps, bt709, LUFS
 node "${CLAUDE_PLUGIN_ROOT}/scripts/inspect.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.mp4 --frames 2.1,3.6 -o video/check   # puis Read
 ```
-Contrôler 2–3 frames en plein mouvement. Relire `cues.json` : chaque son doit tomber sur l'événement
+Contrôler 2–3 frames en plein mouvement (avec sous-titres : au moins une frame au milieu d'une phrase). Relire `cues.json` : chaque son doit tomber sur l'événement
 visuel voulu (et, avec musique, sur un beat). Vérifier la synchro réelle dans le fichier :
 `node "${CLAUDE_PLUGIN_ROOT}/scripts/audio.mjs" analyze video/intro.mp4 --home "${CLAUDE_PLUGIN_DATA}"` (onsets). Livrer le chemin du fichier + le storyboard final.
 
@@ -116,4 +127,5 @@ visuel voulu (et, avec musique, sur un beat). Vérifier la synchro réelle dans 
 3. **Easing partout** : aucun `linear` sauf rotations continues / défilements. Préférer out-expo et ressorts.
 4. **Stagger** 30–80 ms entre éléments d'un même groupe ; 1 seul point focal à la fois.
 5. **Le son fait 50 % de la perception** : chaque mouvement important a son bruitage, les entrées tombent sur les beats.
-6. **Safe area** : garder texte et logo à ≥ 5 % des bords (≥ 10 % en 9:16 pour l'UI des réseaux).
+6. **Voix** : narration d'abord, storyboard sur ses durées réelles ; sous-titres ≤ 42 caractères (24–28 en 9:16), zone du bas libre.
+7. **Safe area** : garder texte et logo à ≥ 5 % des bords (≥ 10 % en 9:16 pour l'UI des réseaux).

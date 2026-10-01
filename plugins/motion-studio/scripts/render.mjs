@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { analyze, mix } from './audio.mjs';
+import { parseSubs, toSrt, toVtt, wordsOf } from './captions.mjs';
 import { LAUNCH_ARGS, ensureDeps, routeCdnToLocal } from './deps.mjs';
 
 const HELP = `
@@ -38,6 +39,13 @@ Options (CLI overrides the <body data-*> attributes of the composition):
       --audio-gain <g>    Gain of --audio in the mix (default 1)
       --beats <json>      Exact beat grid {bpm, beats[]} (e.g. from sfx.mjs bed) overriding analysis
       --no-sfx            Ignore sound cues (data-sfx, __sfx(), <audio data-start>)
+      --voice <json>      Narration from voice.mjs (voice.json): mixed on top, music ducked under it,
+                          subtitles taken from it, exposed to the page as window.__captions
+      --subs <file>       Subtitles (.srt .vtt .json) — burned in, exported next to the video
+      --captions <style>  Burned-in style: bottom (default) | karaoke | center | off
+                          (off = no overlay, the page draws its own from window.__captions)
+      --embed-subs        Also add a soft (toggleable) subtitle track (mp4 / webm)
+      --duck <dB|off>     Music attenuation while the voice speaks (default -9)
       --lufs <n|off>      Loudness target of the final mix (default -14, streaming standard)
       --cues <file.json>  Also write the collected sound cues (debug / external DAW)
       --transparent      Transparent background (use with --format webm|mov)
@@ -61,7 +69,7 @@ function parseArgs(argv) {
       key = alias[key] || key;
       if (val === undefined) {
         const next = argv[i + 1];
-        if (next !== undefined && !next.startsWith('--') && !['help', 'transparent', 'jpeg', 'no-sfx'].includes(key)) {
+        if (next !== undefined && !next.startsWith('--') && !['help', 'transparent', 'jpeg', 'no-sfx', 'embed-subs'].includes(key)) {
           val = next; i++;
         } else val = true;
       }
@@ -100,6 +108,56 @@ window.__audio = (() => {
       return { index: i, since, phase: i < 0 ? 0 : Math.min(1, since / (60 / d.bpm)), pulse: i < 0 ? 0 : Math.exp(-since * 8) };
     },
     nextBeat: (t) => d.beats.find((b) => b >= t - 1e-6) ?? t,
+  };
+})();
+`;
+
+// Subtitles: window.__captions for the page + a burned-in overlay (deterministic: driven by virtual time).
+const CAPTIONS_API = String.raw`
+window.__captions = (() => {
+  const d = __DATA__;
+  const cues = d.cues, lines = d.lines || [];
+  const find = (arr, t) => arr.find((c) => t >= c.start && t < c.end) || null;
+  return {
+    ...d,
+    at: (t) => find(cues, t),                       // active subtitle cue (or null)
+    line: (t) => find(lines, t),                    // active spoken line (or null) — image follows voice
+    word: (t) => { const c = find(cues, t); return c ? c.words.find((w) => t >= w.start && t < w.end) || null : null; },
+    speaking: (t) => lines.some((l) => t >= l.start && t < l.end),
+  };
+})();
+(() => {
+  const style = __STYLE__;
+  if (style === 'off') return;
+  let el = null, last = null;
+  const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  window.__captionsTick = (t) => {
+    if (!el) {
+      el = document.createElement('div');
+      el.id = '__captions';
+      const W = innerWidth, H = innerHeight, portrait = H > W;
+      const size = Math.round(Math.min(H * 0.046, W * 0.062));
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#ffd23f';
+      const pos = style === 'center' ? 'top:50%;transform:translateY(-50%);' : 'bottom:' + Math.round(H * (portrait ? 0.17 : 0.075)) + 'px;';
+      el.style.cssText = 'position:fixed;left:50%;margin-left:' + (-W * 0.4) + 'px;width:' + (W * 0.8) + 'px;' + pos +
+        'text-align:center;z-index:2147483647;pointer-events:none;font:700 ' + size + 'px/1.25 ' + (getComputedStyle(document.body).fontFamily || 'sans-serif') +
+        ';color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.9),0 0 ' + Math.round(size * 0.35) + 'px rgba(0,0,0,.85),0 0 2px #000;' +
+        '-webkit-text-stroke:' + Math.max(2, Math.round(size / 14)) + 'px rgba(0,0,0,.9);paint-order:stroke fill;text-wrap:balance;';
+      el.style.setProperty('--cap-accent', accent);
+      (document.body || document.documentElement).appendChild(el);
+    }
+    const c = window.__captions.at(t);
+    if (!c) { el.style.opacity = 0; last = null; return; }
+    // fade in / out by hand (no CSS animation → nothing to seek)
+    const k = Math.min(1, (t - c.start) / 0.12, (c.end - t) / 0.12);
+    el.style.opacity = Math.max(0, k);
+    const w = style === 'karaoke' ? window.__captions.word(t) : null;
+    const key = c.start + '|' + (w ? w.start : '');
+    if (key === last) return;
+    last = key;
+    el.innerHTML = style === 'karaoke'
+      ? (c.words || []).map((x) => '<span style="' + (t >= x.start ? 'color:var(--cap-accent)' : '') + '">' + esc(x.w) + '</span>').join(' ')
+      : esc(c.text).replace(/\n/g, '<br>');
   };
 })();
 `;
@@ -222,6 +280,7 @@ const VIRTUAL_TIME = String.raw`
       if (ms < now) throw new Error('virtual time only moves forward');
       advance(ms);
       if (typeof window.__seek === 'function') await window.__seek(ms / 1000);
+      if (window.__captionsTick) window.__captionsTick(ms / 1000);
       await sync();
       if (document.fonts) await document.fonts.ready;
       return now;
@@ -258,6 +317,25 @@ if (args.audio) {
   log(`♪ ${path.basename(file)}  ${audioData.bpm} BPM  ${audioData.beats.length} beats  ${audioData.onsets.length} onsets  → window.__audio`);
 }
 
+// Narration + subtitles: voice.json (from voice.mjs) and/or a subtitle file. Cues get word timings for karaoke.
+let voice = null, captionData = null;
+if (args.voice) {
+  const f = path.resolve(args.voice);
+  if (!fs.existsSync(f)) die(`Voice not found: ${args.voice}`);
+  if (/\.json$/i.test(f)) {
+    voice = JSON.parse(fs.readFileSync(f, 'utf8'));
+    voice.file = path.resolve(path.dirname(f), voice.narration);
+  } else voice = { file: f, lines: [], cues: [] }; // a bare recording: mixed, no timing data
+  if (!fs.existsSync(voice.file)) die(`Narration audio missing: ${voice.file}`);
+}
+if (args.subs || voice?.cues?.length) {
+  const cues = args.subs ? parseSubs(path.resolve(args.subs)) : voice.cues;
+  captionData = { cues: cues.map((c) => ({ ...c, words: wordsOf(c) })), lines: voice?.lines ?? [] };
+  log(`✎ ${cues.length} subtitle cue(s)${args.captions === 'off' ? ' (no overlay)' : ''}`);
+}
+const captionStyle = captionData ? (args.captions === true ? 'bottom' : args.captions || 'bottom') : 'off';
+if (!['bottom', 'karaoke', 'center', 'off'].includes(captionStyle)) die(`Unknown --captions style: ${captionStyle} (bottom | karaoke | center | off)`);
+
 const browser = await chromium.launch({ ...deps.browser.opts, args: LAUNCH_ARGS });
 
 try {
@@ -285,7 +363,8 @@ try {
   const context = await browser.newContext({ viewport: { width: cfg.width, height: cfg.height }, deviceScaleFactor: cfg.scale, reducedMotion: 'no-preference' });
   await context.addInitScript({
     content: `globalThis.__realSetTimeout = setTimeout;\n` + VIRTUAL_TIME.replace('__SEED__', String(cfg.seed)) +
-      (audioData ? AUDIO_API.replace('__DATA__', JSON.stringify(audioData)) : ''),
+      (audioData ? AUDIO_API.replace('__DATA__', JSON.stringify(audioData)) : '') +
+      (captionData ? CAPTIONS_API.replace('__DATA__', () => JSON.stringify(captionData)).replace('__STYLE__', JSON.stringify(captionStyle)) : ''),
   });
   await routeCdnToLocal(context, log);
   const page = await context.newPage();
@@ -368,21 +447,46 @@ try {
     const cues = args.noSfx ? [] : await page.evaluate(() => window.__vt.cues());
     if (args.cues) fs.writeFileSync(path.resolve(args.cues), JSON.stringify(cues, null, 1));
     const beds = args.audio ? [{ src: path.resolve(args.audio), at: 0, gain: num(args.audioGain, 1) }] : [];
+    const voices = voice ? [{ src: voice.file, at: 0, gain: num(args.voiceGain, 1) }] : [];
     const wav = format === 'gif' ? null : mix({
-      ffmpeg, duration: to - from, from, beds,
+      ffmpeg, duration: to - from, from, beds, voices, duck: args.duck === 'off' ? 0 : num(args.duck, -9),
       cues: cues.filter((c) => c.at < to),
       baseDir: /^file:/.test(url) ? path.dirname(fileURLToPath(url)) : process.cwd(),
       out: out.replace(/(\.[^.]+)$/, '.mix.wav'),
     });
-    if (wav) {
+    // Subtitle sidecars (.srt / .vtt) cut to the rendered range, so they match the video's own timeline.
+    let srt = null;
+    if (captionData && format !== 'gif') {
+      const cut = captionData.cues.filter((c) => c.end > from && c.start < to)
+        .map((c) => ({ ...c, start: Math.max(0, c.start - from), end: Math.min(to, c.end) - from, words: undefined }));
+      const stem = out.replace(/\.[^.]+$/, '');
+      fs.writeFileSync(`${stem}.srt`, toSrt(cut));
+      fs.writeFileSync(`${stem}.vtt`, toVtt(cut));
+      log(`✎ ${path.basename(stem)}.srt / .vtt`);
+      if (args.embedSubs) {
+        if (format === 'mov') log('⚠ --embed-subs: not supported for mov, sidecar files only');
+        else srt = `${stem}.srt`;
+      }
+    }
+    if (wav || srt) {
       const lufs = args.lufs === 'off' ? null : num(args.lufs, -14);
-      const mux = ['-y', '-hide_banner', '-loglevel', 'error', '-i', videoOnly, '-i', wav, '-map', '0:v', '-map', '1:a', '-c:v', 'copy'];
-      if (lufs !== null) mux.push('-af', `loudnorm=I=${lufs}:TP=-1.5:LRA=11,aresample=48000`);
-      mux.push('-c:a', { webm: 'libopus', mov: 'pcm_s16le' }[format] || 'aac', '-b:a', '192k', '-t', String(to - from), out);
+      const mux = ['-y', '-hide_banner', '-loglevel', 'error', '-i', videoOnly];
+      if (wav) mux.push('-i', wav);
+      if (srt) mux.push('-i', srt);
+      mux.push('-map', '0:v');
+      if (wav) mux.push('-map', '1:a');
+      if (srt) mux.push('-map', `${wav ? 2 : 1}:s`);
+      mux.push('-c:v', 'copy');
+      if (wav) {
+        if (lufs !== null) mux.push('-af', `loudnorm=I=${lufs}:TP=-1.5:LRA=11,aresample=48000`);
+        mux.push('-c:a', { webm: 'libopus', mov: 'pcm_s16le' }[format] || 'aac', '-b:a', '192k');
+      }
+      if (srt) mux.push('-c:s', format === 'webm' ? 'webvtt' : 'mov_text', '-metadata:s:s:0', `language=${{ fr: 'fra', en: 'eng', es: 'spa', de: 'deu', it: 'ita', pt: 'por', nl: 'nld' }[voice?.lang] || 'und'}`);
+      mux.push('-t', String(to - from), out);
       const r = spawnSync(ffmpeg, mux, { stdio: 'inherit' });
-      if (r.status !== 0) die('ffmpeg audio mux failed');
-      fs.rmSync(videoOnly); fs.rmSync(wav);
-      log(`♪ ${cues.length} sound cue(s)${beds.length ? ' + music' : ''} mixed${lufs !== null ? ` @ ${lufs} LUFS` : ''}`);
+      if (r.status !== 0) die('ffmpeg mux failed');
+      fs.rmSync(videoOnly); if (wav) fs.rmSync(wav);
+      if (wav) log(`♪ ${cues.length} sound cue(s)${beds.length ? ' + music' : ''}${voices.length ? ' + voice' : ''} mixed${lufs !== null ? ` @ ${lufs} LUFS` : ''}`);
     } else fs.renameSync(videoOnly, out);
 
     const size = (fs.statSync(out).size / 1024 / 1024).toFixed(2);

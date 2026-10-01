@@ -63,9 +63,11 @@ node plugins/motion-studio/scripts/render.mjs composition.html [options]
   --motion-blur 4    --scale 2    --transparent    --audio music.mp3
   --stills 0.5,2,4   --from 2 --to 5   --jpeg      --crf 16    --seed 42
   --beats beats.json --lufs -14 --cues cues.json   --no-sfx
+  --voice voice.json --duck -9  --subs f.srt  --captions bottom|karaoke|center|off  --embed-subs
 
 node plugins/motion-studio/scripts/sfx.mjs list | <son> -o x.wav | bed --bpm 120 --duration 8
 node plugins/motion-studio/scripts/audio.mjs analyze music.mp3     # tempo, beats, onsets
+node plugins/motion-studio/scripts/voice.mjs engines | narration.json -o voice/   # voix off + sous-titres
 ```
 
 Comment ça marche, pour chaque frame :
@@ -88,6 +90,20 @@ Les cues sont horodatés en temps virtuel pendant le rendu, puis mixés en JS à
 normalisés à −14 LUFS et muxés (AAC / Opus / PCM). Les bruitages sont **synthétisés en code** (`sfx.mjs` :
 pop, tick, click, whoosh, swoosh, riser, impact, chime, glitch, kick, hat, pad + générateur de musique `bed`),
 donc sans banque de sons ni licence. Détails : `skills/motion-video/references/sound-design.md`.
+
+## Voix off et sous-titres
+
+| Besoin | Commande |
+|--------|----------|
+| Faire **lire** un texte | `node scripts/voice.mjs narration.json -o voice/` → `narration.wav`, `voice.json` (timeline réelle), `subs.srt/.vtt` |
+| Mixer la voix (musique baissée dessous) + sous-titres incrustés | `node scripts/render.mjs comp.html --voice voice/voice.json` |
+| Sous-titres d'un `.srt/.vtt` existant, style karaoké, piste souple | `--subs fr.srt --captions karaoke --embed-subs` |
+
+La voix est synthétisée **localement, sans clé API** : `say` (macOS), SAPI (Windows), Piper (`PIPER_MODEL`, voix neuronale,
+recommandé sous Linux) ou eSpeak NG (`apt install espeak-ng`, robotique). Une ligne peut aussi référencer un enregistrement
+existant (`"file"`). Les durées de chaque phrase sont **mesurées** sur l'audio : le storyboard se cale dessus, les sous-titres
+suivent (temps par mot estimés pour le karaoké). Les `.srt`/`.vtt` sont écrits à côté de la vidéo.
+`window.__captions` expose cues, mot actif et `speaking(t)` aux compositions. Détails : `skills/motion-video/references/voice-and-subtitles.md`.
 
 ## Exemple
 
