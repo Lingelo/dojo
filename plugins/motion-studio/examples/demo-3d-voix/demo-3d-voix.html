@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>motion-studio — démo 3D + voix off + sous-titres</title>
+<!--
+  Démo 30 s : scène Three.js, voix off (Piper) et sous-titres karaoké, musique qui pilote l'image.
+  La timeline suit les phrases mesurées dans voice/voice.json (voir PHASES ci-dessous).
+  Rendu complet (depuis ce dossier) :
+    node ../../scripts/voice-setup.mjs install piper --lang fr          # une fois
+    node ../../scripts/voice.mjs narration.json -o voice
+    node ../../scripts/sfx.mjs bed --bpm 120 --duration 31 --start 2.45 -o bed.wav > bed.json
+    node ../../scripts/render.mjs demo-3d-voix.html --voice voice/voice.json --captions karaoke \
+         --audio bed.wav --beats bed.json --embed-subs -o demo.mp4
+-->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root { --bg: #07080c; --ink: #f4efe6; --muted: #9a9fad; --clay: #d97757; --accent: #ffb48f; --sky: #7aa2f7;
+    --out-expo: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+  body { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: var(--ink); position: relative; }
+  canvas { position: absolute; inset: 0; }
+
+  .head { position: absolute; left: 110px; top: 90px; }
+  .head::before { content: ''; position: absolute; inset: -120px -220px -120px -160px; z-index: -1;
+    background: radial-gradient(closest-side, rgba(7,8,12,.7), rgba(7,8,12,0)); }
+  .head h1 { font-size: 96px; font-weight: 800; letter-spacing: -0.045em; line-height: 1; display: flex; }
+  .head h1 span { display: inline-block; opacity: 0; transform: translateY(46px);
+    animation: rise .7s var(--out-expo) forwards; animation-delay: calc(.8s + var(--i) * 40ms); }
+  .head h1 .accent { color: var(--clay); }
+  .bar { width: 0; height: 6px; border-radius: 3px; margin-bottom: 24px; background: linear-gradient(90deg, var(--clay), var(--sky));
+    animation: grow .9s var(--out-expo) .6s forwards; }
+  #label { margin-top: 20px; font-size: 30px; letter-spacing: .24em; text-transform: uppercase; color: var(--muted); opacity: 0; min-height: 40px; }
+  #label b { color: var(--ink); font-weight: 600; }
+  .mono { text-transform: none; font-variant-numeric: tabular-nums; font-family: "SF Mono", Menlo, Consolas, monospace; letter-spacing: .05em; }
+  .curtain { position: absolute; inset: 0; background: var(--bg); opacity: 0; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  @keyframes grow { to { width: 340px; } }
+</style>
+</head>
+<body data-width="1920" data-height="1080" data-fps="30" data-duration="31">
+  <canvas id="gl"></canvas>
+  <div class="head">
+    <div class="bar" data-sfx="whoosh?dur=.7&from=600&to=5000" data-sfx-gain=".3" data-sfx-pan="-.5"></div>
+    <h1 id="title"></h1>
+    <div id="label"></div>
+  </div>
+  <div class="curtain" id="curtain"></div>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+  import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+  import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+  import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+  // ---------- titre HTML (tics spatialisés)
+  const title = document.getElementById('title');
+  [...'Motion Studio'].forEach((ch, i) => title.insertAdjacentHTML('beforeend',
+    ch === ' ' ? '<span style="width:.3em"></span>'
+      : `<span class="${i > 6 ? 'accent' : ''}" style="--i:${i}" data-sfx="tick?pitch=${(0.8 + i * 0.05).toFixed(2)}" data-sfx-gain=".25" data-sfx-pan="auto">${ch}</span>`));
+
+  // ---------- temps
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const seg = (t, a, b) => clamp((t - a) / (b - a));
+  const smooth = (x) => x * x * (3 - 2 * x);
+  const easeOutExpo = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+  const spring = (t, k = 170, c = 14) => { if (t <= 0) return 0; const w0 = Math.sqrt(k), z = c / (2 * w0), wd = w0 * Math.sqrt(1 - z * z);
+    return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t)); };
+  /** Interpolation lissée entre points-clés [[t, v], …] */
+  const kf = (t, pts) => { if (t <= pts[0][0]) return pts[0][1]; for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) return pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * smooth(seg(t, pts[i - 1][0], pts[i][0])); return pts.at(-1)[1]; };
+  const audio = window.__audio;                       // musique analysée (absent dans un navigateur)
+  const bass = (t) => (audio ? audio.bass(t) : 0.5 + 0.5 * Math.sin(t * 12.6) ** 8);
+  const level = (t) => (audio ? audio.level(t) : 0.5);
+  const pulse = (t) => (audio ? audio.beat(t).pulse : 0);
+
+  // ---------- timeline calée sur les phrases de voice/voice.json
+  const HIT = 2.45;                                   // début de « Une vidéo s'écrit… » = impact + entrée de la batterie
+  const PHASES = [                                    // [début, fin, libellé HTML]
+    [2.6, 7.4, 'HTML · CSS · SVG · Canvas'],
+    [7.6, 11.5, '<b>Three.js</b> · WebGL'],
+    [11.7, 16.4, 'Horloge virtuelle <b class="mono" id="clock"></b>'],
+    [16.7, 22.1, 'La musique pilote l’image · <b>120 BPM</b>'],
+    [22.4, 25.3, 'Son <b>→</b> image · impacts'],
+    [25.6, 29.0, 'Voix · sous-titres · son'],
+  ];
+  const SHOCKS = [HIT, 22.45, 23.45, 24.45, 29.24];   // ondes de choc (impacts sonores aux mêmes instants)
+  const BIG = new Set([HIT, 24.45]);
+
+  // ---------- son (cues horodatés au temps virtuel → synchro exacte)
+  const sfx = window.__sfx;
+  sfx?.('whoosh?dur=1.9&from=120&to=1400', { at: 0.1, gain: 0.45 });
+  sfx?.('riser?dur=1.6', { at: HIT, align: 'end', gain: 0.4 });
+  for (const s of SHOCKS) sfx?.('impact', { at: s, gain: BIG.has(s) ? 0.75 : 0.4 });
+  for (const [a] of PHASES) sfx?.('pop', { at: a, gain: 0.22 });
+  sfx?.('swoosh?dur=1', { at: 25.4, gain: 0.35 });
+  sfx?.('chime', { at: 29.3, gain: 0.5 });
+
+  // ---------- rendu
+  const W = 1920, H = 1080;
+  const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(W, H, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x07080c);
+  scene.fog = new THREE.FogExp2(0x07080c, 0.045);
+  const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 200);
+  camera.setViewOffset(W, H, -230, 40, W, H);          // sujet à droite, titre à gauche, sous-titres libres en bas
+
+  scene.add(new THREE.AmbientLight(0x404660, 0.6));
+  const key = new THREE.DirectionalLight(0xffe2cc, 2.2); key.position.set(4, 6, 5); scene.add(key);
+  const warm = new THREE.PointLight(0xd97757, 30, 20); scene.add(warm);
+  const cool = new THREE.PointLight(0x7aa2f7, 30, 20); scene.add(cool);
+
+  const crystal = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 0),
+    new THREE.MeshStandardMaterial({ color: 0xd97757, metalness: 0.35, roughness: 0.28, flatShading: true, emissive: 0x3a120a }));
+  scene.add(crystal);
+  const shell = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.75, 1)),
+    new THREE.LineBasicMaterial({ color: 0x7aa2f7, transparent: true, opacity: 0 }));
+  scene.add(shell);
+  const shell2 = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(2.3, 2)),
+    new THREE.LineBasicMaterial({ color: 0x7dcfb6, transparent: true, opacity: 0 }));
+  scene.add(shell2);
+
+  const shocks = SHOCKS.map(() => {
+    const m = new THREE.Mesh(new THREE.RingGeometry(0.96, 1, 128),
+      new THREE.MeshBasicMaterial({ color: 0xffc9a8, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2; scene.add(m); return m;
+  });
+
+  const N = 72, R = 3.3;
+  const bars = new THREE.InstancedMesh(new THREE.BoxGeometry(0.13, 1, 0.13).translate(0, 0.5, 0), new THREE.MeshBasicMaterial({ toneMapped: false }), N);
+  const cA = new THREE.Color(0xd97757), cB = new THREE.Color(0x7aa2f7), cC = new THREE.Color(0x7dcfb6), tmp = new THREE.Color();
+  for (let i = 0; i < N; i++) {
+    const u = i / N, x = (u * 3) % 1;
+    bars.setColorAt(i, tmp.copy(u < 1 / 3 ? cA : u < 2 / 3 ? cB : cC).lerp(u < 1 / 3 ? cB : u < 2 / 3 ? cC : cA, x));
+  }
+  bars.position.y = -1.2; scene.add(bars);
+  const dummy = new THREE.Object3D();
+
+  const grid = new THREE.PolarGridHelper(14, 24, 10, 96, 0x2a2f3d, 0x1a1e28); grid.position.y = -1.2; scene.add(grid);
+  const starGeo = new THREE.BufferGeometry(), sp = new Float32Array(1800 * 3);
+  for (let i = 0; i < 1800; i++) { const r = 18 + Math.random() * 30, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+    sp.set([r * Math.sin(ph) * Math.cos(th), r * Math.cos(ph), r * Math.sin(ph) * Math.sin(th)], i * 3); }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xcfd6ff, size: 0.07, sizeAttenuation: true, transparent: true, opacity: 0.8 })));
+
+  const composer = new EffectComposer(renderer);
+  composer.setPixelRatio(window.devicePixelRatio);
+  composer.setSize(W, H);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.5, 0.5, 0.12);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+
+  const label = document.getElementById('label'), curtain = document.getElementById('curtain');
+  let phase = -1, clockEl = null;
+
+  function draw(ms) {
+    const t = ms / 1000;
+    const hit = seg(t, HIT, HIT + 0.6);
+
+    // ----- caméra : arrivée → orbite continue, avec des points-clés de distance / hauteur
+    const arrive = smooth(seg(t, 0, HIT));
+    const orbit = 0.35 + 0.19 * t + 0.35 * smooth(seg(t, 7.5, 11.5));
+    const dist = kf(t, [[0, 26], [HIT, 10.5], [7.5, 10.5], [11, 8.2], [16.5, 9.5], [22, 8.8], [25.4, 9.5], [28.5, 17], [30.6, 12]]);
+    const height = kf(t, [[0, 7], [HIT, 1.6], [7.5, 2.2], [11.5, 3.8], [16.5, 2.0], [22, 1.2], [25.4, 2.4], [28.5, 8], [30.6, 2.2]]) + Math.sin(t * 0.9) * 0.2;
+    camera.position.set(Math.sin(orbit) * dist, height, Math.cos(orbit) * dist);
+    camera.lookAt(0, 0.1, 0);
+
+    // ----- cristal : grossit vers l'impact, ressort, pulse sur les beats
+    const pre = 0.35 + 0.25 * smooth(seg(t, 0.4, HIT));
+    const pop = t < HIT ? pre : pre + (1 - pre) * spring(t - HIT);
+    let flash = 0;
+    for (const s of SHOCKS) if (t >= s) flash += Math.exp(-(t - s) * 4) * (BIG.has(s) ? 1 : 0.5);
+    crystal.scale.setScalar(pop * (1 + 0.09 * pulse(t) + 0.12 * flash));
+    crystal.rotation.set(t * 0.35, t * 0.6, 0);
+    crystal.material.emissiveIntensity = 1 + 1.5 * pulse(t) + 3 * flash;
+    shell.scale.setScalar(0.8 + 0.25 * easeOutExpo(hit) + 0.05 * bass(t));
+    shell.rotation.set(-t * 0.2, -t * 0.25, 0);
+    shell.material.opacity = 0.55 * kf(t, [[HIT, 0], [HIT + 0.6, 1], [28.5, 1], [30, 0.3]]);
+    shell2.scale.setScalar(1 + 0.04 * bass(t));
+    shell2.rotation.set(t * 0.12, -t * 0.18, t * 0.07);
+    shell2.material.opacity = 0.4 * kf(t, [[7.5, 0], [8.4, 1], [11.5, 1], [12.5, 0.35]]);   // « troisième dimension » : 2e coque filaire
+
+    // ----- ondes de choc
+    shocks.forEach((m, i) => {
+      const k = seg(t, SHOCKS[i], SHOCKS[i] + (BIG.has(SHOCKS[i]) ? 1.2 : 0.9));
+      m.scale.setScalar(1 + easeOutExpo(k) * (BIG.has(SHOCKS[i]) ? 13 : 8));
+      m.material.opacity = t < SHOCKS[i] ? 0 : (1 - k) * (BIG.has(SHOCKS[i]) ? 0.6 : 0.4);
+    });
+
+    // ----- égaliseur : s'éveille à l'impact, plein régime pendant « la musique pilote l'image »
+    const alive = easeOutExpo(seg(t, HIT, HIT + 0.7)) * kf(t, [[HIT, 0.45], [16.5, 0.45], [17.5, 1], [25.4, 1], [26.5, 0.55]]);
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      const delay = (Math.abs(((i / N) + 0.25) % 1 - 0.5)) * 0.18;
+      const e = 0.6 * bass(t - delay) + 0.5 * level(t - delay) * (0.5 + 0.5 * Math.sin(i * 0.9 + t * 3));
+      dummy.position.set(Math.cos(a) * R, 0, Math.sin(a) * R);
+      dummy.rotation.y = -a;
+      dummy.scale.set(1, 0.03 + alive * (0.2 + 1.8 * e), 1);
+      dummy.updateMatrix();
+      bars.setMatrixAt(i, dummy.matrix);
+    }
+    bars.instanceMatrix.needsUpdate = true;
+    bars.rotation.y = t * 0.12;
+
+    warm.position.set(Math.cos(t * 1.1) * 3, 1.5, Math.sin(t * 1.1) * 3);
+    cool.position.set(Math.cos(t * 1.1 + Math.PI) * 3, -0.5, Math.sin(t * 1.1 + Math.PI) * 3);
+    bloom.strength = 0.4 + 0.45 * bass(t) * alive + 0.5 * flash;
+
+    // ----- libellé de phase (HTML) : fondu manuel, déterministe
+    const p = PHASES.findIndex(([a, b]) => t >= a && t < b);
+    if (p !== phase) { phase = p; label.innerHTML = p >= 0 ? PHASES[p][2] : ''; clockEl = document.getElementById('clock'); }
+    if (p >= 0) {
+      const [a, b] = PHASES[p];
+      label.style.opacity = Math.min(seg(t, a, a + 0.35), seg(t, b, b - 0.35));
+      label.style.transform = `translateY(${(1 - smooth(seg(t, a, a + 0.5))) * 14}px)`;
+      if (clockEl) clockEl.textContent = `t = ${t.toFixed(2)} s · image ${Math.round(t * 30)}`;
+    } else label.style.opacity = 0;
+
+    curtain.style.opacity = seg(t, 30.3, 31);   // fondu final
+
+    composer.render();
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+</script>
+</body>
+</html>
