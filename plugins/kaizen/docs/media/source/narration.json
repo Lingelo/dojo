@@ -1,0 +1,16 @@
+{ "lang": "fr", "rate": 1, "gap": 0.45, "start": 0.6, "maxChars": 42,
+  "lines": [
+    { "id": "hook",    "text": "L'IA écrit du code plus vite que jamais." },
+    { "id": "amp",     "text": "Selon le rapport DORA 2025, elle accélère la livraison, mais augmente aussi l'instabilité.", "caption": "Selon DORA 2025, elle accélère la livraison, mais augmente aussi l'instabilité.", "pause": 0.6 },
+    { "id": "kaizen",  "text": "Kaizen fait de Claude Code un cycle de développement maîtrisé.", "pause": 0.6 },
+    { "id": "const",   "text": "Tout part d'une constitution : vos principes, chacun avec un contrôle vérifiable." },
+    { "id": "plan1",   "text": "Le brainstorm définit quoi construire. Le plan décide comment." },
+    { "id": "plan2",   "text": "Exigences, tests, retour arrière : tout est tracé, puis relu par des agents spécialisés.", "pause": 0.6 },
+    { "id": "gate",    "text": "Pendant le travail, un garde-fou bloque la fin de l'étape quand les tests sont rouges." },
+    { "id": "review",  "text": "Des relecteurs choisis selon le code modifié l'inspectent, et chaque constat bloquant est vérifié.", "pause": 0.6 },
+    { "id": "ship",    "text": "La pull request est décrite, sa taille contrôlée, puis elle est suivie jusqu'à être prête.", "caption": "La PR est décrite, sa taille contrôlée, puis elle est suivie jusqu'à être prête." },
+    { "id": "merge",   "text": "Le merge, lui, reste à vous.", "pause": 0.7 },
+    { "id": "loop1",   "text": "Enfin, les leçons durables sont capitalisées, et relues au cycle suivant." },
+    { "id": "loop2",   "text": "L'objectif : que chaque unité de travail rende la suivante plus facile.", "pause": 0.8 },
+    { "id": "outro",   "text": "Kaizen. Pour Claude Code." }
+  ] }

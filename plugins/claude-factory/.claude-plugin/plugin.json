@@ -1,9 +1,0 @@
-{
-  "name": "claude-factory",
-  "description": "Meta-plugin for creating Claude Code tools: skills, hooks, agents, commands, rules, CLAUDE.md maintenance, audit, and offline documentation reference.",
-  "version": "1.0.0",
-  "author": {
-    "name": "Angelo LIMA",
-    "email": "angelomiguellima@gmail.com"
-  }
-}
