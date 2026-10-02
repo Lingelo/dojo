@@ -8,6 +8,7 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 
 | Je veux… | Lire |
 |---|---|
+| Voir Kaizen en une minute | [La vidéo de présentation](media/kaizen-presentation.mp4) |
 | Comprendre Kaizen en 5 minutes | [Le README du plugin](../README.md) |
 | Faire un premier cycle complet, pas à pas | [Démarrage](demarrage.md) |
 | Régler Kaizen pour mon projet | [Configuration](configuration.md) |

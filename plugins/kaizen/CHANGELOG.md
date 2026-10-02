@@ -33,6 +33,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   en bout (`evals/run.mjs`) et CI GitHub Actions.
 - Documentation utilisateur dans `docs/` : démarrage, configuration, packs, dépannage, un guide par
   skill.
+- Vidéo de présentation d'une minute (`docs/media/`), avec voix off, sous-titres et source
+  reproductible.
 
 ### Modifié
 - `/kaizen:work` : contrôle de taille, audit des dépendances, livraison via `/kaizen:ship`.

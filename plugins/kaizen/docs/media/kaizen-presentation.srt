@@ -1,0 +1,127 @@
+1
+00:00:00,600 --> 00:00:02,800
+L'IA écrit du code
+plus vite que jamais.
+
+2
+00:00:03,000 --> 00:00:05,443
+Selon DORA 2025,
+elle accélère la
+
+3
+00:00:05,443 --> 00:00:07,205
+livraison, mais augmente
+
+4
+00:00:07,205 --> 00:00:08,762
+aussi l'instabilité.
+
+5
+00:00:09,112 --> 00:00:11,045
+Kaizen fait de
+Claude Code un cycle
+
+6
+00:00:11,045 --> 00:00:12,644
+de développement maîtrisé.
+
+7
+00:00:12,994 --> 00:00:14,771
+Tout part d'une constitution :
+
+8
+00:00:14,771 --> 00:00:16,503
+vos principes, chacun avec un
+
+9
+00:00:16,503 --> 00:00:17,801
+contrôle vérifiable.
+
+10
+00:00:18,001 --> 00:00:20,414
+Le brainstorm définit
+quoi construire.
+
+11
+00:00:20,414 --> 00:00:22,016
+Le plan décide comment.
+
+12
+00:00:22,216 --> 00:00:24,626
+Exigences, tests,
+retour arrière :
+
+13
+00:00:24,626 --> 00:00:26,544
+tout est tracé, puis relu par
+
+14
+00:00:26,544 --> 00:00:28,122
+des agents spécialisés.
+
+15
+00:00:28,472 --> 00:00:29,529
+Pendant le travail,
+
+16
+00:00:29,529 --> 00:00:31,359
+un garde-fou bloque
+la fin de l'étape
+
+17
+00:00:31,359 --> 00:00:32,992
+quand les tests sont rouges.
+
+18
+00:00:33,192 --> 00:00:34,979
+Des relecteurs
+choisis selon le code
+
+19
+00:00:34,979 --> 00:00:36,101
+modifié l'inspectent,
+
+20
+00:00:36,101 --> 00:00:38,262
+et chaque constat
+bloquant est vérifié.
+
+21
+00:00:38,612 --> 00:00:41,496
+La PR est décrite,
+sa taille contrôlée,
+
+22
+00:00:41,496 --> 00:00:44,358
+puis elle est suivie
+jusqu'à être prête.
+
+23
+00:00:44,558 --> 00:00:47,114
+Le merge, lui, reste à vous.
+
+24
+00:00:47,564 --> 00:00:49,416
+Enfin, les leçons durables sont
+
+25
+00:00:49,416 --> 00:00:52,028
+capitalisées, et relues
+au cycle suivant.
+
+26
+00:00:52,228 --> 00:00:54,487
+L'objectif : que chaque
+unité de travail
+
+27
+00:00:54,487 --> 00:00:56,331
+rende la suivante plus facile.
+
+28
+00:00:56,881 --> 00:00:57,694
+Kaizen.
+
+29
+00:00:57,694 --> 00:00:59,081
+Pour Claude Code.

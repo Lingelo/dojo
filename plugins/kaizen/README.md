@@ -2,6 +2,12 @@
 
 **Un SDLC assisté par IA où chaque unité de travail rend la suivante plus facile.**
 
+<a href="docs/media/kaizen-presentation.mp4"><img src="docs/media/kaizen-presentation.jpg" alt="Présentation de Kaizen en une minute : la spirale du cycle au-dessus d'un jardin sec" width="100%"></a>
+
+*Présentation en une minute, avec voix off : [regarder la vidéo (MP4)](docs/media/kaizen-presentation.mp4)
+· [sous-titres](docs/media/kaizen-presentation.srt). Source reproductible :
+[docs/media/source/](docs/media/source/kaizen-presentation.html), rendue avec le plugin `motion-studio`.*
+
 Kaizen structure le travail avec Claude Code de la constitution du projet jusqu'à la PR prête à
 merger, puis **referme la boucle** : ce qui a été appris est écrit là où le prochain cycle le relira.
 

@@ -3,6 +3,9 @@
 Ce guide déroule un vrai cycle Kaizen sur un exemple : ajouter un **export CSV des commandes** à une
 application. Comptez une heure la première fois, dont l'essentiel en discussion avec Claude.
 
+Pour une vue d'ensemble avant de commencer : [la vidéo de présentation](media/kaizen-presentation.mp4)
+(une minute, voix off et [sous-titres](media/kaizen-presentation.srt)).
+
 ## 0. Prérequis
 
 - Claude Code, Node ≥ 18, git.

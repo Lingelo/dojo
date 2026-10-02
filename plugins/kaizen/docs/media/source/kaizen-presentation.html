@@ -23,7 +23,10 @@
     node ../../../../motion-studio/scripts/voice.mjs narration.json -o <work>/voice
     node bed-ma.mjs --duration 61 --bpm 84 --start 9.1 -o <work>/bed.wav > <work>/bed.json
     node ../../../../motion-studio/scripts/render.mjs kaizen-presentation.html --voice <work>/voice/voice.json \
-         --audio <work>/bed.wav --beats <work>/bed.json -o ../kaizen-presentation.mp4
+         --audio <work>/bed.wav --beats <work>/bed.json -o <work>/kaizen-presentation.mp4
+    ffmpeg -i <work>/kaizen-presentation.mp4 -c:v libx264 -preset slow -crf 27 -pix_fmt yuv420p \
+         -movflags +faststart -c:a aac -b:a 128k ../kaizen-presentation.mp4   # ~11 Mo au lieu de ~47
+    cp <work>/kaizen-presentation.srt <work>/kaizen-presentation.vtt ..
 -->
 <script type="importmap">
 { "imports": {
