@@ -4,498 +4,515 @@
 <meta charset="utf-8">
 <title>Kaizen — présentation</title>
 <!--
-  Vidéo de présentation du plugin Kaizen, rendue avec le plugin motion-studio du marketplace :
-    node plugins/motion-studio/scripts/voice.mjs narration.json -o <work>/voice
-    node plugins/motion-studio/scripts/sfx.mjs bed --bpm 96 --duration 56 --start 6.6 -o <work>/bed.wav > <work>/bed.json
-    node plugins/motion-studio/scripts/render.mjs kaizen-presentation.html --voice <work>/voice/voice.json \
+  Vidéo de présentation du plugin Kaizen (61 s, 1920×1080, 30 fps), rendue avec le plugin motion-studio.
+
+  Métaphore unique : une spirale qui monte. Chaque tour est un cycle
+  (brainstorm → plan → work → review → ship → compound), chaque tour est plus haut que le précédent
+  (改善, amélioration continue). Un cube, l'unité de travail, parcourt la spirale ; la constitution est
+  le socle ; au centre, une colonne grandit d'une dalle à chaque leçon capitalisée.
+  Aucun chiffre inventé : la seule source citée est le rapport DORA 2025 (qualitatif) ; les cartes
+  d'exemple reprennent l'exemple de la documentation (SHOP-412, export CSV) et sont marquées « exemple ».
+
+  Rendu (depuis ce dossier, <work> = dossier de travail) :
+    node ../../../../motion-studio/scripts/voice.mjs narration.json -o <work>/voice
+    node ../../../../motion-studio/scripts/sfx.mjs bed --bpm 84 --duration 61 --start 9.1 --root 45 -o <work>/bed.wav > <work>/bed.json
+    node ../../../../motion-studio/scripts/render.mjs kaizen-presentation.html --voice <work>/voice/voice.json \
          --audio <work>/bed.wav --beats <work>/bed.json -o ../kaizen-presentation.mp4
-  Tout est piloté par window.__seek(t) : la composition est déterministe.
 -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
 <style>
   :root {
-    --bg: #0b0f17; --panel: #121826; --panel2: #182033; --line: #263048;
-    --ink: #eef2f8; --muted: #8a94a8; --accent: #f97316; --accent2: #fbbf24;
-    --green: #3fb950; --red: #f85149; --blue: #58a6ff; --violet: #b392f0;
+    --ink: #0f1013; --paper: #ece6d8; --muted: #8f8a7e; --line: #3a3832;
+    --seal: #d8412f; --ok: #6fae7c;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
-  body { font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif; color: var(--ink); position: relative; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); }
+  body { font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif; color: var(--paper); position: relative; }
+  canvas#gl { position: absolute; inset: 0; }
+  .serif { font-family: "Liberation Serif", "DejaVu Serif", serif; }
   .mono { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; }
-  canvas#bgc { position: absolute; inset: 0; }
-  .scene { position: absolute; inset: 0; opacity: 0; will-change: opacity, transform; }
-  .abs { position: absolute; }
-  .center { left: 50%; top: 50%; transform: translate(-50%, -50%); }
-  .tag { font-size: 26px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
-  .card { background: var(--panel); border: 2px solid var(--line); border-radius: 22px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
-  .chip { display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 999px; font-size: 26px; font-weight: 700; }
-  .ok { color: var(--green); }
-  .ko { color: var(--red); }
-  .src { font-size: 22px; color: var(--muted); }
-
-  /* S1 */
-  #s1 .big { font-size: 190px; font-weight: 700; letter-spacing: -0.04em; }
-  #s1 .sub { font-size: 44px; color: var(--muted); }
-  /* S2 */
-  #s2 svg { position: absolute; left: 260px; top: 170px; width: 1080px; height: 494px; }
-  /* S3 */
-  #kanji { white-space: nowrap; font-family: "IPAGothic", "WenQuanYi Zen Hei", sans-serif; font-size: 460px; color: #ffffff; position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
-  #word { font-size: 210px; font-weight: 700; letter-spacing: -0.03em; }
-  /* S4 */
-  #const { left: 360px; top: 150px; width: 1200px; padding: 0 0 36px; }
-  #const .tab { padding: 22px 34px; border-bottom: 2px solid var(--line); font-size: 30px; color: var(--muted); }
-  .art { display: flex; justify-content: space-between; align-items: center; padding: 30px 40px 0; font-size: 46px; }
-  .art .n { color: var(--accent); font-weight: 700; margin-right: 18px; }
-  .art .nn { font-size: 22px; color: var(--accent2); border: 2px solid var(--accent2); border-radius: 8px; padding: 2px 10px; margin-left: 16px; letter-spacing: .08em; }
-  .art .ctl { background: rgba(63,185,80,.15); color: var(--green); }
-  /* S5 */
-  .qc { width: 700px; height: 420px; padding: 50px; top: 250px; }
-  .qc .cmd { font-size: 36px; color: var(--blue); }
-  .qc .q { font-size: 112px; font-weight: 700; margin-top: 50px; letter-spacing: -0.03em; }
-  .qc .d { font-size: 32px; color: var(--muted); margin-top: 14px; }
-  /* S6 */
-  #trace .row { white-space: nowrap; font-size: 34px; padding: 14px 24px; border-radius: 14px; background: var(--panel2); border: 2px solid var(--line); width: 470px; }
-  .rv { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 700; background: var(--panel2); border: 3px solid var(--blue); color: var(--blue); }
-  /* S7 */
-  #term { left: 360px; top: 170px; width: 1200px; height: 560px; overflow: hidden; }
-  #term .bar { height: 54px; border-bottom: 2px solid var(--line); display: flex; gap: 12px; align-items: center; padding-left: 22px; }
-  #term .bar i { width: 16px; height: 16px; border-radius: 50%; display: block; background: #3a4560; }
-  #term pre { font-size: 32px; line-height: 1.55; padding: 30px 40px; white-space: pre; }
-  #gatebar { left: 300px; width: 1320px; height: 110px; top: 610px; border-radius: 18px; display: flex; align-items: center; justify-content: center; gap: 24px; font-size: 46px; font-weight: 700; }
-  /* S8 */
-  #diff { left: 410px; top: 300px; width: 1100px; padding: 26px 0; }
-  #diff .l { font-size: 29px; padding: 6px 34px; white-space: pre; }
-  #diff .add { background: rgba(63,185,80,.10); }
-  #diff .hl { background: rgba(248,81,73,.22); }
-  .rchip { font-size: 21px; padding: 8px 16px; border-radius: 999px; border: 2px solid var(--line); color: var(--muted); background: var(--panel); }
-  #finding { left: 640px; top: 700px; width: 640px; padding: 26px 30px; border-color: var(--red); }
-  /* S9 */
-  #pr { left: 360px; top: 120px; width: 1200px; padding: 40px 50px; }
-  #pr .t { font-size: 44px; font-weight: 700; }
-  #pr .meta { font-size: 26px; color: var(--muted); margin-top: 10px; }
-  #sizebar { height: 18px; border-radius: 9px; background: var(--panel2); margin-top: 30px; position: relative; overflow: hidden; }
-  #sizefill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--green); border-radius: 9px; }
-  .check { font-size: 34px; margin-top: 22px; display: flex; gap: 18px; align-items: center; }
-  #ready { font-size: 40px; font-weight: 700; margin-top: 34px; color: var(--green); }
-  #merge { left: 1220px; top: 690px; padding: 22px 48px; border-radius: 16px; font-size: 38px; font-weight: 700; background: var(--green); color: #06210d; }
-  #cursor { width: 46px; height: 46px; }
-  #yours { left: 1160px; top: 800px; font-size: 34px; color: var(--accent2); font-weight: 700; }
-  /* S10 */
-  .node { position: absolute; width: 230px; height: 84px; margin: -42px 0 0 -115px; border-radius: 42px; display: grid; place-items: center; font-size: 30px; font-weight: 700; background: var(--panel); border: 3px solid var(--line); }
-  #lessons { left: 1440px; top: 300px; width: 330px; }
-  .lesson { height: 52px; border-radius: 10px; background: var(--panel2); border: 2px solid var(--accent); margin-top: 12px; font-size: 22px; display: flex; align-items: center; padding-left: 18px; color: var(--ink); }
-  /* S11 */
-  #s11 .w { font-size: 220px; font-weight: 700; letter-spacing: -0.03em; }
-  #s11 .t { white-space: nowrap; font-size: 46px; color: var(--muted); margin-top: 10px; }
-  #s11 .i { font-size: 34px; margin-top: 60px; color: var(--accent2); background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 18px 34px; display: inline-block; }
+  .ov { position: absolute; left: 130px; top: 150px; width: 640px; opacity: 0; }
+  .kicker { font-size: 22px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+  .rule { height: 2px; background: var(--seal); width: 64px; margin: 22px 0 26px; }
+  .h { font-size: 64px; line-height: 1.08; letter-spacing: -0.01em; }
+  .b { font-size: 30px; line-height: 1.45; color: var(--paper); }
+  .m { color: var(--muted); }
+  .ex { display: inline-block; font-size: 18px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 3px 10px; margin-bottom: 18px; }
+  .panel { border-top: 2px solid var(--line); padding-top: 22px; }
+  .rowx { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 30px; }
+  .ctl { font-size: 22px; color: var(--ok); letter-spacing: .06em; }
+  .seal { display: inline-grid; place-items: center; width: 118px; height: 118px; border: 5px solid var(--seal); color: var(--seal); border-radius: 10px; font-size: 22px; font-weight: 700; letter-spacing: .08em; transform: rotate(-8deg); }
+  .bar { height: 10px; background: #24231f; margin-top: 10px; position: relative; }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--paper); }
+  .bar b { position: absolute; top: -8px; bottom: -8px; width: 2px; background: var(--seal); }
+  .btn { display: inline-block; padding: 16px 40px; border: 2px solid var(--paper); font-size: 30px; font-weight: 700; letter-spacing: .04em; }
+  .lbl { position: absolute; font-size: 22px; letter-spacing: .06em; color: var(--paper); transform: translate(-50%, -150%); white-space: nowrap; opacity: 0; }
+  #title { left: 130px; top: 300px; width: 900px; }
+  #title .k { font-size: 190px; line-height: 1; letter-spacing: -0.02em; }
+  #title .jp { font-family: "IPAGothic", "WenQuanYi Zen Hei", sans-serif; font-size: 40px; color: var(--seal); letter-spacing: .3em; margin-top: 18px; }
+  #outro { left: 130px; top: 300px; width: 760px; }
+  #outro .k { font-size: 170px; line-height: 1; }
+  #outro .t { font-size: 40px; margin-top: 28px; color: var(--paper); }
+  #outro .i { font-size: 28px; margin-top: 44px; color: var(--muted); }
+  #cursor { position: absolute; width: 40px; height: 40px; opacity: 0; }
+  #scrim { position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    background: linear-gradient(90deg, rgba(15,16,19,.94) 0, rgba(15,16,19,.86) 760px, rgba(15,16,19,0) 1080px); }
+  #vignette { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 60% 50%, rgba(15,16,19,0) 55%, rgba(15,16,19,.55) 100%); }
 </style>
 </head>
-<body data-width="1920" data-height="1080" data-fps="30" data-duration="56" data-seed="7">
-<canvas id="bgc" width="1920" height="1080"></canvas>
+<body data-width="1920" data-height="1080" data-fps="30" data-duration="61" data-seed="11">
+<canvas id="gl"></canvas>
+<div id="labels"></div>
+<div id="scrim"></div>
+<div id="vignette"></div>
 
-<!-- S1 · accroche -->
-<section class="scene" id="s1">
-  <canvas id="rain" width="1920" height="1080" class="abs" style="left:0;top:0"></canvas>
-  <div class="abs center" style="text-align:center;top:44%">
-    <div class="tag">Développement assisté par IA</div>
-    <div class="big" id="cnt">+0 %</div>
-    <div class="sub">de pull requests par développeur</div>
+<!-- 3.0–8.6 · DORA -->
+<div class="ov" id="o-dora">
+  <div class="kicker">DORA · State of AI-assisted Software Development 2025</div>
+  <div class="rule"></div>
+  <div class="h serif">L'IA amplifie.</div>
+  <div class="panel" style="margin-top:36px">
+    <div class="rowx"><span>Livraison</span><span>↑</span></div>
+    <div class="rowx" style="color:var(--seal)"><span>Instabilité</span><span>↑</span></div>
   </div>
-</section>
+</div>
 
-<!-- S2 · amplification -->
-<section class="scene" id="s2">
-  <div class="abs" style="left:260px;top:90px"><span class="tag">L'IA amplifie</span></div>
-  <svg width="1400" height="640" viewBox="0 0 1400 640">
-    <line x1="0" y1="600" x2="1400" y2="600" stroke="#263048" stroke-width="3"/>
-    <path id="thru" d="M0 560 C 300 540, 600 420, 900 300 S 1250 120, 1400 90" fill="none" stroke="#3fb950" stroke-width="10" stroke-linecap="round"/>
-    <path id="inst" d="M0 580 L120 560 L200 590 L300 520 L380 560 L480 470 L560 520 L660 420 L740 470 L840 360 L920 420 L1020 300 L1100 360 L1200 230 L1280 300 L1400 170" fill="none" stroke="#f85149" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+<!-- 9.1–12.6 · titre -->
+<div class="ov" id="title">
+  <div class="k serif">Kaizen</div>
+  <div class="jp">改善</div>
+  <div class="b m" style="margin-top:14px">amélioration continue · pour Claude Code</div>
+</div>
+
+<!-- 13.0–17.8 · constitution -->
+<div class="ov" id="o-const">
+  <div class="kicker">Le socle</div>
+  <div class="rule"></div>
+  <div class="mono" style="font-size:40px">CONSTITUTION.md</div>
+  <div class="panel" style="margin-top:26px">
+    <span class="ex">exemple</span>
+    <div class="rowx" id="ar1"><span>I. Preuve d'abord</span><span class="ctl">contrôle ✓</span></div>
+    <div class="rowx" id="ar2"><span>II. Petits lots</span><span class="ctl">contrôle ✓</span></div>
+    <div class="rowx" id="ar3"><span>III. Sécurité par défaut</span><span class="ctl">contrôle ✓</span></div>
+    <div class="rowx" id="ar4"><span>IV. Autonomie des agents</span><span class="ctl">contrôle ✓</span></div>
+  </div>
+</div>
+
+<!-- 18.0–22.1 · quoi / comment -->
+<div class="ov" id="o-qc">
+  <div class="kicker">Avant le code</div>
+  <div class="rule"></div>
+  <div id="qc1"><div class="mono m" style="font-size:26px">/kaizen:brainstorm</div><div class="h serif">quoi</div></div>
+  <div id="qc2" style="margin-top:34px"><div class="mono m" style="font-size:26px">/kaizen:plan</div><div class="h serif">comment</div></div>
+</div>
+
+<!-- 22.2–28.2 · traçabilité -->
+<div class="ov" id="o-trace">
+  <div class="kicker">Le plan</div>
+  <div class="rule"></div>
+  <svg width="640" height="300" viewBox="0 0 640 300" class="mono">
+    <g font-size="26" fill="#ece6d8" font-family="DejaVu Sans Mono">
+      <text x="0" y="50">R1</text><text x="0" y="150">R2</text><text x="0" y="250">R3</text>
+      <text x="560" y="100">U1</text><text x="560" y="200">U2</text>
+    </g>
+    <g id="tlinks" stroke="#ece6d8" stroke-width="2" fill="none"></g>
   </svg>
-  <div class="abs" id="lbl1" style="left:1400px;top:200px;font-size:46px;font-weight:700;color:var(--green)">Débit ↑</div>
-  <div class="abs" id="lbl2" style="left:1400px;top:290px;font-size:46px;font-weight:700;color:var(--red)">Instabilité ↑</div>
-  <div class="abs src" style="left:260px;top:700px">Source : DORA, State of AI-assisted Software Development 2025</div>
-</section>
+  <div class="b" style="margin-top:6px"><span id="pchk" style="color:var(--ok)">plan check ✓</span></div>
+  <div class="b m" id="drv" style="font-size:26px;margin-top:10px">relu par 2 à 6 agents (doc-review)</div>
+</div>
 
-<!-- S3 · logo -->
-<section class="scene" id="s3">
-  <div id="kanji">改善</div>
-  <div class="abs center" style="text-align:center;top:47%">
-    <div id="word">Kaizen</div>
-    <div id="tagl" style="white-space:nowrap;font-size:44px;color:var(--muted);margin-top:6px">un cycle de développement maîtrisé pour Claude Code</div>
-  </div>
-</section>
+<!-- 28.4–33.1 · garde-fou -->
+<div class="ov" id="o-gate">
+  <div class="kicker">Hook Stop · garde-fou</div>
+  <div class="rule"></div>
+  <pre class="mono" id="term" style="font-size:26px;line-height:1.6"></pre>
+  <div class="b" id="gmsg" style="margin-top:18px"></div>
+</div>
 
-<!-- S4 · constitution -->
-<section class="scene" id="s4">
-  <div class="abs card" id="const">
-    <div class="tab mono">CONSTITUTION.md · v1.0.0</div>
-    <div class="art" id="a1"><span><span class="n">I.</span>Preuve d'abord<span class="nn">NON NÉGOCIABLE</span></span><span class="chip ctl" id="c1">✓ Contrôle</span></div>
-    <div class="art" id="a2"><span><span class="n">II.</span>Petits lots</span><span class="chip ctl" id="c2">✓ Contrôle</span></div>
-    <div class="art" id="a3"><span><span class="n">III.</span>Sécurité par défaut</span><span class="chip ctl" id="c3">✓ Contrôle</span></div>
-    <div class="art" id="a4"><span><span class="n">IV.</span>Autonomie des agents</span><span class="chip ctl" id="c4">✓ Contrôle</span></div>
-  </div>
-</section>
+<!-- 33.2–38.4 · revue -->
+<div class="ov" id="o-rev">
+  <div class="kicker">Revue · relecteurs choisis selon le diff</div>
+  <div class="rule"></div>
+  <span class="ex">exemple</span>
+  <div class="mono" style="font-size:24px;line-height:1.6;color:var(--muted)">execSync(`grep "${customer}" …`)</div>
+  <div class="b" style="margin-top:20px"><span style="color:var(--seal);font-weight:700">P0</span> · injection de commande (CWE-78)</div>
+  <div style="margin-top:34px"><span class="seal" id="seal">VÉRIFIÉ</span></div>
+</div>
 
-<!-- S5 · quoi / comment -->
-<section class="scene" id="s5">
-  <div class="abs card qc" id="q1" style="left:180px"><div class="cmd mono">/kaizen:brainstorm</div><div class="q">QUOI</div><div class="d">exigences R1… · exemples AE1…</div></div>
-  <div class="abs" id="qarrow" style="left:915px;top:410px;font-size:90px;color:var(--accent)">→</div>
-  <div class="abs card qc" id="q2" style="left:1040px"><div class="cmd mono">/kaizen:plan</div><div class="q">COMMENT</div><div class="d">unités · tests · retour arrière</div></div>
-</section>
+<!-- 38.6–47.3 · PR -->
+<div class="ov" id="o-pr">
+  <div class="kicker">Ship · babysit-pr</div>
+  <div class="rule"></div>
+  <span class="ex">exemple</span>
+  <div class="b" style="font-weight:700">feat(SHOP-412): export CSV des commandes</div>
+  <div class="mono m" style="font-size:22px;margin-top:22px">taille : <span id="lns">0</span> / 400 lignes</div>
+  <div class="bar"><i id="sz"></i><b style="left:100%"></b></div>
+  <div class="b" id="pk1" style="margin-top:24px">✓ description et guide du relecteur</div>
+  <div class="b" id="pk2">✓ retours de revue traités</div>
+  <div class="b" id="pk3">✓ CI verte</div>
+  <div class="b" id="prd" style="margin-top:20px;color:var(--ok)">semble prête à merger</div>
+  <div style="margin-top:34px"><span class="btn" id="mbtn">Merge</span> <span class="b m" id="yours" style="margin-left:20px">à vous</span></div>
+</div>
 
-<!-- S6 · traçabilité + relecture -->
-<section class="scene" id="s6">
-  <div class="abs tag" style="left:330px;top:110px">Traçabilité</div>
-  <svg class="abs" style="left:0;top:0" width="1920" height="1080">
-    <g id="links" stroke="#58a6ff" stroke-width="5" fill="none" stroke-linecap="round"></g>
-  </svg>
-  <div id="trace">
-    <div class="abs row mono" id="r1" style="left:330px;top:250px">R1 · filtres actifs</div>
-    <div class="abs row mono" id="r2" style="left:330px;top:400px">R2 · accents (BOM)</div>
-    <div class="abs row mono" id="r3" style="left:330px;top:550px">R3 · plafond 10 000</div>
-    <div class="abs row mono" id="u1" style="left:1210px;top:320px">U1 · sérialiseur</div>
-    <div class="abs row mono" id="u2" style="left:1210px;top:480px">U2 · endpoint</div>
-  </div>
-  <div class="abs chip" id="pcheck" style="left:860px;top:690px;background:rgba(63,185,80,.15);color:var(--green)">✓ plan check</div>
-  <div id="revs"></div>
-</section>
+<!-- 47.5–56.3 · boucle -->
+<div class="ov" id="o-loop">
+  <div class="kicker">Compound</div>
+  <div class="rule"></div>
+  <div class="mono" style="font-size:30px">docs/solutions/</div>
+  <div class="b m" style="margin-top:16px">leçons durables, relues par le cycle suivant</div>
+</div>
 
-<!-- S7 · garde-fou -->
-<section class="scene" id="s7">
-  <div class="abs card" id="term">
-    <div class="bar"><i></i><i></i><i></i><span class="mono" style="margin-left:18px;color:var(--muted);font-size:24px">/kaizen:work · garde-fou actif</span></div>
-    <pre class="mono" id="tout"></pre>
-  </div>
-  <div class="abs" id="gatebar"></div>
-</section>
+<!-- 56.8–61 · fin -->
+<div class="ov" id="outro">
+  <div class="k serif">Kaizen</div>
+  <div class="t">Que chaque unité de travail rende la suivante plus facile.</div>
+  <div class="i mono">/plugin install kaizen@angelo-plugins</div>
+</div>
 
-<!-- S8 · revue -->
-<section class="scene" id="s8">
-  <div class="abs tag" style="left:410px;top:110px">10 relecteurs spécialisés</div>
-  <div id="rchips"></div>
-  <div class="abs card mono" id="diff">
-    <div class="l">  export function exportOrders(customer) {</div>
-    <div class="l add hl" id="badline">+   return execSync(`grep "${customer}" orders.csv`)</div>
-    <div class="l add">+     .toString();</div>
-    <div class="l">  }</div>
-  </div>
-  <div class="abs card" id="finding">
-    <div style="font-size:30px;font-weight:700"><span class="ko">P0</span> · Injection de commande (CWE-78)</div>
-    <div class="src" style="margin-top:8px">security + correctness · confiance 100</div>
-    <div class="chip" id="verified" style="margin-top:16px;background:rgba(63,185,80,.15);color:var(--green)">✓ vérifié sur la ligne citée</div>
-  </div>
-</section>
+<svg id="cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#ece6d8" stroke="#0f1013" stroke-width="1.2"/></svg>
 
-<!-- S9 · PR -->
-<section class="scene" id="s9">
-  <div class="abs card" id="pr">
-    <div class="t">feat(SHOP-412): export CSV des commandes</div>
-    <div class="meta mono">+248 −12 · <span id="lines">0</span> / 400 lignes · guide du relecteur ✓</div>
-    <div id="sizebar"><div id="sizefill"></div></div>
-    <div class="check" id="k1"><span class="ok">✓</span> tests · Linux et macOS</div>
-    <div class="check" id="k2"><span class="ok">✓</span> revue Kaizen : aucun P0/P1</div>
-    <div class="check" id="k3"><span class="ok">✓</span> retours de revue traités</div>
-    <div id="ready">✅ Semble prête à merger</div>
-  </div>
-  <div class="abs" id="merge">Merge</div>
-  <svg class="abs" id="cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#eef2f8" stroke="#0b0f17" stroke-width="1.2"/></svg>
-  <div class="abs" id="yours">le merge reste à vous</div>
-</section>
+<script type="module">
+import * as THREE from 'three';
 
-<!-- S10 · boucle -->
-<section class="scene" id="s10">
-  <svg class="abs" style="left:0;top:0" width="1920" height="1080">
-    <circle id="ring" cx="800" cy="470" r="300" fill="none" stroke="#263048" stroke-width="6"/>
-    <circle id="ringp" cx="800" cy="470" r="300" fill="none" stroke="#f97316" stroke-width="8" stroke-linecap="round" transform="rotate(-90 800 470)"/>
-    <circle id="dot" r="16" fill="#fbbf24"/>
-  </svg>
-  <div id="nodes"></div>
-  <div class="abs" style="left:800px;top:470px;transform:translate(-50%,-50%);text-align:center">
-    <div style="font-size:30px;color:var(--muted)">cycle</div>
-    <div id="cyc" style="font-size:120px;font-weight:700">1</div>
-  </div>
-  <div class="abs" id="lessons">
-    <div class="mono" style="font-size:26px;color:var(--accent)">docs/solutions/</div>
-    <div id="lstack"></div>
-  </div>
-</section>
-
-<!-- S11 · fin -->
-<section class="scene" id="s11">
-  <div class="abs center" style="text-align:center;top:44%">
-    <div class="w">Kaizen</div>
-    <div class="t">Chaque unité de travail rend la suivante plus facile.</div>
-    <div class="i mono">/plugin install kaizen@angelo-plugins</div>
-  </div>
-</section>
-
-<script>
+const W = 1920, H = 1080, DUR = 61;
 const $ = (s) => document.querySelector(s);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const prog = (t, a, d) => clamp((t - a) / d);
-const ease = {
-  out: (x) => 1 - Math.pow(1 - x, 3),
-  expo: (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x)),
-  back: (x) => { const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); },
-  inout: (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
-};
-const sfx = (src, at, gain = 0.4, extra = {}) => window.__sfx?.(src, { at, gain, ...extra });
+const sstep = (x) => x * x * (3 - 2 * x);
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const eback = (x) => { const c = 1.4; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const sfx = (src, at, gain = 0.35, extra = {}) => window.__sfx?.(src, { at, gain, ...extra });
 
-// Fenêtres des scènes (calées sur la voix : voir narration.json)
-const SCENES = [
-  ['#s1', 0.0, 3.1], ['#s2', 2.9, 6.6], ['#s3', 6.4, 10.5], ['#s4', 10.3, 15.5],
-  ['#s5', 15.3, 19.7], ['#s6', 19.5, 25.1], ['#s7', 24.9, 30.1], ['#s8', 29.9, 35.3],
-  ['#s9', 35.1, 43.8], ['#s10', 43.6, 52.0], ['#s11', 51.8, 56.0],
-];
-function sceneVis(t, a, b) {
-  const i = a <= 0 ? 1 : ease.out(prog(t, a, 0.45));
-  const o = b >= 56 ? 1 : 1 - ease.inout(prog(t, b - 0.4, 0.4));
-  return i * o;
+// ---------------------------------------------------------------- scène
+const renderer = new THREE.WebGLRenderer({ canvas: $('#gl'), antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(W, H, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0f1013);
+scene.fog = new THREE.Fog(0x0f1013, 22, 70);
+const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 200);
+
+scene.add(new THREE.HemisphereLight(0xfff3e2, 0x1a1916, 1.1));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(12, 20, 9);
+scene.add(sun);
+
+const PAPER = 0xece6d8, SEAL = 0xd8412f, OK = 0x6fae7c;
+
+// spirale : 6 stations par tour, chaque tour monte de PITCH
+const R = 5.2, PITCH = 2.3, TURNS = 4.2;
+const helix = (s) => { const a = (s / 6) * Math.PI * 2 - Math.PI / 2; return new THREE.Vector3(R * Math.cos(a), 0.9 + (s / 6) * PITCH, R * Math.sin(a)); };
+class HelixCurve extends THREE.Curve { getPoint(u, v = new THREE.Vector3()) { return v.copy(helix(u * 6 * TURNS)); } }
+const tubeGeo = new THREE.TubeGeometry(new HelixCurve(), 900, 0.055, 8, false);
+const tube = new THREE.Mesh(tubeGeo, new THREE.MeshStandardMaterial({ color: PAPER, roughness: 0.85 }));
+scene.add(tube);
+const tubeIndexCount = tubeGeo.index.count;
+
+// socle : la constitution
+const plinth = new THREE.Mesh(new THREE.BoxGeometry(14, 0.6, 14), new THREE.MeshStandardMaterial({ color: 0x17171a, roughness: 0.95 }));
+plinth.position.y = -0.3;
+scene.add(plinth);
+const plinthEdges = new THREE.LineSegments(new THREE.EdgesGeometry(plinth.geometry), new THREE.LineBasicMaterial({ color: 0x5a564c }));
+plinthEdges.position.copy(plinth.position);
+scene.add(plinthEdges);
+const articles = [0, 1, 2, 3].map((i) => {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.05, 0.16), new THREE.MeshStandardMaterial({ color: 0x3a3832 }));
+  m.position.set(0, 0.03, 3.2 + i * 0.75);
+  scene.add(m);
+  return m;
+});
+
+// stations
+const NAMES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'compound'];
+const stations = [];
+for (let s = 0; s < 6 * 4; s++) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 40), new THREE.MeshStandardMaterial({ color: PAPER, roughness: 0.7 }));
+  m.position.copy(helix(s)).add(new THREE.Vector3(0, -0.12, 0));
+  scene.add(m);
+  stations.push(m);
 }
+$('#labels').innerHTML = NAMES.map((n, i) => `<div class="lbl mono" id="lb${i}">${n}</div>`).join('');
 
-// ---- fond : grille légère + grain (évite le banding H.264)
-const bg = $('#bgc').getContext('2d');
-function drawBg(t) {
-  bg.fillStyle = '#0b0f17';
-  bg.fillRect(0, 0, 1920, 1080);
-  const g = bg.createRadialGradient(960, 480, 100, 960, 540, 1100);
-  g.addColorStop(0, 'rgba(249,115,22,0.07)');
-  g.addColorStop(1, 'rgba(0,0,0,0)');
-  bg.fillStyle = g;
-  bg.fillRect(0, 0, 1920, 1080);
-  bg.strokeStyle = 'rgba(255,255,255,0.035)';
-  bg.lineWidth = 1;
-  const off = (t * 12) % 80;
-  for (let x = -80 + off; x < 1920; x += 80) { bg.beginPath(); bg.moveTo(x, 0); bg.lineTo(x, 1080); bg.stroke(); }
-  for (let y = -80 + off; y < 1080; y += 80) { bg.beginPath(); bg.moveTo(0, y); bg.lineTo(1920, y); bg.stroke(); }
-  // grain déterministe par frame
-  let s = Math.floor(t * 30) * 9301 + 49297;
-  bg.fillStyle = 'rgba(255,255,255,0.025)';
-  for (let k = 0; k < 2500; k++) { s = (s * 1103515245 + 12345) & 0x7fffffff; const x = s % 1920; s = (s * 1103515245 + 12345) & 0x7fffffff; bg.fillRect(x, s % 1080, 2, 2); }
-}
+// colonne centrale : une dalle par leçon
+const slabs = [0, 1, 2, 3].map((i) => {
+  const g = new THREE.BoxGeometry(2.0, 0.34, 2.0);
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: PAPER, roughness: 0.6 }));
+  m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: 0x0f1013 })));
+  m.position.set(0, 0.17 + i * 0.36, 0);
+  scene.add(m);
+  return m;
+});
 
-// ---- S1 : pluie de code
-const rain = $('#rain').getContext('2d');
-const TOK = ['const', 'return', 'await', 'fn()', '=>', '{ }', 'if', 'map', 'test', 'git', 'push', 'diff', '+++', '---', 'PR', 'merge'];
-const cols = Array.from({ length: 34 }, (_, i) => ({ x: 30 + i * 57, sp: 0.6 + Math.random() * 1.2, ph: Math.random() * 1000, tok: Math.floor(Math.random() * TOK.length) }));
-function drawRain(t) {
-  rain.clearRect(0, 0, 1920, 1080);
-  rain.font = '22px "DejaVu Sans Mono"';
-  const speed = 160 + 700 * ease.inout(prog(t, 0, 3));
-  for (const c of cols) {
-    for (let k = 0; k < 14; k++) {
-      const y = ((c.ph + t * speed * c.sp + k * 90) % 1260) - 90;
-      const a = 0.05 + 0.10 * (k / 14);
-      rain.fillStyle = `rgba(88,166,255,${a})`;
-      rain.fillText(TOK[(c.tok + k) % TOK.length], c.x, y);
+// cube : l'unité de travail
+const cube = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.62), new THREE.MeshStandardMaterial({ color: SEAL, roughness: 0.45, emissive: 0x3a0d07 }));
+scene.add(cube);
+
+// arche du garde-fou, juste après la station work
+const gate = new THREE.Group();
+const gmat = new THREE.MeshStandardMaterial({ color: SEAL, emissive: 0x4a0f08, roughness: 0.5 });
+const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.9, 0.16), gmat);
+const p2 = p1.clone();
+const lin = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 1.6), gmat);
+p1.position.set(0, 0.95, -0.75); p2.position.set(0, 0.95, 0.75); lin.position.set(0, 1.9, 0);
+gate.add(p1, p2, lin);
+const gp = helix(2.55);
+gate.position.copy(gp).add(new THREE.Vector3(0, -0.15, 0));
+gate.lookAt(new THREE.Vector3(0, gate.position.y, 0));
+scene.add(gate);
+
+// relecteurs : petites sphères en orbite autour du cube pendant la revue
+const orbiters = Array.from({ length: 7 }, () => {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), new THREE.MeshStandardMaterial({ color: PAPER, emissive: 0x222018 }));
+  scene.add(m);
+  return m;
+});
+
+// flux d'introduction : du code qui arrive plus vite que jamais
+const NP = 2600;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(NP * 3), pCol = new Float32Array(NP * 3), seed = [];
+for (let i = 0; i < NP; i++) seed.push([Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random(), Math.random()]);
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.07, vertexColors: true, transparent: true, opacity: 1, depthWrite: false }));
+scene.add(points);
+
+// ---------------------------------------------------------------- trajet du cube (s = position sur la spirale)
+const CUBE = [[0, 0], [18.0, 0], [19.6, 1], [26.6, 1], [28.2, 2], [31.9, 2], [33.0, 3], [37.9, 3], [38.6, 4], [46.9, 4], [47.6, 5],
+  [50.8, 5], [53.0, 11], [54.6, 17], [55.8, 23], [61, 23.6]];
+function cubeS(t) {
+  for (let i = 0; i < CUBE.length - 1; i++) {
+    const [ta, sa] = CUBE[i], [tb, sb] = CUBE[i + 1];
+    if (t <= tb) {
+      const k = clamp((t - ta) / (tb - ta));
+      return lerp(sa, sb, i < 11 ? sstep(k) : k);
     }
   }
+  return CUBE.at(-1)[1];
 }
 
-// ---- S6 : relecteurs du plan
-const REV6 = ['cohér.', 'faisab.', 'périm.', 'sécu.', 'advers.', 'design'];
-$('#revs').innerHTML = REV6.map((n, i) => `<div class="abs rv" id="rv${i}" style="left:${520 + i * 160}px;top:790px">${n}</div>`).join('');
-// ---- S8 : 10 relecteurs
-const REV10 = ['correctness', 'standards', 'security', 'testing', 'performance', 'reliability', 'api-contract', 'data-migration', 'maintainability', 'adversarial'];
-$('#rchips').innerHTML = REV10.map((n, i) => `<div class="abs rchip mono" id="rc${i}" style="left:${370 + (i % 5) * 240}px;top:${i < 5 ? 190 : 580}px">${n}</div>`).join('');
-// ---- S10 : nœuds de la boucle
-const NODES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'compound'];
-$('#nodes').innerHTML = NODES.map((n, i) => {
-  const a = -Math.PI / 2 + (i / NODES.length) * Math.PI * 2;
-  return `<div class="node" id="nd${i}" style="left:${800 + 300 * Math.cos(a)}px;top:${470 + 300 * Math.sin(a)}px">${n}</div>`;
-}).join('');
-const LESSONS = ['csv-bom-excel.md', 'retry-idempotent.md', 'n-plus-one-orders.md', 'flaky-time-tests.md', 'auth-ownership.md'];
+// ---------------------------------------------------------------- caméra (poses enchaînées)
+function followPose(t) {
+  const c = helix(cubeS(t));
+  const out = new THREE.Vector3(c.x, 0, c.z).normalize();
+  const side = new THREE.Vector3(-out.z, 0, out.x);
+  const pos = c.clone().add(out.clone().multiplyScalar(8.6)).add(side.multiplyScalar(2.0)).add(new THREE.Vector3(0, 3.4, 0));
+  const tgt = c.clone().multiplyScalar(0.55).add(new THREE.Vector3(0, 0.6, 0));
+  return [pos, tgt];
+}
+const POSES = [
+  [0, () => [new THREE.Vector3(0, 1.4, 16), new THREE.Vector3(0, 1.4, 0)]],
+  [9.0, (t) => { const a = 0.6 + (t - 9) * 0.05; return [new THREE.Vector3(19 * Math.cos(a), 10, 19 * Math.sin(a)), new THREE.Vector3(0, 3.6, 0)]; }],
+  [13.0, (t) => { const a = 0.95 + (t - 13) * 0.03; return [new THREE.Vector3(11 * Math.cos(a), 4.2, 11 * Math.sin(a)), new THREE.Vector3(0, 0.2, 2.6)]; }],
+  [18.0, followPose],
+  [47.4, (t) => { const top = 0.17 + 0.36 * 1.5; const a = 2.2 + (t - 47.4) * 0.08; return [new THREE.Vector3(12.5 * Math.cos(a), top + 7.5, 12.5 * Math.sin(a)), new THREE.Vector3(0, top + 0.6, 0)]; }],
+  [51.0, (t) => { const a = 2.6 + (t - 51) * 0.16; const h = 9 + (t - 51) * 0.9; return [new THREE.Vector3(21 * Math.cos(a), h, 21 * Math.sin(a)), new THREE.Vector3(0, 4 + (t - 51) * 0.4, 0)]; }],
+  [56.8, (t) => { const a = 3.5 + (t - 56.8) * 0.05; return [new THREE.Vector3(24 * Math.cos(a), 17, 24 * Math.sin(a)), new THREE.Vector3(0, 6.5, 0)]; }],
+];
+const BLEND = 1.4;
+function cameraPose(t) {
+  let i = 0;
+  while (i + 1 < POSES.length && t >= POSES[i + 1][0]) i++;
+  let [p, q] = POSES[i][1](t);
+  if (i > 0 && t < POSES[i][0] + BLEND) {
+    const k = sstep(clamp((t - POSES[i][0]) / BLEND));
+    const [pp, pq] = POSES[i - 1][1](t);
+    p = pp.lerp(p, k); q = pq.lerp(q, k);
+  }
+  return [p, q];
+}
+// cartes HTML (le sujet 3D est décalé vers la droite quand une carte occupe la gauche)
+const OVS = [['#o-dora', 3.0, 8.7], ['#title', 9.1, 12.7], ['#o-const', 13.0, 17.9], ['#o-qc', 18.0, 22.1], ['#o-trace', 22.2, 28.2],
+  ['#o-gate', 28.4, 33.1], ['#o-rev', 33.2, 38.4], ['#o-pr', 38.6, 47.3], ['#o-loop', 47.5, 56.4], ['#outro', 56.8, 61]];
+function ovVis(t, a, b) { return eo(prog(t, a, 0.5)) * (b >= DUR ? 1 : 1 - sstep(prog(t, b - 0.45, 0.45))); }
 
-// ---- sons (idempotents)
+// ---------------------------------------------------------------- sons
 function cues() {
-  sfx('whoosh?dur=.7', 0.05, 0.35);
-  sfx('glitch', 4.2, 0.3);
-  sfx('riser?dur=1.6', 7.2, 0.45, { align: 'end' });
-  sfx('impact', 7.2, 0.8);
-  [11.0, 11.5, 12.0, 12.5].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.1}`, at, 0.35));
-  [13.3, 13.6, 13.9, 14.2].forEach((at, i) => sfx(`pop?pitch=${1 + i * 0.12}`, at, 0.3));
-  sfx('pop', 15.7, 0.4); sfx('whoosh?dur=.5', 17.2, 0.25); sfx('pop?pitch=1.2', 17.5, 0.4);
-  [20.4, 20.9, 21.4, 21.9].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.1}`, at, 0.3));
-  sfx('chime?note=79', 22.6, 0.3);
-  REV6.forEach((_, i) => sfx(`pop?pitch=${1 + i * 0.08}`, 23.3 + i * 0.18, 0.28));
-  sfx('glitch', 25.6, 0.35); sfx('click', 26.4, 0.3);
-  sfx('chime?note=81', 28.9, 0.45); sfx('whoosh?dur=.5', 29.1, 0.25);
-  REV10.forEach((_, i) => sfx(`tick?pitch=${0.9 + i * 0.06}`, 30.6 + i * 0.16, 0.22));
-  sfx('pop', 32.6, 0.45); sfx('chime?note=84', 34.0, 0.3);
-  [37.6, 38.2, 38.8].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.15}`, at, 0.35));
-  sfx('chime?note=81', 39.6, 0.4); sfx('click', 42.5, 0.6);
-  sfx('whoosh?dur=.8', 43.7, 0.3);
-  [45.6, 47.4, 48.8, 49.9, 50.8].forEach((at, i) => sfx(`pop?pitch=${1 + i * 0.1}`, at, 0.28));
-  sfx('chime?note=84', 52.1, 0.5);
+  sfx('whoosh?dur=1.4&from=200&to=2400', 0.3, 0.25);
+  sfx('glitch', 6.4, 0.18);
+  sfx('riser?dur=1.8', 9.4, 0.3, { align: 'end' });
+  sfx('impact', 9.4, 0.55);
+  [14.2, 14.8, 15.4, 16.0].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.08}`, at, 0.25));
+  sfx('pop', 18.1, 0.25); sfx('whoosh?dur=.9', 18.6, 0.18); sfx('pop?pitch=1.15', 19.7, 0.25);
+  [23.0, 23.5, 24.0, 24.5].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.08}`, at, 0.2));
+  sfx('chime?note=79', 25.6, 0.22);
+  sfx('glitch', 28.9, 0.25);
+  sfx('chime?note=81', 31.8, 0.32);
+  sfx('whoosh?dur=1', 32.0, 0.16);
+  sfx('pop', 35.6, 0.3);
+  sfx('impact?dur=.8', 37.6, 0.4);
+  [40.2, 40.9, 41.6].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.12}`, at, 0.25));
+  sfx('chime?note=81', 42.6, 0.3); sfx('click', 46.0, 0.5);
+  sfx('pop?pitch=.8', 49.3, 0.35);
+  [52.7, 54.3, 55.5].forEach((at, i) => sfx(`pop?pitch=${0.85 + i * 0.1}`, at, 0.25));
+  sfx('chime?note=84', 57.0, 0.4);
 }
 
-const TERM_RED = '$ npm test\n\n  ✗ export › accents lisibles dans Excel\n  ✗ export › plafond de 10 000 lignes\n\n  40 passing · 2 failing';
-const TERM_GREEN = '$ npm test\n\n  ✓ export › accents lisibles dans Excel\n  ✓ export › plafond de 10 000 lignes\n\n  42 passing';
+const TERM_RED = '$ npm test\n  ✗ accents lisibles dans Excel\n  ✗ plafond de 10 000 lignes\n  2 failing';
+const TERM_GREEN = '$ npm test\n  ✓ accents lisibles dans Excel\n  ✓ plafond de 10 000 lignes\n  0 failing';
+const tmp = new THREE.Vector3();
 
 window.__seek = (t) => {
   cues();
-  drawBg(t);
-  for (const [sel, a, b] of SCENES) {
-    const v = sceneVis(t, a, b);
-    const el = $(sel);
-    el.style.opacity = v;
-    el.style.display = v <= 0.001 ? 'none' : 'block';
+
+  // --- intro : flux de points qui accélère ; avec DORA, une part devient rouge et instable
+  const introV = 1 - sstep(prog(t, 8.4, 1.4));
+  points.material.opacity = introV;
+  points.visible = introV > 0.001;
+  if (points.visible) {
+    const speed = 6 + 30 * sstep(prog(t, 0, 3));
+    const instab = sstep(prog(t, 4.0, 3.0));
+    for (let i = 0; i < NP; i++) {
+      const [x, y, r1, r2] = seed[i];
+      const L = 60;
+      const z = ((r1 * L + t * speed * (0.6 + r2)) % L) - L + 14;
+      const red = r2 < 0.35 * instab;
+      const jx = red ? Math.sin(t * 23 + i) * 0.25 * instab : 0;
+      pPos[i * 3] = x * 9 + jx; pPos[i * 3 + 1] = 1.4 + y * 5; pPos[i * 3 + 2] = z;
+      const c = red ? [0.85, 0.25, 0.18] : [0.93, 0.9, 0.85];
+      const f = 0.35 + 0.65 * r2;
+      pCol[i * 3] = c[0] * f; pCol[i * 3 + 1] = c[1] * f; pCol[i * 3 + 2] = c[2] * f;
+    }
+    pGeo.attributes.position.needsUpdate = true;
+    pGeo.attributes.color.needsUpdate = true;
   }
 
-  // S1
-  if (t < 3.2) {
-    drawRain(t);
-    const n = Math.round(98 * ease.out(prog(t, 0.3, 2.0)));
-    $('#cnt').textContent = `+${n} %`;
-    $('#cnt').style.transform = `scale(${0.85 + 0.15 * ease.back(prog(t, 0.2, 0.8))})`;
+  // --- monde Kaizen : apparaît au titre, la spirale se prolonge pendant la boucle finale
+  const worldV = sstep(prog(t, 8.8, 2.0));
+  const frac = clamp(0.04 + 0.32 * sstep(prog(t, 8.8, 3.0)) + 0.64 * sstep(prog(t, 50.6, 5.5)));
+  tube.geometry.setDrawRange(0, Math.floor((tubeIndexCount * frac) / 3) * 3);
+  tube.visible = worldV > 0.001;
+  for (const o of [plinth, plinthEdges, ...articles]) o.visible = worldV > 0.001;
+  stations.forEach((m, s) => {
+    const turn = Math.floor(s / 6);
+    const shown = turn === 0 ? worldV : sstep(prog(t, 51.0 + turn * 1.5, 1.2));
+    m.visible = shown > 0.01;
+    m.scale.setScalar(Math.max(0.001, shown));
+    const active = Math.abs(cubeS(t) - s) < 0.35 && t > 17.8;
+    m.material.emissive.setHex(active ? 0x5a150c : 0x000000);
+  });
+  articles.forEach((m, i) => {
+    const k = sstep(prog(t, 14.2 + i * 0.6, 0.5));
+    m.material.color.setRGB(lerp(0.23, 0.92, k), lerp(0.22, 0.9, k), lerp(0.2, 0.85, k));
+  });
+
+  // --- cube
+  const s = cubeS(t);
+  cube.visible = t > 17.4;
+  cube.position.copy(helix(s)).add(new THREE.Vector3(0, 0.38 + 0.06 * Math.sin(t * 3), 0));
+  cube.rotation.y = s * 0.9 + t * 0.4;
+  cube.scale.setScalar(Math.max(0.001, eback(prog(t, 17.4, 0.6))));
+
+  // --- garde-fou : rouge, puis vert, et l'arche se lève
+  const green = t >= 31.8;
+  gate.visible = worldV > 0.01 && t < 34;
+  gmat.color.setHex(green ? OK : SEAL);
+  gmat.emissive.setHex(green ? 0x0f2a14 : 0x4a0f08);
+  gate.position.y = gp.y - 0.15 + 2.6 * sstep(prog(t, 31.9, 0.9));
+  gate.scale.setScalar(Math.max(0.001, eo(prog(t, 27.2, 0.6))));
+
+  // --- relecteurs en orbite pendant la revue
+  const rv = sstep(prog(t, 33.0, 0.6)) * (1 - sstep(prog(t, 38.2, 0.5)));
+  orbiters.forEach((m, i) => {
+    m.visible = rv > 0.01;
+    const a = (i / orbiters.length) * Math.PI * 2 + t * 1.6;
+    m.position.copy(cube.position).add(tmp.set(Math.cos(a) * 1.15 * rv, 0.35 * Math.sin(a * 2 + i), Math.sin(a) * 1.15 * rv));
+    const hit = i === 2 && t > 35.6;
+    m.material.color.setHex(hit ? SEAL : PAPER);
+    m.material.emissive.setHex(hit ? 0x4a0f08 : 0x222018);
+  });
+
+  // --- dalles de leçons : une par passage à compound
+  const drops = [49.3, 52.7, 54.3, 55.5];
+  slabs.forEach((m, i) => {
+    const k = prog(t, drops[i], 0.7);
+    m.visible = t > drops[i] - 0.01 && worldV > 0.01;
+    m.position.y = 0.17 + i * 0.36 + 3.5 * (1 - eo(k));
+    const fresh = clamp(1 - (t - drops[i] - 0.7) / 1.5);
+    m.material.emissive.setRGB(0.32 * fresh, 0.07 * fresh, 0.04 * fresh);
+  });
+
+  // --- caméra
+  const [cp, ct] = cameraPose(t);
+  camera.position.copy(cp);
+  camera.lookAt(ct);
+  let shift = 0;
+  for (const [id, a, b] of OVS) shift = Math.max(shift, ovVis(t, a, b) * (id === '#title' || id === '#outro' ? 0.7 : 1));
+  camera.setViewOffset(W, H, -480 * shift, 0, W, H);
+  $('#scrim').style.opacity = shift;
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+
+  // --- étiquettes des stations du premier tour, projetées depuis la 3D
+  NAMES.forEach((_, i) => {
+    const el = $(`#lb${i}`);
+    const p = helix(i).add(new THREE.Vector3(0, 0.15, 0)).project(camera);
+    el.style.left = `${(p.x * 0.5 + 0.5) * W}px`;
+    el.style.top = `${(-p.y * 0.5 + 0.5) * H}px`;
+    const near = Math.abs(cubeS(t) - i) < 0.6 && t > 17.8 && t < 50.8;
+    el.style.opacity = (p.z < 1 ? 1 : 0) * worldV * (near ? 1 : 0.35) * (1 - sstep(prog(t, 50.8, 1.0))) * (t > 12.8 ? 1 : 0);
+    el.style.color = near ? '#d8412f' : '#ece6d8';
+  });
+
+  // --- cartes HTML
+  for (const [id, a, b] of OVS) {
+    const v = ovVis(t, a, b);
+    const el = $(id);
+    el.style.opacity = v;
+    el.style.transform = `translateY(${18 * (1 - v)}px)`;
   }
-  // S2
-  if (t > 2.8 && t < 6.8) {
-    for (const [id, a] of [['#thru', 3.2], ['#inst', 3.9]]) {
-      const p = $(id); const L = p.getTotalLength();
-      p.style.strokeDasharray = L; p.style.strokeDashoffset = L * (1 - ease.inout(prog(t, a, 1.6)));
-    }
-    $('#lbl1').style.opacity = prog(t, 4.6, 0.4);
-    $('#lbl2').style.opacity = prog(t, 5.3, 0.4);
-    const j = t > 4.2 && t < 4.35 ? 6 : 0;
-    $('#inst').style.transform = `translateX(${j}px)`;
-  }
-  // S3
-  if (t > 6.3 && t < 10.6) {
-    const k = ease.out(prog(t, 6.6, 2.2));
-    $('#kanji').style.opacity = 0.07 * k;
-    $('#kanji').style.transform = `translate(-50%,-50%) scale(${1.15 - 0.15 * k})`;
-    const w = ease.back(prog(t, 7.1, 0.7));
-    $('#word').style.transform = `scale(${0.6 + 0.4 * w})`;
-    $('#word').style.opacity = prog(t, 7.1, 0.25);
-    $('#tagl').style.opacity = ease.out(prog(t, 8.0, 0.6));
-    $('#tagl').style.transform = `translateY(${20 * (1 - ease.out(prog(t, 8.0, 0.6)))}px)`;
-  }
-  // S4
-  if (t > 10.2 && t < 15.6) {
-    $('#const').style.transform = `translateY(${40 * (1 - ease.expo(prog(t, 10.4, 0.8)))}px)`;
-    [11.0, 11.5, 12.0, 12.5].forEach((a, i) => {
-      const e = $(`#a${i + 1}`); const v = ease.out(prog(t, a, 0.45));
-      e.style.opacity = v; e.style.transform = `translateX(${-30 * (1 - v)}px)`;
-    });
-    [13.3, 13.6, 13.9, 14.2].forEach((a, i) => {
-      const c = $(`#c${i + 1}`); const v = ease.back(prog(t, a, 0.4));
-      c.style.opacity = prog(t, a, 0.15); c.style.transform = `scale(${0.6 + 0.4 * v})`;
-    });
-  }
-  // S5
-  if (t > 15.2 && t < 19.8) {
-    const v1 = ease.expo(prog(t, 15.6, 0.7)); const v2 = ease.expo(prog(t, 17.5, 0.7));
-    $('#q1').style.opacity = prog(t, 15.6, 0.3); $('#q1').style.transform = `translateY(${50 * (1 - v1)}px)`;
-    $('#qarrow').style.opacity = prog(t, 17.2, 0.3); $('#qarrow').style.transform = `translateX(${-30 * (1 - ease.out(prog(t, 17.2, 0.4)))}px)`;
-    $('#q2').style.opacity = prog(t, 17.5, 0.3); $('#q2').style.transform = `translateY(${50 * (1 - v2)}px)`;
-  }
-  // S6
-  if (t > 19.4 && t < 25.2) {
-    ['#r1', '#r2', '#r3'].forEach((s, i) => { $(s).style.opacity = prog(t, 19.8 + i * 0.15, 0.3); });
-    ['#u1', '#u2'].forEach((s, i) => { $(s).style.opacity = prog(t, 20.1 + i * 0.15, 0.3); });
-    const L = [[0, 0, 20.4], [1, 0, 20.9], [1, 1, 21.4], [2, 1, 21.9]];
-    $('#links').innerHTML = L.map(([r, u, a]) => {
-      const x1 = 800, y1 = 282 + r * 150, x2 = 1210, y2 = 352 + u * 160;
-      const p = ease.inout(prog(t, a, 0.5)); const len = Math.hypot(x2 - x1, y2 - y1);
-      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-dasharray="${len}" stroke-dashoffset="${len * (1 - p)}"/>`;
-    }).join('');
-    const pc = ease.back(prog(t, 22.6, 0.45));
-    $('#pcheck').style.opacity = prog(t, 22.6, 0.15); $('#pcheck').style.transform = `scale(${0.6 + 0.4 * pc})`;
-    REV6.forEach((_, i) => {
-      const a = 23.3 + i * 0.18; const v = ease.back(prog(t, a, 0.4)); const d = $(`#rv${i}`);
-      d.style.opacity = prog(t, a, 0.15); d.style.transform = `scale(${0.5 + 0.5 * v})`;
-      const ok = t > a + 0.5; d.style.borderColor = ok ? '#3fb950' : '#58a6ff'; d.style.color = ok ? '#3fb950' : '#58a6ff';
-    });
-  }
-  // S7
-  if (t > 24.8 && t < 30.2) {
-    const green = t >= 28.9;
-    const base = green ? TERM_GREEN : TERM_RED;
-    const shown = Math.floor(base.length * prog(t, green ? 28.9 : 25.2, green ? 0.35 : 0.9));
-    $('#tout').innerHTML = base.slice(0, shown)
-      .replace(/✗[^\n]*/g, (m) => `<span class="ko">${m}</span>`)
-      .replace(/✓[^\n]*/g, (m) => `<span class="ok">${m}</span>`)
-      .replace(/2 failing/, '<span class="ko">2 failing</span>')
-      .replace(/42 passing/, '<span class="ok">42 passing</span>');
-    const gb = $('#gatebar');
-    const gIn = ease.expo(prog(t, 25.6, 0.5));
-    const lift = ease.inout(prog(t, 29.0, 0.6));
-    gb.style.opacity = prog(t, 25.6, 0.2) * (1 - lift);
-    gb.style.transform = `translateY(${(1 - gIn) * 60 + lift * -40}px)`;
-    gb.style.background = green ? 'rgba(63,185,80,.18)' : 'rgba(248,81,73,.18)';
-    gb.style.border = `3px solid ${green ? '#3fb950' : '#f85149'}`;
-    gb.innerHTML = green ? '<span class="ok">✓ vert : le travail peut s\'arrêter</span>' : '<span class="ko">⛔ STOP · garde-fou : 2 tests rouges</span>';
-    const jit = t > 25.6 && t < 25.72 ? 5 : 0; $('#term').style.transform = `translateX(${jit}px)`;
-  }
-  // S8
-  if (t > 29.8 && t < 35.4) {
-    $('#diff').style.opacity = prog(t, 30.1, 0.3);
-    REV10.forEach((_, i) => {
-      const a = 30.6 + i * 0.16; const c = $(`#rc${i}`);
-      c.style.opacity = prog(t, a, 0.2);
-      const scan = Math.abs(((t - 30.6) * 3.2) % 10 - i) < 0.6 && t < 32.6;
-      const lit = (i === 2 || i === 0) && t > 32.4;
-      c.style.borderColor = lit ? '#f85149' : scan ? '#58a6ff' : '#263048';
-      c.style.color = lit ? '#f85149' : scan ? '#58a6ff' : '#8a94a8';
-    });
-    $('#badline').style.background = t > 32.4 ? 'rgba(248,81,73,.28)' : 'rgba(63,185,80,.10)';
-    const f = ease.back(prog(t, 32.6, 0.5));
-    $('#finding').style.opacity = prog(t, 32.6, 0.2); $('#finding').style.transform = `translateY(${40 * (1 - f)}px)`;
-    const vv = ease.back(prog(t, 34.0, 0.4));
-    $('#verified').style.opacity = prog(t, 34.0, 0.15); $('#verified').style.transform = `scale(${0.6 + 0.4 * vv})`;
-  }
-  // S9
-  if (t > 35.0 && t < 43.9) {
-    $('#pr').style.transform = `translateY(${50 * (1 - ease.expo(prog(t, 35.3, 0.8)))}px)`;
-    const sz = ease.out(prog(t, 36.0, 1.2));
-    $('#sizefill').style.width = `${65 * sz}%`;
-    $('#lines').textContent = Math.round(260 * sz);
-    ['#k1', '#k2', '#k3'].forEach((s, i) => { const a = 37.6 + i * 0.6; $(s).style.opacity = prog(t, a, 0.25); $(s).style.transform = `translateX(${-24 * (1 - ease.out(prog(t, a, 0.35)))}px)`; });
-    const r = ease.back(prog(t, 39.6, 0.5)); $('#ready').style.opacity = prog(t, 39.6, 0.2); $('#ready').style.transform = `scale(${0.85 + 0.15 * r})`;
-    $('#merge').style.opacity = prog(t, 40.6, 0.3);
-    const cp = ease.inout(prog(t, 41.0, 1.3));
-    $('#cursor').style.left = `${1720 - (1720 - 1340) * cp}px`;
-    $('#cursor').style.top = `${980 - (980 - 720) * cp}px`;
-    $('#cursor').style.opacity = prog(t, 40.9, 0.2);
-    const press = t > 42.5 && t < 42.7;
-    $('#merge').style.transform = `scale(${press ? 0.94 : 1})`;
-    $('#merge').style.boxShadow = t > 42.4 ? '0 0 50px rgba(63,185,80,.7)' : 'none';
-    $('#yours').style.opacity = prog(t, 41.3, 0.4);
-  }
-  // S10
-  if (t > 43.5 && t < 52.1) {
-    // la boucle accélère : chaque tour plus court
-    const laps = [[44.0, 2.4], [46.4, 1.7], [48.1, 1.3], [49.4, 1.0], [50.4, 0.8]];
-    let lap = 0, frac = 0;
-    for (let i = 0; i < laps.length; i++) { if (t >= laps[i][0]) { lap = i; frac = clamp((t - laps[i][0]) / laps[i][1]); } }
-    const started = t >= 44.0;
-    const ang = -Math.PI / 2 + frac * Math.PI * 2;
-    $('#dot').setAttribute('cx', 800 + 300 * Math.cos(ang));
-    $('#dot').setAttribute('cy', 470 + 300 * Math.sin(ang));
-    $('#dot').style.opacity = started ? 1 : 0;
-    const C = 2 * Math.PI * 300; $('#ringp').style.strokeDasharray = C; $('#ringp').style.strokeDashoffset = C * (1 - (started ? frac : 0));
-    $('#cyc').textContent = started ? lap + 1 : 1;
-    NODES.forEach((_, i) => {
-      const n = $(`#nd${i}`); n.style.opacity = prog(t, 43.9 + i * 0.1, 0.25);
-      const here = started && Math.abs(frac * 6 - i) < 0.5;
-      n.style.borderColor = here ? '#f97316' : (i === 5 ? '#fbbf24' : '#263048');
-      n.style.transform = `scale(${here ? 1.08 : 1})`;
-    });
-    $('#lstack').innerHTML = LESSONS.map((l, i) => {
-      const a = [45.6, 47.4, 48.8, 49.9, 50.8][i]; const v = ease.back(prog(t, a, 0.4));
-      return `<div class="lesson mono" style="opacity:${prog(t, a, 0.15)};transform:translateY(${-20 * (1 - v)}px)">${l}</div>`;
-    }).join('');
-  }
-  // S11
-  if (t > 51.7) {
-    const v = ease.expo(prog(t, 52.0, 0.9));
-    $('#s11 .w').style.transform = `scale(${0.8 + 0.2 * v})`;
-    $('#s11 .t').style.opacity = prog(t, 52.5, 0.5);
-    $('#s11 .i').style.opacity = prog(t, 53.2, 0.5);
-  }
+  ['#ar1', '#ar2', '#ar3', '#ar4'].forEach((id, i) => { $(id).style.opacity = 0.25 + 0.75 * sstep(prog(t, 14.2 + i * 0.6, 0.4)); });
+  $('#qc2').style.opacity = sstep(prog(t, 19.7, 0.5));
+  const L = [[50, 100, 23.0], [150, 100, 23.5], [150, 200, 24.0], [250, 200, 24.5]];
+  $('#tlinks').innerHTML = L.map(([y1, y2, a]) => {
+    const k = sstep(prog(t, a, 0.45));
+    return `<line x1="70" y1="${y1 - 9}" x2="${70 + 470 * k}" y2="${y1 - 9 + (y2 - y1) * k}"/>`;
+  }).join('');
+  $('#pchk').style.opacity = sstep(prog(t, 25.6, 0.4));
+  $('#drv').style.opacity = sstep(prog(t, 26.4, 0.5));
+  const base = green ? TERM_GREEN : TERM_RED;
+  const shown = Math.floor(base.length * prog(t, green ? 31.8 : 28.6, green ? 0.3 : 0.8));
+  $('#term').innerHTML = base.slice(0, shown)
+    .replace(/✗[^\n]*|2 failing/g, (m) => `<span style="color:#d8412f">${m}</span>`)
+    .replace(/✓[^\n]*|0 failing/g, (m) => `<span style="color:#6fae7c">${m}</span>`);
+  $('#gmsg').innerHTML = green ? '<span style="color:#6fae7c">vert : l\'étape peut se terminer</span>'
+    : t > 29.4 ? '<span style="color:#d8412f">bloqué : fin de l\'étape refusée</span>' : '';
+  const sk = eback(prog(t, 37.6, 0.35));
+  $('#seal').style.opacity = prog(t, 37.6, 0.1);
+  $('#seal').style.transform = `rotate(-8deg) scale(${1.6 - 0.6 * sk})`;
+  const z = eo(prog(t, 39.4, 1.2));
+  $('#sz').style.width = `${65 * z}%`;
+  $('#lns').textContent = Math.round(260 * z);
+  ['#pk1', '#pk2', '#pk3'].forEach((id, i) => { $(id).style.opacity = sstep(prog(t, 40.2 + i * 0.7, 0.35)); });
+  $('#prd').style.opacity = sstep(prog(t, 42.6, 0.4));
+  $('#mbtn').style.opacity = sstep(prog(t, 44.4, 0.4));
+  $('#yours').style.opacity = sstep(prog(t, 45.2, 0.4));
+  const btn = $('#mbtn').getBoundingClientRect();
+  const ck = sstep(prog(t, 44.6, 1.3));
+  const cur = $('#cursor');
+  cur.style.left = `${lerp(1100, btn.left + btn.width * 0.55, ck)}px`;
+  cur.style.top = `${lerp(1000, btn.top + btn.height * 0.5, ck)}px`;
+  cur.style.opacity = sstep(prog(t, 44.5, 0.3)) * (1 - sstep(prog(t, 47.0, 0.3)));
+  const pressed = t > 46.0 && t < 46.2;
+  $('#mbtn').style.background = t > 46.0 ? '#ece6d8' : 'transparent';
+  $('#mbtn').style.color = t > 46.0 ? '#0f1013' : '#ece6d8';
+  $('#mbtn').style.transform = `scale(${pressed ? 0.95 : 1})`;
 };
-// Aperçu dans un navigateur normal (le renderer appelle __seek lui-même)
-if (!window.__sfx) { const t0 = performance.now(); const loop = () => { window.__seek((performance.now() - t0) / 1000 % 56); requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+
+// Aperçu dans un navigateur normal : le renderer appelle __seek lui-même
+if (!window.__sfx) {
+  const t0 = performance.now();
+  const loop = () => { window.__seek(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+}
 </script>
 </body>
 </html>
