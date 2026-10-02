@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Lit musical de la vidéo Kaizen : sobre, avec beaucoup de silence (間, ma).
+// Lit musical de la vidéo Kaizen : sobre, avec beaucoup de silence (ma).
 // Cordes pincées (Karplus-Strong) sur la gamme miyako-bushi en ré (ré, mi♭, sol, la, si♭),
 // bourdon grave et tambour sourd sur les temps forts. Déterministe, sans dépendance.
 //

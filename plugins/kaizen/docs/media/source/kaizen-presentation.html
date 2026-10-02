@@ -8,13 +8,13 @@
 
   Métaphore : une spirale qui monte au-dessus d'un jardin sec. Chaque tour est un cycle
   (brainstorm → plan → work → review → ship → compound) et monte plus haut que le précédent
-  (改善, amélioration continue). Un cube vermillon, l'unité de travail, suit le chemin de pierres ;
+  (amélioration continue). Un cube vermillon, l'unité de travail, suit le chemin de pierres ;
   les quatre pierres posées dans le gravier sont les articles de la constitution ; le garde-fou est
   un torii fermé par une barre tant que les tests sont rouges ; chaque leçon capitalisée ajoute une
   pierre à la pile du centre. L'ensō (cercle tracé d'un seul geste) ouvre et ferme la boucle.
 
-  Direction artistique : papier washi, encre sumi, vermillon shu, beaucoup de vide (ma). Les seuls
-  caractères japonais sont 改善 (kaizen) et les numéraux 一 à 六 des six étapes.
+  Direction artistique d'inspiration japonaise, sans texte japonais : papier washi, encre sumi,
+  vermillon shu, beaucoup de vide (ma). Les six étapes sont numérotées 01 à 06.
   Aucun chiffre inventé : la seule source citée est le rapport DORA 2025 (qualitatif) ; les cartes
   d'exemple reprennent l'exemple de la documentation (SHOP-412, export CSV) et sont marquées « exemple ».
   Polices : Shippori Mincho et Zen Kaku Gothic New (SIL OFL 1.1, voir fonts/), sous-ensembles embarqués.
@@ -34,8 +34,6 @@
 <style>
   @font-face { font-family: "Shippori Mincho"; font-weight: 500; font-display: block; src: url(fonts/shippori-mincho-500-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
   @font-face { font-family: "Shippori Mincho"; font-weight: 700; font-display: block; src: url(fonts/shippori-mincho-700-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
-  @font-face { font-family: "Shippori Mincho"; font-weight: 500; font-display: block; src: url(fonts/shippori-mincho-500-kanji.woff2) format("woff2"); unicode-range: U+4E00, U+4E09, U+4E8C, U+4E94, U+516D, U+5584, U+56DB, U+6539; }
-  @font-face { font-family: "Shippori Mincho"; font-weight: 700; font-display: block; src: url(fonts/shippori-mincho-700-kanji.woff2) format("woff2"); unicode-range: U+4E00, U+4E09, U+4E8C, U+4E94, U+516D, U+5584, U+56DB, U+6539; }
   @font-face { font-family: "Zen Kaku Gothic New"; font-weight: 400; font-display: block; src: url(fonts/zen-kaku-gothic-new-400-latin.woff2) format("woff2"); }
   @font-face { font-family: "Zen Kaku Gothic New"; font-weight: 700; font-display: block; src: url(fonts/zen-kaku-gothic-new-700-latin.woff2) format("woff2"); }
 
@@ -54,7 +52,7 @@
   /* plaques de papier montées sur la spirale (rendu CSS3D : le texte reste net) */
   .ov.plate { left: 0; top: 0; transform-origin: 50% 50%; width: 780px; padding: 50px 56px 54px 118px;
     background: var(--grain), var(--washi2); box-shadow: 0 40px 60px -40px rgba(70,52,28,.45), 0 0 0 1px rgba(120,100,70,.12); }
-  .num { position: absolute; left: 40px; top: 46px; font-size: 52px; font-weight: 700; color: var(--shu); writing-mode: vertical-rl; line-height: 1; font-family: "Shippori Mincho", serif; }
+  .num { position: absolute; left: 38px; top: 44px; font-size: 40px; font-weight: 500; color: var(--shu); line-height: 1; font-family: "Shippori Mincho", serif; }
   .kicker { font-size: 21px; letter-spacing: .26em; text-transform: uppercase; color: var(--usu); }
   .rule { height: 3px; background: var(--shu); width: 56px; margin: 22px 0 26px; border-radius: 2px; }
   .h { font-size: 66px; line-height: 1.1; font-weight: 500; }
@@ -70,9 +68,6 @@
   .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--sumi); }
   .bar b { position: absolute; top: -8px; bottom: -8px; width: 2px; background: var(--shu); }
   .btn { display: inline-block; padding: 14px 40px; border: 2px solid var(--sumi); font-size: 30px; font-weight: 700; letter-spacing: .04em; }
-  .hanko { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 104px; height: 104px;
-    background: var(--shu); color: var(--washi2); border-radius: 9px; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 40px; line-height: 1;
-    box-shadow: inset 0 0 0 5px var(--shu), inset 0 0 0 7px rgba(246,241,230,.85); opacity: 0; }
   .lbl { position: absolute; font-size: 21px; letter-spacing: .05em; color: var(--sumi); transform: translate(-50%, -160%); white-space: nowrap; opacity: 0; }
   .lbl b { font-family: "Shippori Mincho", serif; font-weight: 700; color: var(--shu); margin-right: 8px; }
   #title { left: 150px; top: 330px; width: 900px; }
@@ -114,7 +109,6 @@
 <div class="ov" id="title">
   <div style="display:flex;align-items:center;gap:44px">
     <div class="k mincho">Kaizen</div>
-    <div class="hanko" id="hk1"><span>改</span><span>善</span></div>
   </div>
   <div class="b m" style="margin-top:22px">amélioration continue · pour Claude Code</div>
 </div>
@@ -135,7 +129,7 @@
 
 <!-- 18.0–22.1 · quoi / comment (plaque, station brainstorm) -->
 <div class="ov" id="o-qc">
-  <div class="num">一</div>
+  <div class="num">01</div>
   <div class="kicker">Avant le code</div>
   <div class="rule"></div>
   <div id="qc1"><div class="mono m" style="font-size:25px">/kaizen:brainstorm</div><div class="h mincho">quoi</div></div>
@@ -144,7 +138,7 @@
 
 <!-- 22.2–28.2 · traçabilité (plaque, station plan) -->
 <div class="ov" id="o-trace">
-  <div class="num">二</div>
+  <div class="num">02</div>
   <div class="kicker">Le plan</div>
   <div class="rule"></div>
   <svg width="600" height="290" viewBox="0 0 640 300">
@@ -160,7 +154,7 @@
 
 <!-- 28.4–33.1 · garde-fou (plaque, station work) -->
 <div class="ov" id="o-gate">
-  <div class="num">三</div>
+  <div class="num">03</div>
   <div class="kicker">Hook Stop · garde-fou</div>
   <div class="rule"></div>
   <pre class="mono" id="term" style="font-size:25px;line-height:1.6"></pre>
@@ -169,7 +163,7 @@
 
 <!-- 33.2–38.4 · revue (plaque, station review) -->
 <div class="ov" id="o-rev">
-  <div class="num">四</div>
+  <div class="num">04</div>
   <div class="kicker">Revue · relecteurs choisis selon le diff</div>
   <div class="rule"></div>
   <span class="ex">exemple</span>
@@ -180,7 +174,7 @@
 
 <!-- 38.6–47.3 · PR (plaque, station ship) -->
 <div class="ov" id="o-pr">
-  <div class="num">五</div>
+  <div class="num">05</div>
   <div class="kicker">Ship · babysit-pr</div>
   <div class="rule"></div>
   <span class="ex">exemple</span>
@@ -196,7 +190,7 @@
 
 <!-- 47.5–56.3 · boucle -->
 <div class="ov" id="o-loop">
-  <div class="kicker"><span class="mincho" style="color:var(--shu);font-weight:700;letter-spacing:0;margin-right:14px">六</span>Compound</div>
+  <div class="kicker"><span class="mincho" style="color:var(--shu);font-weight:700;letter-spacing:0;margin-right:14px">06</span>Compound</div>
   <div class="rule"></div>
   <div class="mono" style="font-size:30px">docs/solutions/</div>
   <div class="b m" style="margin-top:16px">leçons durables, relues par le cycle suivant</div>
@@ -206,7 +200,6 @@
 <div class="ov" id="outro">
   <div style="display:flex;align-items:center;gap:44px">
     <div class="k mincho">Kaizen</div>
-    <div class="hanko" id="hk2"><span>改</span><span>善</span></div>
   </div>
   <div class="t">Que chaque unité de travail rende la suivante plus facile.</div>
   <div class="i mono">/plugin install kaizen@angelo-plugins</div>
@@ -332,7 +325,7 @@ const rocks = ROCKS.map(([x, z, s], i) => {
 
 // pierres de gué : les stations du chemin
 const NAMES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'compound'];
-const KANJI = ['一', '二', '三', '四', '五', '六'];
+const NUMS = ['01', '02', '03', '04', '05', '06'];
 const stations = [];
 for (let s = 0; s < 6 * 4; s++) {
   const g = new THREE.CylinderGeometry(0.44, 0.48, 0.13, 11);
@@ -344,7 +337,7 @@ for (let s = 0; s < 6 * 4; s++) {
   scene.add(m);
   stations.push(m);
 }
-$('#labels').innerHTML = NAMES.map((n, i) => `<div class="lbl" id="lb${i}"><b>${KANJI[i]}</b>${n}</div>`).join('');
+$('#labels').innerHTML = NAMES.map((n, i) => `<div class="lbl" id="lb${i}"><b>${NUMS[i]}</b>${n}</div>`).join('');
 
 // pile du centre : une pierre plate par leçon
 const slabs = [0, 1, 2, 3].map((i) => {
@@ -533,10 +526,9 @@ function cues() {
   sfx('glitch', 6.4, 0.15);
   // souffle discret sur chaque transition spatiale
   [13.0, 26.6, 38.0, 47.0, 51.0].forEach((at) => sfx('whoosh?dur=1.1&from=300&to=1400', at, 0.12));
-  // titre : coup de pinceau, cloche, sceau
+  // titre : coup de pinceau, cloche
   sfx('whoosh?dur=1.3&from=500&to=1300', 9.1, 0.16);
   sfx('chime?note=57&dur=5', 9.4, 0.42); sfx('kick?dur=.8', 9.4, 0.25);
-  sfx('click?pitch=.5', 10.4, 0.4); sfx('kick?dur=.25', 10.4, 0.18);
   // pierres de la constitution
   [14.2, 14.8, 15.4, 16.0].forEach((at, i) => sfx(`click?pitch=${0.42 + i * 0.05}`, at, 0.32));
   sfx('click?pitch=.7', 18.1, 0.2); sfx('whoosh?dur=.9', 21.7, 0.16); sfx('click?pitch=.8', 19.7, 0.2);
@@ -551,7 +543,6 @@ function cues() {
   sfx('chime?note=81', 42.6, 0.25); sfx('click', 46.0, 0.45);
   [49.3, 52.7, 54.3, 55.5].forEach((at, i) => { sfx(`click?pitch=${0.4 + i * 0.04}`, at, 0.32); sfx('kick?dur=.3', at, 0.14); });
   sfx('whoosh?dur=1.3&from=500&to=1300', 56.9, 0.16);
-  sfx('click?pitch=.5', 58.2, 0.4); sfx('kick?dur=.25', 58.2, 0.18);
 }
 
 const TERM_RED = '$ npm test\n  ✗ accents lisibles dans Excel\n  ✗ plafond de 10 000 lignes\n  2 failing';
@@ -662,15 +653,10 @@ window.__seek = (t) => {
     el.style.color = near ? '#c4401f' : '#1d1c1a';
   });
 
-  // --- ensō et sceaux
+  // --- ensō
   ectx.clearRect(0, 0, W, H);
   drawEnso(430, 470, 330, sstep(prog(t, 9.1, 1.3)), 74, ovVis(t, 9.1, 12.7));
   drawEnso(440, 336, 272, sstep(prog(t, 56.9, 1.3)), 64, ovVis(t, 56.8, 61));
-  for (const [id, at] of [['#hk1', 10.4], ['#hk2', 58.2]]) {
-    const k = prog(t, at, 0.22);
-    $(id).style.opacity = k > 0 ? 0.95 : 0;
-    $(id).style.transform = `rotate(-4deg) scale(${1.35 - 0.35 * eo(k)})`;
-  }
 
   // --- cartes HTML
   for (const [id, a, b] of OVS) {
