@@ -15,6 +15,7 @@ Marketplace de plugins pour Claude Code, fournissant des outils et workflows de 
 | [**claude-factory**](plugins/claude-factory/README.md) | Meta-plugin pour créer des outils Claude Code + dream consolidation | Skills |
 | [**frustration-detector**](plugins/frustration-detector/README.md) | Détecte la frustration et adapte le style de Claude (moins de blabla, plus d'action) | Hook |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design en code : HTML/CSS/SVG/Canvas → MP4/WebM/GIF image par image, son synchronisé (Playwright + ffmpeg) | Skill, Script |
+| [**kaizen**](plugins/kaizen/README.md) | Boucle compound engineering : ideate → brainstorm → plan → work → review → compound, leçons capitalisées relues à chaque cycle, revue multi-agents, packs de règles, debug, mode autonome, garde-fou qualité | Skills, Agents, Hook, Script |
 
 ## Installation
 
@@ -50,6 +51,7 @@ Ou via le mode interactif :
 /plugin install claude-factory@angelo-plugins
 /plugin install frustration-detector@angelo-plugins
 /plugin install motion-studio@angelo-plugins
+/plugin install kaizen@angelo-plugins
 ```
 
 ## Configuration équipe

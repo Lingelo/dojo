@@ -32,7 +32,7 @@ plugins/<name>/
 | **Hook** | `hooks.json` → scripts | Tool events (PreToolUse, Stop, Notification, UserPromptSubmit) |
 | **MCP** | `.mcp.json` | External service integration |
 
-## 9 Plugins
+## 10 Plugins
 
 - **security** — Hook blocking sensitive files (.env, keys, credentials) + secret scanner (~30 secret types) + circuit breaker utility. Exit code 2 = block.
 - **notifications-system** — System sound & OS notifications on Stop and permission_prompt events.
@@ -43,6 +43,8 @@ plugins/<name>/
 - **claude-factory** — Meta-plugin for creating Claude Code tools (skills, hooks, agents, commands, rules), CLAUDE.md maintenance, audit, dream consolidation, and docs reference.
 - **frustration-detector** — UserPromptSubmit hook detecting developer frustration (FR/EN, ~200 terms) and injecting context for adapted responses.
 - **motion-studio** — `/motion-video` skill: motion design as code. `scripts/render.mjs` renders HTML/CSS/SVG/Canvas compositions frame by frame (virtual clock + WAAPI/SMIL seeking, Playwright CDP capture → ffmpeg) to MP4/WebM/GIF/MOV, with sample-accurate synced sound (`data-sfx` / `__sfx()` cues, procedural SFX + music bed in `sfx.mjs`, beat/energy analysis in `audio.mjs` exposed as `window.__audio`), plus voice-over and subtitles (`voice.mjs` local TTS — say/SAPI/Piper/eSpeak or user recordings — measures real line timings, `captions.mjs` builds/parses SRT/VTT; `render.mjs --voice/--subs` mixes narration with music ducking, burns in captions and writes `.srt/.vtt`, exposed as `window.__captions`). Self-sufficient: `scripts/setup.mjs` reuses or auto-installs playwright-core, ffmpeg-static and Chrome Headless Shell into `${CLAUDE_PLUGIN_DATA}` (the one plugin with npm deps, declared in its `package.json`).
+
+- **kaizen** — Compound engineering loop adapted from Every's Compound Engineering plugin (MIT, see `plugins/kaizen/LICENSE`): skills `ideate`, `brainstorm`, `plan`, `work`, `review`, `compound`, `debug`, `refresh`, `lfg`, `setup` (invoked `/kaizen:<skill>`), 15 agents (5 research, 10 reviewers sharing `references/review-contract.md`). Artifacts live in the target repo: one unified plan per topic in `docs/plans/` (`kaizen-plan/v1`, stable `<!-- kaizen:<id> -->` markers, R/AE/KTD/U IDs), learnings in `docs/solutions/` (schema in `references/learnings-schema.md`) read back by `learnings-researcher` on every plan/review, team rule packs declared in `.kaizen/config.json`. `scripts/kaizen.mjs` is a zero-dependency CLI for all deterministic work (paths, stack detection, verify, plan reservation, learnings search/validate, packs, gate); `scripts/quality-gate.mjs` is a Stop hook that blocks while verify is red, only when `.kaizen/state/gate.json` is active (max 3 blocks).
 
 ## Adding a New Plugin
 

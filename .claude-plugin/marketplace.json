@@ -59,6 +59,12 @@
             "source": "./plugins/motion-studio",
             "description": "Motion design as code: HTML/CSS/SVG/Canvas animations rendered frame by frame to MP4/WebM/GIF via Playwright + ffmpeg, with synced sound, voice-over and subtitles",
             "category": "creative"
+        },
+        {
+            "name": "kaizen",
+            "source": "./plugins/kaizen",
+            "description": "Compound engineering loop (ideate, brainstorm, plan, work, review, compound): multi-agent research & review, learnings in docs/solutions/ read back by every plan and review, team rule packs, debug, refresh, autonomous lfg, Stop-hook quality gate",
+            "category": "development"
         }
     ]
 }
