@@ -15,19 +15,20 @@
 //   comment  --body-file F                           commentaire de premier niveau (marqueur ajouté)
 //   update-branch                                    met à jour la branche depuis la base (si BEHIND)
 //
-// Variable de test : KAIZEN_GH = binaire à utiliser à la place de `gh`.
+// Variable de test : KAIZEN_GH = binaire (ou script Node .mjs/.js) à utiliser à la place de `gh`.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
+import { ghCommand } from './lib.mjs';
 
 export const MARKER = '<!-- kaizen -->';
-const GH = process.env.KAIZEN_GH || 'gh';
 const BACKSTOP_SECONDS = 3 * 24 * 3600;
 
 function gh(args, { input } = {}) {
   try {
-    return execFileSync(GH, args, { encoding: 'utf8', input, stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
+    const [cmd, argv] = ghCommand(args);
+    return execFileSync(cmd, argv, { encoding: 'utf8', input, stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 });
   } catch (err) {
     const msg = String(err.stderr || err.message).trim().split('\n')[0];
     throw new Error(`gh ${args.slice(0, 2).join(' ')} : ${msg}`);

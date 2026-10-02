@@ -29,7 +29,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { loadConstitution, validateConstitution } from './constitution.mjs';
 import { checkPlan } from './plancheck.mjs';
 import * as prmod from './pr.mjs';
@@ -80,7 +80,8 @@ function requireRepo() {
   return root;
 }
 
-const rel = (root, p) => relative(root, p) || '.';
+// Chemins affichés en style POSIX, y compris sous Windows : git, Node et les skills les acceptent tels quels.
+const rel = (root, p) => relative(root, p).split(sep).join('/') || '.';
 
 // ---------------------------------------------------------------------------
 // root / config / init

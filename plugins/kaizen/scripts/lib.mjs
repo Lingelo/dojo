@@ -10,6 +10,13 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 // Repo & configuration
 // ---------------------------------------------------------------------------
 
+// Commande gh à lancer : KAIZEN_GH peut pointer vers un script Node (faux gh des tests) ; on le
+// passe alors à node, car Windows n'exécute pas un .mjs directement.
+export function ghCommand(args) {
+  const gh = process.env.KAIZEN_GH || 'gh';
+  return /\.(mjs|cjs|js)$/i.test(gh) ? [process.execPath, [gh, ...args]] : [gh, args];
+}
+
 export function repoRoot(cwd = process.cwd()) {
   try {
     return execFileSync('git', ['rev-parse', '--show-toplevel'], {

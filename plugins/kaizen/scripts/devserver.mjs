@@ -7,7 +7,9 @@
 // processus et ses logs.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative as nodeRelative, sep } from 'node:path';
+
+const relative = (from, to) => nodeRelative(from, to).split(sep).join('/');
 
 function readJson(file) {
   try {

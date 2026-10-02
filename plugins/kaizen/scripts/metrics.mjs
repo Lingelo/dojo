@@ -7,7 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { defaultBranch, docsRoot, git, loadConfig, parseFrontmatter, walkMarkdown } from './lib.mjs';
+import { defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
 const FIX_RE = /^(fix|hotfix|revert)(\(|!|:)|^Revert "/i;
@@ -59,7 +59,8 @@ function changesOnDefault(root, branch, from) {
 
 function prsFromGitHub(from) {
   try {
-    const out = execFileSync(process.env.KAIZEN_GH || 'gh', ['pr', 'list', '--state', 'merged', '--limit', '300', '--search', `merged:>=${from.toISOString().slice(0, 10)}`, '--json', 'number,createdAt,mergedAt,additions,deletions,title'], {
+    const [cmd, argv] = ghCommand(['pr', 'list', '--state', 'merged', '--limit', '300', '--search', `merged:>=${from.toISOString().slice(0, 10)}`, '--json', 'number,createdAt,mergedAt,additions,deletions,title']);
+    const out = execFileSync(cmd, argv, {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
       timeout: 30000,
