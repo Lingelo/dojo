@@ -37,6 +37,9 @@
   .serif { font-family: "Liberation Serif", "DejaVu Serif", serif; }
   .mono { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; }
   .ov { position: absolute; left: 130px; top: 150px; width: 640px; opacity: 0; transform-origin: 0 50%; }
+  /* plaques montées sur la spirale (rendu CSS3D : le texte reste net) */
+  .ov.plate { left: 0; top: 0; transform-origin: 50% 50%; width: 760px; padding: 44px 52px 48px; background: rgba(15,16,19,.95); border: 1px solid #3a3832; border-top: 2px solid var(--seal); }
+  #css3d { position: absolute; inset: 0; pointer-events: none; }
   .kicker { font-size: 22px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
   .rule { height: 2px; background: var(--seal); width: 64px; margin: 22px 0 26px; }
   .h { font-size: 64px; line-height: 1.08; letter-spacing: -0.01em; }
@@ -179,6 +182,7 @@
 
 <script type="module">
 import * as THREE from 'three';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
 
 const W = 1920, H = 1080, DUR = 61;
 const $ = (s) => document.querySelector(s);
@@ -286,7 +290,7 @@ const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.07, ver
 scene.add(points);
 
 // ---------------------------------------------------------------- trajet du cube (s = position sur la spirale)
-const CUBE = [[0, 0], [18.0, 0], [19.6, 1], [26.6, 1], [28.2, 2], [31.9, 2], [33.0, 3], [37.9, 3], [38.6, 4], [46.9, 4], [47.6, 5],
+const CUBE = [[0, 0], [21.6, 0], [22.6, 1], [26.6, 1], [28.2, 2], [31.9, 2], [33.0, 3], [37.9, 3], [38.6, 4], [46.9, 4], [47.6, 5],
   [50.8, 5], [53.0, 11], [54.6, 17], [55.8, 23], [61, 23.6]];
 function cubeS(t) {
   for (let i = 0; i < CUBE.length - 1; i++) {
@@ -300,19 +304,19 @@ function cubeS(t) {
 }
 
 // ---------------------------------------------------------------- caméra (poses enchaînées)
-function followPose(t) {
-  const c = helix(cubeS(t));
+// la caméra roule sur un rail parallèle à la spirale, en suivant le cube ; les plaques défilent avec
+const RAIL_LEAD = 0.3, RAIL_DIST = 8.5, RAIL_UP = 3.0;
+function railAt(s) {
+  const c = helix(s - RAIL_LEAD);
   const out = new THREE.Vector3(c.x, 0, c.z).normalize();
-  const side = new THREE.Vector3(-out.z, 0, out.x);
-  const pos = c.clone().add(out.clone().multiplyScalar(8.6)).add(side.multiplyScalar(2.0)).add(new THREE.Vector3(0, 3.4, 0));
-  const tgt = c.clone().multiplyScalar(0.55).add(new THREE.Vector3(0, 0.6, 0));
-  return [pos, tgt];
+  return [out.clone().multiplyScalar(R + RAIL_DIST).setY(c.y + RAIL_UP), out.clone().multiplyScalar(R * 0.9).setY(c.y + 0.9)];
 }
+const railPose = (t) => railAt(cubeS(t));
 const POSES = [
   [0, () => [new THREE.Vector3(0, 1.4, 16), new THREE.Vector3(0, 1.4, 0)]],
   [9.0, (t) => { const a = 0.6 + (t - 9) * 0.05; return [new THREE.Vector3(19 * Math.cos(a), 10, 19 * Math.sin(a)), new THREE.Vector3(0, 3.6, 0)]; }],
   [13.0, (t) => { const a = 0.95 + (t - 13) * 0.03; return [new THREE.Vector3(11 * Math.cos(a), 4.2, 11 * Math.sin(a)), new THREE.Vector3(0, 0.2, 2.6)]; }],
-  [18.0, followPose],
+  [18.0, railPose, 2.6],
   [47.4, (t) => { const top = 0.17 + 0.36 * 1.5; const a = 2.2 + (t - 47.4) * 0.08; return [new THREE.Vector3(12.5 * Math.cos(a), top + 7.5, 12.5 * Math.sin(a)), new THREE.Vector3(0, top + 0.6, 0)]; }],
   [51.0, (t) => { const a = 2.6 + (t - 51) * 0.16; const h = 9 + (t - 51) * 0.9; return [new THREE.Vector3(21 * Math.cos(a), h, 21 * Math.sin(a)), new THREE.Vector3(0, 4 + (t - 51) * 0.4, 0)]; }],
   [56.8, (t) => { const a = 3.5 + (t - 56.8) * 0.05; return [new THREE.Vector3(24 * Math.cos(a), 17, 24 * Math.sin(a)), new THREE.Vector3(0, 6.5, 0)]; }],
@@ -320,17 +324,24 @@ const POSES = [
 const BLEND = 1.8;
 const UP = new THREE.Vector3(0, 1, 0);
 const SWOOPS = [
-  [9.0, 2.4, 'z', -10], [13.0, 2.0, 'y', 4], [18.0, 2.0, 'x', 3.5], [26.6, 1.6, 'y', 2.6], [31.9, 1.1, 'x', -3],
-  [37.9, 0.9, 'z', 3], [46.9, 0.9, 'y', 2.4], [51.0, 2.2, 'z', -7], [56.8, 2.0, 'y', 4],
+  [9.0, 2.4, 'z', -10], [13.0, 2.0, 'y', 4], 
+  [46.9, 0.9, 'y', 2.4], [51.0, 2.2, 'z', -7], [56.8, 2.0, 'y', 4],
 ];
 function cameraPose(t) {
   let i = 0;
   while (i + 1 < POSES.length && t >= POSES[i + 1][0]) i++;
   let [p, q] = POSES[i][1](t);
-  if (i > 0 && t < POSES[i][0] + BLEND) {
-    const k = sstep(clamp((t - POSES[i][0]) / BLEND));
+  const bl = POSES[i][2] ?? BLEND;
+  if (i > 0 && t < POSES[i][0] + bl) {
+    // fondu en coordonnées cylindriques : la caméra tourne autour de la spirale au lieu de la traverser
+    const k = sstep(clamp((t - POSES[i][0]) / bl));
     const [pp, pq] = POSES[i - 1][1](t);
-    p = pp.lerp(p, k); q = pq.lerp(q, k);
+    const a0 = Math.atan2(pp.z, pp.x);
+    let da = Math.atan2(p.z, p.x) - a0;
+    da = Math.atan2(Math.sin(da), Math.cos(da));
+    const a = a0 + da * k, r = lerp(Math.hypot(pp.x, pp.z), Math.hypot(p.x, p.z), k);
+    p = new THREE.Vector3(r * Math.cos(a), lerp(pp.y, p.y, k) + 2.5 * Math.sin(Math.PI * k) * (bl > 2 ? 1 : 0), r * Math.sin(a));
+    q = pq.lerp(q, k);
   }
   // transitions spatiales : chaque changement de chapitre se fait par un mouvement d'un axe de la caméra
   // x = travelling latéral, y = grue, z = plongée en profondeur (le long du regard)
@@ -350,6 +361,24 @@ function cameraPose(t) {
 const OVS = [['#o-dora', 3.0, 8.7], ['#title', 9.1, 12.7], ['#o-const', 13.0, 17.9], ['#o-qc', 18.0, 22.1], ['#o-trace', 22.2, 28.2],
   ['#o-gate', 28.4, 33.1], ['#o-rev', 33.2, 38.4], ['#o-pr', 38.6, 47.3], ['#o-loop', 47.5, 56.4], ['#outro', 56.8, 61]];
 const CARD_AXIS = { '#o-dora': 'z', '#title': 'z', '#o-const': 'x', '#o-qc': 'y', '#o-trace': 'x', '#o-gate': 'z', '#o-rev': 'y', '#o-pr': 'x', '#o-loop': 'z', '#outro': 'z' };
+// plaques du rail : chaque chapitre du cycle est posé juste avant sa station, face à la caméra
+const RAIL = { '#o-qc': 0, '#o-trace': 1, '#o-gate': 2, '#o-rev': 3, '#o-pr': 4 };
+const cssRenderer = new CSS3DRenderer();
+cssRenderer.setSize(W, H);
+cssRenderer.domElement.id = 'css3d';
+$('#labels').after(cssRenderer.domElement);
+const cssScene = new THREE.Scene();
+for (const [id, st] of Object.entries(RAIL)) {
+  const el = $(id);
+  el.classList.add('plate');
+  const obj = new CSS3DObject(el);
+  const c = helix(st - 0.62);
+  const out = new THREE.Vector3(c.x, 0, c.z).normalize();
+  obj.position.copy(out.multiplyScalar(R + 1.3)).setY(c.y + 1.7);
+  obj.scale.setScalar(0.0052);
+  obj.lookAt(railAt(st)[0]);
+  cssScene.add(obj);
+}
 function ovVis(t, a, b) { return eo(prog(t, a, 0.5)) * (b >= DUR ? 1 : 1 - sstep(prog(t, b - 0.45, 0.45))); }
 
 // ---------------------------------------------------------------- sons
@@ -361,7 +390,7 @@ function cues() {
   sfx('riser?dur=1.8', 9.4, 0.3, { align: 'end' });
   sfx('impact', 9.4, 0.55);
   [14.2, 14.8, 15.4, 16.0].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.08}`, at, 0.25));
-  sfx('pop', 18.1, 0.25); sfx('whoosh?dur=.9', 18.6, 0.18); sfx('pop?pitch=1.15', 19.7, 0.25);
+  sfx('pop', 18.1, 0.25); sfx('whoosh?dur=.9', 21.7, 0.18); sfx('pop?pitch=1.15', 19.7, 0.25);
   [23.0, 23.5, 24.0, 24.5].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.08}`, at, 0.2));
   sfx('chime?note=79', 25.6, 0.22);
   sfx('glitch', 28.9, 0.25);
@@ -465,11 +494,12 @@ window.__seek = (t) => {
   camera.position.copy(cp);
   camera.lookAt(ct);
   let shift = 0;
-  for (const [id, a, b] of OVS) shift = Math.max(shift, ovVis(t, a, b) * (id === '#title' || id === '#outro' ? 0.7 : 1));
+  for (const [id, a, b] of OVS) if (!(id in RAIL)) shift = Math.max(shift, ovVis(t, a, b) * (id === '#title' || id === '#outro' ? 0.7 : 1));
   camera.setViewOffset(W, H, -480 * shift, 0, W, H);
   $('#scrim').style.opacity = shift;
   camera.updateProjectionMatrix();
   renderer.render(scene, camera);
+  cssRenderer.render(cssScene, camera);
 
   // --- étiquettes des stations du premier tour, projetées depuis la 3D
   NAMES.forEach((_, i) => {
@@ -486,6 +516,12 @@ window.__seek = (t) => {
   for (const [id, a, b] of OVS) {
     const v = ovVis(t, a, b);
     const el = $(id);
+    if (id in RAIL) {
+      // plaque sur le rail : visible tant que la caméra est à sa hauteur sur la spirale
+      const d = Math.abs(cubeS(t) - RAIL[id]);
+      el.style.opacity = (1 - sstep(clamp((d - 0.2) / 0.45))) * sstep(prog(t, 17.8, 0.8)) * (1 - sstep(prog(t, 47.0, 0.6)));
+      continue;
+    }
     el.style.opacity = v;
     // les cartes entrent et sortent dans l'espace, sur l'axe de leur chapitre
     const e = 1 - v, inn = t < (a + b) / 2, ax = CARD_AXIS[id];
