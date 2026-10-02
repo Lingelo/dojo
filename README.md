@@ -145,6 +145,21 @@ Fonctionne en FR et EN (~200 termes détectés). Aucune commande nécessaire.
 Storyboard → composition HTML/CSS/SVG/Canvas → stills de contrôle → rendu MP4 image par image
 (horloge virtuelle, motion blur, supersampling) avec bruitages et musique synchronisés. Dépendances (Playwright, Chromium, ffmpeg) installées automatiquement au premier usage.
 
+### Kaizen
+
+```bash
+/kaizen:setup                                   # config, détection de la stack, dossiers docs/
+/kaizen:constitution                            # principes non négociables du projet
+/kaizen:brainstorm export CSV des commandes     # QUOI construire → docs/plans/…-plan.md
+/kaizen:plan                                    # COMMENT → unités, tests, retour arrière + relecture du plan
+/kaizen:work                                    # test d'abord, garde-fou, revue multi-agents
+/kaizen:ship                                    # PR relisible, puis /kaizen:babysit-pr jusqu'à « prête »
+/kaizen:compound                                # la leçon, relue par le prochain plan
+/kaizen:lfg                                     # ou tout enchaîner après le brainstorm
+```
+
+Documentation : [démarrage](plugins/kaizen/docs/demarrage.md) · [guides par skill](plugins/kaizen/docs/README.md).
+
 ### Claude Factory — Dream Consolidation
 ```bash
 /factory:dream              # Consolide les CLAUDE.md et rules/

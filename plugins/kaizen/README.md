@@ -34,6 +34,12 @@ Kaizen outille ces trois disciplines.
 > marketplace (`git`, `security`, `playwright`). Elle ajoute un garde-fou par hook, un CLI
 > déterministe sans dépendances, des tests et des évaluations de bout en bout. Voir [LICENSE](LICENSE).
 
+## Documentation
+
+- **[Démarrage](docs/demarrage.md)** — un premier cycle complet, pas à pas
+- **[Guides par skill](docs/README.md)** — quand utiliser chaque commande, ce qu'elle produit, ses options
+- [Configuration](docs/configuration.md) · [Kaizen Packs](docs/packs.md) · [Dépannage](docs/depannage.md) · [Changelog](CHANGELOG.md)
+
 ## Installation
 
 ```json

@@ -121,6 +121,24 @@ test('le plugin est enregistré dans le marketplace et documenté', () => {
   assert.ok(readme.includes(`Agents (${agents.length})`), `README : le compte d'agents doit être ${agents.length}`);
 });
 
+test('documentation : un guide par skill, liens relatifs valides', () => {
+  const missing = skills.filter((s) => !existsSync(join(PLUGIN, 'docs', 'guides', `${s}.md`)));
+  assert.deepEqual(missing, [], 'skills sans guide dans docs/guides/');
+  const extra = readdirSync(join(PLUGIN, 'docs', 'guides')).filter((f) => !skills.includes(f.replace(/\.md$/, '')));
+  assert.deepEqual(extra, [], 'guides sans skill correspondante');
+  const index = readFileSync(join(PLUGIN, 'docs', 'README.md'), 'utf8');
+  for (const s of skills) assert.ok(index.includes(`(guides/${s}.md)`), `docs/README.md : guide ${s} non listé`);
+  const broken = [];
+  for (const f of [...walk(join(PLUGIN, 'docs')), join(PLUGIN, 'README.md'), join(PLUGIN, 'CHANGELOG.md')]) {
+    const text = readFileSync(f, 'utf8').replace(/```[\s\S]*?```/g, '');
+    for (const m of text.matchAll(/\]\(([^)#\s]+)(#[^)]*)?\)/g)) {
+      if (/^(https?:|mailto:)/.test(m[1])) continue;
+      if (!existsSync(join(f, '..', m[1]))) broken.push(`${relative(PLUGIN, f)} → ${m[1]}`);
+    }
+  }
+  assert.deepEqual(broken, []);
+});
+
 test('aucun livrable du plugin ne contient de chemin absolu ni de secret évident', () => {
   for (const { file, text } of docs) {
     assert.doesNotMatch(text, /\/home\/user\/|\/Users\/[a-z]+\//, `${file} : chemin absolu`);
