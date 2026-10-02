@@ -9,7 +9,7 @@
 // Coûteux (appels de modèle réels) : à lancer avant une release, pas dans la CI par défaut.
 
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,6 +65,22 @@ function runClaude(dir, prompt, timeoutMs) {
       resolve({ code, out });
     });
   });
+}
+
+// Arrête les process laissés par un scénario (ex. serveur de dev de polish) : ceux dont le dossier
+// courant est dans le dépôt temporaire. Linux seulement (/proc) ; ailleurs, rien n'est fait.
+function stopLeftovers(dir) {
+  let pids = [];
+  try {
+    pids = readdirSync('/proc').filter((p) => /^\d+$/.test(p));
+  } catch {
+    return;
+  }
+  for (const pid of pids) {
+    try {
+      if (realpathSync(`/proc/${pid}/cwd`).startsWith(realpathSync(dir))) process.kill(Number(pid), 'SIGTERM');
+    } catch {}
+  }
 }
 
 const ctx = (dir) => ({
@@ -128,6 +144,7 @@ for (const f of files) {
     }
     return { label, ok, note };
   });
+  stopLeftovers(dir);
   const pass = results.every((r) => r.ok);
   if (!pass) failed++;
   console.log(`${pass ? '✔' : '✘'} ${sc.name} (${Math.round((Date.now() - started) / 1000)} s)`);

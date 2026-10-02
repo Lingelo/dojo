@@ -84,5 +84,6 @@ Quand l'utilisateur dit qu'il a fini :
    nommés explicitement — les modifications antérieures de l'utilisateur hors polish restent hors du
    commit.
 3. Rapport : retouches appliquées, bloquées (et pourquoi), commit(s), URL du serveur **toujours en
-   marche** (dis comment l'arrêter). Suggère `/kaizen:ship` pour livrer, et `/kaizen:compound` si une
+   marche** et comment l'arrêter : son PID exact (`kill <pid>`), jamais un `pkill` par motif qui
+   toucherait les serveurs d'autres projets. Suggère `/kaizen:ship` pour livrer, et `/kaizen:compound` si une
    retouche a révélé une règle d'UI à retenir (ou une règle de pack « design »).

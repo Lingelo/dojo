@@ -1,4 +1,5 @@
-// /kaizen:polish démarre le serveur de dev, applique un retour précis, commite en local, ne pousse pas.
+// /kaizen:polish démarre le serveur de dev, applique un retour précis, commite en local, ne pousse pas,
+// et laisse le serveur tourner en disant comment l'arrêter (le harnais l'arrête ensuite).
 import { SHOP } from '../fixtures.mjs';
 
 export default {
@@ -15,6 +16,6 @@ export default {
   checks: [
     ['le retour est appliqué', (_, c) => { const t = c.read('public/style.css'); const h = +(t.match(/height:\s*(\d+)px/) || [])[1]; const f = +(t.match(/font-size:\s*(\d+)px/) || [])[1]; return { ok: h >= 44 && f >= 16, note: t.trim() }; }],
     ['commité en local', (_, c) => c.git('status', '--porcelain', 'public').trim() === '' && c.git('log', '--oneline').trim().split('\n').length >= 2],
-    ['serveur de dev arrêté', (_, c) => c.run('node', ['-e', "fetch('http://localhost:5173/').then(()=>process.exit(1),()=>process.exit(0))"]).code === 0],
+    ['rapport : URL du serveur et arrêt par PID, sans pkill', (out) => /localhost:5173/.test(out) && /kill \d+|PID/i.test(out) && !/pkill/.test(out)],
   ],
 };
