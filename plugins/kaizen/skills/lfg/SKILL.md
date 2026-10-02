@@ -69,14 +69,14 @@ existant, ni de plan pioché au hasard dans le dossier des plans.
 **Précondition de livraison** (à partir de 9) : `git remote` vide → tout reste en commits locaux, on
 saute push, PR et CI. Ce n'est pas une erreur.
 
-9. **Livrer** — `git push -u origin <branche>` (jamais la branche par défaut, jamais `--force`), puis
-   PR (`gh pr create` ou outils GitHub MCP) : titre conventionnel, description tirée du plan
-   (objectif, R couverts, preuves de vérification, leçon ajoutée, points ouverts) + lien vers le plan.
-   Si une PR existe déjà pour la branche, mets-la à jour plutôt que d'en ouvrir une seconde.
-10. **Surveiller la CI** — `gh pr checks <n> --watch` si disponible. Rouge → lis les logs, corrige la
-    cause racine (règles de `/kaizen:debug`), re-vérifie localement, pousse ; **2 cycles de réparation
-    au plus**. Ne désactive, n'ignore ni ne met en quarantaine aucun test ; pas de commit vide pour
-    relancer la CI. Budget épuisé → consigne ce qui reste rouge dans la PR et termine.
+9. **Livrer** — `kaizen:ship <plan> mode:auto` : vérifications, taille (`node "$K" size` ; au-delà du
+   plafond, la PR le justifie), push de la branche (jamais la branche par défaut, jamais `--force`),
+   PR avec description, guide du relecteur, déploiement et retour arrière, points ouverts. Une PR
+   existante pour la branche est mise à jour, pas dupliquée.
+10. **Mener la PR** — `kaizen:babysit-pr <url> mode:pipeline` : retours de revue traités, CI réparée
+    (au plus 2 correctifs par cause, aucune désactivation de test, aucun commit vide), branche mise à
+    jour seulement si GitHub le demande. Il rend `looks-ready`, un blocage motivé ou ses résidus :
+    consigne-les dans la PR (« Points ouverts ») et termine.
 11. `node "$K" gate off`, puis rapport final et `DONE`.
 
 ## Arrêts (dire pourquoi)
@@ -89,7 +89,7 @@ déjà ; il retire le garde-fou (`gate off`) et résume l'état exact et la repr
 
 ```
 DONE — <titre>
-PR : <url> (CI : verte | rouge après 2 réparations : <check>)
+PR : <url> — ✅ semble prête | 🟡 réserve : … | ⛔ bloquée : … (babysit-pr)
 Plan : <chemin> · Unités : 4/4 · Revue : 1 P1 corrigé, 2 P3 consignés · Leçon : <chemin | aucune>
 Points ouverts : …
 ```

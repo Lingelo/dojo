@@ -15,7 +15,7 @@ Marketplace de plugins pour Claude Code, fournissant des outils et workflows de 
 | [**claude-factory**](plugins/claude-factory/README.md) | Meta-plugin pour créer des outils Claude Code + dream consolidation | Skills |
 | [**frustration-detector**](plugins/frustration-detector/README.md) | Détecte la frustration et adapte le style de Claude (moins de blabla, plus d'action) | Hook |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design en code : HTML/CSS/SVG/Canvas → MP4/WebM/GIF image par image, son synchronisé (Playwright + ffmpeg) | Skill, Script |
-| [**kaizen**](plugins/kaizen/README.md) | Boucle compound engineering : ideate → brainstorm → plan → work → review → compound, leçons capitalisées relues à chaque cycle, revue multi-agents, packs de règles, debug, mode autonome, garde-fou qualité | Skills, Agents, Hook, Script |
+| [**kaizen**](plugins/kaizen/README.md) | SDLC assisté par IA (compound engineering) : constitution d'ingénierie appliquée comme contrôles, brainstorm → plan (traçabilité, menaces, retour arrière, tranches de PR) → doc-review → work (garde-fou) → review multi-agents → ship → babysit-pr, polish UI, leçons/ADR/post-mortems relus à chaque cycle, métriques DORA, release | Skills, Agents, Hook, Script |
 
 ## Installation
 

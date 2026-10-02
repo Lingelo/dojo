@@ -8,7 +8,7 @@ relire coûte du temps et ajoute du bruit.
 | Relecteur | Agent | Quand |
 |---|---|---|
 | `correctness` | `kaizen:correctness-reviewer` | toujours (revue ciblée ou complète) |
-| `standards` | `kaizen:standards-reviewer` | dès qu'existe au moins un fichier de standards applicable (`CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `.claude/rules/`), une règle de pack dont `applies_when` correspond, ou une leçon pertinente de `docs/solutions/` |
+| `standards` | `kaizen:standards-reviewer` | dès qu'existe `CONSTITUTION.md`, au moins un fichier de standards applicable (`CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `.claude/rules/`), une règle de pack dont `applies_when` correspond, ou une leçon pertinente de `docs/solutions/` |
 
 ## Conditionnels génériques
 

@@ -43,8 +43,10 @@ verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
    d'écriture sur la branche par défaut sans demande explicite dans cette session.
 3. **Garde-fou** — `node "$K" gate on --plan <chemin>` : le hook Stop refusera de terminer tant que
    les vérifications sont rouges (3 blocages max, puis il laisse passer en le signalant).
-4. **Contexte** — lis les fichiers référencés par le plan, les leçons qu'il cite (`docs/solutions/…`)
-   et les règles de packs citées. Une leçon citée est une contrainte d'implémentation.
+4. **Contexte** — lis les fichiers référencés par le plan, les leçons qu'il cite (`docs/solutions/…`),
+   les règles de packs citées et `CONSTITUTION.md` s'il existe. Une leçon citée est une contrainte
+   d'implémentation ; un article de la constitution est une règle, pas une suggestion.
+   Vérifie le plan une fois : `node "$K" plan check <chemin>` (rouge → `/kaizen:plan` d'abord).
 5. **Tâches** — une tâche par unité (`TaskCreate`), dans l'ordre des dépendances.
 
 ## Phase 2 — Exécuter
@@ -62,26 +64,28 @@ moindre conflit, repasse en série.
 ## Phase 3 — Qualité (mode autonome uniquement)
 
 1. **Vérification complète** — `node "$K" verify`. Rouge → corrige la cause racine, jamais en
-   affaiblissant un test.
-2. **Couverture du plan** — chaque `R` et chaque `AE` a sa preuve (test ou vérification consignée) ;
+   affaiblissant un test. Dépendances ajoutées ou modifiées → `node "$K" verify --only audit` aussi.
+2. **Taille** — `node "$K" size`. Au-delà de `pr.max_lines` : la tranche était trop grosse — propose de
+   la scinder en plusieurs PR (branches empilées, une par groupe d'unités) plutôt que de livrer un
+   bloc que personne ne relira bien. Exception assumée (code généré, migration) → dite dans la PR.
+3. **Couverture du plan** — chaque `R` et chaque `AE` a sa preuve (test ou vérification consignée) ;
    chaque élément de la « Définition de terminé » est vrai. Sinon, complète.
-3. **Simplification** — si la skill `simplify` est disponible, invoque-la sur le diff de la branche ;
+4. **Simplification** — si la skill `simplify` est disponible, invoque-la sur le diff de la branche ;
    sinon, relis toi-même le diff avec trois lentilles (réutilisation d'un utilitaire existant, clarté,
    efficacité) et applique les simplifications sûres. Re-vérifie.
-4. **Revue obligatoire** — invoque `kaizen:review plan:<chemin>`. Le travail n'est **pas** terminé et
+5. **Revue obligatoire** — invoque `kaizen:review plan:<chemin>`. Le travail n'est **pas** terminé et
    rien n'est poussé sans un rapport de revue réellement produit, ou une instruction explicite de
    l'utilisateur de s'en passer. Une auto-relecture mentale ne compte pas.
-5. Applique les correctifs P0/P1 retenus (ou demande pour ceux marqués `manual`), re-vérifie, commit.
+6. Applique les correctifs P0/P1 retenus (ou demande pour ceux marqués `manual`), re-vérifie, commit.
 
 ## Phase 4 — Livrer
 
 1. `node "$K" gate off`.
 2. Résumé : unités livrées, preuves, commits, constats de revue restants (et pourquoi), décisions
    prises en route.
-3. Propose (une question) : **pousser et ouvrir une PR** (Recommandé ; via `/push` du plugin git s'il
-   existe, sinon `git push -u origin <branche>` puis `gh pr create` avec une description tirée du
-   plan : objectif, R couverts, preuves, risques) · **garder en local** · **capitaliser une leçon
-   d'abord**.
+3. Propose (une question) : **livrer** (Recommandé → invoque `kaizen:ship <plan>` : push, PR avec
+   description et guide du relecteur tirés du plan, puis surveillance de la PR proposée) · **garder en
+   local** · **capitaliser une leçon d'abord**.
 4. Si le travail a produit un raisonnement non évident (un piège, une cause surprenante, une décision
    qui a demandé de l'enquête), propose `/kaizen:compound` — c'est ce qui rend le prochain cycle plus
    facile.

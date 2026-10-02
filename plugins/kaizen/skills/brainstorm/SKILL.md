@@ -44,6 +44,7 @@ place du menu final rends `{ status: complete|blocked, plan_path, open_blockers 
 - lis `CLAUDE.md`, `CONCEPTS.md` s'il existe, et le code de la zone (lectures bornées) ;
 - `node "$K" learnings search <mots-clés du sujet>` → lis les leçons qui ressortent ;
 - `node "$K" packs --json` → note les règles dont `applies_when` correspond ;
+- `node "$K" constitution --json` → les principes non négociables cadrent les approches possibles ;
 - en taille Standard/Profonde, lance `kaizen:repo-researcher` (motifs existants) et, si le corpus de
   leçons est conséquent, `kaizen:learnings-researcher`, dans **un seul message**.
 
@@ -88,9 +89,12 @@ ou packs en disent. Recommande-en une et demande le choix. Puis écris une **syn
      décisions clés en index de provenance (`Régit R…`), annotées
      `(décidé en session : choisi plutôt que <alternative> — <raison>)` quand l'utilisateur a tranché.
    - Contraintes venues d'un pack citées `(pack: <id>, <fichier>)`, leçons citées par leur chemin.
+   - Ce qui reste flou mais ne bloque pas la planification : `[À CLARIFIER : question — défaut
+     proposé]` sur place, plutôt qu'une supposition présentée comme acquise.
    - Un diagramme seulement si une structure le justifie (flux multi-étapes, états, transformation de
      données, maquette d'écran) — jamais à la place de la prose.
-4. Passe le **contrôle « prêt pour la planification »** de `plan-contract.md`. Corrige sur place ce qui
+4. `node "$K" plan check <chemin>` (stade exigences) puis le **contrôle « prêt pour la
+   planification »** de `plan-contract.md`. Corrige sur place ce qui
    préserve l'intention ; pose une question ciblée pour ce qui changerait le comportement produit. Ne
    déclare pas le fichier écrit tant qu'un contrôle échoue.
 

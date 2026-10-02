@@ -39,6 +39,9 @@ est présent.
 | `kaizen:product` | Contrat produit | brainstorm (ou plan si pas de brainstorm) | oui |
 | `kaizen:relationships` | Comment ce travail s'articule | brainstorm | si le sujet a été découpé |
 | `kaizen:planning` | Contrat de planification | plan | oui (plan prêt) |
+| `kaizen:constitution` | Contrôle constitutionnel | plan | oui si `CONSTITUTION.md` existe |
+| `kaizen:threats` | Menaces | plan | si surface à risque (auth, données sensibles, paiement, entrée externe, intégration tierce) |
+| `kaizen:rollout` | Déploiement et retour arrière | plan | oui dès que le changement atteint la production |
 | `kaizen:units` | Unités d'implémentation | plan | oui (plan prêt) |
 | `kaizen:verification` | Contrat de vérification | plan | oui (plan prêt) |
 | `kaizen:done` | Définition de terminé | plan | oui (plan prêt) |
@@ -65,6 +68,11 @@ conditionnelle) · Critères de succès · Hors périmètre (« plus tard » / �
 Dépendances et hypothèses · Questions ouvertes (« À résoudre avant planification » / « Reportées à la
 planification ») · Sources.
 
+**Zones floues** : tant qu'une réponse manque, écris-la sur place
+`[À CLARIFIER : question précise — défaut proposé si personne ne répond]` plutôt que de deviner
+(« connexion » → `[À CLARIFIER : e-mail + mot de passe, SSO ou les deux ?]`). Admis dans un plan
+« exigences » ; **interdit** dans un plan prêt à implémenter (`plan check` échoue).
+
 Une exigence n'engage que ce que l'utilisateur a demandé ou choisi, et ce qu'il faut pour que ça
 marche. Un garde-fou que personne n'a demandé (audit, alerte, option…) va dans Hors périmètre ou
 Questions ouvertes, pas dans les exigences.
@@ -77,6 +85,38 @@ Questions ouvertes, pas dans les exigences.
   le plan, citée (`docs/solutions/…` ou `(pack: id, fichier)`), avec ce qu'elle change ici.
 - Selon la matière : Conception technique (diagramme si la structure le mérite) · Impact transverse ·
   Risques et dépendances · Notes de doc / exploitation.
+
+### Contrôle constitutionnel (`kaizen:constitution`)
+
+Si `CONSTITUTION.md` existe (`node "$K" constitution --json`), **chaque article** est évalué, dans un
+tableau, avant toute unité :
+
+```markdown
+| Article | Verdict | Justification / preuve |
+|---|---|---|
+| I. Preuve d'abord | ✅ | chaque unité a une stratégie de preuve test d'abord |
+| IV. Petits lots | ⚠️ exception | U3 dépasse : migration générée de 600 lignes, non découpable — relue à part |
+```
+
+Un article **NON NÉGOCIABLE** n'admet pas de ⚠️ : si le plan ne peut pas le respecter, il est
+bloqué (capsule : bloquant ouvert) ou la constitution doit être amendée. Toute exception est reprise
+dans la description de la PR.
+
+### Menaces (`kaizen:threats`)
+
+Seulement si le travail touche une surface à risque. Modèle léger **STRIDE** sur les flux nouveaux
+ou modifiés : pour chaque menace plausible (usurpation, altération, répudiation, divulgation, déni de
+service, élévation de privilège), une ligne : actif visé · scénario · parade dans le plan (unité qui
+la porte) ou risque accepté (et par qui). Pas de menace théorique sans chemin dans ce changement.
+
+### Déploiement et retour arrière (`kaizen:rollout`)
+
+- **Exposition** — directe, derrière un feature flag (nom, défaut, qui le bascule), progressive.
+- **Ordre** — migrations en expand → migrate → contract ; ce qui doit être déployé avant quoi.
+- **Retour arrière** — comment on revient (désactiver le flag, revert, migration inverse) et ce qui
+  n'est pas réversible (données écrites, e-mails envoyés) — à dire explicitement.
+- **Signal** — ce qu'on surveille après déploiement pour savoir que ça marche (log, métrique, erreur)
+  et le seuil qui déclenche le retour arrière.
 
 ### Unités d'implémentation (`kaizen:units`)
 
@@ -92,7 +132,13 @@ Des paquets de travail dimensionnés pour un commit chacun, ordonnés par dépen
 - **Preuve :** test d'abord | caractérisation d'abord | exception (raison + vérification de remplacement)
 - **Scénarios de test :** cas nominal ; commande sans lignes ; caractères accentués (BOM, docs/solutions/…)
 - **Vérification :** `bundle exec rspec spec/exports/orders_csv_spec.rb` vert
+- **Tranche :** T1
 ```
+
+**Tranches** : une tranche = **une PR**, sous le plafond `pr.max_lines` (400 lignes relisibles par
+défaut). Le rapport DORA 2025 montre que l'IA grossit les PR et que la revue devient le goulot :
+découpe le plan en tranches livrables et relisables séparément (chaque tranche laisse la branche par
+défaut fonctionnelle — derrière un flag si besoin). Un plan d'une seule PR peut omettre le champ.
 
 ### Contrat de vérification (`kaizen:verification`)
 
@@ -106,7 +152,8 @@ revue passée sans P0/P1 ouvert, leçon capitalisée si elle passe le test de du
 
 ## Contrôle « prêt pour la planification » (après brainstorm)
 
-1. **Complet** — aucun TBD ni placeholder ; chaque question ouverte est classée.
+1. **Complet** — aucun TBD ni placeholder ; chaque question ouverte est classée ; les
+   `[À CLARIFIER : …]` restants sont tous dans « À résoudre avant planification ».
 2. **Cohérent** — capsule, exigences, parcours, exemples et périmètre ne se contredisent pas ; aucune
    règle n'est écrite en entier à deux endroits.
 3. **Focalisé** — une seule unité de travail cohérente ; le reste est contexte, plus tard ou hors
@@ -116,8 +163,14 @@ revue passée sans P0/P1 ouvert, leçon capitalisée si elle passe le test de du
 
 ## Contrôle « prêt à implémenter » (après plan)
 
+D'abord le contrôle **déterministe** : `node "$K" plan check <chemin>` (frontmatter, sections,
+numérotation continue, aucun `[À CLARIFIER`, chaque R et AE couvert par une unité, champs obligatoires
+des unités, chaque article de la constitution évalué). Il doit passer. Puis le jugement :
+
 1. Chaque `R` est couvert par au moins une unité ; chaque `AE` par un scénario de test.
 2. Chaque unité a des fichiers exacts, une stratégie de preuve et une vérification exécutable.
 3. Chaque `KTD` est justifiée par une preuve (code, leçon, doc, pack), pas par une préférence.
 4. Les leçons et règles de pack pertinentes sont citées, ou leur absence est un constat vérifié.
 5. Aucun bloquant ouvert, ou le plan est explicitement marqué bloqué dans la capsule.
+6. Les tranches tiennent sous `pr.max_lines` et chacune laisse la branche par défaut saine.
+7. Le retour arrière est décrit, et ce qui est irréversible est dit.

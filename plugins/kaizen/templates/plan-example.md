@@ -72,6 +72,35 @@ filtres actifs, lisible tel quel dans Excel.
 ### Risques
 - Requête lente sur 10 000 commandes avec jointures client → `includes(:customer)` (évite un N+1).
 
+<!-- kaizen:constitution -->
+## Contrôle constitutionnel
+
+| Article | Verdict | Justification / preuve |
+|---|---|---|
+| I. Preuve d'abord | ✅ | U1–U3 en test d'abord |
+| II. Simplicité | ✅ | export synchrone plafonné, pas de file de jobs (KTD1) |
+| III. Petits lots | ✅ | une tranche, ~250 lignes estimées |
+| IV. Sécurité par défaut | ✅ | même garde d'autorisation que la liste (U2), voir Menaces |
+| V. Autonomie des agents | ✅ | aucune migration ni dépendance ajoutée |
+
+<!-- kaizen:threats -->
+## Menaces
+
+- **Divulgation** · données clients exportées · un utilisateur sans droit appelle l'URL d'export
+  directement → `authorize_orders!` sur l'endpoint, test 403 (U2).
+- **Déni de service** · base de données · exports répétés de gros volumes → plafond 10 000 (R5) et
+  génération en flux (KTD1).
+
+<!-- kaizen:rollout -->
+## Déploiement et retour arrière
+
+- **Exposition** : directe (bouton visible des seuls rôles autorisés), pas de flag — fonctionnalité
+  en lecture seule.
+- **Ordre** : aucune migration.
+- **Retour arrière** : revert de la PR ; rien d'irréversible (aucune écriture).
+- **Signal** : taux d'erreur 5xx de `Orders::ExportsController` et durée p95 ; > 1 % d'erreurs ou
+  p95 > 10 s → revert.
+
 <!-- kaizen:units -->
 ## Unités d'implémentation
 
@@ -85,6 +114,7 @@ filtres actifs, lisible tel quel dans Excel.
 - **Scénarios de test :** colonnes et ordre ; total formaté ; nom accentué (AE2, octets du BOM) ;
   commande sans articles.
 - **Vérification :** `bundle exec rspec spec/exports/orders_csv_spec.rb`
+- **Tranche :** T1
 
 ### U2. Endpoint d'export avec filtres, droits et plafond
 - **Objectif :** exposer l'export filtré, autorisé et plafonné (R1, R4, R5).
@@ -98,6 +128,7 @@ filtres actifs, lisible tel quel dans Excel.
 - **Scénarios de test :** filtre statut (AE1) ; utilisateur sans droit → 403 ; 10 001 commandes → 422
   avec message (AE3) ; en-têtes `Content-Type` et `Content-Disposition`.
 - **Vérification :** `bundle exec rspec spec/requests/orders/exports_spec.rb`
+- **Tranche :** T1
 
 ### U3. Bouton « Exporter » sur la liste
 - **Objectif :** déclencher l'export avec les filtres courants.
@@ -107,6 +138,7 @@ filtres actifs, lisible tel quel dans Excel.
 - **Approche :** lien qui reprend `request.query_parameters`.
 - **Preuve :** test système.
 - **Vérification :** `bundle exec rspec spec/system/orders_export_spec.rb`
+- **Tranche :** T1
 
 <!-- kaizen:verification -->
 ## Contrat de vérification
@@ -117,5 +149,5 @@ filtres actifs, lisible tel quel dans Excel.
 ## Définition de terminé
 - U1–U3 livrées, chacune avec sa preuve.
 - R1–R5 et AE1–AE3 couverts par des tests verts.
-- `/kaizen:review` sans P0/P1 ouvert.
+- `/kaizen:review` sans P0/P1 ouvert ; diff sous `pr.max_lines` (`node "$K" size`).
 - Leçon capitalisée si l'implémentation a révélé un piège non documenté.

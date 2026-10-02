@@ -53,7 +53,7 @@ sont les critères de l'étape 6.
 
 Selon `persona-catalog.md` : `correctness` toujours (hors profondeur légère), puis seulement les
 relecteurs dont le domaine est **présent dans le diff** — par jugement sur le diff, pas par mots-clés.
-Pour `standards` : rassemble les fichiers de standards, `node "$K" packs --json` (règles dont
+Pour `standards` : rassemble `CONSTITUTION.md` (`node "$K" constitution --json`), les fichiers de standards, `node "$K" packs --json` (règles dont
 `applies_when` correspond) et `node "$K" learnings search <termes du diff>` (leçons pertinentes).
 Annonce en une ligne par relecteur pourquoi il est retenu.
 
@@ -100,6 +100,9 @@ constat P0/P1 par relecture des lignes citées, classement, et compte rendu des 
 | 1 | P0 | 100 | `app/x.rb:42` | … | … | security |
 
 <pour chaque P0/P1 : 2 à 4 phrases de why_it_matters + la ligne citée>
+
+### Constitution
+| Article | Respecté ? | Preuve |  — seulement si `CONSTITUTION.md` existe ; exceptions du plan rappelées
 
 ### Conformité au plan
 | Exigence | Couverte par | Preuve |  — R/AE non couverts ou couverts différemment = constat

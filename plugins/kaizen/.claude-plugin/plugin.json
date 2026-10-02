@@ -1,7 +1,7 @@
 {
   "name": "kaizen",
-  "description": "Compound engineering loop: ideate, brainstorm, plan, work, review, compound — each unit of work makes the next one easier. Multi-agent research and review, learnings in docs/solutions/ read back by every plan and review, Kaizen Packs of team rules, debug, refresh, autonomous lfg, and a Stop-hook quality gate",
-  "version": "1.0.0",
+  "description": "High-quality AI SDLC built on the compound engineering loop: engineering constitution enforced as gates, brainstorm, plan (traceability, threats, rollout, PR-sized slices) with independent doc review, test-first work with a Stop-hook quality gate, multi-agent code review, ship and PR babysitting, UI polish, learnings in docs/solutions/ read back by every cycle, ADRs, blameless postmortems, DORA metrics and releases",
+  "version": "1.1.0",
   "author": {
     "name": "Angelo LIMA",
     "email": "contact@example.com"

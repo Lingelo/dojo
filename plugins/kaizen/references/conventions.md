@@ -3,11 +3,15 @@
 ## La boucle
 
 ```
-ideate → brainstorm → plan → work → review → compound
-                       ▲                         │
-                       └── docs/solutions/ ◄─────┘   (leçons relues à chaque plan et revue)
-     debug ──► fix ──► review ──► compound            refresh : entretien des leçons
+                 CONSTITUTION.md (principes non négociables, appliqués comme contrôles)
+ideate → brainstorm → plan ─► doc-review → work → review → ship → babysit-pr → compound
+                       ▲                                                          │
+                       └──────────── docs/solutions/ · docs/adr/ ◄────────────────┘
+debug → fix → review → compound      polish : retouches UI guidées      refresh : entretien des leçons
+decide → ADR      postmortem → leçons, packs, amendements      metrics : DORA + réutilisation      release
 ```
+
+**Hiérarchie des règles** : constitution > règles des Kaizen Packs > leçons > préférences.
 
 Principe : **chaque unité de travail doit rendre la suivante plus facile.** 80 % du temps en
 planification et revue, 20 % en exécution. Une leçon écrite aujourd'hui est relue par le prochain
@@ -29,6 +33,16 @@ node "$K" learnings search <mots…> [--json]     # leçons pertinentes, classé
 node "$K" learnings validate [fichiers…]
 node "$K" packs [--json]           # règles des Kaizen Packs déclarés
 node "$K" gate on --plan <p> | off | status     # garde-fou du hook Stop
+node "$K" constitution [check] [--json]         # articles de CONSTITUTION.md / validation
+node "$K" plan check <chemin>      # contrôle structurel d'un plan (traçabilité R/AE → U, constitution)
+node "$K" size [--base <ref>]      # taille du diff vs pr.max_lines (exit 1 au-delà)
+node "$K" verify --only audit      # audit des dépendances (hors garde-fou, sur demande)
+node "$K" pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch   # suivi de PR
+node "$K" dev detect | dev probe --url <u>      # serveur de dev
+node "$K" metrics [--since 90d]    # DORA approché + santé de la boucle
+node "$K" adr new --title "…" | adr list        # décisions d'architecture
+node "$K" postmortem new --title "…"            # post-mortem
+node "$K" release notes [--from <tag>]          # notes de version + SemVer
 node "$K" run-dir reviews         # dossier de travail local d'un run (ignoré par git)
 ```
 
@@ -44,6 +58,10 @@ Lis `node "$K" root` avant de composer un chemin. Par défaut tout vit sous `doc
 | `<root>/plans/` | plan unifié : exigences puis plan d'implémentation, **un seul fichier** qui grossit | brainstorm, plan |
 | `<root>/solutions/` | leçons capitalisées, une par fichier, frontmatter validé | compound, refresh |
 | `<root>/ideation/` | idées classées | ideate |
+| `<root>/adr/` | décisions d'architecture numérotées (`NNNN-titre.md`) | decide |
+| `<root>/postmortems/` | post-mortems d'incident | postmortem |
+| `<root>/metrics/` | rapports de mesure (optionnel) | metrics |
+| `CONSTITUTION.md` | principes d'ingénierie non négociables, versionnés | constitution |
 | `kaizen-packs/<pack>/` | règles prescriptives d'équipe | setup, compound (sur accord) |
 | `.kaizen/config.json` | configuration versionnée (`config.local.json` = surcharge perso, ignorée par git) | setup |
 | `.kaizen/state/` | état local (garde-fou, revues) — auto-ignoré par git | CLI |

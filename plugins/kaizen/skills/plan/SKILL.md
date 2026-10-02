@@ -48,8 +48,10 @@ envisagées) et lance selon le besoin :
 | `kaizen:docs-researcher` | une décision dépend d'un comportement externe incertain ou d'une technologie nouvelle pour le repo — pose-lui des **questions précises** |
 | `kaizen:flow-analyst` | comportement multi-étapes et pas de brainstorm préalable avec exemples d'acceptation |
 
-Pendant ce temps, lis toi-même les fichiers que la demande nomme et `node "$K" detect` (commandes de
-vérification réelles).
+Pendant ce temps, lis toi-même les fichiers que la demande nomme, `node "$K" detect` (commandes de
+vérification réelles) et `node "$K" constitution --json` (principes à respecter). Une décision
+d'architecture lourde ou irréversible (format de données, fournisseur, interface publique) mérite
+`/kaizen:decide` : propose-le plutôt que de la trancher en une ligne de KTD.
 
 ## Phase 2 — Décider
 
@@ -58,7 +60,14 @@ vérification réelles).
   R…`. Une décision prise par l'utilisateur en session est reprise telle quelle avec son annotation.
 - Une leçon qui s'applique **change** le plan (contrainte, test, séquence) et est citée ; une règle de
   pack qui s'applique est citée `(pack: <id>, <fichier>)` ; ne la contredis pas sans le dire.
-- Ce qui reste vraiment ouvert et bloque : question à l'utilisateur (une à la fois).
+- Ce qui reste vraiment ouvert et bloque : question à l'utilisateur (une à la fois). En `mode:return`,
+  consigne l'hypothèse retenue ; ne laisse jamais de `[À CLARIFIER : …]` dans un plan prêt.
+- **Constitution** : évalue chaque article (section `kaizen:constitution`). Un article NON NÉGOCIABLE
+  impossible à respecter bloque le plan (capsule : bloquant ouvert) — ne le contourne pas.
+- **Menaces** : surface à risque (auth, données sensibles, paiement, entrée externe, intégration) →
+  section `kaizen:threats` (STRIDE léger), chaque parade portée par une unité.
+- **Déploiement** : section `kaizen:rollout` — exposition (flag ?), ordre, retour arrière, ce qui est
+  irréversible, signal à surveiller.
 
 ## Phase 3 — Structurer
 
@@ -67,6 +76,11 @@ dépendance, chacune avec fichiers exacts, `Couvre`, approche (motif à imiter, 
 de **preuve** (test d'abord par défaut pour tout changement de comportement), scénarios de test
 (chaque `AE` a le sien ; les cas limites et les leçons « Ce qui n'a pas marché » deviennent des tests),
 vérification exécutable.
+
+**Tranches** : regroupe les unités en tranches (`**Tranche :** T1`), une tranche = une PR sous
+`pr.max_lines` (config, 400 par défaut) qui laisse la branche par défaut saine. Estime grossièrement
+les lignes par unité ; au-delà du plafond, découpe (souvent : modèle et tests → endpoint → interface,
+la partie visible derrière un flag).
 
 **Construis ce qui est demandé** : n'ajoute un mécanisme non demandé (garde, retry, option,
 abstraction) que si un contrat existant l'exige, si son absence laisse un dommage arriver avant que
@@ -84,7 +98,12 @@ argent, sécurité) — et dans sa plus petite forme.
 
 ## Phase 5 — Contrôle de confiance
 
-Passe le **contrôle « prêt à implémenter »** de `plan-contract.md` et corrige sur place. Puis
+1. `node "$K" plan check <chemin>` doit passer : corrige jusqu'au vert.
+2. Passe le **contrôle « prêt à implémenter »** de `plan-contract.md` et corrige sur place.
+3. **Relecture indépendante obligatoire** (forme Durable) : invoque `kaizen:doc-review <chemin>
+   mode:auto`. Elle applique les corrections mécaniques et rend les décisions restantes : pose-les à
+   l'utilisateur (une par tour) en interactif, ou consigne-les en `mode:return`. Un verdict ⛔ bloque
+   la suite. Puis
 relis le plan comme un relecteur hostile : quelle unité est la plus floue ? quelle KTD repose sur une
 supposition ? quel risque n'a pas de test ? Si une faiblesse touche une décision, relance une
 recherche ciblée (voir « Approfondir ») avant de livrer.

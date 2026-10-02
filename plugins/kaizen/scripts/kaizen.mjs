@@ -15,14 +15,30 @@
 //   node kaizen.mjs pack new <nom>               crée et déclare un pack local
 //   node kaizen.mjs gate on [--plan p] | off | status      garde-fou qualité du hook Stop
 //   node kaizen.mjs run-dir <type>                dossier de run local (ex. reviews), ignoré par git
+//   node kaizen.mjs constitution [check] [--json] articles de CONSTITUTION.md / validation
+//   node kaizen.mjs plan check <chemin> [--json]  contrôle structurel d'un plan (traçabilité R/AE → U)
+//   node kaizen.mjs size [--base <ref>] [--json]  taille du diff vs pr.max_lines (exit 1 si au-delà)
+//   node kaizen.mjs dev detect | probe --url U    serveur de dev (polish)
+//   node kaizen.mjs metrics [--since 90d] [--no-github]   indicateurs DORA approchés + santé de la boucle
+//   node kaizen.mjs adr new --title "…" | adr list        décisions d'architecture (docs/adr)
+//   node kaizen.mjs postmortem new --title "…"            réserve un post-mortem (docs/postmortems)
+//   node kaizen.mjs release notes [--from <tag>]          notes de version + version SemVer proposée
+//   node kaizen.mjs pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch …   suivi de PR (voir pr.mjs)
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { loadConstitution, validateConstitution } from './constitution.mjs';
+import { checkPlan } from './plancheck.mjs';
+import * as prmod from './pr.mjs';
+import { detectDevServers, probe } from './devserver.mjs';
+import { computeMetrics } from './metrics.mjs';
+import { releaseNotes } from './release.mjs';
 import {
   DEFAULT_CONFIG,
+  diffSize,
   detectStack,
   docsRoot,
   expandHome,
@@ -205,7 +221,19 @@ function cmdPlan(root, sub) {
     );
     return;
   }
-  die('usage : plan new --type <type> --topic <slug> | plan latest | plan list');
+  if (sub === 'check') {
+    const target = positional[2];
+    if (!target) die('usage : plan check <chemin>');
+    const report = checkPlan(resolve(target), { constitution: loadConstitution(root) });
+    if (flags.json) out(report);
+    else {
+      out(`${report.errors.length ? '✘' : '✔'} ${target} — ${report.stage} · ${report.requirements} R · ${report.acceptance_examples} AE · ${report.units} U${report.slices ? ` · ${report.slices} tranche(s)` : ''}`);
+      for (const e of report.errors) out(`    ✘ ${e}`);
+      for (const w of report.warnings) out(`    ⚠ ${w}`);
+    }
+    process.exit(report.errors.length ? 1 : 0);
+  }
+  die('usage : plan new --type <type> --topic <slug> | plan latest | plan list | plan check <chemin>');
 }
 
 // ---------------------------------------------------------------------------
@@ -502,6 +530,145 @@ try {
     case 'gate':
       cmdGate(requireRepo(), sub);
       break;
+    case 'constitution': {
+      const root = requireRepo();
+      const c = loadConstitution(root);
+      if (!c) {
+        if (flags.json) out({ exists: false });
+        else out('Aucune CONSTITUTION.md à la racine du repo (/kaizen:constitution pour la créer).');
+        process.exit(sub === 'check' ? 1 : 0);
+      }
+      if (sub === 'check') {
+        const v = validateConstitution(c);
+        if (flags.json) out({ exists: true, version: c.meta.version, articles: c.articles.length, ...v });
+        else {
+          out(`${v.errors.length ? '✘' : '✔'} CONSTITUTION.md v${c.meta.version ?? '?'} — ${c.articles.length} article(s)`);
+          for (const e of v.errors) out(`    ✘ ${e}`);
+          for (const w of v.warnings) out(`    ⚠ ${w}`);
+        }
+        process.exit(v.errors.length ? 1 : 0);
+      }
+      if (flags.json) out({ exists: true, ...c });
+      else {
+        out(`CONSTITUTION.md v${c.meta.version ?? '?'} (ratifiée ${c.meta.ratified ?? '?'}, amendée ${c.meta.last_amended ?? '?'})`);
+        for (const a of c.articles) out(`  ${a.id}. ${a.title}${a.non_negotiable ? ' — NON NÉGOCIABLE' : ''}\n      contrôle : ${a.control || '—'}`);
+      }
+      break;
+    }
+    case 'size': {
+      const root = requireRepo();
+      const config = loadConfig(root);
+      const s = diffSize(root, { base: flags.base, ignore: config.pr.ignore });
+      const max = Number(flags.max || config.pr.max_lines);
+      const over = s.total > max;
+      if (flags.json) out({ ...s, max_lines: max, over });
+      else {
+        out(`${over ? '✘' : '✔'} ${s.total} lignes modifiées (+${s.added} −${s.removed}) sur ${s.files} fichier(s) — plafond ${max}${s.ignored ? ` · ${s.ignored} fichier(s) ignoré(s)` : ''}`);
+        if (over) for (const f of s.largest) out(`    ${String(f.added + f.removed).padStart(6)}  ${f.file}`);
+      }
+      process.exit(over ? 1 : 0);
+    }
+    case 'metrics': {
+      const root = requireRepo();
+      out(computeMetrics(root, { since: flags.since || '90d', useGitHub: !flags['no-github'] }));
+      break;
+    }
+    case 'adr': {
+      const root = requireRepo();
+      const dir = join(docsRoot(root), 'adr');
+      const existing = existsSync(dir) ? readdirSync(dir).filter((f) => /^\d{4}-.*\.md$/.test(f)).sort() : [];
+      if (sub === 'list') {
+        out(existing.map((f) => {
+          const { data } = parseFrontmatter(readFileSync(join(dir, f), 'utf8'));
+          return { path: rel(root, join(dir, f)), title: data?.title || f, status: data?.status || '?', date: data?.date || null };
+        }));
+      } else if (sub === 'new') {
+        const title = flags.title || positional.slice(2).join(' ');
+        if (!title) die('usage : adr new --title "Choix de la file de messages"');
+        mkdirSync(dir, { recursive: true });
+        const n = existing.length ? Number(existing.at(-1).slice(0, 4)) + 1 : 1;
+        for (let k = n; k < n + 50; k++) {
+          const file = join(dir, `${String(k).padStart(4, '0')}-${slugify(title)}.md`);
+          try {
+            closeSync(openSync(file, 'wx'));
+            out(rel(root, file));
+            break;
+          } catch (err) {
+            if (err.code !== 'EEXIST') throw err;
+          }
+        }
+      } else die('usage : adr new --title "…" | adr list');
+      break;
+    }
+    case 'postmortem': {
+      const root = requireRepo();
+      if (sub !== 'new') die('usage : postmortem new --title "…"');
+      const title = flags.title || positional.slice(2).join(' ');
+      if (!title) die('usage : postmortem new --title "Panne des exports du 3 novembre"');
+      const dir = join(docsRoot(root), 'postmortems');
+      mkdirSync(dir, { recursive: true });
+      const day = new Date().toISOString().slice(0, 10);
+      for (let k = 1; k < 50; k++) {
+        const file = join(dir, `${day}-${slugify(title)}${k > 1 ? `-${k}` : ''}.md`);
+        try {
+          closeSync(openSync(file, 'wx'));
+          out(rel(root, file));
+          break;
+        } catch (err) {
+          if (err.code !== 'EEXIST') throw err;
+        }
+      }
+      break;
+    }
+    case 'release': {
+      const root = requireRepo();
+      if (sub !== 'notes') die('usage : release notes [--from <tag>] [--to <ref>]');
+      out(releaseNotes(root, { from: flags.from, to: flags.to || 'HEAD' }));
+      break;
+    }
+    case 'dev': {
+      const root = requireRepo();
+      if (sub === 'detect') out(detectDevServers(root));
+      else if (sub === 'probe') {
+        if (!flags.url) die('usage : dev probe --url http://localhost:3000 [--timeout-seconds 30]');
+        const r = await probe(flags.url, Number(flags['timeout-seconds'] || 30));
+        out(r);
+        process.exit(r.reachable ? 0 : 1);
+      } else die('usage : dev detect | dev probe --url <url>');
+      break;
+    }
+    case 'pr': {
+      const root = requireRepo();
+      const stateRoot = ensureStateDir(root);
+      const opts = {
+        pr: flags.pr,
+        repo: flags.repo,
+        start: Boolean(flags.start),
+        budgetSeconds: flags['budget-seconds'],
+        settleSeconds: flags['settle-seconds'],
+        interval: flags.interval,
+        thread: flags.thread,
+        comment: flags.comment,
+        check: flags.check,
+        disposition: flags.disposition,
+        note: flags.note,
+        bodyFile: flags['body-file'],
+        all: Boolean(flags.all),
+      };
+      if (sub === 'watch') process.exit(await prmod.watch(stateRoot, opts));
+      const handlers = {
+        snapshot: () => prmod.snapshot(stateRoot, opts),
+        mark: () => prmod.mark(stateRoot, opts),
+        threads: () => prmod.threads(opts),
+        reply: () => prmod.reply(opts),
+        resolve: () => prmod.resolveThread(opts),
+        comment: () => prmod.comment(opts),
+        'update-branch': () => prmod.updateBranch(stateRoot, opts),
+      };
+      if (!handlers[sub]) die('usage : pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch');
+      out(handlers[sub]());
+      break;
+    }
     case 'run-dir': {
       const root = requireRepo();
       const kind = slugify(sub || 'runs') || 'runs';

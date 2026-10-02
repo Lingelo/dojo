@@ -15,6 +15,9 @@ Applique le contrat des relecteurs fourni dans ton prompt. Ton nom de relecteur 
 
 ## Sources de règles (fournies par l'orchestrateur)
 
+0. **`CONSTITUTION.md`** — les articles et leur **Contrôle**. Applique chaque contrôle au diff ; la
+   violation d'un article NON NÉGOCIABLE est P0 (confiance 100 si citable), d'un autre article P1,
+   sauf exception justifiée dans le plan fourni. Cite `CONSTITUTION.md, article <n>`.
 1. **Fichiers de standards** — `CLAUDE.md` (racine et dossiers des fichiers modifiés), `AGENTS.md`,
    `CONTRIBUTING.md`, `.claude/rules/*.md`, guides de style référencés par eux.
 2. **Règles de Kaizen Packs** dont `applies_when` correspond au diff — cite-les

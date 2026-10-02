@@ -28,6 +28,7 @@ export const DEFAULT_CONFIG = {
   tracker: 'auto',
   verify: {},
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, max_age_hours: 24 },
+  pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
   packs: [],
 };
 
@@ -49,6 +50,7 @@ export function loadConfig(root) {
   const merged = { ...DEFAULT_CONFIG, ...base, ...localRest };
   merged.gate = { ...DEFAULT_CONFIG.gate, ...(base.gate || {}), ...(local.gate || {}) };
   merged.verify = { ...(base.verify || {}), ...(local.verify || {}) };
+  merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
   if (base.docs_root) merged.docs_root = base.docs_root;
   return merged;
 }
@@ -102,7 +104,9 @@ function splitInline(list) {
 }
 
 function scalar(v) {
-  const s = v.trim();
+  let s = v.trim();
+  // Commentaire YAML en fin de ligne (« # » précédé d'un blanc), hors chaînes entre guillemets.
+  if (!/^["']/.test(s)) s = s.replace(/\s+#.*$/, '');
   if (s === '') return '';
   if (s.startsWith('[') && s.endsWith(']')) return splitInline(s.slice(1, -1));
   if (s === 'true') return true;
@@ -176,6 +180,11 @@ export function isFile(p) {
 // Détection de stack → commandes de vérification (test, lint, typecheck)
 // ---------------------------------------------------------------------------
 
+function onPath(bin) {
+  const r = spawnSync(process.platform === 'win32' ? 'where' : 'which', [bin], { stdio: 'ignore' });
+  return r.status === 0;
+}
+
 function nodeRunner(root) {
   if (existsSync(join(root, 'pnpm-lock.yaml'))) return 'pnpm';
   if (existsSync(join(root, 'yarn.lock'))) return 'yarn';
@@ -207,6 +216,7 @@ export function detectStack(root) {
     for (const n of ['lint', 'eslint']) if (scripts[n]) set('lint', runScript(pm, n));
     for (const n of ['typecheck', 'type-check', 'tsc', 'check-types']) if (scripts[n]) set('typecheck', runScript(pm, n));
     if (!verify.typecheck && existsSync(join(root, 'tsconfig.json'))) set('typecheck', 'npx --no-install tsc --noEmit');
+    set('audit', pm === 'npm' ? 'npm audit --audit-level=high' : pm === 'pnpm' ? 'pnpm audit --audit-level high' : pm === 'yarn' ? 'yarn npm audit --severity high' : null);
   }
 
   if (existsSync(join(root, 'pyproject.toml')) || existsSync(join(root, 'setup.py')) || existsSync(join(root, 'requirements.txt'))) {
@@ -219,18 +229,21 @@ export function detectStack(root) {
     } catch {}
     if (/\[tool\.ruff/.test(pyproject) || existsSync(join(root, 'ruff.toml'))) set('lint', `${py}ruff check .`);
     if (/\[tool\.mypy/.test(pyproject) || existsSync(join(root, 'mypy.ini'))) set('typecheck', `${py}mypy .`);
+    if (onPath('pip-audit')) set('audit', 'pip-audit');
   }
 
   if (existsSync(join(root, 'go.mod'))) {
     stacks.push('go');
     set('test', 'go test ./...');
     set('lint', 'go vet ./...');
+    if (onPath('govulncheck')) set('audit', 'govulncheck ./...');
   }
 
   if (existsSync(join(root, 'Cargo.toml'))) {
     stacks.push('rust');
     set('test', 'cargo test --quiet');
     set('lint', 'cargo clippy --quiet -- -D warnings');
+    if (onPath('cargo-audit')) set('audit', 'cargo audit');
   }
 
   if (existsSync(join(root, 'pom.xml'))) {
@@ -248,6 +261,7 @@ export function detectStack(root) {
     if (existsSync(join(root, 'spec'))) set('test', 'bundle exec rspec');
     else if (existsSync(join(root, 'test'))) set('test', 'bundle exec rake test');
     if (existsSync(join(root, '.rubocop.yml'))) set('lint', 'bundle exec rubocop');
+    if (onPath('bundle-audit')) set('audit', 'bundle-audit check --update');
   }
 
   if (existsSync(join(root, 'composer.json'))) {
@@ -284,7 +298,8 @@ function tail(text, n = 40) {
 export function runVerify(root, { only, timeoutSeconds } = {}) {
   const config = loadConfig(root);
   const { commands } = verifyCommands(root, config);
-  const wanted = only ? only.split(',').map((s) => s.trim()) : Object.keys(commands);
+  // L'audit des dépendances (réseau, lent) ne tourne que sur demande explicite (--only audit).
+  const wanted = only ? only.split(',').map((s) => s.trim()) : Object.keys(commands).filter((k) => k !== 'audit');
   const timeout = (timeoutSeconds || config.gate.timeout_seconds || 600) * 1000;
   const results = [];
   for (const name of wanted) {
@@ -305,3 +320,75 @@ export function runVerify(root, { only, timeoutSeconds } = {}) {
   return results;
 }
 
+
+// ---------------------------------------------------------------------------
+// Git : branche par défaut, base de comparaison, taille d'un diff
+// ---------------------------------------------------------------------------
+
+export function git(root, args, { allowFail = false } = {}) {
+  try {
+    return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 }).trim();
+  } catch (err) {
+    if (allowFail) return null;
+    throw new Error(`git ${args.join(' ')} : ${String(err.stderr || err.message).trim().split('\n')[0]}`);
+  }
+}
+
+export function defaultBranch(root) {
+  const head = git(root, ['rev-parse', '--abbrev-ref', 'origin/HEAD'], { allowFail: true });
+  if (head && head.startsWith('origin/')) return head.slice('origin/'.length);
+  for (const b of ['main', 'master', 'trunk', 'develop']) {
+    if (git(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${b}`], { allowFail: true })) return b;
+    if (git(root, ['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${b}`], { allowFail: true })) return b;
+  }
+  return null;
+}
+
+export function diffBase(root, explicit) {
+  if (explicit) return explicit;
+  const def = defaultBranch(root);
+  if (!def) return null;
+  for (const ref of [`origin/${def}`, def]) {
+    const mb = git(root, ['merge-base', 'HEAD', ref], { allowFail: true });
+    if (mb) return mb;
+  }
+  return null;
+}
+
+function globToRegex(glob) {
+  let re = '';
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === '*' && glob[i + 1] === '*') {
+      re += '.*';
+      i++;
+      if (glob[i + 1] === '/') i++;
+    } else if (c === '*') re += '[^/]*';
+    else if (c === '?') re += '[^/]';
+    else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(`(^|/)${re}$`);
+}
+
+export function diffSize(root, { base, ignore = [] } = {}) {
+  const from = diffBase(root, base);
+  if (!from) throw new Error('base introuvable : passe --base <ref>');
+  const out = git(root, ['diff', '--numstat', from]);
+  const res = ignore.map(globToRegex);
+  const files = [];
+  let added = 0;
+  let removed = 0;
+  let ignored = 0;
+  for (const line of out ? out.split('\n') : []) {
+    const [a, d, ...rest] = line.split('\t');
+    const file = rest.join('\t');
+    if (a === '-' || res.some((r) => r.test(file))) {
+      ignored++;
+      continue;
+    }
+    added += Number(a);
+    removed += Number(d);
+    files.push({ file, added: Number(a), removed: Number(d) });
+  }
+  return { base: from, files: files.length, added, removed, total: added + removed, ignored, largest: files.sort((x, y) => y.added + y.removed - (x.added + x.removed)).slice(0, 5) };
+}
