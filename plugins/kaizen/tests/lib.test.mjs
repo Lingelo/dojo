@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { join } from 'node:path';
 import { detectStack, docsRoot, loadConfig, parseFrontmatter } from '../scripts/lib.mjs';
 import { cleanup, tempRepo } from './helpers.mjs';
 
@@ -81,6 +82,6 @@ test('docs_root doit rester dans le repo', () => {
   for (const bad of ['../x', '.git/docs', '.', '/abs']) {
     assert.throws(() => docsRoot(dir, { docs_root: bad }), /docs_root/);
   }
-  assert.ok(docsRoot(dir, { docs_root: 'docs/kaizen' }).endsWith('docs/kaizen'));
+  assert.ok(docsRoot(dir, { docs_root: 'docs/kaizen' }).endsWith(join('docs', 'kaizen')));
   cleanup(dir);
 });

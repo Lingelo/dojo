@@ -79,7 +79,8 @@ test('plan new réserve des noms uniques ; plan check valide l’exemple de réf
 
 test('plan check attrape les défauts de traçabilité et de constitution', () => {
   const dir = tempRepo({ 'CONSTITUTION.md': CONSTITUTION });
-  let text = readFileSync(join(PLUGIN, 'templates/plan-example.md'), 'utf8');
+  // Sous Windows, git extrait le gabarit en CRLF : on normalise avant d'y injecter les défauts.
+  let text = readFileSync(join(PLUGIN, 'templates/plan-example.md'), 'utf8').replace(/\r\n/g, '\n');
   text = text
     .replace('| V. Autonomie des agents | ✅ | aucune migration ni dépendance ajoutée |\n', '')
     .replace('- R5. Au-delà', '- R7. Au-delà')
