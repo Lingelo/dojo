@@ -12,7 +12,6 @@ Marketplace de plugins pour Claude Code, fournissant des outils et workflows de 
 | [**playwright**](plugins/playwright/README.md) | MCP Playwright + agents tests E2E (planner, generator, healer) | MCP, Agents |
 | [**statusline**](plugins/statusline/README.md) | Statusline avec suivi des coûts, git et support multi-plans | Command, Script |
 | [**experts**](plugins/experts/README.md) | Agent architecte pour analyse de code et évolutions | Agent |
-| [**claude-factory**](plugins/claude-factory/README.md) | Meta-plugin pour créer des outils Claude Code + dream consolidation | Skills |
 | [**frustration-detector**](plugins/frustration-detector/README.md) | Détecte la frustration et adapte le style de Claude (moins de blabla, plus d'action) | Hook |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design en code : HTML/CSS/SVG/Canvas → MP4/WebM/GIF image par image, son synchronisé (Playwright + ffmpeg) | Skill, Script |
 | [**kaizen**](plugins/kaizen/README.md) | SDLC assisté par IA (compound engineering) : constitution d'ingénierie appliquée comme contrôles, brainstorm → plan (traçabilité, menaces, retour arrière, tranches de PR) → doc-review → work (garde-fou) → review multi-agents → ship → babysit-pr, polish UI, leçons/ADR/post-mortems relus à chaque cycle, métriques DORA, release | Skills, Agents, Hook, Script |
@@ -48,7 +47,6 @@ Ou via le mode interactif :
 /plugin install playwright@angelo-plugins
 /plugin install statusline@angelo-plugins
 /plugin install experts@angelo-plugins
-/plugin install claude-factory@angelo-plugins
 /plugin install frustration-detector@angelo-plugins
 /plugin install motion-studio@angelo-plugins
 /plugin install kaizen@angelo-plugins
@@ -180,7 +178,6 @@ marketplace-claude-code/
 │   ├── playwright/           # MCP + Agents tests E2E
 │   ├── statusline/           # Statusline personnalisée
 │   ├── experts/              # Agent architecte
-│   ├── claude-factory/       # Meta-plugin creation outils + dream consolidation
 │   ├── frustration-detector/ # Détection frustration + adaptation style
 │   └── motion-studio/        # Vidéos motion design depuis HTML (Playwright + ffmpeg)
 └── README.md
