@@ -6,16 +6,22 @@
 <!--
   Vidéo de présentation du plugin Kaizen (61 s, 1920×1080, 30 fps), rendue avec le plugin motion-studio.
 
-  Métaphore unique : une spirale qui monte. Chaque tour est un cycle
-  (brainstorm → plan → work → review → ship → compound), chaque tour est plus haut que le précédent
-  (改善, amélioration continue). Un cube, l'unité de travail, parcourt la spirale ; la constitution est
-  le socle ; au centre, une colonne grandit d'une dalle à chaque leçon capitalisée.
+  Métaphore : une spirale qui monte au-dessus d'un jardin sec. Chaque tour est un cycle
+  (brainstorm → plan → work → review → ship → compound) et monte plus haut que le précédent
+  (改善, amélioration continue). Un cube vermillon, l'unité de travail, suit le chemin de pierres ;
+  les quatre pierres posées dans le gravier sont les articles de la constitution ; le garde-fou est
+  un torii fermé par une barre tant que les tests sont rouges ; chaque leçon capitalisée ajoute une
+  pierre à la pile du centre. L'ensō (cercle tracé d'un seul geste) ouvre et ferme la boucle.
+
+  Direction artistique : papier washi, encre sumi, vermillon shu, beaucoup de vide (ma). Les seuls
+  caractères japonais sont 改善 (kaizen) et les numéraux 一 à 六 des six étapes.
   Aucun chiffre inventé : la seule source citée est le rapport DORA 2025 (qualitatif) ; les cartes
   d'exemple reprennent l'exemple de la documentation (SHOP-412, export CSV) et sont marquées « exemple ».
+  Polices : Shippori Mincho et Zen Kaku Gothic New (SIL OFL 1.1, voir fonts/), sous-ensembles embarqués.
 
   Rendu (depuis ce dossier, <work> = dossier de travail) :
     node ../../../../motion-studio/scripts/voice.mjs narration.json -o <work>/voice
-    node ../../../../motion-studio/scripts/sfx.mjs bed --bpm 84 --duration 61 --start 9.1 --root 45 -o <work>/bed.wav > <work>/bed.json
+    node bed-ma.mjs --duration 61 --bpm 84 --start 9.1 -o <work>/bed.wav > <work>/bed.json
     node ../../../../motion-studio/scripts/render.mjs kaizen-presentation.html --voice <work>/voice/voice.json \
          --audio <work>/bed.wav --beats <work>/bed.json -o ../kaizen-presentation.mp4
 -->
@@ -26,78 +32,98 @@
 } }
 </script>
 <style>
+  @font-face { font-family: "Shippori Mincho"; font-weight: 500; font-display: block; src: url(fonts/shippori-mincho-500-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+  @font-face { font-family: "Shippori Mincho"; font-weight: 700; font-display: block; src: url(fonts/shippori-mincho-700-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+  @font-face { font-family: "Shippori Mincho"; font-weight: 500; font-display: block; src: url(fonts/shippori-mincho-500-kanji.woff2) format("woff2"); unicode-range: U+4E00, U+4E09, U+4E8C, U+4E94, U+516D, U+5584, U+56DB, U+6539; }
+  @font-face { font-family: "Shippori Mincho"; font-weight: 700; font-display: block; src: url(fonts/shippori-mincho-700-kanji.woff2) format("woff2"); unicode-range: U+4E00, U+4E09, U+4E8C, U+4E94, U+516D, U+5584, U+56DB, U+6539; }
+  @font-face { font-family: "Zen Kaku Gothic New"; font-weight: 400; font-display: block; src: url(fonts/zen-kaku-gothic-new-400-latin.woff2) format("woff2"); }
+  @font-face { font-family: "Zen Kaku Gothic New"; font-weight: 700; font-display: block; src: url(fonts/zen-kaku-gothic-new-700-latin.woff2) format("woff2"); }
+
   :root {
-    --ink: #0f1013; --paper: #ece6d8; --muted: #8f8a7e; --line: #3a3832;
-    --seal: #d8412f; --ok: #6fae7c;
+    --washi: #efe8d9; --washi2: #f6f1e6; --sumi: #1d1c1a; --usu: #7a7468; --line: #d2c8b4;
+    --shu: #c4401f; --koke: #5d7436;
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .35 0 0 0 0 .25 0 0 0 .11 0'/%3E%3C/filter%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .22' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .43 0 0 0 0 .32 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); }
-  body { font-family: "Liberation Sans", "DejaVu Sans", Arial, sans-serif; color: var(--paper); position: relative; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--washi); }
+  body { font-family: "Zen Kaku Gothic New", "Liberation Sans", sans-serif; color: var(--sumi); position: relative; }
   canvas#gl { position: absolute; inset: 0; }
-  .serif { font-family: "Liberation Serif", "DejaVu Serif", serif; }
+  .mincho { font-family: "Shippori Mincho", "Liberation Serif", serif; }
   .mono { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; }
   .ov { position: absolute; left: 130px; top: 150px; width: 640px; opacity: 0; transform-origin: 0 50%; }
-  /* plaques montées sur la spirale (rendu CSS3D : le texte reste net) */
-  .ov.plate { left: 0; top: 0; transform-origin: 50% 50%; width: 760px; padding: 44px 52px 48px; background: rgba(15,16,19,.95); border: 1px solid #3a3832; border-top: 2px solid var(--seal); }
-  #css3d { position: absolute; inset: 0; pointer-events: none; }
-  .kicker { font-size: 22px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
-  .rule { height: 2px; background: var(--seal); width: 64px; margin: 22px 0 26px; }
-  .h { font-size: 64px; line-height: 1.08; letter-spacing: -0.01em; }
-  .b { font-size: 30px; line-height: 1.45; color: var(--paper); }
-  .m { color: var(--muted); }
-  .ex { display: inline-block; font-size: 18px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 3px 10px; margin-bottom: 18px; }
-  .panel { border-top: 2px solid var(--line); padding-top: 22px; }
+  /* plaques de papier montées sur la spirale (rendu CSS3D : le texte reste net) */
+  .ov.plate { left: 0; top: 0; transform-origin: 50% 50%; width: 780px; padding: 50px 56px 54px 118px;
+    background: var(--grain), var(--washi2); box-shadow: 0 40px 60px -40px rgba(70,52,28,.45), 0 0 0 1px rgba(120,100,70,.12); }
+  .num { position: absolute; left: 40px; top: 46px; font-size: 52px; font-weight: 700; color: var(--shu); writing-mode: vertical-rl; line-height: 1; font-family: "Shippori Mincho", serif; }
+  .kicker { font-size: 21px; letter-spacing: .26em; text-transform: uppercase; color: var(--usu); }
+  .rule { height: 3px; background: var(--shu); width: 56px; margin: 22px 0 26px; border-radius: 2px; }
+  .h { font-size: 66px; line-height: 1.1; font-weight: 500; }
+  .b { font-size: 30px; line-height: 1.5; }
+  .m { color: var(--usu); }
+  .ex { display: inline-block; font-size: 17px; letter-spacing: .16em; text-transform: uppercase; color: var(--usu); border: 1px solid var(--line); padding: 3px 10px; margin-bottom: 18px; }
+  .panel { border-top: 1px solid var(--line); padding-top: 18px; }
   .rowx { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 30px; }
-  .ctl { font-size: 22px; color: var(--ok); letter-spacing: .06em; }
-  .seal { display: inline-grid; place-items: center; width: 118px; height: 118px; border: 5px solid var(--seal); color: var(--seal); border-radius: 10px; font-size: 22px; font-weight: 700; letter-spacing: .08em; transform: rotate(-8deg); }
-  .bar { height: 10px; background: #24231f; margin-top: 10px; position: relative; }
-  .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--paper); }
-  .bar b { position: absolute; top: -8px; bottom: -8px; width: 2px; background: var(--seal); }
-  .btn { display: inline-block; padding: 16px 40px; border: 2px solid var(--paper); font-size: 30px; font-weight: 700; letter-spacing: .04em; }
-  .lbl { position: absolute; font-size: 22px; letter-spacing: .06em; color: var(--paper); transform: translate(-50%, -150%); white-space: nowrap; opacity: 0; }
-  #title { left: 130px; top: 300px; width: 900px; }
-  #title .k { font-size: 190px; line-height: 1; letter-spacing: -0.02em; }
-  #title .jp { font-family: "IPAGothic", "WenQuanYi Zen Hei", sans-serif; font-size: 40px; color: var(--seal); letter-spacing: .3em; margin-top: 18px; }
-  #outro { left: 130px; top: 300px; width: 760px; }
-  #outro .k { font-size: 170px; line-height: 1; }
-  #outro .t { font-size: 40px; margin-top: 28px; color: var(--paper); }
-  #outro .i { font-size: 28px; margin-top: 44px; color: var(--muted); }
+  .ctl { font-size: 21px; color: var(--koke); letter-spacing: .06em; }
+  .seal { display: inline-grid; place-items: center; width: 132px; height: 132px; border: 6px double var(--shu); color: var(--shu); border-radius: 8px;
+    font-size: 23px; font-weight: 700; letter-spacing: .08em; transform: rotate(-6deg); background: rgba(196,64,31,.05); }
+  .bar { height: 8px; background: #ddd3bf; margin-top: 10px; position: relative; }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--sumi); }
+  .bar b { position: absolute; top: -8px; bottom: -8px; width: 2px; background: var(--shu); }
+  .btn { display: inline-block; padding: 14px 40px; border: 2px solid var(--sumi); font-size: 30px; font-weight: 700; letter-spacing: .04em; }
+  .hanko { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 104px; height: 104px;
+    background: var(--shu); color: var(--washi2); border-radius: 9px; font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 40px; line-height: 1;
+    box-shadow: inset 0 0 0 5px var(--shu), inset 0 0 0 7px rgba(246,241,230,.85); opacity: 0; }
+  .lbl { position: absolute; font-size: 21px; letter-spacing: .05em; color: var(--sumi); transform: translate(-50%, -160%); white-space: nowrap; opacity: 0; }
+  .lbl b { font-family: "Shippori Mincho", serif; font-weight: 700; color: var(--shu); margin-right: 8px; }
+  #title { left: 150px; top: 330px; width: 900px; }
+  #title .k, #outro .k { font-size: 168px; line-height: 1; letter-spacing: -0.01em; font-weight: 500; }
+  #outro { left: 150px; top: 250px; width: 820px; }
+  #outro .t { font-size: 40px; margin-top: 196px; line-height: 1.35; font-family: "Shippori Mincho", serif; }
+  #outro .i { font-size: 27px; margin-top: 30px; color: var(--usu); }
+  #enso { position: absolute; inset: 0; pointer-events: none; }
   #cursor { position: absolute; width: 40px; height: 40px; opacity: 0; }
   #scrim { position: absolute; inset: 0; pointer-events: none; opacity: 0;
-    background: linear-gradient(90deg, rgba(15,16,19,.94) 0, rgba(15,16,19,.86) 760px, rgba(15,16,19,0) 1080px); }
+    background: linear-gradient(90deg, rgba(239,232,217,.97) 0, rgba(239,232,217,.9) 760px, rgba(239,232,217,0) 1100px); }
   #vignette { position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(ellipse at 60% 50%, rgba(15,16,19,0) 55%, rgba(15,16,19,.55) 100%); }
+    background: radial-gradient(ellipse at 58% 50%, rgba(80,60,30,0) 58%, rgba(80,60,30,.17) 100%); }
+  #grain { position: absolute; inset: 0; pointer-events: none; background: var(--grain); mix-blend-mode: multiply; }
+  #css3d { position: absolute; inset: 0; pointer-events: none; }
+  /* sous-titres du renderer : encre sur papier plutôt que blanc cerclé de noir */
+  #__captions { color: #1d1c1a !important; -webkit-text-stroke: 0 !important; font-family: "Zen Kaku Gothic New", sans-serif !important;
+    text-shadow: 0 0 5px #efe8d9, 0 0 12px #efe8d9, 0 0 22px rgba(239,232,217,.95), 0 0 34px rgba(239,232,217,.8) !important; }
 </style>
 </head>
 <body data-width="1920" data-height="1080" data-fps="30" data-duration="61" data-seed="11">
 <canvas id="gl"></canvas>
 <div id="labels"></div>
 <div id="scrim"></div>
-<div id="vignette"></div>
+<canvas id="enso" width="1920" height="1080"></canvas>
 
 <!-- 3.0–8.6 · DORA -->
 <div class="ov" id="o-dora">
   <div class="kicker">DORA · State of AI-assisted Software Development 2025</div>
   <div class="rule"></div>
-  <div class="h serif">L'IA amplifie.</div>
+  <div class="h mincho">L'IA amplifie.</div>
   <div class="panel" style="margin-top:36px">
     <div class="rowx"><span>Livraison</span><span>↑</span></div>
-    <div class="rowx" style="color:var(--seal)"><span>Instabilité</span><span>↑</span></div>
+    <div class="rowx" style="color:var(--shu)"><span>Instabilité</span><span>↑</span></div>
   </div>
 </div>
 
 <!-- 9.1–12.6 · titre -->
 <div class="ov" id="title">
-  <div class="k serif">Kaizen</div>
-  <div class="jp">改善</div>
-  <div class="b m" style="margin-top:14px">amélioration continue · pour Claude Code</div>
+  <div style="display:flex;align-items:center;gap:44px">
+    <div class="k mincho">Kaizen</div>
+    <div class="hanko" id="hk1"><span>改</span><span>善</span></div>
+  </div>
+  <div class="b m" style="margin-top:22px">amélioration continue · pour Claude Code</div>
 </div>
 
 <!-- 13.0–17.8 · constitution -->
 <div class="ov" id="o-const">
   <div class="kicker">Le socle</div>
   <div class="rule"></div>
-  <div class="mono" style="font-size:40px">CONSTITUTION.md</div>
+  <div class="mono" style="font-size:38px">CONSTITUTION.md</div>
   <div class="panel" style="margin-top:26px">
     <span class="ex">exemple</span>
     <div class="rowx" id="ar1"><span>I. Preuve d'abord</span><span class="ctl">contrôle ✓</span></div>
@@ -107,65 +133,70 @@
   </div>
 </div>
 
-<!-- 18.0–22.1 · quoi / comment -->
+<!-- 18.0–22.1 · quoi / comment (plaque, station brainstorm) -->
 <div class="ov" id="o-qc">
+  <div class="num">一</div>
   <div class="kicker">Avant le code</div>
   <div class="rule"></div>
-  <div id="qc1"><div class="mono m" style="font-size:26px">/kaizen:brainstorm</div><div class="h serif">quoi</div></div>
-  <div id="qc2" style="margin-top:34px"><div class="mono m" style="font-size:26px">/kaizen:plan</div><div class="h serif">comment</div></div>
+  <div id="qc1"><div class="mono m" style="font-size:25px">/kaizen:brainstorm</div><div class="h mincho">quoi</div></div>
+  <div id="qc2" style="margin-top:30px"><div class="mono m" style="font-size:25px">/kaizen:plan</div><div class="h mincho">comment</div></div>
 </div>
 
-<!-- 22.2–28.2 · traçabilité -->
+<!-- 22.2–28.2 · traçabilité (plaque, station plan) -->
 <div class="ov" id="o-trace">
+  <div class="num">二</div>
   <div class="kicker">Le plan</div>
   <div class="rule"></div>
-  <svg width="640" height="300" viewBox="0 0 640 300" class="mono">
-    <g font-size="26" fill="#ece6d8" font-family="DejaVu Sans Mono">
+  <svg width="600" height="290" viewBox="0 0 640 300">
+    <g font-size="26" fill="#1d1c1a" font-family="DejaVu Sans Mono">
       <text x="0" y="50">R1</text><text x="0" y="150">R2</text><text x="0" y="250">R3</text>
       <text x="560" y="100">U1</text><text x="560" y="200">U2</text>
     </g>
-    <g id="tlinks" stroke="#ece6d8" stroke-width="2" fill="none"></g>
+    <g id="tlinks" stroke="#1d1c1a" stroke-width="2" fill="none"></g>
   </svg>
-  <div class="b" style="margin-top:6px"><span id="pchk" style="color:var(--ok)">plan check ✓</span></div>
-  <div class="b m" id="drv" style="font-size:26px;margin-top:10px">relu par 2 à 6 agents (doc-review)</div>
+  <div class="b" style="margin-top:6px"><span id="pchk" style="color:var(--koke)">plan check ✓</span></div>
+  <div class="b m" id="drv" style="font-size:25px;margin-top:8px">relu par 2 à 6 agents (doc-review)</div>
 </div>
 
-<!-- 28.4–33.1 · garde-fou -->
+<!-- 28.4–33.1 · garde-fou (plaque, station work) -->
 <div class="ov" id="o-gate">
+  <div class="num">三</div>
   <div class="kicker">Hook Stop · garde-fou</div>
   <div class="rule"></div>
-  <pre class="mono" id="term" style="font-size:26px;line-height:1.6"></pre>
-  <div class="b" id="gmsg" style="margin-top:18px"></div>
+  <pre class="mono" id="term" style="font-size:25px;line-height:1.6"></pre>
+  <div class="b" id="gmsg" style="margin-top:16px"></div>
 </div>
 
-<!-- 33.2–38.4 · revue -->
+<!-- 33.2–38.4 · revue (plaque, station review) -->
 <div class="ov" id="o-rev">
+  <div class="num">四</div>
   <div class="kicker">Revue · relecteurs choisis selon le diff</div>
   <div class="rule"></div>
   <span class="ex">exemple</span>
-  <div class="mono" style="font-size:24px;line-height:1.6;color:var(--muted)">execSync(`grep "${customer}" …`)</div>
-  <div class="b" style="margin-top:20px"><span style="color:var(--seal);font-weight:700">P0</span> · injection de commande (CWE-78)</div>
-  <div style="margin-top:34px"><span class="seal" id="seal">VÉRIFIÉ</span></div>
+  <div class="mono" style="font-size:23px;line-height:1.6;color:var(--usu)">execSync(`grep "${customer}" …`)</div>
+  <div class="b" style="margin-top:18px"><span style="color:var(--shu);font-weight:700">P0</span> · injection de commande (CWE-78)</div>
+  <div style="margin-top:30px"><span class="seal" id="seal">VÉRIFIÉ</span></div>
 </div>
 
-<!-- 38.6–47.3 · PR -->
+<!-- 38.6–47.3 · PR (plaque, station ship) -->
 <div class="ov" id="o-pr">
+  <div class="num">五</div>
   <div class="kicker">Ship · babysit-pr</div>
   <div class="rule"></div>
   <span class="ex">exemple</span>
   <div class="b" style="font-weight:700">feat(SHOP-412): export CSV des commandes</div>
-  <div class="mono m" style="font-size:22px;margin-top:22px">taille : <span id="lns">0</span> / 400 lignes</div>
+  <div class="mono m" style="font-size:21px;margin-top:20px">taille : <span id="lns">0</span> / 400 lignes</div>
   <div class="bar"><i id="sz"></i><b style="left:100%"></b></div>
-  <div class="b" id="pk1" style="margin-top:24px">✓ description et guide du relecteur</div>
+  <div class="b" id="pk1" style="margin-top:22px">✓ description et guide du relecteur</div>
   <div class="b" id="pk2">✓ retours de revue traités</div>
   <div class="b" id="pk3">✓ CI verte</div>
-  <div class="b" id="prd" style="margin-top:20px;color:var(--ok)">semble prête à merger</div>
-  <div style="margin-top:34px"><span class="btn" id="mbtn">Merge</span> <span class="b m" id="yours" style="margin-left:20px">à vous</span></div>
+  <div class="b" id="prd" style="margin-top:18px;color:var(--koke)">semble prête à merger</div>
+  <div style="margin-top:30px"><span class="btn" id="mbtn">Merge</span> <span class="b m" id="yours" style="margin-left:20px">à vous</span></div>
 </div>
 
 <!-- 47.5–56.3 · boucle -->
 <div class="ov" id="o-loop">
-  <div class="kicker">Compound</div>
+  <div class="kicker"><span class="mincho" style="color:var(--shu);font-weight:700;letter-spacing:0;margin-right:14px">六</span>Compound</div>
   <div class="rule"></div>
   <div class="mono" style="font-size:30px">docs/solutions/</div>
   <div class="b m" style="margin-top:16px">leçons durables, relues par le cycle suivant</div>
@@ -173,12 +204,17 @@
 
 <!-- 56.8–61 · fin -->
 <div class="ov" id="outro">
-  <div class="k serif">Kaizen</div>
+  <div style="display:flex;align-items:center;gap:44px">
+    <div class="k mincho">Kaizen</div>
+    <div class="hanko" id="hk2"><span>改</span><span>善</span></div>
+  </div>
   <div class="t">Que chaque unité de travail rende la suivante plus facile.</div>
   <div class="i mono">/plugin install kaizen@angelo-plugins</div>
 </div>
 
-<svg id="cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#ece6d8" stroke="#0f1013" stroke-width="1.2"/></svg>
+<svg id="cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#1d1c1a" stroke="#f6f1e6" stroke-width="1.2"/></svg>
+<div id="vignette"></div>
+<div id="grain"></div>
 
 <script type="module">
 import * as THREE from 'three';
@@ -192,101 +228,186 @@ const sstep = (x) => x * x * (3 - 2 * x);
 const eo = (x) => 1 - Math.pow(1 - x, 3);
 const eback = (x) => { const c = 1.4; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
 const lerp = (a, b, k) => a + (b - a) * k;
+const hn = (a, b) => { const h = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return h - Math.floor(h); };
 const sfx = (src, at, gain = 0.35, extra = {}) => window.__sfx?.(src, { at, gain, ...extra });
 
 // ---------------------------------------------------------------- scène
+const WASHI = 0xefe8d9, SHU = 0xc4401f, STONE = 0x5a564f, GRANITE = 0xb4ab9b;
 const renderer = new THREE.WebGLRenderer({ canvas: $('#gl'), antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(devicePixelRatio);
 renderer.setSize(W, H, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0f1013);
-scene.fog = new THREE.Fog(0x0f1013, 22, 70);
+scene.background = new THREE.Color(WASHI);
+scene.fog = new THREE.Fog(WASHI, 26, 64); // brume : la profondeur se lit comme dans un lavis
 const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 200);
 
-scene.add(new THREE.HemisphereLight(0xfff3e2, 0x1a1916, 1.1));
-const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-sun.position.set(12, 20, 9);
+scene.add(new THREE.HemisphereLight(0xfffaf0, 0xb3a790, 1.25));
+const sun = new THREE.DirectionalLight(0xfff1dc, 1.5);
+sun.position.set(8, 20, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 1, far: 60 });
+sun.shadow.radius = 4;
+sun.shadow.bias = -0.0006;
 scene.add(sun);
-
-const PAPER = 0xece6d8, SEAL = 0xd8412f, OK = 0x6fae7c;
+const shadowy = (m, cast = true, receive = false) => { m.castShadow = cast; m.receiveShadow = receive; return m; };
 
 // spirale : 6 stations par tour, chaque tour monte de PITCH
 const R = 5.2, PITCH = 2.3, TURNS = 4.2;
 const helix = (s) => { const a = (s / 6) * Math.PI * 2 - Math.PI / 2; return new THREE.Vector3(R * Math.cos(a), 0.9 + (s / 6) * PITCH, R * Math.sin(a)); };
 class HelixCurve extends THREE.Curve { getPoint(u, v = new THREE.Vector3()) { return v.copy(helix(u * 6 * TURNS)); } }
-const tubeGeo = new THREE.TubeGeometry(new HelixCurve(), 900, 0.055, 8, false);
-const tube = new THREE.Mesh(tubeGeo, new THREE.MeshStandardMaterial({ color: PAPER, roughness: 0.85 }));
+const tubeGeo = new THREE.TubeGeometry(new HelixCurve(), 900, 0.05, 8, false);
+const tube = shadowy(new THREE.Mesh(tubeGeo, new THREE.MeshStandardMaterial({ color: 0x2a2825, roughness: 0.55 })));
 scene.add(tube);
 const tubeIndexCount = tubeGeo.index.count;
 
-// socle : la constitution
-const plinth = new THREE.Mesh(new THREE.BoxGeometry(14, 0.6, 14), new THREE.MeshStandardMaterial({ color: 0x17171a, roughness: 0.95 }));
-plinth.position.y = -0.3;
-scene.add(plinth);
-const plinthEdges = new THREE.LineSegments(new THREE.EdgesGeometry(plinth.geometry), new THREE.LineBasicMaterial({ color: 0x5a564c }));
-plinthEdges.position.copy(plinth.position);
-scene.add(plinthEdges);
-const articles = [0, 1, 2, 3].map((i) => {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.05, 0.16), new THREE.MeshStandardMaterial({ color: 0x3a3832 }));
-  m.position.set(0, 0.03, 3.2 + i * 0.75);
+// pierre irrégulière, déterministe
+function stoneGeo(seed, detail = 2) {
+  const g = new THREE.IcosahedronGeometry(1, detail), p = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    const n = 1 + 0.16 * Math.sin(v.x * 3.1 + seed) * Math.cos(v.z * 2.7 - seed * 0.7) + 0.08 * Math.sin(v.y * 5.3 + seed * 2);
+    v.multiplyScalar(n);
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
+// jardin sec : gravier ratissé en cercles autour du centre et de chaque pierre, en lignes droites ailleurs
+const G = 15;
+const ROCKS = [[-2.7, 6.0, 0.62], [-0.85, 6.5, 0.44], [1.05, 6.2, 0.7], [2.9, 5.7, 0.4]]; // x, z, taille : les 4 articles
+function gravelTexture() {
+  const N = 1536, c = document.createElement('canvas');
+  c.width = c.height = N;
+  const ctx = c.getContext('2d'), img = ctx.createImageData(N, N), d = img.data;
+  const spacing = 0.2;
+  for (let py = 0; py < N; py++) {
+    for (let px = 0; px < N; px++) {
+      const x = (px / N - 0.5) * G, z = (py / N - 0.5) * G;
+      let dist = null;
+      for (const [rx, rz, rs] of ROCKS) { const dd = Math.hypot(x - rx, z - rz) - rs * 1.05; if (dd < 0.75) { dist = Math.max(0, dd); break; } }
+      const rc = Math.hypot(x, z);
+      const groove = dist !== null ? Math.cos((dist / spacing) * Math.PI * 2)
+        : rc < 6.6 ? Math.cos((rc / spacing) * Math.PI * 2) : Math.cos((z / spacing) * Math.PI * 2);
+      const n = hn(px * 0.37, py * 0.53) - 0.5;
+      const v = 222 + 13 * groove + 26 * n;
+      const i = (py * N + px) * 4;
+      d[i] = v + 6; d[i + 1] = v; d[i + 2] = v - 16; d[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+const gravel = gravelTexture();
+const sideMat = new THREE.MeshStandardMaterial({ color: 0xcfc4ad, roughness: 1 });
+const garden = new THREE.Mesh(new THREE.BoxGeometry(G, 0.5, G), [sideMat, sideMat,
+  new THREE.MeshStandardMaterial({ map: gravel, bumpMap: gravel, bumpScale: 1.4, roughness: 1 }), sideMat, sideMat, sideMat]);
+garden.position.y = -0.25;
+garden.receiveShadow = true;
+scene.add(garden);
+// bordure de bois sombre
+const curbMat = new THREE.MeshStandardMaterial({ color: 0x2b2722, roughness: 0.8 });
+const curbs = [[0, G / 2, G + 0.36, 0.36], [0, -G / 2, G + 0.36, 0.36], [G / 2, 0, 0.36, G], [-G / 2, 0, 0.36, G]].map(([x, z, w, d]) => {
+  const m = shadowy(new THREE.Mesh(new THREE.BoxGeometry(w, 0.62, d), curbMat), false, true);
+  m.position.set(x, -0.2, z);
+  scene.add(m);
+  return m;
+});
+// les quatre pierres : les articles de la constitution
+const rocks = ROCKS.map(([x, z, s], i) => {
+  const m = shadowy(new THREE.Mesh(stoneGeo(i * 3.7 + 1), new THREE.MeshStandardMaterial({ color: STONE, roughness: 0.92 })), true, true);
+  m.scale.set(s, s * 0.7, s * 0.85);
+  m.position.set(x, 0, z);
+  m.rotation.y = i * 1.3;
   scene.add(m);
   return m;
 });
 
-// stations
+// pierres de gué : les stations du chemin
 const NAMES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'compound'];
+const KANJI = ['一', '二', '三', '四', '五', '六'];
 const stations = [];
 for (let s = 0; s < 6 * 4; s++) {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 40), new THREE.MeshStandardMaterial({ color: PAPER, roughness: 0.7 }));
-  m.position.copy(helix(s)).add(new THREE.Vector3(0, -0.12, 0));
+  const g = new THREE.CylinderGeometry(0.44, 0.48, 0.13, 11);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), k = 1 + 0.1 * Math.sin(Math.atan2(z, x) * 3 + s); p.setX(i, x * k); p.setZ(i, z * k); }
+  g.computeVertexNormals();
+  const m = shadowy(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: GRANITE, roughness: 1 })), true, true);
+  m.position.copy(helix(s)).add(new THREE.Vector3(0, -0.13, 0));
   scene.add(m);
   stations.push(m);
 }
-$('#labels').innerHTML = NAMES.map((n, i) => `<div class="lbl mono" id="lb${i}">${n}</div>`).join('');
+$('#labels').innerHTML = NAMES.map((n, i) => `<div class="lbl" id="lb${i}"><b>${KANJI[i]}</b>${n}</div>`).join('');
 
-// colonne centrale : une dalle par leçon
+// pile du centre : une pierre plate par leçon
 const slabs = [0, 1, 2, 3].map((i) => {
-  const g = new THREE.BoxGeometry(2.0, 0.34, 2.0);
-  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: PAPER, roughness: 0.6 }));
-  m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: 0x0f1013 })));
-  m.position.set(0, 0.17 + i * 0.36, 0);
+  const g = new THREE.CylinderGeometry(1.0 - i * 0.13, 1.06 - i * 0.13, 0.3, 12);
+  const p = g.attributes.position;
+  for (let j = 0; j < p.count; j++) { const x = p.getX(j), z = p.getZ(j), k = 1 + 0.09 * Math.sin(Math.atan2(z, x) * 2 + i * 1.7); p.setX(j, x * k); p.setZ(j, z * k); }
+  g.computeVertexNormals();
+  const m = shadowy(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x9d9587, roughness: 0.95 })), true, true);
+  m.position.set(0, 0.15 + i * 0.32, 0);
+  m.rotation.y = i * 0.8;
   scene.add(m);
   return m;
 });
 
-// cube : l'unité de travail
-const cube = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.62), new THREE.MeshStandardMaterial({ color: SEAL, roughness: 0.45, emissive: 0x3a0d07 }));
+// cube : l'unité de travail, laque vermillon
+const cube = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.62), new THREE.MeshStandardMaterial({ color: SHU, roughness: 0.3 })));
 scene.add(cube);
 
-// arche du garde-fou, juste après la station work
-const gate = new THREE.Group();
-const gmat = new THREE.MeshStandardMaterial({ color: SEAL, emissive: 0x4a0f08, roughness: 0.5 });
-const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.9, 0.16), gmat);
-const p2 = p1.clone();
-const lin = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 1.6), gmat);
-p1.position.set(0, 0.95, -0.75); p2.position.set(0, 0.95, 0.75); lin.position.set(0, 1.9, 0);
-gate.add(p1, p2, lin);
+// torii du garde-fou, juste après la station work ; le chemin passe dessous
 const gp = helix(2.55);
-gate.position.copy(gp).add(new THREE.Vector3(0, -0.15, 0));
-gate.lookAt(new THREE.Vector3(0, gate.position.y, 0));
-scene.add(gate);
+const torii = new THREE.Group();
+const shuMat = new THREE.MeshStandardMaterial({ color: SHU, roughness: 0.55 });
+const kuroMat = new THREE.MeshStandardMaterial({ color: 0x1f1d1b, roughness: 0.6 });
+const TOP = gp.y + 1.9, HALF = 0.78;
+for (const z of [-HALF, HALF]) {
+  const pillar = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, TOP, 16), shuMat));
+  pillar.position.set(0, TOP / 2, z);
+  const base = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.26, 16), kuroMat));
+  base.position.set(0, 0.13, z);
+  torii.add(pillar, base);
+}
+const nuki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.13, 2.05), shuMat)); nuki.position.y = TOP - 0.45;
+const strut = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.3, 0.12), shuMat)); strut.position.y = TOP - 0.24;
+const shimaki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 2.2), shuMat)); shimaki.position.y = TOP - 0.03;
+const kasaGeo = new THREE.BoxGeometry(0.24, 0.13, 2.7, 1, 1, 24);
+{ const p = kasaGeo.attributes.position; for (let i = 0; i < p.count; i++) { const z = p.getZ(i) / 1.35; p.setY(i, p.getY(i) + 0.16 * Math.pow(Math.abs(z), 3)); } kasaGeo.computeVertexNormals(); }
+const kasagi = shadowy(new THREE.Mesh(kasaGeo, kuroMat)); kasagi.position.y = TOP + 0.09;
+// barre de fermeture (kannuki) : bloque le passage tant que les tests sont rouges
+const barMat = new THREE.MeshStandardMaterial({ color: 0x1f1d1b, roughness: 0.6, transparent: true });
+const kannuki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 1.62), barMat));
+torii.add(nuki, strut, shimaki, kasagi, kannuki);
+torii.position.set(gp.x, 0, gp.z);
+torii.lookAt(new THREE.Vector3(0, 0, 0));
+scene.add(torii);
 
-// relecteurs : petites sphères en orbite autour du cube pendant la revue
-const orbiters = Array.from({ length: 7 }, () => {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), new THREE.MeshStandardMaterial({ color: PAPER, emissive: 0x222018 }));
+// relecteurs : pierres de go en orbite autour du cube pendant la revue
+const orbiters = Array.from({ length: 7 }, (_, i) => {
+  const m = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.12, 20, 12), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xf2eee4 : 0x1d1c1a, roughness: 0.25 })));
+  m.scale.y = 0.55;
   scene.add(m);
   return m;
 });
 
-// flux d'introduction : du code qui arrive plus vite que jamais
+// flux d'introduction : de l'encre qui arrive de plus en plus vite
 const NP = 2600;
 const pGeo = new THREE.BufferGeometry();
 const pPos = new Float32Array(NP * 3), pCol = new Float32Array(NP * 3), seed = [];
 for (let i = 0; i < NP; i++) seed.push([Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random(), Math.random()]);
 pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
-const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.07, vertexColors: true, transparent: true, opacity: 1, depthWrite: false }));
+const dot = document.createElement('canvas'); dot.width = dot.height = 64;
+{ const c = dot.getContext('2d'); const gr = c.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, '#fff'); gr.addColorStop(0.55, '#fff'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, 64, 64); }
+const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.13, vertexColors: true, transparent: true, map: new THREE.CanvasTexture(dot), depthWrite: false }));
 scene.add(points);
 
 // ---------------------------------------------------------------- trajet du cube (s = position sur la spirale)
@@ -315,16 +436,16 @@ const railPose = (t) => railAt(cubeS(t));
 const POSES = [
   [0, () => [new THREE.Vector3(0, 1.4, 16), new THREE.Vector3(0, 1.4, 0)]],
   [9.0, (t) => { const a = 0.6 + (t - 9) * 0.05; return [new THREE.Vector3(19 * Math.cos(a), 10, 19 * Math.sin(a)), new THREE.Vector3(0, 3.6, 0)]; }],
-  [13.0, (t) => { const a = 0.95 + (t - 13) * 0.03; return [new THREE.Vector3(11 * Math.cos(a), 4.2, 11 * Math.sin(a)), new THREE.Vector3(0, 0.2, 2.6)]; }],
+  [13.0, (t) => { const a = 1.8 + (t - 13) * 0.03; return [new THREE.Vector3(11 * Math.cos(a), 4.6, 11 * Math.sin(a)), new THREE.Vector3(0.4, 0.2, 3.6)]; }],
   [18.0, railPose, 2.6],
-  [47.4, (t) => { const top = 0.17 + 0.36 * 1.5; const a = 2.2 + (t - 47.4) * 0.08; return [new THREE.Vector3(12.5 * Math.cos(a), top + 7.5, 12.5 * Math.sin(a)), new THREE.Vector3(0, top + 0.6, 0)]; }],
+  [47.4, (t) => { const top = 0.15 + 0.32 * 1.5; const a = 2.2 + (t - 47.4) * 0.08; return [new THREE.Vector3(12.5 * Math.cos(a), top + 7.5, 12.5 * Math.sin(a)), new THREE.Vector3(0, top + 0.6, 0)]; }],
   [51.0, (t) => { const a = 2.6 + (t - 51) * 0.16; const h = 9 + (t - 51) * 0.9; return [new THREE.Vector3(21 * Math.cos(a), h, 21 * Math.sin(a)), new THREE.Vector3(0, 4 + (t - 51) * 0.4, 0)]; }],
   [56.8, (t) => { const a = 3.5 + (t - 56.8) * 0.05; return [new THREE.Vector3(24 * Math.cos(a), 17, 24 * Math.sin(a)), new THREE.Vector3(0, 6.5, 0)]; }],
 ];
 const BLEND = 1.8;
 const UP = new THREE.Vector3(0, 1, 0);
 const SWOOPS = [
-  [9.0, 2.4, 'z', -10], [13.0, 2.0, 'y', 4], 
+  [9.0, 2.4, 'z', -10], [13.0, 2.0, 'y', 4],
   [46.9, 0.9, 'y', 2.4], [51.0, 2.2, 'z', -7], [56.8, 2.0, 'y', 4],
 ];
 function cameraPose(t) {
@@ -360,8 +481,8 @@ function cameraPose(t) {
 // cartes HTML (le sujet 3D est décalé vers la droite quand une carte occupe la gauche)
 const OVS = [['#o-dora', 3.0, 8.7], ['#title', 9.1, 12.7], ['#o-const', 13.0, 17.9], ['#o-qc', 18.0, 22.1], ['#o-trace', 22.2, 28.2],
   ['#o-gate', 28.4, 33.1], ['#o-rev', 33.2, 38.4], ['#o-pr', 38.6, 47.3], ['#o-loop', 47.5, 56.4], ['#outro', 56.8, 61]];
-const CARD_AXIS = { '#o-dora': 'z', '#title': 'z', '#o-const': 'x', '#o-qc': 'y', '#o-trace': 'x', '#o-gate': 'z', '#o-rev': 'y', '#o-pr': 'x', '#o-loop': 'z', '#outro': 'z' };
-// plaques du rail : chaque chapitre du cycle est posé juste avant sa station, face à la caméra
+const CARD_AXIS = { '#o-dora': 'z', '#title': 'z', '#o-const': 'x', '#o-loop': 'z', '#outro': 'z' };
+// plaques du rail : chaque étape du cycle est posée juste avant sa station, face à la caméra
 const RAIL = { '#o-qc': 0, '#o-trace': 1, '#o-gate': 2, '#o-rev': 3, '#o-pr': 4 };
 const cssRenderer = new CSS3DRenderer();
 cssRenderer.setSize(W, H);
@@ -381,28 +502,56 @@ for (const [id, st] of Object.entries(RAIL)) {
 }
 function ovVis(t, a, b) { return eo(prog(t, a, 0.5)) * (b >= DUR ? 1 : 1 - sstep(prog(t, b - 0.45, 0.45))); }
 
+// ---------------------------------------------------------------- ensō : un cercle tracé d'un seul geste de pinceau
+const ectx = $('#enso').getContext('2d');
+function drawEnso(cx, cy, r, p, thick, alpha) {
+  if (p <= 0 || alpha <= 0) return;
+  const total = Math.PI * 2 * 0.92, th0 = -Math.PI * 0.6, steps = 260, N = 22;
+  ectx.lineCap = 'round';
+  for (let j = 0; j < N; j++) {
+    const o = (j / (N - 1)) * 2 - 1;
+    let prev = null;
+    for (let i = 0; i <= steps * p; i++) {
+      const u = i / steps, th = th0 + total * u;
+      const w = thick * Math.min(1, 0.35 + u * 10) * (1 - 0.62 * u) * (0.88 + 0.12 * Math.sin(u * 9 + 1));
+      const rr = r * (1 + 0.035 * Math.sin(u * 4.6 + 0.6)) + o * w / 2;
+      const pt = [cx + rr * Math.cos(th), cy + rr * Math.sin(th) * 0.96];
+      const dry = clamp((u - 0.5) / 0.5) * 0.8 + (Math.abs(o) > 0.82 ? 0.3 : 0);
+      if (prev && hn(j * 1.7, Math.floor(u * 70)) > dry) {
+        ectx.strokeStyle = `rgba(29,28,26,${(0.86 * alpha).toFixed(3)})`;
+        ectx.lineWidth = (w / N) * 2.3;
+        ectx.beginPath(); ectx.moveTo(prev[0], prev[1]); ectx.lineTo(pt[0], pt[1]); ectx.stroke();
+      }
+      prev = pt;
+    }
+  }
+}
+
 // ---------------------------------------------------------------- sons
 function cues() {
-  sfx('whoosh?dur=1.4&from=200&to=2400', 0.3, 0.25);
-  sfx('glitch', 6.4, 0.18);
+  sfx('whoosh?dur=1.4&from=200&to=1800', 0.3, 0.18);
+  sfx('glitch', 6.4, 0.15);
   // souffle discret sur chaque transition spatiale
-  [13.0, 26.6, 38.0, 47.0, 51.0, 56.8].forEach((at) => sfx('whoosh?dur=1.1&from=300&to=1600', at, 0.13));
-  sfx('riser?dur=1.8', 9.4, 0.3, { align: 'end' });
-  sfx('impact', 9.4, 0.55);
-  [14.2, 14.8, 15.4, 16.0].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.08}`, at, 0.25));
-  sfx('pop', 18.1, 0.25); sfx('whoosh?dur=.9', 21.7, 0.18); sfx('pop?pitch=1.15', 19.7, 0.25);
-  [23.0, 23.5, 24.0, 24.5].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.08}`, at, 0.2));
-  sfx('chime?note=79', 25.6, 0.22);
-  sfx('glitch', 28.9, 0.25);
-  sfx('chime?note=81', 31.8, 0.32);
-  sfx('whoosh?dur=1', 32.0, 0.16);
-  sfx('pop', 35.6, 0.3);
-  sfx('impact?dur=.8', 37.6, 0.4);
-  [40.2, 40.9, 41.6].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.12}`, at, 0.25));
-  sfx('chime?note=81', 42.6, 0.3); sfx('click', 46.0, 0.5);
-  sfx('pop?pitch=.8', 49.3, 0.35);
-  [52.7, 54.3, 55.5].forEach((at, i) => sfx(`pop?pitch=${0.85 + i * 0.1}`, at, 0.25));
-  sfx('chime?note=84', 57.0, 0.4);
+  [13.0, 26.6, 38.0, 47.0, 51.0].forEach((at) => sfx('whoosh?dur=1.1&from=300&to=1400', at, 0.12));
+  // titre : coup de pinceau, cloche, sceau
+  sfx('whoosh?dur=1.3&from=500&to=1300', 9.1, 0.16);
+  sfx('chime?note=57&dur=5', 9.4, 0.42); sfx('kick?dur=.8', 9.4, 0.25);
+  sfx('click?pitch=.5', 10.4, 0.4); sfx('kick?dur=.25', 10.4, 0.18);
+  // pierres de la constitution
+  [14.2, 14.8, 15.4, 16.0].forEach((at, i) => sfx(`click?pitch=${0.42 + i * 0.05}`, at, 0.32));
+  sfx('click?pitch=.7', 18.1, 0.2); sfx('whoosh?dur=.9', 21.7, 0.16); sfx('click?pitch=.8', 19.7, 0.2);
+  [23.0, 23.5, 24.0, 24.5].forEach((at, i) => sfx(`click?pitch=${0.8 + i * 0.06}`, at, 0.14));
+  sfx('chime?note=79', 25.6, 0.18);
+  sfx('glitch', 28.9, 0.2);
+  sfx('chime?note=81', 31.8, 0.28);
+  sfx('whoosh?dur=1', 32.0, 0.14);
+  sfx('click?pitch=.6', 35.6, 0.3);
+  sfx('click?pitch=.5', 37.6, 0.45); sfx('kick?dur=.25', 37.6, 0.22);
+  [40.2, 40.9, 41.6].forEach((at, i) => sfx(`click?pitch=${0.8 + i * 0.1}`, at, 0.2));
+  sfx('chime?note=81', 42.6, 0.25); sfx('click', 46.0, 0.45);
+  [49.3, 52.7, 54.3, 55.5].forEach((at, i) => { sfx(`click?pitch=${0.4 + i * 0.04}`, at, 0.32); sfx('kick?dur=.3', at, 0.14); });
+  sfx('whoosh?dur=1.3&from=500&to=1300', 56.9, 0.16);
+  sfx('click?pitch=.5', 58.2, 0.4); sfx('kick?dur=.25', 58.2, 0.18);
 }
 
 const TERM_RED = '$ npm test\n  ✗ accents lisibles dans Excel\n  ✗ plafond de 10 000 lignes\n  2 failing';
@@ -412,7 +561,7 @@ const tmp = new THREE.Vector3();
 window.__seek = (t) => {
   cues();
 
-  // --- intro : flux de points qui accélère ; avec DORA, une part devient rouge et instable
+  // --- intro : flux d'encre qui accélère ; avec DORA, une part devient vermillon et instable
   const introV = 1 - sstep(prog(t, 8.4, 1.4));
   points.material.opacity = introV;
   points.visible = introV > 0.001;
@@ -426,47 +575,49 @@ window.__seek = (t) => {
       const red = r2 < 0.35 * instab;
       const jx = red ? Math.sin(t * 23 + i) * 0.25 * instab : 0;
       pPos[i * 3] = x * 9 + jx; pPos[i * 3 + 1] = 1.4 + y * 5; pPos[i * 3 + 2] = z;
-      const c = red ? [0.85, 0.25, 0.18] : [0.93, 0.9, 0.85];
-      const f = 0.35 + 0.65 * r2;
-      pCol[i * 3] = c[0] * f; pCol[i * 3 + 1] = c[1] * f; pCol[i * 3 + 2] = c[2] * f;
+      const c = red ? [0.77, 0.25, 0.12] : [0.11, 0.11, 0.1];
+      const f = 0.62 + 0.38 * r2; // les points pâles se fondent dans le papier
+      pCol[i * 3] = lerp(0.94, c[0], f); pCol[i * 3 + 1] = lerp(0.91, c[1], f); pCol[i * 3 + 2] = lerp(0.85, c[2], f);
     }
     pGeo.attributes.position.needsUpdate = true;
     pGeo.attributes.color.needsUpdate = true;
   }
 
-  // --- monde Kaizen : apparaît au titre, la spirale se prolonge pendant la boucle finale
+  // --- jardin : apparaît au titre, la spirale se prolonge pendant la boucle finale
   const worldV = sstep(prog(t, 8.8, 2.0));
   const frac = clamp(0.04 + 0.32 * sstep(prog(t, 8.8, 3.0)) + 0.64 * sstep(prog(t, 50.6, 5.5)));
   tube.geometry.setDrawRange(0, Math.floor((tubeIndexCount * frac) / 3) * 3);
   tube.visible = worldV > 0.001;
-  for (const o of [plinth, plinthEdges, ...articles]) o.visible = worldV > 0.001;
+  for (const o of [garden, ...curbs, torii]) o.visible = worldV > 0.001;
   stations.forEach((m, s) => {
     const turn = Math.floor(s / 6);
     const shown = turn === 0 ? worldV : sstep(prog(t, 51.0 + turn * 1.5, 1.2));
     m.visible = shown > 0.01;
     m.scale.setScalar(Math.max(0.001, shown));
     const active = Math.abs(cubeS(t) - s) < 0.35 && t > 17.8;
-    m.material.emissive.setHex(active ? 0x5a150c : 0x000000);
+    m.material.emissive.setHex(active ? 0x3a1206 : 0x000000);
   });
-  articles.forEach((m, i) => {
-    const k = sstep(prog(t, 14.2 + i * 0.6, 0.5));
-    m.material.color.setRGB(lerp(0.23, 0.92, k), lerp(0.22, 0.9, k), lerp(0.2, 0.85, k));
+  // les pierres sortent du gravier une à une, avec les articles
+  rocks.forEach((m, i) => {
+    const k = eo(prog(t, 14.2 + i * 0.6, 0.6));
+    m.visible = worldV > 0.01 && k > 0.001;
+    m.position.y = -0.55 * ROCKS[i][2] * (1 - k);
   });
 
   // --- cube
   const s = cubeS(t);
   cube.visible = t > 17.4;
-  cube.position.copy(helix(s)).add(new THREE.Vector3(0, 0.38 + 0.06 * Math.sin(t * 3), 0));
+  cube.position.copy(helix(s)).add(new THREE.Vector3(0, 0.4 + 0.05 * Math.sin(t * 3), 0));
   cube.rotation.y = s * 0.9 + t * 0.4;
   cube.scale.setScalar(Math.max(0.001, eback(prog(t, 17.4, 0.6))));
 
-  // --- garde-fou : rouge, puis vert, et l'arche se lève
+  // --- torii : la barre ferme le passage tant que les tests sont rouges, puis se lève
   const green = t >= 31.8;
-  gate.visible = worldV > 0.01 && t < 34;
-  gmat.color.setHex(green ? OK : SEAL);
-  gmat.emissive.setHex(green ? 0x0f2a14 : 0x4a0f08);
-  gate.position.y = gp.y - 0.15 + 2.6 * sstep(prog(t, 31.9, 0.9));
-  gate.scale.setScalar(Math.max(0.001, eo(prog(t, 27.2, 0.6))));
+  const lift = sstep(prog(t, 31.9, 0.8));
+  kannuki.position.y = gp.y + 0.45 + lift * (TOP - 0.9 - gp.y);
+  kannuki.scale.setScalar(Math.max(0.001, eo(prog(t, 28.6, 0.5))));
+  barMat.opacity = 1 - lift;
+  kannuki.visible = t > 28.6 && lift < 0.999;
 
   // --- relecteurs en orbite pendant la revue
   const rv = sstep(prog(t, 33.0, 0.6)) * (1 - sstep(prog(t, 38.2, 0.5)));
@@ -475,18 +626,17 @@ window.__seek = (t) => {
     const a = (i / orbiters.length) * Math.PI * 2 + t * 1.6;
     m.position.copy(cube.position).add(tmp.set(Math.cos(a) * 1.15 * rv, 0.35 * Math.sin(a * 2 + i), Math.sin(a) * 1.15 * rv));
     const hit = i === 2 && t > 35.6;
-    m.material.color.setHex(hit ? SEAL : PAPER);
-    m.material.emissive.setHex(hit ? 0x4a0f08 : 0x222018);
+    m.material.color.setHex(hit ? SHU : i % 2 ? 0xf2eee4 : 0x1d1c1a);
   });
 
-  // --- dalles de leçons : une par passage à compound
+  // --- pile du centre : une pierre par passage à compound
   const drops = [49.3, 52.7, 54.3, 55.5];
   slabs.forEach((m, i) => {
     const k = prog(t, drops[i], 0.7);
     m.visible = t > drops[i] - 0.01 && worldV > 0.01;
-    m.position.y = 0.17 + i * 0.36 + 3.5 * (1 - eo(k));
+    m.position.y = 0.15 + i * 0.32 + 3.5 * (1 - eo(k));
     const fresh = clamp(1 - (t - drops[i] - 0.7) / 1.5);
-    m.material.emissive.setRGB(0.32 * fresh, 0.07 * fresh, 0.04 * fresh);
+    m.material.emissive.setRGB(0.3 * fresh, 0.06 * fresh, 0.02 * fresh);
   });
 
   // --- caméra
@@ -496,8 +646,8 @@ window.__seek = (t) => {
   let shift = 0;
   for (const [id, a, b] of OVS) if (!(id in RAIL)) shift = Math.max(shift, ovVis(t, a, b) * (id === '#title' || id === '#outro' ? 0.7 : 1));
   camera.setViewOffset(W, H, -480 * shift, 0, W, H);
-  $('#scrim').style.opacity = shift;
   camera.updateProjectionMatrix();
+  $('#scrim').style.opacity = shift;
   renderer.render(scene, camera);
   cssRenderer.render(cssScene, camera);
 
@@ -508,13 +658,22 @@ window.__seek = (t) => {
     el.style.left = `${(p.x * 0.5 + 0.5) * W}px`;
     el.style.top = `${(-p.y * 0.5 + 0.5) * H}px`;
     const near = Math.abs(cubeS(t) - i) < 0.6 && t > 17.8 && t < 50.8;
-    el.style.opacity = (p.z < 1 ? 1 : 0) * worldV * (near ? 1 : 0.35) * (1 - sstep(prog(t, 50.8, 1.0))) * (t > 12.8 ? 1 : 0);
-    el.style.color = near ? '#d8412f' : '#ece6d8';
+    el.style.opacity = (p.z < 1 ? 1 : 0) * worldV * (near ? 1 : 0.45) * (1 - sstep(prog(t, 50.8, 1.0))) * (t > 12.8 ? 1 : 0);
+    el.style.color = near ? '#c4401f' : '#1d1c1a';
   });
+
+  // --- ensō et sceaux
+  ectx.clearRect(0, 0, W, H);
+  drawEnso(430, 470, 330, sstep(prog(t, 9.1, 1.3)), 74, ovVis(t, 9.1, 12.7));
+  drawEnso(440, 336, 272, sstep(prog(t, 56.9, 1.3)), 64, ovVis(t, 56.8, 61));
+  for (const [id, at] of [['#hk1', 10.4], ['#hk2', 58.2]]) {
+    const k = prog(t, at, 0.22);
+    $(id).style.opacity = k > 0 ? 0.95 : 0;
+    $(id).style.transform = `rotate(-4deg) scale(${1.35 - 0.35 * eo(k)})`;
+  }
 
   // --- cartes HTML
   for (const [id, a, b] of OVS) {
-    const v = ovVis(t, a, b);
     const el = $(id);
     if (id in RAIL) {
       // plaque sur le rail : visible tant que la caméra est à sa hauteur sur la spirale
@@ -522,12 +681,12 @@ window.__seek = (t) => {
       el.style.opacity = (1 - sstep(clamp((d - 0.2) / 0.45))) * sstep(prog(t, 17.8, 0.8)) * (1 - sstep(prog(t, 47.0, 0.6)));
       continue;
     }
+    const v = ovVis(t, a, b);
     el.style.opacity = v;
     // les cartes entrent et sortent dans l'espace, sur l'axe de leur chapitre
     const e = 1 - v, inn = t < (a + b) / 2, ax = CARD_AXIS[id];
     el.style.transform = ax === 'z' ? `perspective(1400px) translateZ(${inn ? -520 * e : 260 * e}px)`
-      : ax === 'x' ? `perspective(1400px) translateX(${-170 * e}px) rotateY(${(inn ? 38 : -38) * e}deg)`
-      : `perspective(1400px) translateY(${(inn ? 130 : -100) * e}px) rotateX(${(inn ? -34 : 30) * e}deg)`;
+      : `perspective(1400px) translateX(${-170 * e}px) rotateY(${(inn ? 38 : -38) * e}deg)`;
   }
   ['#ar1', '#ar2', '#ar3', '#ar4'].forEach((id, i) => { $(id).style.opacity = 0.25 + 0.75 * sstep(prog(t, 14.2 + i * 0.6, 0.4)); });
   $('#qc2').style.opacity = sstep(prog(t, 19.7, 0.5));
@@ -541,13 +700,13 @@ window.__seek = (t) => {
   const base = green ? TERM_GREEN : TERM_RED;
   const shown = Math.floor(base.length * prog(t, green ? 31.8 : 28.6, green ? 0.3 : 0.8));
   $('#term').innerHTML = base.slice(0, shown)
-    .replace(/✗[^\n]*|2 failing/g, (m) => `<span style="color:#d8412f">${m}</span>`)
-    .replace(/✓[^\n]*|0 failing/g, (m) => `<span style="color:#6fae7c">${m}</span>`);
-  $('#gmsg').innerHTML = green ? '<span style="color:#6fae7c">vert : l\'étape peut se terminer</span>'
-    : t > 29.4 ? '<span style="color:#d8412f">bloqué : fin de l\'étape refusée</span>' : '';
+    .replace(/✗[^\n]*|2 failing/g, (m) => `<span style="color:#c4401f">${m}</span>`)
+    .replace(/✓[^\n]*|0 failing/g, (m) => `<span style="color:#5d7436">${m}</span>`);
+  $('#gmsg').innerHTML = green ? '<span style="color:#5d7436">vert : l\'étape peut se terminer</span>'
+    : t > 29.4 ? '<span style="color:#c4401f">bloqué : fin de l\'étape refusée</span>' : '';
   const sk = eback(prog(t, 37.6, 0.35));
   $('#seal').style.opacity = prog(t, 37.6, 0.1);
-  $('#seal').style.transform = `rotate(-8deg) scale(${1.6 - 0.6 * sk})`;
+  $('#seal').style.transform = `rotate(-6deg) scale(${1.6 - 0.6 * sk})`;
   const z = eo(prog(t, 39.4, 1.2));
   $('#sz').style.width = `${65 * z}%`;
   $('#lns').textContent = Math.round(260 * z);
@@ -562,8 +721,8 @@ window.__seek = (t) => {
   cur.style.top = `${lerp(1000, btn.top + btn.height * 0.5, ck)}px`;
   cur.style.opacity = sstep(prog(t, 44.5, 0.3)) * (1 - sstep(prog(t, 47.0, 0.3)));
   const pressed = t > 46.0 && t < 46.2;
-  $('#mbtn').style.background = t > 46.0 ? '#ece6d8' : 'transparent';
-  $('#mbtn').style.color = t > 46.0 ? '#0f1013' : '#ece6d8';
+  $('#mbtn').style.background = t > 46.0 ? '#1d1c1a' : 'transparent';
+  $('#mbtn').style.color = t > 46.0 ? '#f6f1e6' : '#1d1c1a';
   $('#mbtn').style.transform = `scale(${pressed ? 0.95 : 1})`;
 };
 
