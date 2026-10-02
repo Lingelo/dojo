@@ -36,7 +36,7 @@
   canvas#gl { position: absolute; inset: 0; }
   .serif { font-family: "Liberation Serif", "DejaVu Serif", serif; }
   .mono { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; }
-  .ov { position: absolute; left: 130px; top: 150px; width: 640px; opacity: 0; }
+  .ov { position: absolute; left: 130px; top: 150px; width: 640px; opacity: 0; transform-origin: 0 50%; }
   .kicker { font-size: 22px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
   .rule { height: 2px; background: var(--seal); width: 64px; margin: 22px 0 26px; }
   .h { font-size: 64px; line-height: 1.08; letter-spacing: -0.01em; }
@@ -317,7 +317,12 @@ const POSES = [
   [51.0, (t) => { const a = 2.6 + (t - 51) * 0.16; const h = 9 + (t - 51) * 0.9; return [new THREE.Vector3(21 * Math.cos(a), h, 21 * Math.sin(a)), new THREE.Vector3(0, 4 + (t - 51) * 0.4, 0)]; }],
   [56.8, (t) => { const a = 3.5 + (t - 56.8) * 0.05; return [new THREE.Vector3(24 * Math.cos(a), 17, 24 * Math.sin(a)), new THREE.Vector3(0, 6.5, 0)]; }],
 ];
-const BLEND = 1.4;
+const BLEND = 1.8;
+const UP = new THREE.Vector3(0, 1, 0);
+const SWOOPS = [
+  [9.0, 2.4, 'z', -10], [13.0, 2.0, 'y', 4], [18.0, 2.0, 'x', 3.5], [26.6, 1.6, 'y', 2.6], [31.9, 1.1, 'x', -3],
+  [37.9, 0.9, 'z', 3], [46.9, 0.9, 'y', 2.4], [51.0, 2.2, 'z', -7], [56.8, 2.0, 'y', 4],
+];
 function cameraPose(t) {
   let i = 0;
   while (i + 1 < POSES.length && t >= POSES[i + 1][0]) i++;
@@ -327,17 +332,32 @@ function cameraPose(t) {
     const [pp, pq] = POSES[i - 1][1](t);
     p = pp.lerp(p, k); q = pq.lerp(q, k);
   }
+  // transitions spatiales : chaque changement de chapitre se fait par un mouvement d'un axe de la caméra
+  // x = travelling latéral, y = grue, z = plongée en profondeur (le long du regard)
+  for (const [t0, d, axis, amp] of SWOOPS) {
+    const k = prog(t, t0, d);
+    if (k <= 0 || k >= 1) continue;
+    const o = amp * Math.sin(Math.PI * sstep(k));
+    const fwd = q.clone().sub(p).normalize();
+    const right = fwd.clone().cross(UP).normalize();
+    const up = right.clone().cross(fwd);
+    if (axis === 'z') p = p.clone().add(fwd.multiplyScalar(o));
+    else { const v = (axis === 'x' ? right : up).multiplyScalar(o); p = p.clone().add(v); q = q.clone().add(v.multiplyScalar(0.6)); }
+  }
   return [p, q];
 }
 // cartes HTML (le sujet 3D est décalé vers la droite quand une carte occupe la gauche)
 const OVS = [['#o-dora', 3.0, 8.7], ['#title', 9.1, 12.7], ['#o-const', 13.0, 17.9], ['#o-qc', 18.0, 22.1], ['#o-trace', 22.2, 28.2],
   ['#o-gate', 28.4, 33.1], ['#o-rev', 33.2, 38.4], ['#o-pr', 38.6, 47.3], ['#o-loop', 47.5, 56.4], ['#outro', 56.8, 61]];
+const CARD_AXIS = { '#o-dora': 'z', '#title': 'z', '#o-const': 'x', '#o-qc': 'y', '#o-trace': 'x', '#o-gate': 'z', '#o-rev': 'y', '#o-pr': 'x', '#o-loop': 'z', '#outro': 'z' };
 function ovVis(t, a, b) { return eo(prog(t, a, 0.5)) * (b >= DUR ? 1 : 1 - sstep(prog(t, b - 0.45, 0.45))); }
 
 // ---------------------------------------------------------------- sons
 function cues() {
   sfx('whoosh?dur=1.4&from=200&to=2400', 0.3, 0.25);
   sfx('glitch', 6.4, 0.18);
+  // souffle discret sur chaque transition spatiale
+  [13.0, 26.6, 38.0, 47.0, 51.0, 56.8].forEach((at) => sfx('whoosh?dur=1.1&from=300&to=1600', at, 0.13));
   sfx('riser?dur=1.8', 9.4, 0.3, { align: 'end' });
   sfx('impact', 9.4, 0.55);
   [14.2, 14.8, 15.4, 16.0].forEach((at, i) => sfx(`tick?pitch=${1 + i * 0.08}`, at, 0.25));
@@ -467,7 +487,11 @@ window.__seek = (t) => {
     const v = ovVis(t, a, b);
     const el = $(id);
     el.style.opacity = v;
-    el.style.transform = `translateY(${18 * (1 - v)}px)`;
+    // les cartes entrent et sortent dans l'espace, sur l'axe de leur chapitre
+    const e = 1 - v, inn = t < (a + b) / 2, ax = CARD_AXIS[id];
+    el.style.transform = ax === 'z' ? `perspective(1400px) translateZ(${inn ? -520 * e : 260 * e}px)`
+      : ax === 'x' ? `perspective(1400px) translateX(${-170 * e}px) rotateY(${(inn ? 38 : -38) * e}deg)`
+      : `perspective(1400px) translateY(${(inn ? 130 : -100) * e}px) rotateX(${(inn ? -34 : 30) * e}deg)`;
   }
   ['#ar1', '#ar2', '#ar3', '#ar4'].forEach((id, i) => { $(id).style.opacity = 0.25 + 0.75 * sstep(prog(t, 14.2 + i * 0.6, 0.4)); });
   $('#qc2').style.opacity = sstep(prog(t, 19.7, 0.5));
