@@ -70,11 +70,13 @@
   .btn { display: inline-block; padding: 14px 40px; border: 2px solid var(--sumi); font-size: 30px; font-weight: 700; letter-spacing: .04em; }
   .lbl { position: absolute; font-size: 21px; letter-spacing: .05em; color: var(--sumi); transform: translate(-50%, -160%); white-space: nowrap; opacity: 0; }
   .lbl b { font-family: "Shippori Mincho", serif; font-weight: 700; color: var(--shu); margin-right: 8px; }
-  #title { left: 150px; top: 330px; width: 900px; }
-  #title .k, #outro .k { font-size: 168px; line-height: 1; letter-spacing: -0.01em; font-weight: 500; }
-  #outro { left: 150px; top: 250px; width: 820px; }
-  #outro .t { font-size: 40px; margin-top: 196px; line-height: 1.35; font-family: "Shippori Mincho", serif; }
-  #outro .i { font-size: 27px; margin-top: 30px; color: var(--usu); }
+  /* titre : le mot est centré dans l'ensō, avec de l'air tout autour */
+  #title { left: 200px; top: 404px; width: 720px; text-align: center; transform-origin: 50% 50%; }
+  #title .k, #outro .k { font-size: 150px; line-height: 1; letter-spacing: -0.01em; font-weight: 500; }
+  /* fin : l'ensō devient une marque posée à gauche du mot */
+  #outro { left: 400px; top: 335px; width: 600px; }
+  #outro .t { font-size: 38px; margin-top: 34px; line-height: 1.35; font-family: "Shippori Mincho", serif; }
+  #outro .i { font-size: 27px; margin-top: 30px; white-space: nowrap; color: var(--usu); }
   #enso { position: absolute; inset: 0; pointer-events: none; }
   #cursor { position: absolute; width: 40px; height: 40px; opacity: 0; }
   #scrim { position: absolute; inset: 0; pointer-events: none; opacity: 0;
@@ -107,10 +109,8 @@
 
 <!-- 9.1–12.6 · titre -->
 <div class="ov" id="title">
-  <div style="display:flex;align-items:center;gap:44px">
-    <div class="k mincho">Kaizen</div>
-  </div>
-  <div class="b m" style="margin-top:22px">amélioration continue · pour Claude Code</div>
+  <div class="k mincho">Kaizen</div>
+  <div class="b m" style="margin-top:20px">amélioration continue · pour Claude Code</div>
 </div>
 
 <!-- 13.0–17.8 · constitution -->
@@ -198,9 +198,7 @@
 
 <!-- 56.8–61 · fin -->
 <div class="ov" id="outro">
-  <div style="display:flex;align-items:center;gap:44px">
-    <div class="k mincho">Kaizen</div>
-  </div>
+  <div class="k mincho">Kaizen</div>
   <div class="t">Que chaque unité de travail rende la suivante plus facile.</div>
   <div class="i mono">/plugin install kaizen@angelo-plugins</div>
 </div>
@@ -499,7 +497,7 @@ function ovVis(t, a, b) { return eo(prog(t, a, 0.5)) * (b >= DUR ? 1 : 1 - sstep
 const ectx = $('#enso').getContext('2d');
 function drawEnso(cx, cy, r, p, thick, alpha) {
   if (p <= 0 || alpha <= 0) return;
-  const total = Math.PI * 2 * 0.92, th0 = -Math.PI * 0.6, steps = 260, N = 22;
+  const total = Math.PI * 2 * 0.92, th0 = -Math.PI * 0.6, steps = 620, N = 26;
   ectx.lineCap = 'round';
   for (let j = 0; j < N; j++) {
     const o = (j / (N - 1)) * 2 - 1;
@@ -510,7 +508,7 @@ function drawEnso(cx, cy, r, p, thick, alpha) {
       const rr = r * (1 + 0.035 * Math.sin(u * 4.6 + 0.6)) + o * w / 2;
       const pt = [cx + rr * Math.cos(th), cy + rr * Math.sin(th) * 0.96];
       const dry = clamp((u - 0.5) / 0.5) * 0.8 + (Math.abs(o) > 0.82 ? 0.3 : 0);
-      if (prev && hn(j * 1.7, Math.floor(u * 70)) > dry) {
+      if (prev && hn(j * 1.7, Math.floor(u * 150 + j * 2.3)) > dry) {
         ectx.strokeStyle = `rgba(29,28,26,${(0.86 * alpha).toFixed(3)})`;
         ectx.lineWidth = (w / N) * 2.3;
         ectx.beginPath(); ectx.moveTo(prev[0], prev[1]); ectx.lineTo(pt[0], pt[1]); ectx.stroke();
@@ -635,7 +633,7 @@ window.__seek = (t) => {
   camera.position.copy(cp);
   camera.lookAt(ct);
   let shift = 0;
-  for (const [id, a, b] of OVS) if (!(id in RAIL)) shift = Math.max(shift, ovVis(t, a, b) * (id === '#title' || id === '#outro' ? 0.7 : 1));
+  for (const [id, a, b] of OVS) if (!(id in RAIL)) shift = Math.max(shift, ovVis(t, a, b) * (id === '#title' ? 0.7 : 1));
   camera.setViewOffset(W, H, -480 * shift, 0, W, H);
   camera.updateProjectionMatrix();
   $('#scrim').style.opacity = shift;
@@ -655,8 +653,8 @@ window.__seek = (t) => {
 
   // --- ensō
   ectx.clearRect(0, 0, W, H);
-  drawEnso(430, 470, 330, sstep(prog(t, 9.1, 1.3)), 74, ovVis(t, 9.1, 12.7));
-  drawEnso(440, 336, 272, sstep(prog(t, 56.9, 1.3)), 64, ovVis(t, 56.8, 61));
+  drawEnso(560, 512, 368, sstep(prog(t, 9.1, 1.3)), 66, ovVis(t, 9.1, 12.7));
+  drawEnso(250, 412, 96, sstep(prog(t, 56.9, 1.1)), 26, ovVis(t, 56.8, 61));
 
   // --- cartes HTML
   for (const [id, a, b] of OVS) {
