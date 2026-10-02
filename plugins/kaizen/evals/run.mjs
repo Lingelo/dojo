@@ -40,6 +40,7 @@ function makeRepo(files, steps) {
     if (step.branch) sh(dir, 'git', ['checkout', '-qb', step.branch]);
     if (step.files) write(step.files);
     if (step.tag) sh(dir, 'git', ['tag', step.tag]);
+    if (step.run) execFileSync(process.execPath, [CLI, ...step.run], { cwd: dir, stdio: 'ignore' });
     if (step.commit) {
       sh(dir, 'git', ['add', '-A']);
       sh(dir, 'git', ['commit', '-qm', step.commit]);

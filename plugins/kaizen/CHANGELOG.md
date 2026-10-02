@@ -30,9 +30,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   - `/kaizen:release` (notes de version et SemVer).
 - `node $K size` (plafond `pr.max_lines`) et `verify --only audit` (audit des dépendances).
 - Tests `node:test` (unitaires, CLI, garde-fou, PR avec un faux `gh`, contrats), CI GitHub Actions et
-  16 évaluations de bout en bout (`evals/run.mjs`, vrai `claude -p` sur un projet de démonstration)
-  couvrant 15 skills : review, plan, compound, work, debug, lfg, polish, brainstorm, constitution,
-  decide, ideate, postmortem, metrics, release, refresh.
+  19 évaluations de bout en bout (`evals/run.mjs`, vrai `claude -p` sur un projet de démonstration)
+  couvrant 17 skills : review, plan, doc-review, compound, work, debug, lfg, polish, brainstorm,
+  constitution, decide, ideate, postmortem, metrics, release, refresh, setup.
 - Documentation utilisateur dans `docs/` : démarrage, configuration, packs, dépannage, un guide par
   skill.
 - Vidéo de présentation d'une minute (`docs/media/`), avec voix off, sous-titres et source
@@ -50,6 +50,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   - `release` écrit le CHANGELOG et la version sans commiter ; commit, tag et publication sur accord ;
   - `ideate` part en « Surprends-moi » quand personne ne peut choisir le sujet ;
   - `decide` n'écrit un ADR que pour une décision coûteuse à défaire (description alignée).
+- Windows : `KAIZEN_GH` peut pointer vers un script Node, chemins affichés en style POSIX, CI sur
+  `windows-latest`.
 
 ## [1.0.0] - 2026-10-02
 
