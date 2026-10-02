@@ -1,6 +1,6 @@
 ---
 name: decide
-description: Prend une décision technique difficile ou irréversible sur preuves — cadre la question, explore le code, les leçons, la constitution et la doc externe, compare 2 à 4 options réelles (dont « ne rien faire »), donne un verdict argumenté avec son niveau de confiance et le signal qui ferait changer d'avis, puis l'enregistre en ADR (docs/adr/). Utiliser pour « faut-il adopter X ? », « A ou B ? », « on migre vers… ? », « documente cette décision », /kaizen:decide. Lecture seule jusqu'à l'ADR.
+description: Prend une décision technique difficile ou irréversible sur preuves — cadre la question, explore le code, les leçons, la constitution et la doc externe, compare 2 à 4 options réelles (dont « ne rien faire »), donne un verdict argumenté avec son niveau de confiance et le signal qui ferait changer d'avis, puis l'enregistre en ADR (docs/adr/) quand elle est coûteuse à défaire — une décision qui se défait d'un revert reçoit une réponse simple, sans ADR. Utiliser pour « faut-il adopter X ? », « A ou B ? », « on migre vers… ? », « documente cette décision », /kaizen:decide. Lecture seule jusqu'à l'ADR.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Glob, Grep, Agent, AskUserQuestion, WebSearch, WebFetch
 argument-hint: "[question ou choix à trancher] [adr-only]"
 ---

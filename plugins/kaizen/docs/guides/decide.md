@@ -12,7 +12,7 @@ qui ferait changer d'avis**.
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Cadre la question, ancre (décisions passées, code, doc externe), compare 2 à 4 options dont « ne rien faire », attaque sa propre recommandation, écrit l'ADR |
+| **Ce qu'elle fait** | Cadre la question, ancre (décisions passées, code, doc externe), compare 2 à 4 options dont « ne rien faire », attaque sa propre recommandation, écrit l'ADR si la décision est coûteuse à défaire (sinon répond simplement) |
 | **Quand l'utiliser** | « Faut-il adopter X ? », « A ou B ? », « on migre vers… ? », une KTD du plan trop lourde pour une ligne, « documente cette décision » |
 | **Quand ne pas l'utiliser** | Une décision facile à défaire (un revert suffit) : demandez simplement ; chercher des idées (→ [ideate](ideate.md)) |
 | **Ce qu'elle produit** | Un verdict dans le chat, puis `docs/adr/NNNN-<titre>.md` (statut `proposed` ou `accepted`) |

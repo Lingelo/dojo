@@ -39,6 +39,11 @@ Associe la demande à la skill dont c'est le métier :
 - un résultat **qui n'est pas du code** (idées, explication) → la skill concernée, et c'est tout ;
 - tout autre changement de code → `kaizen:plan mode:return`.
 
+**Pas de raccourci « changement trivial ».** Même pour cinq lignes, la course passe par une source de
+travail (un plan, court s'il le faut), `work` sous garde-fou, `node "$K" verify` et `kaizen:review`.
+Seule la simplification (étape 3) se saute pour un petit diff, et la livraison (9-10) sans remote.
+Qui veut un changement sans cérémonie utilise `/kaizen:work` directement, pas `lfg`.
+
 En cas de doute, la route qui exige le plus de preuves. **Jamais** de plan improvisé par-dessus un plan
 existant, ni de plan pioché au hasard dans le dossier des plans.
 

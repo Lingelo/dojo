@@ -32,6 +32,9 @@
 | un résultat qui n'est pas du code (idées, explication) | la skill concernée, et c'est tout |
 | tout autre changement de code | `plan mode:return` |
 
+Pas de raccourci pour un « petit » changement : plan, garde-fou, `verify` et revue tournent toujours.
+Seules la simplification (petit diff) et la livraison (pas de remote) peuvent être sautées.
+
 ## La course
 
 1. **Source de travail** : un plan prêt (qui passe `plan check` et `doc-review`), ou un correctif de

@@ -24,14 +24,16 @@ Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
    avant la moindre critique. Chaque rejet a une raison.
 3. **Envoyer vers le brainstorm pour agir.** Jamais directement de l'idée au plan.
 4. **Ne jamais lancer sur un sujet non identifié** : demande (3 questions max, « Surprends-moi » est
-   une vraie option, « Annuler » aussi). Ne pose pas de questions de solution, d'audience ou de critères :
+   une vraie option, « Annuler » aussi). Personne pour répondre (session non interactive, ou
+   l'utilisateur a dit ne pas être disponible) → « Surprends-moi », annoncé dans le document. Ne pose pas de questions de solution, d'audience ou de critères :
    c'est le rôle du brainstorm.
 5. **Annonce le coût** (nombre d'agents) avant de lancer.
 
 ## Phase 0 — Sujet et échelle
 
 - Sujet nommé (une zone, un flux, une fonctionnalité) → on reste **dans** ce périmètre, à pleine
-  ambition. Sujet vide → demande, avec « Surprends-moi » en option.
+  ambition. Sujet vide → demande, avec « Surprends-moi » en option (sans interlocuteur :
+  « Surprends-moi » d'office, voir règle 4).
 - « rapide » → 3 à 4 idées par angle ; « en profondeur » → angles séparés et plus de vérification ;
   « top N » → N survivantes (la génération ne change pas).
 - Reprise : un document d'idéation de moins de 30 jours sur le même sujet existe dans

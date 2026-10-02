@@ -29,7 +29,8 @@ raisonnement écrit de bout en bout). Une idée sans base est jetée, aussi séd
 
 ## Comment ça se passe
 
-1. **Sujet** : sans sujet, Claude demande (« Surprends-moi » est une vraie option). Le périmètre
+1. **Sujet** : sans sujet, Claude demande (« Surprends-moi » est une vraie option) ; si personne ne
+   peut répondre, il part d'office en « Surprends-moi » et l'indique. Le périmètre
    demandé est respecté : « la page de facturation » ne déborde pas sur tout le produit.
 2. **Ancrage** :
    - repo, plans récents, leçons (les zones à beaucoup de bugs sont des frictions documentées) ;

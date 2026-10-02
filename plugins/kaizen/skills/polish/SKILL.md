@@ -26,7 +26,9 @@ on ne touche qu'à la surface concernée par les retours.
 - PR ou branche nommée : si elle est déjà extraite dans un autre worktree (`git worktree list`),
   travaille là-bas ; sinon `gh pr checkout <n>` / `git switch <branche>` **seulement** si l'arbre
   courant est propre. Sans argument : la branche courante.
-- Refuse la branche par défaut et un HEAD détaché : dis-le et arrête.
+- Branche par défaut avec un arbre propre → crée une branche locale `polish/<sujet-court>` et dis-le
+  (sans risque : rien n'est poussé). Arbre sale sur la branche par défaut, ou HEAD détaché : dis-le et
+  arrête.
 
 ## 2. Serveur de dev
 

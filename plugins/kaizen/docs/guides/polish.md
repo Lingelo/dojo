@@ -26,7 +26,8 @@ retours et applique chaque retouche sur la surface concernée.
 
 ## Comment ça se passe
 
-1. **Espace de travail** : jamais la branche par défaut. Une PR ou une branche déjà extraite dans un
+1. **Espace de travail** : jamais la branche par défaut. Sur elle, avec un arbre propre, Claude crée
+   une branche locale `polish/<sujet>` et vous le dit. Une PR ou une branche déjà extraite dans un
    autre worktree est travaillée là-bas.
 2. **Serveur de dev** : `node $K dev detect` trouve la commande, le dossier et le port. Sont
    reconnus :

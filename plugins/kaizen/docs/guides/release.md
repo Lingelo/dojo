@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Collecte les commits conventionnels depuis le dernier tag, vérifie le niveau SemVer (cherche les changements cassants cachés), rédige les notes, met à jour le CHANGELOG, établit la checklist de mise en production |
+| **Ce qu'elle fait** | Collecte les commits conventionnels depuis le dernier tag, vérifie le niveau SemVer (cherche les changements cassants cachés), rédige les notes, met à jour le CHANGELOG et la version dans l'arbre de travail (sans commiter), établit la checklist de mise en production |
 | **Quand l'utiliser** | « Prépare la release », « notes de version », « quelle version ? », « changelog » |
 | **Quand ne pas l'utiliser** | Livrer une PR (→ [ship](ship.md)) |
 | **Ce qu'elle produit** | Notes de version, version proposée, entrée de `CHANGELOG.md` (format Keep a Changelog), checklist |

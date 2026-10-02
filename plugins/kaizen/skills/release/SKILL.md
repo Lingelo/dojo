@@ -35,7 +35,9 @@ cassant a sa **migration** (avant → après, étapes). Liens vers PR et plans (
 ils éclairent. Supprime le bruit (chore, ci, tests, refactors invisibles).
 
 Mets à jour `CHANGELOG.md` (format Keep a Changelog : `## [x.y.z] - YYYY-MM-DD`) s'il existe ou si
-l'utilisateur le veut.
+l'utilisateur le veut, et la version du manifeste (`package.json`…) : **dans l'arbre de travail,
+sans commiter**, y compris sur la branche par défaut — c'est relisible et se défait d'un
+`git checkout`. Le commit de release, le tag et la publication restent à l'étape 5, sur accord.
 
 ## 4. Checklist de mise en production
 
