@@ -51,7 +51,11 @@ function makeRepo(files, steps) {
 function runClaude(dir, prompt, timeoutMs) {
   return new Promise((resolve) => {
     const args = ['--plugin-dir', PLUGIN, '-p', prompt, '--allowedTools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Agent', 'Skill', 'TaskCreate', 'TaskUpdate'];
-    const child = spawn('claude', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+    // Session isolée : sans cela, un claude -p lancé depuis une session Claude Code hérite de son
+    // identifiant et écrit dans sa liste de tâches.
+    const env = { ...process.env };
+    for (const k of ['CLAUDE_CODE_SESSION_ID', 'CLAUDE_PID', 'CLAUDE_CODE_CHILD_SESSION']) delete env[k];
+    const child = spawn('claude', args, { cwd: dir, env, stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
     child.stdout.on('data', (d) => (out += d));
     child.stderr.on('data', (d) => (out += d));
