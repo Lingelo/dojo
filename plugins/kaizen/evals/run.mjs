@@ -9,7 +9,7 @@
 // Coûteux (appels de modèle réels) : à lancer avant une release, pas dans la CI par défaut.
 
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtempSync, readdirSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,6 +39,7 @@ function makeRepo(files, steps) {
   for (const step of steps || []) {
     if (step.branch) sh(dir, 'git', ['checkout', '-qb', step.branch]);
     if (step.files) write(step.files);
+    if (step.tag) sh(dir, 'git', ['tag', step.tag]);
     if (step.commit) {
       sh(dir, 'git', ['add', '-A']);
       sh(dir, 'git', ['commit', '-qm', step.commit]);
@@ -72,6 +73,27 @@ const ctx = (dir) => ({
     }
   },
   git: (...args) => sh(dir, 'git', args),
+  run: (cmd, args) => {
+    try {
+      return { code: 0, out: execFileSync(cmd, args, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000 }) };
+    } catch (e) {
+      return { code: e.status ?? 1, out: `${e.stdout || ''}${e.stderr || ''}` };
+    }
+  },
+  read: (p) => {
+    try {
+      return readFileSync(join(dir, p), 'utf8');
+    } catch {
+      return '';
+    }
+  },
+  lsRead: (p, re) => {
+    try {
+      return readdirSync(join(dir, p), { recursive: true }).filter((f) => re.test(f)).map((f) => readFileSync(join(dir, p, f), 'utf8')).join('\n');
+    } catch {
+      return '';
+    }
+  },
   ls: (p) => {
     try {
       return readdirSync(join(dir, p), { recursive: true }).filter((f) => !f.endsWith('.gitkeep'));
