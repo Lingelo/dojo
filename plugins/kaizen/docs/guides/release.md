@@ -45,6 +45,8 @@
    3. tag annoté ;
    4. push ;
    5. `gh release create`.
+6. **Mise en production** : `release` ne déploie pas ; il propose `/kaizen:deploy <env> vX.Y.Z`
+   ([deploy](deploy.md)) quand des environnements sont configurés.
 
 ## Bon à savoir
 

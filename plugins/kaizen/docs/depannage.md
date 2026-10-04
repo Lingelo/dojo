@@ -35,6 +35,15 @@ C'est le hook de revue : dans un repo Kaizen, une branche ne part pas sans revue
 | « aucun relecteur Kaizen lancé » au moment de `review record` | la revue n'a pas lancé ses relecteurs (ou ils ont tourné dans une autre session de plus de 12 h) : relancez `/kaizen:review` |
 | Vous ne voulez pas de cette règle dans ce repo | `"review": { "require_before_push": false }` |
 
+## Déploiement refusé
+
+| Message | Que faire |
+|---|---|
+| « Déploiement direct de production refusé » | passez par `/kaizen:deploy production` : il demande votre approbation, pose le tag et surveille |
+| « production est protégé : approbation requise » | tapez vous-même le code affiché : `kaizen deploy <code>` (30 min, pour ce commit) |
+| « environnement inconnu » | déclarez-le dans `.kaizen/config.json` → `deploy.environments` ([configuration](configuration.md#deploy--déploiement-et-retour-arrière)) |
+| « Les tags deploy/… ne se créent que par kaizen.mjs » | ne créez pas ces tags à la main : ils portent les métriques DORA et la chronologie des incidents |
+
 ## `plan check` est rouge
 
 `node $K plan check <plan>` liste chaque problème. Les plus fréquents :

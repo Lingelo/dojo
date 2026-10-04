@@ -20,11 +20,17 @@ const command = String(input.tool_input?.command || '');
 const filePath = String(input.tool_input?.file_path || input.tool_input?.notebook_path || '');
 // Filtres bon marché avant tout import : ce hook voit passer chaque commande Bash et chaque écriture.
 const PUSH = /(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+push(\s|$)/;
-const TAMPER = /(reviews|review-evidence|waivers)\.json|review-hooks\.mjs/;
+const TAMPER = /(reviews|review-evidence|waivers|deploy-approvals)\.json|deployments\.jsonl|review-hooks\.mjs/;
+// Tags de déploiement fabriqués à la main : ils fausseraient les métriques DORA et les post-mortems.
+const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback)\//;
 const tamper = input.tool_name === 'Bash'
   ? TAMPER.test(command) && /\.kaizen|review-hooks\.mjs/.test(command)
   : /\.kaizen[\\/]state[\\/]/.test(filePath) && TAMPER.test(filePath);
-if (!tamper && (input.tool_name && input.tool_name !== 'Bash' || !PUSH.test(command))) process.exit(0);
+const isBash = !input.tool_name || input.tool_name === 'Bash';
+const forged = isBash && FORGED_TAG.test(command) && !/\s(-d|--delete|-l|--list)\b/.test(command);
+// La commande de déploiement d'un environnement protégé n'est connue qu'après lecture de la config :
+// toute commande Bash non triviale passe donc par ce contrôle dans un repo Kaizen (lecture d'un JSON).
+if (!tamper && !forged && (!isBash || (!PUSH.test(command) && !command.trim()))) process.exit(0);
 
 try {
   const { existsSync } = await import('node:fs');
@@ -34,12 +40,34 @@ try {
   if (!root || !existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
   if (tamper) {
     process.stderr.write(
-      '[kaizen] Les preuves de revue (.kaizen/state/reviews.json, review-evidence.json, waivers.json) ne s\'écrivent ' +
+      '[kaizen] Les preuves de revue et de déploiement (.kaizen/state/reviews.json, review-evidence.json, waivers.json, ' +
+        'deploy-approvals.json, deployments.jsonl) ne s\'écrivent ' +
         'que par le CLI et les hooks. Pour lire l\'état : `review status`. Pour renoncer à la revue : `review waive --reason`, ' +
         'confirmé par l\'utilisateur.\n',
     );
     process.exit(2);
   }
+  if (forged) {
+    process.stderr.write('[kaizen] Les tags deploy/… et rollback/… ne se créent que par `kaizen.mjs deploy run|rollback` : ils portent les métriques DORA et la chronologie des post-mortems.\n');
+    process.exit(2);
+  }
+  // Déploiement direct d'un environnement protégé : il passe par /kaizen:deploy (approbation tapée par
+  // l'utilisateur, tag, surveillance), jamais par sa commande brute.
+  if (!/kaizen\.mjs/.test(command)) {
+    const { loadConfig } = await import('./lib.mjs');
+    const envs = loadConfig(root).deploy.environments || {};
+    for (const [name, e] of Object.entries(envs)) {
+      const prot = e.protected ?? name === 'production';
+      if (prot && e.command && command.includes(e.command)) {
+        process.stderr.write(
+          `[kaizen] Déploiement direct de ${name} refusé : passe par /kaizen:deploy ${name} ` +
+            '(approbation que l\'utilisateur tape lui-même, tag de déploiement, surveillance des signaux, retour arrière prêt).\n',
+        );
+        process.exit(2);
+      }
+    }
+  }
+  if (!PUSH.test(command)) process.exit(0);
   // Supprimer une branche distante ou ne pousser que des tags ne publie aucun code nouveau.
   const pushPart = command.slice(command.search(PUSH)).split(/[;&|]/)[0];
   if (/\s(--delete|-d|--tags)(\s|$)/.test(pushPart) || /\s:\S+/.test(pushPart)) process.exit(0);

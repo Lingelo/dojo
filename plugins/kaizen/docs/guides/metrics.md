@@ -38,8 +38,10 @@ Brut : `node $K metrics --since 90d` (ajoutez `--no-github` si `gh` n'est pas au
 
 ## Lire honnêtement
 
-- Ce sont des **approximations** depuis la branche par défaut, pas une mesure de votre système de
-  déploiement. Chaque indicateur affiche sa méthode.
+- Avec [`/kaizen:deploy`](deploy.md), les indicateurs viennent des **vrais déploiements** de
+  production (tags `deploy/…` et `rollback/…`) : fréquence, délai premier commit → production, taux
+  d'échec (déploiement suivi d'un retour arrière), temps de rétablissement. Sans déploiement tracé, ce
+  sont des **approximations** depuis la branche par défaut. Chaque indicateur affiche sa méthode.
 - Limites signalées :
   - clone superficiel (`--depth`) ;
   - merges squash sans accès GitHub (délai indisponible) ;

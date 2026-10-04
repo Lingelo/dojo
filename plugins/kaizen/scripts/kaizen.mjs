@@ -3,6 +3,11 @@
 //
 //   node kaizen.mjs status [--json]              où en est le repo dans la boucle, et la commande suivante
 //   node kaizen.mjs root                         chemins des livrables (JSON)
+//   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
+//                                                 déploiement par les commandes de l'équipe, tag deploy/<env>/…
+//   node kaizen.mjs deploy flag on|off <nom> [--env e]     feature flag (deploy.flags)
+//   node kaizen.mjs monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]
+//                                                 signaux de production (exit 1 si seuil franchi)
 //   node kaizen.mjs config                       configuration effective (JSON)
 //   node kaizen.mjs init [--docs-root d] [--language fr] [--profile lean|standard|full]   initialise .kaizen/ et les dossiers
 //   node kaizen.mjs detect                       stack et commandes de vérification (JSON)
@@ -41,6 +46,8 @@ import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
 import { computeMetrics } from './metrics.mjs';
 import { releaseNotes } from './release.mjs';
+import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs';
+import { check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
 import {
   DEFAULT_CONFIG,
@@ -574,6 +581,9 @@ function repoStatus(root) {
     if (review?.pending_waiver) say('kaizen waive <code>', 'une renonciation à la revue attend votre confirmation (à taper vous-même)');
     else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branche ${branch} relue (${review.push.reason}) : prête à livrer`);
     else say('/kaizen:review', `branche ${branch} : ${review?.review ? review.push.reason : 'changements pas encore relus'}${dirty ? ' (non commités compris)' : ''}`);
+  } else if (branch && branch === def && undeployed(root, config)) {
+    const u = undeployed(root, config);
+    say(`/kaizen:deploy ${u.env}`, `${u.commits} commit(s) de ${def} pas encore déployé(s) sur ${u.env}${u.last ? ` (dernier : ${u.last})` : ''}`);
   } else if (latest?.stage === 'requirements') say(`/kaizen:plan ${latest.path}`, 'des exigences attendent leur plan d’implémentation');
   else if (latest?.stage === 'implementation-ready' && !latest.errors) say(`/kaizen:work ${latest.path}`, 'un plan prêt attend d’être exécuté (si ce n’est pas déjà fait)');
   if (!next.length || (initialized && constitution.exists && !gate.active && !(branch && branch !== def && (ahead || dirty)))) {
@@ -592,9 +602,21 @@ function repoStatus(root) {
     latest_plan: latest,
     learnings,
     gate: { active: Boolean(gate.active), plan: gate.plan || null, since: gate.since || null },
+    deploy: Object.keys(config.deploy.environments || {}).length ? { environments: Object.keys(config.deploy.environments), undeployed: undeployed(root, config) } : null,
     review: review ? { verdict: review.review?.verdict || null, depth: review.review?.depth || null, push_allowed: review.push.allowed, reason: review.push.reason, pending_waiver: Boolean(review.pending_waiver) } : null,
     next,
   };
+}
+
+// Commits de la branche courante pas encore déployés sur le premier environnement déclaré (staging
+// avant production) : null si rien n'est configuré ou si tout est déployé.
+function undeployed(root, config) {
+  const envs = Object.keys(config.deploy.environments || {});
+  if (!envs.length) return null;
+  const env = envs.includes('production') ? 'production' : envs[0];
+  const last = deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1);
+  const commits = Number(git(root, ['rev-list', '--count', last ? `${last.sha}..HEAD` : 'HEAD'], { allowFail: true }) || 0);
+  return commits ? { env, commits, last: last?.tag || null } : null;
 }
 
 function cmdStatus(root) {
@@ -622,6 +644,59 @@ try {
     case 'root':
       out(paths(requireRepo()));
       break;
+    case 'deploy': {
+      const root = requireRepo();
+      const env = positional[2];
+      const ref = typeof flags.ref === 'string' ? flags.ref : undefined;
+      if (sub === 'request') out(requestDeploy(root, env, { ref }));
+      else if (sub === 'run') {
+        // Plans livrés depuis le dernier déploiement de cet environnement : leurs signaux et seuils
+        // serviront à la surveillance qui suit.
+        const last = deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1);
+        const plans = releaseNotes(root, { from: last?.tag, to: ref || 'HEAD' }).rollout.map((r) => r.plan);
+        const r = deploy(root, env, { ref, plans });
+        out(r);
+        process.exit(r.ok ? 0 : 1);
+      } else if (sub === 'rollback') {
+        const r = rollback(root, env, { reason: typeof flags.reason === 'string' ? flags.reason : null, to: typeof flags.to === 'string' ? flags.to : undefined });
+        out(r);
+        process.exit(r.ok ? 0 : 1);
+      } else if (sub === 'list') out(deployments(root, { env: typeof flags.env === 'string' ? flags.env : null }));
+      else if (sub === 'flag') {
+        const state = positional[2];
+        if (!['on', 'off'].includes(state) || !positional[3]) die('usage : deploy flag on|off <nom> [--env e]');
+        const r = flag(root, state, positional[3], { env: typeof flags.env === 'string' ? flags.env : null });
+        out(r);
+        process.exit(r.ok ? 0 : 1);
+      } else die('usage : deploy request|run <env> [--ref r] | deploy rollback <env> [--reason …] [--to r] | deploy list [--env e] | deploy flag on|off <nom>');
+      break;
+    }
+    case 'monitor': {
+      const root = requireRepo();
+      const env = typeof flags.env === 'string' ? flags.env : null;
+      // Sans --plan : les plans du dernier déploiement de l'environnement (seuils de leur rollout).
+      const plan = typeof flags.plan === 'string' ? flags.plan : (env ? deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1)?.note?.plans || null : null);
+      if (sub === 'check') {
+        const r = await monitorCheck(root, { env, plan });
+        out(r);
+        process.exit(r.ok ? 0 : 1);
+      } else if (sub === 'watch') {
+        const r = await monitorWatch(root, {
+          env,
+          plan,
+          minutes: flags.minutes,
+          intervalSeconds: flags.interval,
+          onSample: (c) => process.stderr.write(`[kaizen] ${c.at} ${c.ok ? '✔' : '✘'} ${Object.entries(c.signals).map(([n, s]) => `${n}=${s.value ?? '—'}${s.ok ? '' : '!'}`).join(' ')}\n`),
+        });
+        const config = loadConfig(root);
+        if (r.status === 'breach' && env && config.deploy.auto_rollback && config.deploy.environments?.[env]?.rollback) {
+          r.rollback = rollback(root, env, { reason: `monitor : ${r.breached.join(', ')} hors seuil` });
+        }
+        out(r);
+        process.exit(r.status === 'breach' ? 1 : 0);
+      } else die('usage : monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]');
+      break;
+    }
     case 'config':
       out(loadConfig(requireRepo()));
       break;

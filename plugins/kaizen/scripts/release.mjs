@@ -16,7 +16,8 @@ const GROUPS = [
 ];
 
 export function lastTag(root) {
-  return git(root, ['describe', '--tags', '--abbrev=0'], { allowFail: true });
+  // Les tags de déploiement (deploy/…, rollback/…) ne sont pas des versions.
+  return git(root, ['describe', '--tags', '--abbrev=0', '--exclude', 'deploy/*', '--exclude', 'rollback/*'], { allowFail: true });
 }
 
 export function bump(version, level) {

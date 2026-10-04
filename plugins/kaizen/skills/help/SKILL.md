@@ -24,7 +24,7 @@ fait, pas comme d'un ordre : la situation décrite par l'utilisateur l'emporte.
 
 **Sans argument** — en moins de 30 lignes :
 1. Kaizen en trois phrases : un cycle de développement assisté par IA, de la constitution du projet
-   jusqu'à la PR prête à merger ; des garde-fous **déterministes** (tests verts avant de terminer,
+   jusqu'à la mise en production surveillée ; des garde-fous **déterministes** (tests verts avant de terminer,
    revue enregistrée avant tout push, taille des PR) ; une boucle d'apprentissage (leçons, ADR,
    post-mortems) relue au cycle suivant. Le merge reste à l'humain.
 2. Le schéma de la boucle (ci-dessous).
@@ -49,7 +49,8 @@ ideate → brainstorm → plan ─► doc-review → work → review → ship �
                        ▲                                                         │
                        └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
 debug → correctif → review → learn       polish : retouches UI guidées
-decide → ADR     postmortem → leçons, amendements     metrics (DORA, coût)     release
+release → deploy → monitor ─(seuil franchi)→ rollback → postmortem → leçons, amendements
+decide → ADR     metrics (DORA réel, coût)
 autopilot : de la demande à la PR prête, en autonomie
 ```
 
@@ -76,6 +77,8 @@ autopilot : de la demande à la PR prête, en autonomie
 | Leçons nombreuses ou périmées | `/kaizen:prune-learnings` | garder, mettre à jour, fusionner, supprimer |
 | Un incident en production | `/kaizen:postmortem` | sans coupable : chronologie, facteurs, actions, leçons |
 | Préparer une version | `/kaizen:release` | notes, SemVer, CHANGELOG, checklist de mise en production |
+| Mettre en production, ou revenir en arrière | `/kaizen:deploy <env> [ref]`, `/kaizen:deploy rollback <env>` | commandes de l'équipe, approbation tapée pour la production, tag, surveillance, retour arrière |
+| La prod va-t-elle bien ? | `/kaizen:monitor [env] [watch n]` | signaux déclarés contre les seuils de la config et des plans |
 | Savoir si ça s'améliore | `/kaizen:metrics` | DORA approché, réutilisation des leçons, coût des cycles |
 | Push refusé, garde-fou qui bloque, skill qui ne se déclenche pas | — | `docs/depannage.md`, puis `/kaizen:setup check` |
 

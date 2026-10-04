@@ -158,6 +158,9 @@ retrouvera, la citera, et en fera un test.
 
 ## Et ensuite
 
+- Mettre en production : déclarez vos commandes et vos signaux (`/kaizen:setup`), puis
+  `/kaizen:deploy staging` et `/kaizen:deploy production`. Les signaux cités par le plan sont
+  surveillés après le déploiement, avec retour arrière si un seuil est franchi.
 - Ne plus savoir quoi lancer : `/kaizen:help` regarde l'état du repo (`node $K status`) et recommande
   la commande suivante.
 - Tout enchaîner : après un brainstorm, `/kaizen:autopilot` exécute le plan, la revue, la livraison et le

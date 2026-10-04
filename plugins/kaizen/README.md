@@ -25,7 +25,8 @@ Kaizen outille ces trois disciplines.
                         ▲                                                         │
                         └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
  debug → correctif → review → learn        polish : retouches UI guidées par l'utilisateur
- decide → ADR      postmortem → leçons · packs · amendements      metrics (DORA)      release
+ release → deploy → monitor ─(seuil franchi)→ rollback → postmortem → leçons · packs · amendements
+ decide → ADR      metrics (DORA réel depuis les déploiements, coût des cycles)
  autopilot : de la demande à la PR prête, en autonomie      prune-learnings : entretien des leçons
  help : quelle commande lancer maintenant, d'après l'état du repo
 ```
@@ -60,7 +61,7 @@ Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans
 /kaizen:constitution
 ```
 
-## Les commandes (21 skills)
+## Les commandes (23 skills)
 
 Perdu ? **`/kaizen:help`** explique Kaizen, regarde où en est votre repo et vous dit quelle commande
 lancer ensuite.
@@ -93,6 +94,13 @@ lancer ensuite.
 | `/kaizen:address-feedback` | Chaque retour de revue reçoit un verdict, un correctif poussé **avant** la réponse, une réponse qui cite le retour, et la résolution du fil. Les décisions humaines restent ouvertes. |
 | `/kaizen:watch-pr` | Mène une PR jusqu'à « semble prête » : retours **avant** la CI, réparation de la CI (jamais de test désactivé). Mise à jour depuis la base seulement sur signal de GitHub, contrôle qu'aucune revue n'est encore en route, budget de 8 h. **Ne merge jamais.** |
 | `/kaizen:release` | Notes de version depuis les commits conventionnels, version SemVer vérifiée, CHANGELOG, checklist de mise en production. Ne tague jamais sans accord. |
+
+### Mettre en production et surveiller
+
+| Commande | Rôle |
+|---|---|
+| `/kaizen:deploy` | Déploie par **vos** commandes (`deploy.environments`) : préconditions, approbation que vous tapez pour la production, tag `deploy/<env>/…`, surveillance des signaux du plan, **retour arrière** si un seuil est franchi. |
+| `/kaizen:monitor` | Signaux de production (health-check HTTP natif ou toute commande qui affiche un nombre) contre les seuils de la config et des plans livrés. Seuil franchi → retour arrière, puis post-mortem. |
 
 ### Apprendre et mesurer
 

@@ -155,6 +155,46 @@ dérive, pas contre un agent décidé à contourner le dispositif.
 La valeur de 400 lignes suit les pratiques de Google (une PR courte se relit vite et cache moins de
 bugs) et le constat de DORA 2025 : l'IA grossit les PR, et la revue devient le goulot.
 
+### `deploy` — déploiement et retour arrière
+
+Facultatif. Les commandes avec lesquelles `/kaizen:deploy` met en production : Kaizen ne connaît
+aucune plateforme et ne devine jamais une commande.
+
+| Clé | Défaut | Rôle |
+|---|---|---|
+| `environments.<env>.command` | — | déploie ; reçoit `KAIZEN_ENV`, `KAIZEN_REF`, `KAIZEN_SHA` |
+| `environments.<env>.rollback` | — | revient en arrière (vers le déploiement précédent par défaut) |
+| `environments.<env>.url` | — | adresse de l'environnement, montrée pendant la surveillance |
+| `environments.<env>.protected` | `true` pour `production` | exige un code que **vous** tapez (`kaizen deploy <code>`) ; la commande brute est refusée par un hook |
+| `watch_minutes` | `15` | durée de la surveillance des signaux après un déploiement |
+| `auto_rollback` | `false` | retour arrière automatique dès qu'un seuil est franchi |
+| `push_tags` | `true` | pousse les tags `deploy/<env>/…` et `rollback/<env>/…` (source des métriques DORA réelles) |
+| `flags.on` / `flags.off` | — | commandes de feature flag, avec `{flag}` et `{env}` (`kaizen.mjs deploy flag on|off <nom>`) |
+| `metrics_env` | `production` | environnement dont les déploiements alimentent `/kaizen:metrics` |
+
+```json
+"deploy": {
+  "environments": {
+    "staging":    { "command": "make deploy ENV=staging", "rollback": "make rollback ENV=staging" },
+    "production": { "command": "make deploy ENV=production", "rollback": "make rollback ENV=production", "url": "https://shop.example" }
+  },
+  "flags": { "on": "unleash toggle {flag} --env {env} --on", "off": "unleash toggle {flag} --env {env} --off" }
+}
+```
+
+### `monitor` — signaux de production
+
+Facultatif. Les signaux que `/kaizen:monitor` et `/kaizen:deploy` comparent à leurs seuils.
+
+| Clé | Défaut | Rôle |
+|---|---|---|
+| `signals.<nom>.type: "http"` + `url`, `expect` | `expect: 200` | health-check natif, sans outil |
+| `signals.<nom>.command` | — | toute commande dont le dernier mot affiché est un nombre (Prometheus, Datadog, CloudWatch, SQL, logs) ; `{env}` remplacé |
+| `signals.<nom>.max` / `min` | — | seuils ; remplacés par ceux du plan livré (`` `nom` > seuil `` dans sa section « Déploiement et retour arrière ») |
+| `signals.<nom>.env` | tous | limite le signal à un ou plusieurs environnements |
+| `interval_seconds` | `60` | intervalle entre deux échantillons |
+| `consecutive` | `2` | échantillons hors seuil de suite pour retenir une violation |
+
 ### `packs`
 
 Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
@@ -167,6 +207,9 @@ Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
 |---|---|
 | `gate.json` | état du garde-fou (actif, plan, session, nombre de blocages) |
 | `cycles.jsonl` | un cycle `work`/`autopilot` par ligne, écrit par `gate off` : plan, durée, blocages, tokens (lu par `metrics` → `cycle_cost`) |
+| `deployments.jsonl` | déploiements, retours arrière et flags lancés depuis cette machine (les tags git font foi) |
+| `deploy-approvals.json` | approbations de déploiement protégé en attente ou confirmées, 30 min |
+| `monitor.jsonl` | échantillons des signaux (`monitor check` / `watch`), pour la chronologie des post-mortems |
 | `reviews.json` | dernière revue enregistrée par branche (arbre relu, verdict, relecteurs, renonciation) |
 | `review-evidence.json` | relecteurs de code réellement lancés (hook sur l'outil `Agent`), 12 h |
 | `waivers.json` | renonciations en attente de confirmation par l'utilisateur, 30 min |

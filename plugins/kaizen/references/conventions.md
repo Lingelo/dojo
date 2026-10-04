@@ -46,6 +46,8 @@ node "$K" metrics [--since 90d]    # DORA approché + santé de la boucle
 node "$K" adr new --title "…" | adr list        # décisions d'architecture
 node "$K" postmortem new --title "…"            # post-mortem
 node "$K" release notes [--from <tag>]          # notes de version + SemVer
+node "$K" deploy request|run <env> [--ref r] | rollback <env> | list | flag on|off <nom>   # déploiement (tag deploy/<env>/…)
+node "$K" monitor check|watch [--env e] [--plan p] [--minutes n]   # signaux de production contre leurs seuils
 node "$K" run-dir reviews         # dossier de travail local d'un run (ignoré par git)
 ```
 
@@ -90,6 +92,15 @@ n'a enregistré l'état poussé. Toute skill qui pousse vérifie d'abord `node "
 - les fichiers d'état de revue (`.kaizen/state/reviews.json`, `review-evidence.json`,
   `waivers.json`) ne s'écrivent que par le CLI et les hooks. Jamais de contournement ni de
   désactivation (`review.require_before_push: false`) sans demande de l'utilisateur.
+
+## Déploiement
+
+Kaizen ne déploie que par `/kaizen:deploy`, avec les commandes déclarées par l'équipe
+(`deploy.environments`), jamais devinées. Un environnement protégé (`production` par défaut) exige un
+code que l'utilisateur tape lui-même (`kaizen deploy <code>`) ; sa commande brute est refusée par le
+hook, et les tags `deploy/…` / `rollback/…` ne se créent que par le CLI. Après chaque déploiement, les
+signaux (`monitor.signals`, seuils des plans) sont surveillés ; un seuil franchi → retour arrière
+d'abord, post-mortem ensuite. `autopilot` ne déploie jamais.
 
 ## Racine des livrables
 

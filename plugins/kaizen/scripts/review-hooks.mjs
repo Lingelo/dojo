@@ -4,7 +4,8 @@
 //   --evidence  (PostToolUse, outil Agent/Task) : consigne chaque relecteur de code Kaizen réellement
 //               lancé ; `review record` l'exige.
 //   --confirm   (UserPromptSubmit) : un message de l'utilisateur contenant `kaizen waive <code>`
-//               confirme la renonciation à la revue demandée par `review waive`.
+//               confirme la renonciation à la revue demandée par `review waive` ; `kaizen deploy <code>`
+//               approuve le déploiement sur un environnement protégé demandé par `deploy request`.
 // Toujours exit 0 : ces hooks observent, ils ne bloquent rien. Inactifs hors d'un repo Kaizen.
 
 import { readFileSync } from 'node:fs';
@@ -15,7 +16,7 @@ try {
 } catch {}
 
 const mode = process.argv.includes('--confirm') ? 'confirm' : 'evidence';
-const WAIVE = /\bkaizen\s+waive\s+([A-F0-9]{6})\b/i;
+const WAIVE = /\bkaizen\s+(waive|deploy)\s+([A-F0-9]{6})\b/i;
 
 // Filtres bon marché avant tout import : ces hooks voient passer chaque message et chaque sous-agent.
 if (mode === 'confirm' && !WAIVE.test(String(input.prompt || ''))) process.exit(0);
@@ -33,7 +34,17 @@ try {
     const reviewer = state.reviewerOf(input.tool_input);
     if (reviewer) state.addEvidence(root, { reviewer, session: input.session_id || null });
   } else {
-    const code = WAIVE.exec(String(input.prompt))[1];
+    const [, kind, code] = WAIVE.exec(String(input.prompt));
+    if (kind.toLowerCase() === 'deploy') {
+      const { confirmDeploy } = await import('./deploy.mjs');
+      const a = confirmDeploy(root, code, { session: input.session_id || null });
+      process.stdout.write(
+        a
+          ? `[kaizen] Déploiement de ${a.sha.slice(0, 7)} sur ${a.env} approuvé par l'utilisateur (30 min) : lance \`deploy run ${a.env}\` pour ce commit, puis surveille.\n`
+          : `[kaizen] Code de déploiement ${code} inconnu ou expiré (30 min) : relance \`deploy request\` si l'utilisateur le souhaite toujours.\n`,
+      );
+      process.exit(0);
+    }
     const entry = state.confirmWaiver(root, code, { session: input.session_id || null });
     // Sur UserPromptSubmit, la sortie standard est ajoutée au contexte de Claude.
     process.stdout.write(

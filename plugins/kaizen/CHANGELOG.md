@@ -25,6 +25,22 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   la saisie de `kaizen waive <code>` par l'utilisateur (hook `UserPromptSubmit`, 30 min, usage unique)
   la rend effective. `ship` ajoute une section « Revue écartée » à la PR. Le hook `PreToolUse` refuse
   l'écriture directe des fichiers d'état de revue et l'appel manuel des hooks de preuve.
+- **Déploiement et monitoring** :
+  - `/kaizen:deploy` : déploie par les commandes de l'équipe (`deploy.environments`), préconditions
+    (CI verte, checklist des plans livrés, retour arrière prêt, signaux sains), approbation que
+    l'utilisateur tape (`kaizen deploy <code>`) pour un environnement protégé, tag annoté
+    `deploy/<env>/…` poussé, surveillance des signaux, retour arrière (`rollback/<env>/…`), feature
+    flags (`deploy.flags`) ;
+  - `/kaizen:monitor` et `node $K monitor check|watch` : health-check HTTP natif ou toute commande
+    qui affiche un nombre, seuils de la config remplacés par ceux des plans livrés
+    (`` `error_rate` > 1 % ``), violation confirmée sur échantillons consécutifs, retour arrière
+    automatique optionnel (`deploy.auto_rollback`) ;
+  - `metrics` : DORA mesuré sur les vrais déploiements (fréquence, délai commit → production, taux
+    d'échec, temps de rétablissement) quand des tags `deploy/` existent ;
+  - `postmortem` lit la chronologie dans les tags et `monitor.jsonl` ; `release` propose
+    `/kaizen:deploy` ; `status` et `help` suggèrent de déployer les commits en attente ;
+  - hook : la commande brute d'un environnement protégé et les tags `deploy/`/`rollback/` forgés sont
+    refusés ; `release notes` ignore les tags de déploiement comme point de départ.
 - **`/kaizen:help`** : explique Kaizen et recommande la commande à lancer selon la situation décrite
   et l'état réel du repo. S'appuie sur **`node $K status`**, un diagnostic déterministe (initialisation,
   profil, constitution, dernier plan, garde-fou, revue de la branche) qui déduit l'étape suivante.

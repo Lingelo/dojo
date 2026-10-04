@@ -50,12 +50,18 @@ Un garde-fou resté actif sans travail en cours (`gate status` actif) → propos
 7. **Constitution** — `CONSTITUTION.md` absente → propose `/kaizen:constitution` (Recommandé) : sans
    elle, plan et revue n'ont que les règles génériques. Présente → `node "$K" constitution check`.
 8. **Taille des PR** — `pr.max_lines` (400 par défaut) : demande si l'équipe a un autre plafond.
-9. **Profil** — demande (une question) : **lean** (Recommandé pour une première adoption : cérémonie
+9. **Déploiement et monitoring** (facultatif) — si l'équipe veut que Kaizen mène aussi la mise en
+   production : demande les commandes de déploiement et de retour arrière par environnement (scripts
+   du repo, `Makefile`, CI détectés : propose-les, ne les invente pas) et ses signaux (health-check
+   HTTP au minimum, puis une commande par métrique : taux d'erreur, latence). Écris `deploy` et
+   `monitor` dans `.kaizen/config.json` ; `production` est protégée par défaut. Vérifie avec
+   `node "$K" monitor check --env <env>`.
+10. **Profil** — demande (une question) : **lean** (Recommandé pour une première adoption : cérémonie
    minimale, garde-fous gardés) · **standard** · **full** (domaines régulés, équipe rodée). Écris
    `profile` dans `.kaizen/config.json`. Équipe de plusieurs personnes → propose `approvers` dans
    `CONSTITUTION.md` et une ligne `CODEOWNERS` pour `CONSTITUTION.md` et `kaizen-packs/`. Rappelle que la revue est exigée avant tout `git push` d'une
    branche (`review.require_before_push`) et que seule l'équipe peut choisir de l'assouplir.
-10. **Bilan** — termine par le bilan de santé ci-dessus et la commande à lancer ensuite
+11. **Bilan** — termine par le bilan de santé ci-dessus et la commande à lancer ensuite
    (`/kaizen:brainstorm <idée>` ou `/kaizen:ideate`) ; rappelle que `/kaizen:help` dit à tout moment
    quoi faire ensuite.
 

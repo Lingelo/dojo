@@ -59,6 +59,8 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 - [address-feedback](guides/address-feedback.md) — traiter les retours de revue
 - [watch-pr](guides/watch-pr.md) — mener une PR jusqu'à « prête »
 - [release](guides/release.md) — préparer une version
+- [deploy](guides/deploy.md) — mettre en production, surveiller, revenir en arrière
+- [monitor](guides/monitor.md) — les signaux de production contre leurs seuils
 
 **Apprendre et mesurer**
 - [learn](guides/learn.md) — capitaliser une leçon

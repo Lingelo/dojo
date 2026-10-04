@@ -59,3 +59,9 @@ retour arrière et le signal avant de publier, ne les invente pas.
 Avec `publish` et confirmation : mise à jour des fichiers de version, commit
 `chore(release): vX.Y.Z`, tag annoté `vX.Y.Z`, push du commit et du tag, `gh release create vX.Y.Z
 --notes-file <notes>`. Sinon, livre les notes, la version et la checklist, et indique les commandes.
+
+## 6. Mettre en production
+
+`release` ne déploie pas. Si `deploy.environments` est configuré, termine en proposant
+`/kaizen:deploy <env> vX.Y.Z` (staging d'abord s'il existe) : préconditions, approbation tapée par
+l'utilisateur pour la production, surveillance des signaux de la checklist, retour arrière prêt.

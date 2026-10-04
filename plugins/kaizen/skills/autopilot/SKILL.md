@@ -88,6 +88,9 @@ saute push, PR et CI. Ce n'est pas une erreur.
     consigne-les dans la PR (« Points ouverts ») et termine.
 11. `node "$K" gate off`, puis rapport final et `DONE`.
 
+**Pas de déploiement.** La course s'arrête à la PR prête ; mettre en production passe par
+`/kaizen:deploy`, avec l'approbation tapée par l'utilisateur pour un environnement protégé.
+
 ## Arrêts (dire pourquoi)
 
 Source de travail impossible à produire · retour enfant autre que complet et étayé · décision acquise

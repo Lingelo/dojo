@@ -7,6 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+import { deployments } from './deploy.mjs';
 import { defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
@@ -141,6 +142,40 @@ function loopHealth(root, from, branch) {
   };
 }
 
+// DORA mesuré sur les vrais déploiements (tags deploy/<env>/… et rollback/<env>/… posés par
+// `kaizen.mjs deploy`), quand il y en a dans la fenêtre : fréquence, délai commit → production, taux
+// d'échec (déploiement suivi d'un retour arrière avant le suivant), temps de rétablissement.
+function doraFromDeployments(root, from, env) {
+  const all = deployments(root, { env });
+  const deploys = all.filter((d) => d.kind === 'deploy');
+  const inWindow = deploys.filter((d) => Date.parse(d.at) >= from.getTime());
+  if (!inWindow.length) return null;
+  const lead = [];
+  let failed = 0;
+  const restore = [];
+  for (const d of inWindow) {
+    const prev = deploys[deploys.indexOf(d) - 1];
+    const range = prev ? `${prev.sha}..${d.sha}` : d.sha;
+    const times = (git(root, ['log', '--format=%aI', range, '-n', '500'], { allowFail: true }) || '').split('\n').filter(Boolean).map(Date.parse);
+    for (const t of times) lead.push((Date.parse(d.at) - t) / 3600000);
+    const next = deploys[deploys.indexOf(d) + 1];
+    const rb = all.find((x) => x.kind === 'rollback' && x.at >= d.at && (!next || x.at < next.at));
+    if (rb) {
+      failed++;
+      restore.push((Date.parse(rb.at) - Date.parse(d.at)) / 3600000);
+    }
+  }
+  return {
+    env,
+    deployments: inWindow.length,
+    rollbacks: all.filter((x) => x.kind === 'rollback' && Date.parse(x.at) >= from.getTime()).length,
+    lead_time_hours_median: round(median(lead.filter((h) => h >= 0))),
+    change_failure_rate: round(failed / inWindow.length, 2),
+    time_to_restore_hours_median: round(median(restore)),
+    method: `tags deploy/${env}/… et rollback/${env}/… (kaizen.mjs deploy) : délai = premier commit → déploiement, échec = retour arrière avant le déploiement suivant, rétablissement = déploiement → retour arrière`,
+  };
+}
+
 // Coût des cycles work/autopilot terminés (`gate off`), relevé localement : durée, blocages du
 // garde-fou, tokens de la session principale. Local à la machine, comme .kaizen/state/.
 function cycleCost(root, from) {
@@ -197,20 +232,25 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
   const sizes = prs?.length ? prs.map((p) => p.additions + p.deletions) : changes.map((c) => c.lines);
   const config = loadConfig(root);
 
+  const real = doraFromDeployments(root, from, config.deploy.metrics_env || 'production');
+  const weeksReal = real ? round(real.deployments / weeks) : null;
+
   return {
     window: { since, days, from: from.toISOString().slice(0, 10), default_branch: branch },
+    deployments: real,
     changes: changes.length,
     throughput: {
-      deployment_frequency_per_week: round(changes.length / weeks),
-      deployment_frequency_method: 'changements arrivés sur la branche par défaut (proxy du déploiement)',
-      lead_time_hours_median: round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
-      lead_time_method: leadFromPrs.length ? 'ouverture → merge des PR (GitHub)' : leadFromMerges.length ? 'premier commit → merge (git)' : 'indisponible (merges squash sans accès GitHub)',
+      deployment_frequency_per_week: real ? weeksReal : round(changes.length / weeks),
+      deployment_frequency_method: real ? `déploiements réels sur ${real.env} (tags deploy/)` : 'changements arrivés sur la branche par défaut (proxy du déploiement)',
+      lead_time_hours_median: real?.lead_time_hours_median ?? round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
+      lead_time_method: real?.lead_time_hours_median != null ? `premier commit → déploiement sur ${real.env}` : leadFromPrs.length ? 'ouverture → merge des PR (GitHub)' : leadFromMerges.length ? 'premier commit → merge (git)' : 'indisponible (merges squash sans accès GitHub)',
       rework_rate: changes.length ? round(changes.filter((c) => c.fix).length / changes.length, 2) : null,
       rework_method: 'part des changements de type fix / hotfix / revert',
     },
     instability: {
-      change_failure_rate: nonFix ? round(failed / nonFix, 2) : null,
-      change_failure_method: 'changements suivis sous 7 jours d’un fix ou revert touchant les mêmes fichiers',
+      change_failure_rate: real ? real.change_failure_rate : nonFix ? round(failed / nonFix, 2) : null,
+      change_failure_method: real ? `déploiements sur ${real.env} suivis d’un retour arrière` : 'changements suivis sous 7 jours d’un fix ou revert touchant les mêmes fichiers',
+      time_to_restore_hours_median: real?.time_to_restore_hours_median ?? null,
     },
     batch_size: {
       lines_median: round(median(sizes), 0),

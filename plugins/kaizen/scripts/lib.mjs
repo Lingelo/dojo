@@ -40,6 +40,9 @@ export const DEFAULT_CONFIG = {
   profile: 'standard',
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
   review: { require_before_push: true, max_unreviewed_lines: 80 },
+  // Déploiement et monitoring : commandes de l'équipe, Kaizen ne connaît aucune plateforme.
+  deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, flags: {} },
+  monitor: { signals: {}, interval_seconds: 60, consecutive: 2 },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
   packs: [],
 };
@@ -64,6 +67,8 @@ export function loadConfig(root) {
   merged.verify = { ...(base.verify || {}), ...(local.verify || {}) };
   merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
   merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
+  merged.deploy = { ...DEFAULT_CONFIG.deploy, ...(base.deploy || {}), ...(local.deploy || {}) };
+  merged.monitor = { ...DEFAULT_CONFIG.monitor, ...(base.monitor || {}), ...(local.monitor || {}) };
   // Un profil mal saisi ne doit pas casser les hooks : repli sur « standard », signalé par `config`.
   if (!PROFILES.includes(merged.profile)) {
     merged.profile_warning = `profile inconnu : "${merged.profile}" (attendu : ${PROFILES.join(', ')}) — « standard » appliqué`;
