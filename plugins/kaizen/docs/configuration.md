@@ -27,7 +27,10 @@ Voir la configuration effective : `node $K config`. Créer le fichier : `/kaizen
     "typecheck": "pnpm tsc --noEmit",
     "audit": "pnpm audit --audit-level high"
   },
-  "gate": { "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "budget_seconds": 840, "max_age_hours": 24 },
+  "gate": {
+    "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "budget_seconds": 840, "max_age_hours": 24,
+    "targeted": { "test": "pnpm vitest related --run {files}", "lint": "pnpm eslint {files}" }
+  },
   "review": { "require_before_push": true, "max_unreviewed_lines": 80 },
   "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] },
   "packs": [
@@ -107,6 +110,7 @@ Voir ce qui est détecté : `node $K detect`.
 | `enabled` | `true` | `false` désactive le garde-fou pour ce repo |
 | `max_blocks` | `3` | après N blocages consécutifs, laisse terminer en exigeant que l'échec soit signalé |
 | `timeout_seconds` | `600` | délai maximum par commande de vérification |
+| `targeted` | `{}` | commandes **ciblées** pour le garde-fou, avec `{files}` remplacé par les fichiers touchés par la branche (non commité et nouveaux fichiers compris) ; elles remplacent les commandes de même nom à chaque fin de tour. Aucun fichier touché → sautées. La vérification complète reste celle de `work` et `ship` |
 | `budget_seconds` | `840` | temps total des vérifications à chaque fin de tour, sous le délai du hook (900 s) ; les commandes qui n'ont pas pu démarrer sont signalées, pas comptées rouges |
 | `max_age_hours` | `24` | un garde-fou actif depuis plus longtemps (session interrompue) se désactive tout seul |
 
@@ -149,6 +153,7 @@ Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
 | Fichier | Rôle |
 |---|---|
 | `gate.json` | état du garde-fou (actif, plan, session, nombre de blocages) |
+| `cycles.jsonl` | un cycle `work`/`autopilot` par ligne, écrit par `gate off` : plan, durée, blocages, tokens (lu par `metrics` → `cycle_cost`) |
 | `reviews.json` | dernière revue enregistrée par branche (arbre relu, verdict, renonciation) |
 | `pr/<owner>-<repo>-<n>.json` | ce que `watch-pr` a déjà traité (fils, commentaires, checks) |
 | `reviews/<horodatage>/` | retours bruts des relecteurs d'une revue |

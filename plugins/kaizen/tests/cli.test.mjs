@@ -74,6 +74,12 @@ test('plan new réserve des noms uniques ; plan check valide l’exemple de réf
   assert.equal(ok.json.stage, 'implementation-ready');
   assert.equal(ok.json.requirements, 5);
   assert.equal(ok.json.units, 3);
+  assert.deepEqual(ok.json.warnings.filter((w) => /rollout/.test(w)), [], 'l’exemple a signal, seuil et retour arrière');
+  const example = readFileSync(join(PLUGIN, 'templates/plan-example.md'), 'utf8');
+  writeFileSync(join(dir, 'plan.md'), example.replace(/- \*\*Retour arrière\*\*[^\n]*\n/, '').replace(/; > 1 %[^\n]*\n[^\n]*\n/, '.\n'));
+  const w = cli(dir, ['plan', 'check', 'plan.md', '--json']).json.warnings.join('\n');
+  assert.match(w, /Retour arrière\*\* manquant/);
+  assert.match(w, /Signal\*\* sans seuil/);
   cleanup(dir);
 });
 
@@ -224,6 +230,37 @@ test('metrics : calcule sans GitHub sur un historique de merges', () => {
   assert.equal(m.throughput.rework_rate, 0.25, '1 fix sur 4 changements');
   assert.equal(m.instability.change_failure_rate, 0.33, 'la 1re feature est suivie d’un fix sur le même fichier (1 sur 3 non-fix)');
   assert.ok(m.throughput.lead_time_hours_median !== null);
+  cleanup(dir);
+});
+
+test('constitution : gouvernance par approbateurs déclarés', () => {
+  const gov = CONSTITUTION.replace('version: 1.0.0', 'version: 1.1.0\napprovers: [@alice, @bob]\nratified_by: alice');
+  const dir = tempRepo({ 'CONSTITUTION.md': gov });
+  assert.match(cli(dir, ['constitution', 'check', '--json']).json.errors.join('\n'), /aucun amendement v1\.1\.0/);
+  writeFileSync(join(dir, 'CONSTITUTION.md'), `${gov}\n## Amendements\n\n- v1.1.0 (2026-02-01) — Article II élargi. Raison : post-mortem. Approuvé par : @mallory\n`);
+  assert.match(cli(dir, ['constitution', 'check', '--json']).json.errors.join('\n'), /aucun approbateur déclaré/);
+  writeFileSync(join(dir, 'CONSTITUTION.md'), `${gov}\n## Amendements\n\n- v1.1.0 (2026-02-01) — Article II élargi. Raison : post-mortem. Approuvé par : @Bob, @claude\n`);
+  const r = cli(dir, ['constitution', 'check', '--json']).json;
+  assert.ok(r.errors.some((e) => /approuvé par un agent/.test(e)));
+  assert.ok(!r.errors.some((e) => /aucun approbateur/.test(e)));
+  assert.equal(cli(dir, ['constitution', '--json']).json.amendments[0].version, '1.1.0');
+  cleanup(dir);
+});
+
+test('release notes : déploiement des plans livrés, champs manquants signalés', () => {
+  const plan = (rollout) => `---\ntitle: X - Plan\n---\n<!-- kaizen:rollout -->\n## Déploiement\n\n${rollout}\n<!-- kaizen:units -->\n`;
+  const dir = tempRepo({ 'a.txt': '1' });
+  gitc(dir, ['tag', 'v1.0.0']);
+  writeFiles(dir, {
+    'docs/plans/2026-01-01-feat-a-plan.md': plan('- **Exposition** : flag `export_csv`\n- **Retour arrière** : couper le flag\n- **Signal** : 5xx > 1 % → couper'),
+    'docs/plans/2026-01-02-feat-b-plan.md': plan('- **Exposition** : directe'),
+  });
+  gitc(dir, ['add', '-A'], ['commit', '-qm', 'docs: plans']);
+  const r = cli(dir, ['release', 'notes', '--json']).json;
+  assert.equal(r.rollout.length, 2);
+  assert.equal(r.rollout[0].signal, '5xx > 1 % → couper');
+  assert.deepEqual(r.rollout[0].missing, []);
+  assert.deepEqual(r.rollout[1].missing, ['rollback', 'signal']);
   cleanup(dir);
 });
 

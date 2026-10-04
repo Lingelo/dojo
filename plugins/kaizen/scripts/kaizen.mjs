@@ -29,7 +29,7 @@
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { loadConstitution, validateConstitution } from './constitution.mjs';
@@ -493,8 +493,28 @@ function cmdGate(root, sub) {
     writeFileSync(file, `${JSON.stringify(state, null, 2)}\n`);
     out(state);
   } else if (sub === 'off') {
+    // Un cycle terminé laisse une trace locale (durée, blocages, tokens) que /kaizen:metrics agrège :
+    // c'est ce qui permet de juger si la cérémonie rapporte plus qu'elle ne coûte.
+    let cycle = null;
+    if (existsSync(file)) {
+      try {
+        const st = JSON.parse(readFileSync(file, 'utf8'));
+        if (st.active && st.since) {
+          const ended = new Date();
+          cycle = {
+            plan: st.plan || null,
+            since: st.since,
+            ended: ended.toISOString(),
+            minutes: Math.round((ended - Date.parse(st.since)) / 6000) / 10,
+            gate_blocks: st.blocks_total || 0,
+            usage: st.usage || null,
+          };
+          appendFileSync(join(dirname(file), 'cycles.jsonl'), `${JSON.stringify(cycle)}\n`);
+        }
+      } catch {}
+    }
     rmSync(file, { force: true });
-    out({ active: false });
+    out({ active: false, cycle });
   } else if (sub === 'status') {
     out(existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : { active: false });
   } else die('usage : gate on [--plan <chemin>] | off | status');

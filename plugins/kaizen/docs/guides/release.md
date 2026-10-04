@@ -36,7 +36,8 @@
    - migrations et leur ordre ;
    - feature flags ;
    - retour arrière et ce qui est irréversible ;
-   - signaux à surveiller ;
+   - signaux à surveiller, avec leur seuil (un plan livré sans signal ni retour arrière est signalé
+     comme bloquant) ;
    - communication.
 5. **Publication** (avec `publish` et confirmation) :
    1. fichiers de version mis à jour ;

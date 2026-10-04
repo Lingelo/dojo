@@ -83,6 +83,17 @@ une **analyse d'impact** : plans en cours, packs et leçons qui deviennent contr
 
 L'amendement est noté dans un journal `## Amendements` en bas du fichier.
 
+**En équipe**, déclarez qui peut approuver :
+
+```yaml
+approvers: [@alice, @bob]
+ratified_by: alice
+```
+
+Chaque entrée du journal se termine alors par `Approuvé par : @bob`, et `node $K constitution check`
+refuse une version sans amendement approuvé par un approbateur déclaré, ou approuvé par un agent.
+Ajoutez `CONSTITUTION.md` et `kaizen-packs/` à `CODEOWNERS` pour que GitHub demande leur revue.
+
 ## Bon à savoir
 
 - Sans constitution, tout Kaizen fonctionne. Vous perdez seulement les contrôles propres au projet.

@@ -6,7 +6,7 @@ import { parseFrontmatter } from './lib.mjs';
 
 const CLARIFY_RE = /\[(À CLARIFIER|A CLARIFIER|NEEDS CLARIFICATION)\s*:[^\]]*\]/gi;
 
-function sectionText(body, id) {
+export function sectionText(body, id) {
   const start = body.indexOf(`<!-- kaizen:${id} -->`);
   if (start < 0) return null;
   const rest = body.slice(start + 1);
@@ -70,6 +70,13 @@ export function checkPlan(file, { constitution = null, stage = 'auto' } = {}) {
 
   for (const id of ['planning', 'units', 'verification', 'done']) if (!body.includes(`<!-- kaizen:${id} -->`)) errors.push(`section kaizen:${id} manquante`);
   if (!body.includes('<!-- kaizen:rollout -->')) warnings.push('section kaizen:rollout absente (déploiement et retour arrière) — requise dès que le changement atteint la production');
+  else {
+    // Sans signal ni retour arrière, la mise en production n'a ni critère de succès ni sortie de secours.
+    const r = parseRollout(sectionText(body, 'rollout') || '');
+    if (!r.rollback) warnings.push('kaizen:rollout : **Retour arrière** manquant');
+    if (!r.signal) warnings.push('kaizen:rollout : **Signal** manquant (quoi surveiller après déploiement)');
+    else if (!/[<>≤≥]|seuil|threshold|%|\d+\s*(ms|s|min|h)\b|au-del[àa]|plus de|more than/i.test(r.signal)) warnings.push('kaizen:rollout : **Signal** sans seuil — à quelle valeur revient-on en arrière ?');
+  }
 
   const units = sectionText(body, 'units') || '';
   const unitIds = definedIds(units, 'U');
@@ -121,4 +128,20 @@ export function checkPlan(file, { constitution = null, stage = 'auto' } = {}) {
     }
   }
   return report;
+}
+
+// Champs de la section kaizen:rollout : « - **Exposition** : … » (plusieurs lignes possibles).
+export function parseRollout(text) {
+  const fields = { exposure: /^exposition|^exposure/i, order: /^ordre|^order/i, rollback: /^retour arri|^rollback/i, signal: /^signal/i };
+  const out = { exposure: '', order: '', rollback: '', signal: '' };
+  let current = null;
+  for (const line of text.split(/\r?\n/)) {
+    const m = /^\s*[-*]\s+\*\*([^*]+?)\*\*\s*:?\s*:?\s*(.*)$/.exec(line);
+    if (m) {
+      current = Object.keys(fields).find((k) => fields[k].test(m[1].trim())) || null;
+      if (current) out[current] = m[2].replace(/^:\s*/, '').trim();
+    } else if (current && /^\s+\S/.test(line)) out[current] = `${out[current]} ${line.trim()}`.trim();
+    else if (!line.trim()) current = null;
+  }
+  return out;
 }

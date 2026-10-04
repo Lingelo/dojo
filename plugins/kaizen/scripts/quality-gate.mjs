@@ -14,7 +14,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadConfig, repoRoot, runVerify } from './lib.mjs';
+import { changedFiles, loadConfig, repoRoot, runVerify, transcriptUsage, withFiles } from './lib.mjs';
 
 function readStdin() {
   try {
@@ -61,7 +61,25 @@ if (state.since && Date.now() - Date.parse(state.since) > maxAgeMs) {
   process.exit(0);
 }
 
-const results = runVerify(root, { budgetSeconds: Number(config.gate.budget_seconds ?? 840) });
+// Coût du cycle : tokens de la session principale depuis `gate on`, relevés à chaque fin de tour ;
+// `gate off` les consigne dans .kaizen/state/cycles.jsonl pour /kaizen:metrics.
+if (input.transcript_path) {
+  const usage = transcriptUsage(input.transcript_path, state.since);
+  if (usage) {
+    state = { ...state, usage };
+    writeFileSync(stateFile, `${JSON.stringify(state, null, 2)}\n`);
+  }
+}
+
+// Vérifications ciblées (gate.targeted, avec {files}) : à chaque fin de tour, seulement ce que la
+// branche touche. La vérification complète reste celle de /kaizen:work (phase 3) et de /kaizen:ship.
+const overrides = {};
+const targeted = Object.entries(config.gate.targeted || {}).filter(([, cmd]) => cmd);
+if (targeted.length) {
+  const files = changedFiles(root);
+  for (const [name, cmd] of targeted) overrides[name] = files.length ? withFiles(cmd, files) : '';
+}
+const results = runVerify(root, { budgetSeconds: Number(config.gate.budget_seconds ?? 840), overrides });
 if (!results.length) process.exit(0);
 
 const failed = results.filter((r) => !r.ok);
@@ -74,7 +92,7 @@ if (!failed.length) {
 
 const max = Number(config.gate.max_blocks ?? 3);
 const blocks = (state.blocks || 0) + 1;
-writeFileSync(stateFile, `${JSON.stringify({ ...state, blocks, last_failure: new Date().toISOString() }, null, 2)}\n`);
+writeFileSync(stateFile, `${JSON.stringify({ ...state, blocks, blocks_total: (state.blocks_total || 0) + 1, last_failure: new Date().toISOString() }, null, 2)}\n`);
 
 const report = failed
   .map((r) => `✘ ${r.name} — \`${r.command}\` (exit ${r.exit})\n${r.output.split('\n').slice(-25).join('\n')}`)

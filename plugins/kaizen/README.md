@@ -143,11 +143,20 @@ revue). Seul l'utilisateur peut y renoncer, et la renonciation est tracée (`rev
 Le profil règle la cérémonie (taille du plan, nombre de relecteurs), jamais les garde-fous
 déterministes. De petits pas, dans l'esprit kaizen.
 
+**De la production au cycle suivant.** Chaque plan dit comment revenir en arrière et quel signal
+surveiller, avec son seuil (`plan check` le signale sinon). `release` en tire la checklist de mise en
+production ; un seuil franchi mène au post-mortem, dont les leçons et amendements nourrissent le
+cycle suivant.
+
+**Gouvernance d'équipe.** Avec `approvers` déclarés, chaque amendement de la constitution doit être
+approuvé par l'un d'eux, jamais par un agent (`constitution check`).
+
 **L'effet cumulatif, mesuré.** Les leçons (`docs/learnings/`), les ADR et les post-mortems sont
 relus par `learnings-researcher` à chaque plan, revue et debug. `/kaizen:metrics` distingue les leçons
 **lues** (citées par un plan récent) des leçons **appliquées** (citées par un commit arrivé sur la
 branche par défaut), et liste celles que personne n'a jamais citées. Une leçon jamais réutilisée
-signale une boucle qui ne se referme pas.
+signale une boucle qui ne se referme pas. `metrics` mesure aussi le **coût** de chaque cycle (durée,
+tokens, blocages du garde-fou) pour juger si la cérémonie rapporte plus qu'elle ne coûte.
 
 ## Agents (21)
 

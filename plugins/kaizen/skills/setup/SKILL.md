@@ -27,7 +27,10 @@ Un garde-fou resté actif sans travail en cours (`gate status` actif) → propos
    `.kaizen/config.json`, ex. `{"test": "pnpm vitest run", "lint": "pnpm eslint ."}`) · **désactiver le
    garde-fou** (`gate.enabled: false`). Rien de détecté → demande les commandes ou désactive.
    Lance une fois `node "$K" verify` pour vérifier qu'elles tournent ; une commande qui échoue déjà
-   sur la branche par défaut est signalée (le garde-fou bloquerait à tort).
+   sur la branche par défaut est signalée (le garde-fou bloquerait à tort). Suite lente (plus d'une
+   minute) → propose des vérifications **ciblées** pour le garde-fou, `gate.targeted` avec `{files}`
+   (ex. `{"test": "pnpm vitest related --run {files}", "lint": "pnpm eslint {files}"}`) ; la
+   vérification complète reste celle de `work` et `ship`.
 3. **Langue** — `language: auto` suit la conversation ; propose de la fixer (`fr`, `en`) si l'équipe
    écrit ses livrables dans une langue précise.
 4. **Tracker** — `tracker: auto` (clé Jira lue dans la branche, issues GitHub via `gh`) ; ajuste si
@@ -49,7 +52,8 @@ Un garde-fou resté actif sans travail en cours (`gate status` actif) → propos
 8. **Taille des PR** — `pr.max_lines` (400 par défaut) : demande si l'équipe a un autre plafond.
 9. **Profil** — demande (une question) : **lean** (Recommandé pour une première adoption : cérémonie
    minimale, garde-fous gardés) · **standard** · **full** (domaines régulés, équipe rodée). Écris
-   `profile` dans `.kaizen/config.json`. Rappelle que la revue est exigée avant tout `git push` d'une
+   `profile` dans `.kaizen/config.json`. Équipe de plusieurs personnes → propose `approvers` dans
+   `CONSTITUTION.md` et une ligne `CODEOWNERS` pour `CONSTITUTION.md` et `kaizen-packs/`. Rappelle que la revue est exigée avant tout `git push` d'une
    branche (`review.require_before_push`) et que seule l'équipe peut choisir de l'assouplir.
 10. **Bilan** — termine par le bilan de santé ci-dessus et la commande à lancer ensuite
    (`/kaizen:brainstorm <idée>` ou `/kaizen:ideate`).

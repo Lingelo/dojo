@@ -141,6 +141,37 @@ function loopHealth(root, from, branch) {
   };
 }
 
+// Coût des cycles work/autopilot terminés (`gate off`), relevé localement : durée, blocages du
+// garde-fou, tokens de la session principale. Local à la machine, comme .kaizen/state/.
+function cycleCost(root, from) {
+  let lines = [];
+  try {
+    lines = readFileSync(join(root, '.kaizen', 'state', 'cycles.jsonl'), 'utf8').split('\n').filter(Boolean);
+  } catch {
+    return null;
+  }
+  const cycles = lines
+    .map((l) => {
+      try {
+        return JSON.parse(l);
+      } catch {
+        return null;
+      }
+    })
+    .filter((c) => c && Date.parse(c.ended) >= from.getTime());
+  if (!cycles.length) return null;
+  const tokens = cycles.filter((c) => c.usage).map((c) => c.usage.input_tokens + c.usage.output_tokens + c.usage.cache_creation_input_tokens + c.usage.cache_read_input_tokens);
+  return {
+    cycles: cycles.length,
+    minutes_median: round(median(cycles.map((c) => c.minutes))),
+    tokens_median: round(median(tokens), 0),
+    output_tokens_median: round(median(cycles.filter((c) => c.usage).map((c) => c.usage.output_tokens)), 0),
+    gate_blocks_total: cycles.reduce((n, c) => n + (c.gate_blocks || 0), 0),
+    cycles_with_gate_block_share: round(cycles.filter((c) => c.gate_blocks > 0).length / cycles.length, 2),
+    method: 'cycles /kaizen:work et /kaizen:autopilot clos par gate off sur cette machine ; tokens de la session principale (sous-agents non comptés)',
+  };
+}
+
 export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
   const { days, from } = parseSince(since);
   const branch = defaultBranch(root);
@@ -189,5 +220,6 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
       source: prs?.length ? 'PR GitHub' : 'diffstat git',
     },
     kaizen_loop: loopHealth(root, from, branch),
+    cycle_cost: cycleCost(root, from),
   };
 }

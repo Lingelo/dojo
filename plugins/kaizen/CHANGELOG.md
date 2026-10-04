@@ -24,6 +24,17 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
 - `/kaizen:metrics` : `learnings_applied_in_commits` (leçon citée dans un message de commit = appliquée,
   pas seulement lue), `learnings_never_cited` et un échantillon pour `prune-learnings`, et la méthode
   de `learning_reuse_rate`. Les commits qui appliquent une leçon la citent dans leur corps.
+- **Coût des cycles** : le hook `Stop` relève les tokens de la session principale depuis `gate on`
+  (transcript), `gate off` consigne le cycle (plan, durée, blocages, tokens) dans
+  `.kaizen/state/cycles.jsonl`, et `/kaizen:metrics` l'agrège (`cycle_cost`).
+- **Vérifications ciblées** du garde-fou : `gate.targeted` avec `{files}` (fichiers touchés par la
+  branche) ; la vérification complète reste celle de `work` et `ship`.
+- **Exploitation** : `plan check` signale un déploiement sans retour arrière, sans signal ou avec un
+  signal sans seuil ; `release notes` extrait le déploiement des plans livrés (`rollout`, champs
+  manquants) pour la checklist ; un seuil franchi renvoie vers `/kaizen:postmortem`.
+- **Gouvernance d'équipe** de la constitution : `approvers` et `ratified_by` dans le frontmatter ;
+  `constitution check` exige un amendement « Approuvé par : @… » d'un approbateur déclaré pour chaque
+  version, et refuse une approbation par un agent. `setup` propose `CODEOWNERS`.
 
 ### Corrigé
 - Garde-fou du hook `Stop` propre à la session qui l'a posé (hook `PostToolUse` `--claim` après
