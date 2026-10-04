@@ -19,7 +19,7 @@ encore en partie sur la consigne donnée à l'agent.
 | Vérification | `review`, CI menée par `watch-pr` | oui : push refusé sans revue réellement faite |
 | Livraison | `ship`, `release` | oui : taille des PR mesurée, SemVer vérifié |
 | Déploiement | `deploy` (plateforme détectée, retour arrière) | oui : code tapé par l'utilisateur pour la production, tags |
-| Exploitation | `monitor` (seuils des plans), retour arrière | en partie : surveillance pendant une fenêtre après déploiement |
+| Exploitation | `monitor` (seuils des plans, contrôle planifié, alertes), incidents datés, retour arrière | en partie : détection continue si `patrol` est planifié ou les alertes branchées |
 | Amélioration | `learn`, `postmortem`, `metrics` (DORA réel, coût) | en partie : mesure locale |
 
 ## Limites
