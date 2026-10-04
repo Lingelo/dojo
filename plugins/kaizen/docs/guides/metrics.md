@@ -11,7 +11,7 @@
 | **Quand l'utiliser** | Rétrospective, point trimestriel, « est-ce que Kaizen sert à quelque chose ? », après avoir changé une pratique |
 | **Quand ne pas l'utiliser** | Pour juger des personnes : ces indicateurs mesurent un système de livraison, pas des individus |
 | **Ce qu'elle produit** | Un rapport court (30 lignes au plus), et sur demande `docs/metrics/AAAA-MM-JJ.md` pour suivre la tendance |
-| **Et ensuite** | Les actions renvoient vers une skill : `refresh`, découpage en tranches, `constitution amend`… |
+| **Et ensuite** | Les actions renvoient vers une skill : `prune-learnings`, découpage en tranches, `constitution amend`… |
 
 ## Exemples
 
@@ -48,4 +48,4 @@ Brut : `node $K metrics --since 90d` (ajoutez `--no-github` si `gh` n'est pas au
 
 ## Voir aussi
 
-[postmortem](postmortem.md) · [refresh](refresh.md) · [release](release.md)
+[postmortem](postmortem.md) · [prune-learnings](prune-learnings.md) · [release](release.md)

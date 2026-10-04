@@ -1,6 +1,6 @@
-# `/kaizen:compound`
+# `/kaizen:learn`
 
-> Écrire **une** leçon durable dans `docs/solutions/`, là où le prochain plan et la prochaine revue la
+> Écrire **une** leçon durable dans `docs/learnings/`, là où le prochain plan et la prochaine revue la
 > liront. C'est l'étape qui rend le cycle suivant plus facile.
 
 ## En bref
@@ -10,15 +10,15 @@
 | **Ce qu'elle fait** | Applique le test de durabilité, rassemble le problème, les symptômes, les impasses, la solution et la prévention, cherche une leçon existante à mettre à jour, classe selon le vocabulaire du corpus, écrit et valide |
 | **Quand l'utiliser** | Après un travail **vérifié** qui a produit un raisonnement non évident : piège d'API, cause surprenante, impasse coûteuse, décision difficile à reconstituer |
 | **Quand ne pas l'utiliser** | Correctif de routine que le test et le message de commit expliquent déjà ; problème pas encore résolu |
-| **Ce qu'elle produit** | `docs/solutions/<catégorie>/<titre>.md`, nouvelle ou mise à jour, frontmatter validé ; ou « Leçon non écrite : <raison> » |
+| **Ce qu'elle produit** | `docs/learnings/<catégorie>/<titre>.md`, nouvelle ou mise à jour, frontmatter validé ; ou « Leçon non écrite : <raison> » |
 | **Et ensuite** | La leçon est relue par `learnings-researcher` à chaque plan, brainstorm, revue et debug |
 
 ## Exemples
 
 ```text
-/kaizen:compound
-/kaizen:compound le BOM UTF-8 pour Excel
-/kaizen:compound mode:auto                 # sans question (utilisé par work, lfg, debug)
+/kaizen:learn
+/kaizen:learn le BOM UTF-8 pour Excel
+/kaizen:learn mode:auto                 # sans question (utilisé par work, autopilot, debug)
 ```
 
 ## Le test de durabilité
@@ -65,7 +65,7 @@ La section **« Ce qui n'a pas marché »** est souvent la plus précieuse. Sch�
 
 - **Une leçon par exécution.** Plusieurs leçons, c'est plusieurs exécutions successives.
 - **Vocabulaire du corpus d'abord** : `component`, `root_cause` et le dossier reprennent les valeurs
-  déjà utilisées dans `docs/solutions/` (`node $K learnings stats`), pour que les recherches les
+  déjà utilisées dans `docs/learnings/` (`node $K learnings stats`), pour que les recherches les
   retrouvent.
 - Une leçon existante devenue fausse est **mise à jour**, pas doublée.
 - Une leçon qui vaut pour toute l'équipe peut devenir une **règle de pack** : Claude le propose.
@@ -74,4 +74,4 @@ La section **« Ce qui n'a pas marché »** est souvent la plus précieuse. Sch�
 
 ## Voir aussi
 
-[refresh](refresh.md) · [Kaizen Packs](../packs.md) · [metrics](metrics.md)
+[prune-learnings](prune-learnings.md) · [Kaizen Packs](../packs.md) · [metrics](metrics.md)

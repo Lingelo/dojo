@@ -11,7 +11,7 @@
 | **Quand l'utiliser** | « Ça plante », « ce test échoue », « c'est lent », « pourquoi X ? », un ticket de bug, une CI rouge |
 | **Quand ne pas l'utiliser** | Une fonctionnalité à construire (→ [plan](plan.md)) ; un incident de production à analyser après coup (→ [postmortem](postmortem.md)) |
 | **Ce qu'elle produit** | Un résumé de debug (problème, cause racine avec `fichier:ligne`, tests, correctif, prévention, confiance) ; si vous le choisissez, un correctif commité sur `fix/…` |
-| **Et ensuite** | Revue du correctif, commit, PR si possible, et `/kaizen:compound` si la cause était surprenante |
+| **Et ensuite** | Revue du correctif, commit, PR si possible, et `/kaizen:learn` si la cause était surprenante |
 
 ## Exemples
 
@@ -54,7 +54,7 @@
 
 | Option | Effet |
 |---|---|
-| `mode:return` | sans question ; applique seulement un correctif **convergent** (qui rétablit le comportement voulu). Un correctif qui renverserait une décision délibérée est différé. Utilisé par `lfg` et `babysit-pr`. |
+| `mode:return` | sans question ; applique seulement un correctif **convergent** (qui rétablit le comportement voulu). Un correctif qui renverserait une décision délibérée est différé. Utilisé par `autopilot` et `watch-pr`. |
 
 ## Bon à savoir
 
@@ -65,4 +65,4 @@
 
 ## Voir aussi
 
-[postmortem](postmortem.md) · [compound](compound.md) · [babysit-pr](babysit-pr.md)
+[postmortem](postmortem.md) · [learn](learn.md) · [watch-pr](watch-pr.md)

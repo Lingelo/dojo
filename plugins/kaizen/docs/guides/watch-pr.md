@@ -1,4 +1,4 @@
-# `/kaizen:babysit-pr`
+# `/kaizen:watch-pr`
 
 > Mener une PR ouverte jusqu'à « semble prête à merger » : retours traités, CI réparée, branche à
 > jour quand GitHub le demande. Puis s'arrêter et vous laisser merger.
@@ -9,16 +9,16 @@
 |---|---|
 | **Ce qu'elle fait** | Cycles successifs : retours de revue **avant** la CI, réparation de la CI du commit de tête, mise à jour de la branche sur signal, attente sans tokens entre deux cycles |
 | **Quand l'utiliser** | Après `/kaizen:ship` ; « surveille ma PR » ; « mène-la jusqu'au merge » |
-| **Quand ne pas l'utiliser** | Un seul commentaire (→ [resolve-pr-feedback](resolve-pr-feedback.md)) ; un seul échec de CI (→ [debug](debug.md)) |
+| **Quand ne pas l'utiliser** | Un seul commentaire (→ [address-feedback](address-feedback.md)) ; un seul échec de CI (→ [debug](debug.md)) |
 | **Ce qu'elle produit** | Des commits et réponses sur la PR, et un état final **vrai** : ✅ semble prête · 🟡 réserve · ⛔ bloquée · ⏱️ budget · 🎉 mergée · 🚫 fermée · ⏸️ en pause |
 | **Et ensuite** | **Vous mergez.** Kaizen ne merge jamais. |
 
 ## Exemples
 
 ```text
-/kaizen:babysit-pr                 # PR de la branche courante, veille jusqu'à 8 h
-/kaizen:babysit-pr 42 4h           # budget de 4 h
-/kaizen:babysit-pr 42 checkpoint   # un seul cycle, puis la commande de reprise
+/kaizen:watch-pr                 # PR de la branche courante, veille jusqu'à 8 h
+/kaizen:watch-pr 42 4h           # budget de 4 h
+/kaizen:watch-pr 42 checkpoint   # un seul cycle, puis la commande de reprise
 ```
 
 ## Un cycle (ordre imposé)
@@ -27,7 +27,7 @@
    (paginés), avec les commentaires, les revues, les checks du commit de tête, l'état de fusion et
    le temps écoulé depuis la dernière activité.
 2. **PR terminée** (mergée ou fermée) → arrêt.
-3. **Retours avant CI** → `resolve-pr-feedback` une fois, puis chaque élément est **marqué**
+3. **Retours avant CI** → `address-feedback` une fois, puis chaque élément est **marqué**
    (`pr mark`), pour ne jamais être retraité tant que personne ne répond.
 4. **Commit de tête périmé** : si un push vient d'avoir lieu, la CI observée est caduque.
 5. **CI** :
@@ -81,4 +81,4 @@ Il ne dit **jamais** « sûr à merger ».
 
 ## Voir aussi
 
-[ship](ship.md) · [resolve-pr-feedback](resolve-pr-feedback.md) · [debug](debug.md) · [Dépannage](../depannage.md#babysit-pr-tourne-en-rond-ou-ne-dit-jamais--prête-)
+[ship](ship.md) · [address-feedback](address-feedback.md) · [debug](debug.md) · [Dépannage](../depannage.md#watch-pr-tourne-en-rond-ou-ne-dit-jamais--prête-)

@@ -14,7 +14,7 @@ retours et applique chaque retouche sur la surface concernée.
 | **Quand l'utiliser** | Avant de livrer une fonctionnalité visible : espacements, textes, états, responsive, accessibilité |
 | **Quand ne pas l'utiliser** | La fonctionnalité ne marche pas encore (→ [work](work.md) ou [debug](debug.md)) ; vous voulez une QA autonome |
 | **Ce qu'elle produit** | Des commits locaux (`style(…)` ou `fix(…)`), et le serveur laissé en marche |
-| **Et ensuite** | `/kaizen:ship` pour livrer ; `/kaizen:compound` si une retouche révèle une règle d'interface à retenir |
+| **Et ensuite** | `/kaizen:ship` pour livrer ; `/kaizen:learn` si une retouche révèle une règle d'interface à retenir |
 
 ## Exemples
 

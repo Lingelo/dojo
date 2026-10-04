@@ -14,7 +14,7 @@ code de production, pas de tests lancés pour « voir ». Du pseudo-code directi
 Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` puis `${CLAUDE_PLUGIN_ROOT}/references/plan-contract.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:return`** (posé par `/kaizen:lfg`) : aucune question ; prends le défaut le plus conservateur et
+**`mode:return`** (posé par `/kaizen:autopilot`) : aucune question ; prends le défaut le plus conservateur et
 consigne-le comme hypothèse ; rends `{ status: complete|blocked, plan_path, blockers }`. Une preuve qui
 invalide une décision prise en session arrête l'écriture : rends `status: blocked` avec
 `settled-decision-invalidated`, la décision et la raison.
@@ -43,7 +43,7 @@ envisagées) et lance selon le besoin :
 | Agent | Quand |
 |---|---|
 | `kaizen:repo-researcher` | toujours en Durable : motifs à imiter, intégration, tests voisins |
-| `kaizen:learnings-researcher` | toujours si `<root>/solutions/` contient des leçons ou si des packs sont déclarés — passe-lui le chemin du CLI, la racine résolue et la liste des packs (`node "$K" packs --json`) |
+| `kaizen:learnings-researcher` | toujours si `<root>/learnings/` contient des leçons ou si des packs sont déclarés — passe-lui le chemin du CLI, la racine résolue et la liste des packs (`node "$K" packs --json`) |
 | `kaizen:git-historian` | le travail modifie du code ancien, central ou déjà source de bugs |
 | `kaizen:docs-researcher` | une décision dépend d'un comportement externe incertain ou d'une technologie nouvelle pour le repo — pose-lui des **questions précises** |
 | `kaizen:flow-analyst` | comportement multi-étapes et pas de brainstorm préalable avec exemples d'acceptation |
@@ -112,7 +112,7 @@ recherche ciblée (voir « Approfondir ») avant de livrer.
 
 En interactif, demande exactement : « Plan prêt : `<chemin>`. Que veux-tu faire ? » avec :
 1. **Lancer l'implémentation** → invoque `kaizen:work <chemin>` (Recommandé).
-2. **Tout enchaîner en autonomie** → `kaizen:lfg <chemin>`.
+2. **Tout enchaîner en autonomie** → `kaizen:autopilot <chemin>`.
 3. **Approfondir** une section faible → section suivante.
 4. **Relire moi-même** → arrêt, donne le chemin et les 3 décisions à vérifier en priorité.
 

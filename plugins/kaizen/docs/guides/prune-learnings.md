@@ -1,9 +1,9 @@
-# `/kaizen:refresh`
+# `/kaizen:prune-learnings`
 
 > Garder les leçons dignes de confiance : chacune est confrontée au code actuel, puis gardée, mise à
 > jour, fusionnée, remplacée ou supprimée, preuves à l'appui.
 
-Une leçon fausse est **pire** qu'aucune leçon, parce que `plan` et `review` l'appliquent. `refresh`
+Une leçon fausse est **pire** qu'aucune leçon, parce que `plan` et `review` l'appliquent. `prune-learnings`
 est l'entretien du corpus.
 
 ## En bref
@@ -12,17 +12,17 @@ est l'entretien du corpus.
 |---|---|
 | **Ce qu'elle fait** | Valide le frontmatter, vérifie chaque leçon (chemins, symboles, comportement, `retire_when`), détecte doublons et contradictions, classe, applique, rend un rapport |
 | **Quand l'utiliser** | Après un gros refactor, une migration ou une montée de version ; quand une leçon s'est révélée fausse ; quand `metrics` montre des leçons jamais réutilisées ; tous les trimestres |
-| **Quand ne pas l'utiliser** | Écrire une nouvelle leçon (→ [compound](compound.md)) |
+| **Quand ne pas l'utiliser** | Écrire une nouvelle leçon (→ [learn](learn.md)) |
 | **Ce qu'elle produit** | Leçons corrigées, un rapport « Appliqué / Recommandé », un commit des seuls fichiers touchés |
 | **Et ensuite** | Les contradictions avec des consignes vous sont signalées, à trancher |
 
 ## Exemples
 
 ```text
-/kaizen:refresh                       # tout docs/solutions/
-/kaizen:refresh exports               # une zone (dossier, module, mot-clé)
-/kaizen:refresh élaguer               # juger aussi la valeur (après confirmation)
-/kaizen:refresh mode:auto
+/kaizen:prune-learnings                       # tout docs/learnings/
+/kaizen:prune-learnings exports               # une zone (dossier, module, mot-clé)
+/kaizen:prune-learnings élaguer               # juger aussi la valeur (après confirmation)
+/kaizen:prune-learnings mode:auto
 ```
 
 ## Les cinq issues
@@ -52,4 +52,4 @@ Frontière : si un lecteur de l'ancienne version prendrait une **mauvaise décis
 
 ## Voir aussi
 
-[compound](compound.md) · [metrics](metrics.md)
+[learn](learn.md) · [metrics](metrics.md)

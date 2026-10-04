@@ -79,7 +79,7 @@ function loopHealth(root, from) {
   } catch {
     return null;
   }
-  const learnings = walkMarkdown(join(docs, 'solutions')).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
+  const learnings = walkMarkdown(join(docs, 'learnings')).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
   const plans = walkMarkdown(join(docs, 'plans'));
   const recentPlans = plans.filter((f) => {
     const d = parseFrontmatter(readFileSync(f, 'utf8')).data?.date;
@@ -89,7 +89,7 @@ function loopHealth(root, from) {
   let exceptions = 0;
   for (const p of recentPlans) {
     const text = readFileSync(p, 'utf8');
-    for (const m of text.matchAll(/solutions\/[\w./-]+\.md/g)) cited.add(m[0]);
+    for (const m of text.matchAll(/learnings\/[\w./-]+\.md/g)) cited.add(m[0]);
     const cc = text.split('<!-- kaizen:constitution -->')[1]?.split(/<!-- kaizen:[a-z-]+ -->/)[0] || '';
     exceptions += (cc.match(/⚠️/g) || []).length;
   }

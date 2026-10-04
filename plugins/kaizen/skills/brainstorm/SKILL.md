@@ -17,7 +17,7 @@ questions, sous-agents). Avant d'écrire le fichier, lis `${CLAUDE_PLUGIN_ROOT}/
 
 **Sans description en argument** : demande ce que l'utilisateur veut explorer et attends.
 
-**`mode:return`** (posé par `/kaizen:lfg`) : retire le jeton, mène le dialogue normalement, et à la
+**`mode:return`** (posé par `/kaizen:autopilot`) : retire le jeton, mène le dialogue normalement, et à la
 place du menu final rends `{ status: complete|blocked, plan_path, open_blockers }`.
 
 ## Phase 0 — Reprendre, classer, dimensionner
@@ -102,7 +102,7 @@ ou packs en disent. Recommande-en une et demande le choix. Puis écris une **syn
 
 Demande (une question) ce que l'utilisateur veut faire, en n'affichant que les options pertinentes :
 1. **Planifier** → invoque la skill `kaizen:plan` avec le chemin du plan (Recommandé).
-2. **Tout enchaîner en autonomie** → invoque `kaizen:lfg` avec le chemin du plan.
+2. **Tout enchaîner en autonomie** → invoque `kaizen:autopilot` avec le chemin du plan.
 3. **Affiner encore** → reviens en phase 1 sur le point à creuser.
 4. **S'arrêter là** → résume en 3 lignes et donne le chemin du fichier.
 

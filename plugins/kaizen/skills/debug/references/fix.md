@@ -31,4 +31,4 @@ valeur invalide peut réellement revenir par un autre chemin.
 
 Le bug a atteint la production, touché des données, ou montré un trou de processus (test absent d'une
 catégorie entière, CI qui ne lance pas un dossier) → ajoute au résumé une ligne « Prévention
-structurelle » et recommande `/kaizen:compound`.
+structurelle » et recommande `/kaizen:learn`.

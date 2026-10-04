@@ -15,7 +15,7 @@ besoin d'aucun changement.
 Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` et `${CLAUDE_PLUGIN_ROOT}/references/plan-contract.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:auto`** (posé par `/kaizen:plan` et `/kaizen:lfg`) : aucune question. Applique `safe_auto` et
+**`mode:auto`** (posé par `/kaizen:plan` et `/kaizen:autopilot`) : aucune question. Applique `safe_auto` et
 les `gated_auto` qui précisent sans changer de décision ; rends
 `{ verdict: ready|ready-with-notes|blocked, applied: [...], decisions_needed: [...], coverage }`.
 

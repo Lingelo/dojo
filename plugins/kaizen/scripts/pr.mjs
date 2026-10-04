@@ -1,4 +1,4 @@
-// Kaizen — instantané déterministe d'une PR GitHub et état du suivi (babysit-pr, resolve-pr-feedback).
+// Kaizen — instantané déterministe d'une PR GitHub et état du suivi (watch-pr, address-feedback).
 //
 // L'agent garde le jugement et les modifications ; ce module fait ce que la prose fait mal :
 // une lecture complète et paginée des fils de revue, des commentaires, des revues et des checks du
@@ -9,7 +9,7 @@
 //   snapshot [--pr N] [--repo o/r] [--start] [--budget-seconds S] [--settle-seconds S]
 //   watch    [--pr N] [--repo o/r] [--interval 150] [--settle-seconds 300]
 //   mark     --thread ID | --comment ID | --check NAME  --disposition dispatched|needs-human|open [--note …]
-//   threads  [--pr N] [--repo o/r] [--all]          fils de revue complets (pour resolve-pr-feedback)
+//   threads  [--pr N] [--repo o/r] [--all]          fils de revue complets (pour address-feedback)
 //   reply    --thread ID --body-file F               répond dans un fil (marqueur kaizen ajouté)
 //   resolve  --thread ID                             marque un fil comme résolu
 //   comment  --body-file F                           commentaire de premier niveau (marqueur ajouté)

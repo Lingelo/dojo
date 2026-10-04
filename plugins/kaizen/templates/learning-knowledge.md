@@ -1,7 +1,7 @@
 ---
 title: [Titre clair et descriptif]
 date: [YYYY-MM-DD]
-category: [sous-dossier de solutions/]
+category: [sous-dossier de learnings/]
 module: [Module ou zone]
 problem_type: [énumération, piste savoir]
 component: [valeur du corpus, sinon défaut suggéré]

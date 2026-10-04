@@ -14,7 +14,7 @@ artifact: kaizen-adr/v1
 
 ## Contexte
 {{La situation et les forces en présence (contraintes, volumes, équipe, délais), avec les preuves :
-code cité, leçons `docs/solutions/…`, articles de la constitution, mesures. Pas la solution.}}
+code cité, leçons `docs/learnings/…`, articles de la constitution, mesures. Pas la solution.}}
 
 ## Options
 ### A. {{option}}

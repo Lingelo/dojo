@@ -65,7 +65,7 @@ filtres actifs, lisible tel quel dans Excel.
 - `app/queries/orders_query.rb` — filtres de la liste, à réutiliser tels quels.
 
 ### Leçons et règles appliquées
-- `docs/solutions/runtime-errors/export-csv-accents-excel.md` — Excel exige un BOM UTF-8 : sans lui,
+- `docs/learnings/runtime-errors/export-csv-accents-excel.md` — Excel exige un BOM UTF-8 : sans lui,
   R3 échoue. → BOM en tête de flux, testé par AE2.
 - (pack: house-rules, csv-exports.md) — séparateur `;` pour les locales FR. → appliqué.
 

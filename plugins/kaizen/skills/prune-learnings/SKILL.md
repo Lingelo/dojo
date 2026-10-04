@@ -1,11 +1,11 @@
 ---
-name: refresh
-description: Entretient les leçons de docs/solutions/ contre le code actuel — détecte les leçons périmées (chemins, symboles, comportements disparus), doublons, chevauchements et contradictions, puis applique Garder / Mettre à jour / Fusionner / Remplacer / Supprimer avec preuves, et rend un rapport complet. Utiliser pour « nettoie les leçons », « audit de docs/solutions », après un gros refactor, ou quand une leçon s'est révélée fausse : /kaizen:refresh [zone]. Ne modifie jamais le code produit.
+name: prune-learnings
+description: Entretient les leçons de docs/learnings/ contre le code actuel — détecte les leçons périmées (chemins, symboles, comportements disparus), doublons, chevauchements et contradictions, puis applique Garder / Mettre à jour / Fusionner / Remplacer / Supprimer avec preuves, et rend un rapport complet. Utiliser pour « nettoie les leçons », « audit de docs/learnings », après un gros refactor, ou quand une leçon s'est révélée fausse : /kaizen:prune-learnings [zone]. Ne modifie jamais le code produit.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
 argument-hint: "[zone : dossier, fichier, module ou mot-clé] [élaguer] [mode:auto]"
 ---
 
-# Refresh — garder les leçons dignes de confiance
+# Prune learnings — garder les leçons dignes de confiance
 
 Les leçons ne cumulent de la valeur que si **chacune** est fiable : une leçon fausse est pire
 qu'aucune, car `/kaizen:plan` et `/kaizen:review` l'appliquent. Cette skill audite le corpus contre le
@@ -22,13 +22,13 @@ une consigne, elle le **signale**.
 **Modes.** Interactif (défaut) : applique Garder/Mettre à jour/Fusionner sans demander, **demande**
 avant Remplacer et Supprimer. `mode:auto` : applique Garder/Mettre à jour/Fusionner, et pour
 Remplacer/Supprimer se contente d'ajouter en tête de la leçon
-`> ⚠️ Possiblement périmée (refresh du <date>) : <raison>` et de les lister en « Recommandé ».
+`> ⚠️ Possiblement périmée (prune-learnings du <date>) : <raison>` et de les lister en « Recommandé ».
 
 ## 1. Périmètre
 
-Candidats : les `.md` sous `<root>/solutions/` (hors `README.md`). Un indice de zone filtre (dossier,
+Candidats : les `.md` sous `<root>/learnings/` (hors `README.md`). Un indice de zone filtre (dossier,
 module, mot-clé via `node "$K" learnings search`) ; un indice qui ne correspond à rien **n'élargit
-jamais** le périmètre : dis-le et arrête. Corpus vide : dis-le et suggère `/kaizen:compound`.
+jamais** le périmètre : dis-le et arrête. Corpus vide : dis-le et suggère `/kaizen:learn`.
 Commence par `node "$K" learnings validate` (frontmatter cassé = mise à jour à faire).
 
 ## 2. Enquêter
@@ -80,7 +80,7 @@ autres leçons, README) et corrige-les.
 ## 5. Rapport (le livrable)
 
 ```markdown
-## Refresh de docs/solutions/<zone> — <date>
+## Élagage de docs/learnings/<zone> — <date>
 Examinées : N · Gardées : a · Mises à jour : b · Fusionnées : c · Remplacées : d · Supprimées : e
 
 ### Appliqué
@@ -96,6 +96,6 @@ Examinées : N · Gardées : a · Mises à jour : b · Fusionnées : c · Rempla
 ## 6. Commit et trouvabilité
 
 Rien n'a changé → pas de commit. Sinon, indexe **uniquement** les fichiers modifiés par cette skill et
-commite (`docs(<JIRA>): refresh des leçons <zone>`) — sur une branche dédiée si tu es sur la branche
+commite (`docs(<JIRA>): prune-learnings des leçons <zone>`) — sur une branche dédiée si tu es sur la branche
 par défaut et en interactif, sinon demande. Enfin, vérifie que `CLAUDE.md` mène bien vers
-`<root>/solutions/` (même règle que `/kaizen:compound`, avec accord).
+`<root>/learnings/` (même règle que `/kaizen:learn`, avec accord).

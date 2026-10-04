@@ -2,6 +2,12 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [SemVer](https://semver.org/lang/fr/).
 
+## [1.2.0] - 2026-10-04
+
+### Modifié
+- Vocabulaire propre à Kaizen pour les skills et le dossier des leçons (`docs/learnings/`).
+- Vidéo de présentation re-rendue avec les nouveaux noms.
+
 ## [1.1.0] - 2026-10-02
 
 ### Ajouté
@@ -19,8 +25,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   adversarial, design.
 - **Livraison** :
   - `/kaizen:ship`, avec description tirée du plan et guide du relecteur ;
-  - `/kaizen:resolve-pr-feedback` ;
-  - `/kaizen:babysit-pr`, qui s'appuie sur `scripts/pr.mjs` : instantané paginé, état des éléments
+  - `/kaizen:address-feedback` ;
+  - `/kaizen:watch-pr`, qui s'appuie sur `scripts/pr.mjs` : instantané paginé, état des éléments
     traités, veilleur sans tokens, mise à jour de la branche seulement sur `BEHIND`.
 - `/kaizen:polish` : détection et lancement du serveur de dev, retouches guidées par l'utilisateur.
 - **Apprentissage** :
@@ -31,8 +37,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
 - `node $K size` (plafond `pr.max_lines`) et `verify --only audit` (audit des dépendances).
 - Tests `node:test` (unitaires, CLI, garde-fou, PR avec un faux `gh`, contrats), CI GitHub Actions et
   19 évaluations de bout en bout (`evals/run.mjs`, vrai `claude -p` sur un projet de démonstration)
-  couvrant 17 skills : review, plan, doc-review, compound, work, debug, lfg, polish, brainstorm,
-  constitution, decide, ideate, postmortem, metrics, release, refresh, setup.
+  couvrant 17 skills : review, plan, doc-review, learn, work, debug, autopilot, polish, brainstorm,
+  constitution, decide, ideate, postmortem, metrics, release, prune-learnings, setup.
 - Documentation utilisateur dans `docs/` : démarrage, configuration, packs, dépannage, un guide par
   skill.
 - Vidéo de présentation d'une minute (`docs/media/`), avec voix off, sous-titres et source
@@ -40,11 +46,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
 
 ### Modifié
 - `/kaizen:work` : contrôle de taille, audit des dépendances, livraison via `/kaizen:ship`.
-- `/kaizen:lfg` : livraison via `ship`, puis suivi par `babysit-pr`.
+- `/kaizen:autopilot` : livraison via `ship`, puis suivi par `watch-pr`.
 - `learnings-researcher` lit aussi les ADR et les post-mortems.
 - Le parseur de frontmatter ignore les commentaires YAML en fin de ligne.
 - Corrections issues des évaluations de bout en bout :
-  - `lfg` n'accepte plus de raccourci « changement trivial » : plan, garde-fou, `verify` et revue
+  - `autopilot` n'accepte plus de raccourci « changement trivial » : plan, garde-fou, `verify` et revue
     tournent toujours ;
   - `polish` crée une branche locale au lieu de s'arrêter sur la branche par défaut ;
   - `release` écrit le CHANGELOG et la version sans commiter ; commit, tag et publication sur accord ;
@@ -57,8 +63,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
 
 ### Ajouté
 - Boucle compound engineering, adaptée du plugin Compound Engineering d'Every (MIT) :
-  - `brainstorm`, `plan`, `work`, `review`, `compound` ;
-  - `ideate`, `debug`, `refresh`, `lfg`, `setup`.
+  - `brainstorm`, `plan`, `work`, `review`, `learn` ;
+  - `ideate`, `debug`, `prune-learnings`, `autopilot`, `setup`.
 - 15 agents : 5 de recherche et 10 relecteurs de code, avec un contrat de constats commun.
 - Plan unifié `kaizen-plan/v1`, schéma des leçons, Kaizen Packs (locaux ou git épinglés).
 - CLI déterministe `scripts/kaizen.mjs`, sans dépendance.

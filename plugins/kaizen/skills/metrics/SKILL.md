@@ -40,13 +40,13 @@ fenêtre trop courte (moins de 10 changements → tendances non significatives).
 
 **Réutilisation des leçons** : c'est l'indicateur propre à Kaizen. Des leçons écrites mais jamais
 citées par un plan = la boucle ne se referme pas (leçons introuvables, mal étiquetées, ou
-`learnings-researcher` non lancé) → `/kaizen:refresh` et vérifier la trouvabilité depuis `CLAUDE.md`.
+`learnings-researcher` non lancé) → `/kaizen:prune-learnings` et vérifier la trouvabilité depuis `CLAUDE.md`.
 
 ## 3. Conclure
 
 Rapport court (≤ 30 lignes) : tableau des valeurs, 2 à 3 constats, et **1 à 3 actions** concrètes
 reliées à une skill (« 62 % des PR dépassent 400 lignes → découper en tranches dans /kaizen:plan,
-`size` bloquant dans ship » ; « 0 leçon citée sur 14 → refresh + étiquettes »). Pas de jugement
+`size` bloquant dans ship » ; « 0 leçon citée sur 14 → prune-learnings + étiquettes »). Pas de jugement
 « bon/mauvais » sans référence : compare à la fenêtre précédente quand c'est possible.
 
 Propose d'enregistrer le rapport dans `<root>/metrics/YYYY-MM-DD.md` pour suivre la tendance (une

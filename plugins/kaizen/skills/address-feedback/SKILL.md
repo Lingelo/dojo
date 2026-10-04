@@ -1,11 +1,11 @@
 ---
-name: resolve-pr-feedback
-description: Traite les retours déjà laissés sur une PR GitHub — juge chaque fil et commentaire sur ses mérites (y compris les nits), corrige ce qui est valable, vérifie, commite et pousse, puis répond dans chaque fil avec le contexte cité et le résout ; escalade sans bloquer ce qui demande une décision humaine. Utiliser pour « traite les commentaires de la PR », « réponds à la revue », « corrige les remarques de Bob », /kaizen:resolve-pr-feedback ; appelé par /kaizen:babysit-pr.
+name: address-feedback
+description: Traite les retours déjà laissés sur une PR GitHub — juge chaque fil et commentaire sur ses mérites (y compris les nits), corrige ce qui est valable, vérifie, commite et pousse, puis répond dans chaque fil avec le contexte cité et le résout ; escalade sans bloquer ce qui demande une décision humaine. Utiliser pour « traite les commentaires de la PR », « réponds à la revue », « corrige les remarques de Bob », /kaizen:address-feedback ; appelé par /kaizen:watch-pr.
 allowed-tools: Bash(node:*), Bash(git:*), Bash(gh:*), Read, Write, Edit, Glob, Grep, Agent
 argument-hint: "[n° ou URL de PR | vide = branche courante] [mode:pipeline]"
 ---
 
-# Resolve PR feedback — chaque retour reçoit un verdict et une réponse
+# Address feedback — chaque retour reçoit un verdict et une réponse
 
 **Terminé quand :** chaque fil et commentaire sélectionné a un verdict ; les correctifs valables sont
 poussés **avant** les réponses ; chaque fil traité a une réponse visible qui cite ce dont il parle et
@@ -15,7 +15,7 @@ Une action non publiée n'est jamais présentée comme faite.
 Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:pipeline`** (posé par `/kaizen:babysit-pr`) : aucune question ; rend
+**`mode:pipeline`** (posé par `/kaizen:watch-pr`) : aucune question ; rend
 `{ fixed: [...], replied: [...], resolved: [...], declined: [...], needs_human: [{id, url, question,
 options, recommendation}], commits: [...], pushed: bool }`.
 

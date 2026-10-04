@@ -1,7 +1,7 @@
-# Schéma des leçons (`<root>/solutions/`)
+# Schéma des leçons (`<root>/learnings/`)
 
-Contrat de frontmatter des leçons écrites par `/kaizen:compound` et entretenues par
-`/kaizen:refresh`. Validation : `node "$K" learnings validate <fichier>` (exit 1 si invalide).
+Contrat de frontmatter des leçons écrites par `/kaizen:learn` et entretenues par
+`/kaizen:prune-learnings`. Validation : `node "$K" learnings validate <fichier>` (exit 1 si invalide).
 
 ## Le test de durabilité
 
@@ -52,7 +52,7 @@ n'écrit rien et on dit pourquoi.
 
 ### Optionnels (les deux pistes)
 
-- `category` — sous-dossier de `solutions/`
+- `category` — sous-dossier de `learnings/`
 - `tags` — ≤ 8 mots-clés en minuscules-avec-tirets
 - `related_components` — autres composants
 - `retire_when` — le changement **hors du repo** qui rendrait la leçon caduque et comment le vérifier
@@ -72,23 +72,23 @@ classer, échantillonne le frontmatter et les dossiers existants (`node "$K" lea
 
 | `problem_type` | Dossier |
 |---|---|
-| `build_error` | `solutions/build-errors/` |
-| `test_failure` | `solutions/test-failures/` |
-| `runtime_error` | `solutions/runtime-errors/` |
-| `performance_issue` | `solutions/performance-issues/` |
-| `database_issue` | `solutions/database-issues/` |
-| `security_issue` | `solutions/security-issues/` |
-| `ui_bug` | `solutions/ui-bugs/` |
-| `integration_issue` | `solutions/integration-issues/` |
-| `logic_error` | `solutions/logic-errors/` |
-| `developer_experience` | `solutions/developer-experience/` |
-| `workflow_issue` | `solutions/workflow-issues/` |
-| `best_practice` | `solutions/best-practices/` |
-| `documentation_gap` | `solutions/documentation-gaps/` |
-| `architecture_pattern` | `solutions/architecture-patterns/` |
-| `design_pattern` | `solutions/design-patterns/` |
-| `tooling_decision` | `solutions/tooling-decisions/` |
-| `convention` | `solutions/conventions/` |
+| `build_error` | `learnings/build-errors/` |
+| `test_failure` | `learnings/test-failures/` |
+| `runtime_error` | `learnings/runtime-errors/` |
+| `performance_issue` | `learnings/performance-issues/` |
+| `database_issue` | `learnings/database-issues/` |
+| `security_issue` | `learnings/security-issues/` |
+| `ui_bug` | `learnings/ui-bugs/` |
+| `integration_issue` | `learnings/integration-issues/` |
+| `logic_error` | `learnings/logic-errors/` |
+| `developer_experience` | `learnings/developer-experience/` |
+| `workflow_issue` | `learnings/workflow-issues/` |
+| `best_practice` | `learnings/best-practices/` |
+| `documentation_gap` | `learnings/documentation-gaps/` |
+| `architecture_pattern` | `learnings/architecture-patterns/` |
+| `design_pattern` | `learnings/design-patterns/` |
+| `tooling_decision` | `learnings/tooling-decisions/` |
+| `convention` | `learnings/conventions/` |
 
 Nom de fichier : `<slug-du-titre>.md`, sans date (la date est dans le frontmatter).
 

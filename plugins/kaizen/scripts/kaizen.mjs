@@ -94,7 +94,7 @@ function paths(root) {
     repo: root,
     docs_root: rel(root, docs),
     plans: rel(root, join(docs, 'plans')),
-    solutions: rel(root, join(docs, 'solutions')),
+    learnings: rel(root, join(docs, 'learnings')),
     ideation: rel(root, join(docs, 'ideation')),
     debug: rel(root, join(docs, 'debug')),
     config_file: existsSync(join(root, '.kaizen', 'config.json')) ? '.kaizen/config.json' : null,
@@ -121,7 +121,7 @@ function cmdInit(root) {
   }
   ensureStateDir(root);
   const docs = docsRoot(root);
-  for (const sub of ['plans', 'solutions', 'ideation']) {
+  for (const sub of ['plans', 'learnings', 'ideation']) {
     const d = join(docs, sub);
     if (!existsSync(d)) {
       mkdirSync(d, { recursive: true });
@@ -238,7 +238,7 @@ function cmdPlan(root, sub) {
 }
 
 // ---------------------------------------------------------------------------
-// learnings (docs/solutions)
+// learnings (docs/learnings)
 // ---------------------------------------------------------------------------
 
 export const SCHEMA = {
@@ -272,7 +272,7 @@ function validateLearning(file) {
 }
 
 function loadLearnings(root) {
-  const dir = join(docsRoot(root), 'solutions');
+  const dir = join(docsRoot(root), 'learnings');
   return walkMarkdown(dir).map((file) => {
     const text = readFileSync(file, 'utf8');
     const { data, body } = parseFrontmatter(text);
@@ -291,7 +291,7 @@ function cmdLearnings(root, sub) {
   if (sub === 'validate') {
     const files = positional.slice(2).length
       ? positional.slice(2).map((f) => resolve(f))
-      : walkMarkdown(join(docsRoot(root), 'solutions'));
+      : walkMarkdown(join(docsRoot(root), 'learnings'));
     let bad = 0;
     for (const f of files) {
       const errors = validateLearning(f);

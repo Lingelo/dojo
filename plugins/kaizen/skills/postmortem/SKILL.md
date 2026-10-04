@@ -62,7 +62,7 @@ une équipe nommée par l'utilisateur), échéance, suivi (ticket, PR). Peu d'ac
 
 ## 5. Refermer la boucle Kaizen
 
-- **Leçon** : invoque `kaizen:compound` (piste bug) avec la cause et ce qui n'a pas marché.
+- **Leçon** : invoque `kaizen:learn` (piste bug) avec la cause et ce qui n'a pas marché.
 - **Test de non-régression** : s'il manque, en faire une action (ou le proposer tout de suite).
 - **Règle de pack** si le facteur est une règle de domaine (« tout webhook est idempotent »).
 - **Amendement de constitution** si un principe manquait ou a été contourné : propose

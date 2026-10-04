@@ -10,7 +10,7 @@ Pour une vue d'ensemble avant de commencer : [la vidéo de présentation](media/
 
 - Claude Code, Node ≥ 18, git.
 - `gh` authentifié (`gh auth status`) pour ouvrir et suivre les PR. Sans lui, tout fonctionne sauf
-  `ship`, `resolve-pr-feedback` et `babysit-pr`.
+  `ship`, `address-feedback` et `watch-pr`.
 - Optionnel : le plugin `playwright` du marketplace, pour que Claude voie l'interface.
 
 ## 1. Installer
@@ -36,7 +36,7 @@ commandes.
 /kaizen:setup
 ```
 
-Claude crée `.kaizen/config.json` et les dossiers `docs/plans`, `docs/solutions` et `docs/ideation`.
+Claude crée `.kaizen/config.json` et les dossiers `docs/plans`, `docs/learnings` et `docs/ideation`.
 Il détecte la stack et vous montre les commandes de vérification qu'il a trouvées (`npm test`,
 `npm run -s lint`…). **Vérifiez-les** : ce sont elles que le garde-fou lancera. Il vous propose
 enfin une petite section dans `CLAUDE.md`, pour que tout agent sache où trouver les leçons.
@@ -120,12 +120,12 @@ Tant que les tests ou le lint sont rouges, le hook l'empêche de s'arrêter.
 À la fin, il vérifie la taille du diff, simplifie, puis lance **obligatoirement** `/kaizen:review`.
 Il corrige les P0/P1 et vous propose de livrer.
 
-## 7. Livrer et suivre : `/kaizen:ship` puis `/kaizen:babysit-pr`
+## 7. Livrer et suivre : `/kaizen:ship` puis `/kaizen:watch-pr`
 
 `ship` pousse la branche et ouvre la PR. La description est tirée du plan : pourquoi, ce qui change,
 **guide du relecteur**, preuves, retour arrière.
 
-`babysit-pr` suit ensuite la PR jusqu'à ce qu'elle semble prête à merger :
+`watch-pr` suit ensuite la PR jusqu'à ce qu'elle semble prête à merger :
 - il traite les commentaires de revue avant la CI ;
 - il répare la CI ;
 - il met la branche à jour quand GitHub le demande ;
@@ -133,16 +133,16 @@ Il corrige les P0/P1 et vous propose de livrer.
 
 **Vous mergez.** Kaizen ne merge jamais.
 
-## 8. Retenir : `/kaizen:compound`
+## 8. Retenir : `/kaizen:learn`
 
 Si le cycle a révélé un piège, par exemple « Excel affiche des accents cassés sans BOM UTF-8 » :
 
 ```text
-/kaizen:compound
+/kaizen:learn
 ```
 
 Claude n'écrit une leçon que si elle passe le test de durabilité : sans ce document, un futur
-développeur referait-il l'erreur ? La leçon va dans `docs/solutions/runtime-errors/…`, avec un
+développeur referait-il l'erreur ? La leçon va dans `docs/learnings/runtime-errors/…`, avec un
 frontmatter validé.
 
 **C'est là que la boucle se referme.** Le prochain `/kaizen:plan` qui touche aux exports la
@@ -150,7 +150,7 @@ retrouvera, la citera, et en fera un test.
 
 ## Et ensuite
 
-- Tout enchaîner : après un brainstorm, `/kaizen:lfg` exécute le plan, la revue, la livraison et le
+- Tout enchaîner : après un brainstorm, `/kaizen:autopilot` exécute le plan, la revue, la livraison et le
   suivi de PR sans vous interrompre.
 - Mesurer après quelques semaines : `/kaizen:metrics` (taille des PR, délai, taux de reprise,
   leçons réellement réutilisées).

@@ -30,12 +30,12 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 │       ▼
 │   /kaizen:review          « est-ce correct ? »
 │       ▼
-│   /kaizen:ship            « livre une PR relisible »  →  /kaizen:babysit-pr
+│   /kaizen:ship            « livre une PR relisible »  →  /kaizen:watch-pr
 │       ▼
-└── /kaizen:compound        « retiens ce qu'on a appris »  → relu par le prochain plan
+└── /kaizen:learn           « retiens ce qu'on a appris »  → relu par le prochain plan
 ```
 
-`/kaizen:lfg` enchaîne tout ce qui suit le brainstorm, sans s'arrêter.
+`/kaizen:autopilot` enchaîne tout ce qui suit le brainstorm, sans s'arrêter.
 
 ## Les guides, skill par skill
 
@@ -55,23 +55,23 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 **Vérifier et livrer**
 - [review](guides/review.md) — revue de code multi-agents
 - [ship](guides/ship.md) — ouvrir une PR relisible
-- [resolve-pr-feedback](guides/resolve-pr-feedback.md) — traiter les retours de revue
-- [babysit-pr](guides/babysit-pr.md) — mener une PR jusqu'à « prête »
+- [address-feedback](guides/address-feedback.md) — traiter les retours de revue
+- [watch-pr](guides/watch-pr.md) — mener une PR jusqu'à « prête »
 - [release](guides/release.md) — préparer une version
 
 **Apprendre et mesurer**
-- [compound](guides/compound.md) — capitaliser une leçon
-- [refresh](guides/refresh.md) — entretenir les leçons
+- [learn](guides/learn.md) — capitaliser une leçon
+- [prune-learnings](guides/prune-learnings.md) — entretenir les leçons
 - [postmortem](guides/postmortem.md) — apprendre d'un incident
 - [metrics](guides/metrics.md) — mesurer la livraison et l'effet cumulatif
 
 **Orchestrer**
-- [lfg](guides/lfg.md) — tout enchaîner en autonomie
+- [autopilot](guides/autopilot.md) — tout enchaîner en autonomie
 - [setup](guides/setup.md) — installer et vérifier Kaizen dans un repo
 
 ## Conventions de ces pages
 
-- Les chemins affichés (`docs/plans/`, `docs/solutions/`…) sont les **défauts**. Si `docs_root` est
+- Les chemins affichés (`docs/plans/`, `docs/learnings/`…) sont les **défauts**. Si `docs_root` est
   réglé, lisez `<docs_root>/plans/`, etc. Voir [Configuration](configuration.md#docs_root).
 - `$K` désigne le CLI du plugin : `node <dossier du plugin>/scripts/kaizen.mjs`.
 - Les modes non interactifs (`mode:auto`, `mode:return`, `mode:pipeline`, `mode:agent`) servent quand

@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Initialise ou vérifie Kaizen dans un repo — crée .kaizen/config.json et les dossiers docs/plans, docs/solutions, docs/ideation, détecte la stack et les commandes de vérification du garde-fou, règle langue et tracker, rend le corpus de leçons trouvable depuis CLAUDE.md, crée un Kaizen Pack (pack:<nom>) et lance un bilan de santé. Utiliser pour « installe/configure kaizen », « crée un pack de règles », « vérifie la config kaizen », /kaizen:setup.
+description: Initialise ou vérifie Kaizen dans un repo — crée .kaizen/config.json et les dossiers docs/plans, docs/learnings, docs/ideation, détecte la stack et les commandes de vérification du garde-fou, règle langue et tracker, rend le corpus de leçons trouvable depuis CLAUDE.md, crée un Kaizen Pack (pack:<nom>) et lance un bilan de santé. Utiliser pour « installe/configure kaizen », « crée un pack de règles », « vérifie la config kaizen », /kaizen:setup.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, AskUserQuestion
 argument-hint: "[pack:<nom>] [check]"
 ---
@@ -40,9 +40,9 @@ Un garde-fou resté actif sans travail en cours (`gate status` actif) → propos
 
    ```markdown
    ## Kaizen
-   - Avant de planifier ou de déboguer, cherche les leçons du projet dans `docs/solutions/`
+   - Avant de planifier ou de déboguer, cherche les leçons du projet dans `docs/learnings/`
      (frontmatter : module, tags, symptoms, applies_when).
-   - Plans dans `docs/plans/` ; boucle : /kaizen:brainstorm → plan → work → review → compound.
+   - Plans dans `docs/plans/` ; boucle : /kaizen:brainstorm → plan → work → review → learn.
    ```
 7. **Constitution** — `CONSTITUTION.md` absente → propose `/kaizen:constitution` (Recommandé) : sans
    elle, plan et revue n'ont que les règles génériques. Présente → `node "$K" constitution check`.

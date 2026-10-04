@@ -19,7 +19,7 @@ Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`, puis
 `${CLAUDE_PLUGIN_ROOT}/skills/debug/references/investigate.md` pour les phases 0 à 2.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:return`** (posé par `/kaizen:lfg`) : pas de question ; correctif appliqué seulement s'il est
+**`mode:return`** (posé par `/kaizen:autopilot`) : pas de question ; correctif appliqué seulement s'il est
 **convergent** (il rétablit le comportement voulu) — un correctif **divergent** (il renverserait une
 décision délibérée, ou un test « rouge » qui affirme le comportement voulu) est différé ; commit sur
 branche dédiée, pas de push. Rends `{ status: fixed|diagnosed-no-fix|needs-human|blocked,
@@ -87,4 +87,4 @@ Si un correctif a été fait :
 3. Push et PR seulement si l'arbre était propre avant, si rien d'autre que le correctif n'est sur la
    branche, et si un remote permet une PR ; sinon commit local et dis en une ligne pourquoi.
 4. **Capitaliser** : un bug dont la cause était surprenante ou l'enquête longue est exactement ce que
-   `/kaizen:compound` doit retenir — propose-le (en `mode:return`, signale-le dans le retour).
+   `/kaizen:learn` doit retenir — propose-le (en `mode:return`, signale-le dans le retour).

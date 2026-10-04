@@ -1,4 +1,4 @@
-# `/kaizen:resolve-pr-feedback`
+# `/kaizen:address-feedback`
 
 > Chaque retour de revue reçoit un verdict, un correctif publié **avant** la réponse, une réponse qui
 > cite le retour, puis la résolution du fil.
@@ -8,17 +8,17 @@
 | | |
 |---|---|
 | **Ce qu'elle fait** | Récupère les fils non résolus et les commentaires, juge chaque retour, corrige, vérifie, commite, pousse, répond dans chaque fil, résout |
-| **Quand l'utiliser** | « Traite les commentaires de la PR », « réponds à la revue de Bob » ; appelée à chaque cycle par `babysit-pr` |
-| **Quand ne pas l'utiliser** | Pas encore de retours : faire relire par Kaizen (→ [review](review.md)) ; suivre la PR dans la durée (→ [babysit-pr](babysit-pr.md)) |
+| **Quand l'utiliser** | « Traite les commentaires de la PR », « réponds à la revue de Bob » ; appelée à chaque cycle par `watch-pr` |
+| **Quand ne pas l'utiliser** | Pas encore de retours : faire relire par Kaizen (→ [review](review.md)) ; suivre la PR dans la durée (→ [watch-pr](watch-pr.md)) |
 | **Ce qu'elle produit** | Des commits poussés, des réponses dans les fils, des fils résolus, un tableau de verdicts, et la liste « Décisions pour toi » |
-| **Et ensuite** | Répondre aux décisions humaines ; `babysit-pr` pour la suite |
+| **Et ensuite** | Répondre aux décisions humaines ; `watch-pr` pour la suite |
 
 ## Exemples
 
 ```text
-/kaizen:resolve-pr-feedback                # PR de la branche courante
-/kaizen:resolve-pr-feedback 42
-/kaizen:resolve-pr-feedback https://github.com/acme/shop/pull/42
+/kaizen:address-feedback                # PR de la branche courante
+/kaizen:address-feedback 42
+/kaizen:address-feedback https://github.com/acme/shop/pull/42
 ```
 
 ## Les verdicts
@@ -50,8 +50,8 @@
   merger, rebaser, forcer un push, approuver un run de CI, résoudre un fil sans y avoir répondu.
 - Le push précède toujours les réponses : on n'écrit pas « corrigé dans `<sha>` » pour un commit
   invisible.
-- `mode:pipeline` (utilisé par `babysit-pr`) : aucune question, retour structuré.
+- `mode:pipeline` (utilisé par `watch-pr`) : aucune question, retour structuré.
 
 ## Voir aussi
 
-[babysit-pr](babysit-pr.md) · [review](review.md) · [Dépannage gh](../depannage.md#gh-nest-pas-authentifié)
+[watch-pr](watch-pr.md) · [review](review.md) · [Dépannage gh](../depannage.md#gh-nest-pas-authentifié)

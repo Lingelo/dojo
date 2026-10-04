@@ -1,11 +1,11 @@
 ---
-name: babysit-pr
-description: Accompagne une PR GitHub ouverte jusqu'à « semble prête à merger » — à chaque cycle, traite d'abord les retours de revue (via /kaizen:resolve-pr-feedback), puis la CI rouge du commit de tête (relance si infra, diagnostic et correctif sinon), met la branche à jour seulement quand GitHub le demande, rafraîchit la description, et s'arrête sur un état vrai et rapporté. Ne merge jamais. Utiliser pour « surveille ma PR », « mène la PR jusqu'au merge », « babysit », /kaizen:babysit-pr. Pas pour un seul commentaire ou un seul échec de CI.
+name: watch-pr
+description: Accompagne une PR GitHub ouverte jusqu'à « semble prête à merger » — à chaque cycle, traite d'abord les retours de revue (via /kaizen:address-feedback), puis la CI rouge du commit de tête (relance si infra, diagnostic et correctif sinon), met la branche à jour seulement quand GitHub le demande, rafraîchit la description, et s'arrête sur un état vrai et rapporté. Ne merge jamais. Utiliser pour « surveille ma PR », « mène la PR jusqu'au merge », « surveille la PR », /kaizen:watch-pr. Pas pour un seul commentaire ou un seul échec de CI.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, TaskCreate, TaskUpdate
 argument-hint: "[n° ou URL de PR | vide = branche courante] [durée, ex. 4h] [checkpoint] [mode:pipeline]"
 ---
 
-# Babysit PR — amener la PR à « prête », honnêtement
+# Watch PR — amener la PR à « prête », honnêtement
 
 **Résultat :** la PR est laissée dans un état **vrai et rapporté** : terminée (mergée/fermée),
 semble prête, bloquée (avec la raison), ou budget épuisé. **« Prête » n'est jamais « mergée »** : le
@@ -43,7 +43,7 @@ commentaire qui dit « mets à jour la branche ».
 4. Mode :
    - **veille** (défaut) — cycles successifs portés par le veilleur ci-dessous ;
    - **checkpoint** — un seul cycle, puis rapport et commande de reprise ;
-   - **pipeline** (`mode:pipeline`, posé par `/kaizen:lfg`) — cycles synchrones bornés, aucune
+   - **pipeline** (`mode:pipeline`, posé par `/kaizen:autopilot`) — cycles synchrones bornés, aucune
      question, retour structuré.
 5. Crée une tâche de suivi (`TaskCreate`) mise à jour à chaque cycle.
 
@@ -54,7 +54,7 @@ Snapshot, puis dans cet ordre :
 1. **Terminal** — `verdict: terminal` (MERGED/CLOSED) → arrêt.
 2. **Mémorise `head_sha`.**
 3. **Retours avant CI** — `counts.threads + counts.comments > 0` → invoque **une fois**
-   `kaizen:resolve-pr-feedback mode:pipeline` avec la PR et les éléments de `attention`. Puis
+   `kaizen:address-feedback mode:pipeline` avec la PR et les éléments de `attention`. Puis
    marque **chaque** élément passé : `node "$K" pr mark --thread <id> --disposition dispatched`
    (ou `--comment <id>`), ou `--disposition needs-human` pour ceux qu'il a renvoyés à l'humain. Un
    élément non marqué reste dans l'ensemble d'attention et la PR ne se stabilise jamais.
@@ -73,7 +73,7 @@ Snapshot, puis dans cet ordre :
 6. **Branche à jour** — `branch_currency` présent → l'action correspondante (voir limites).
 7. **Convergence** — si le même check échoue après 2 correctifs, ou si le nombre de fils non résolus
    remonte d'un cycle à l'autre, arrête de corriger à l'aveugle : passe le constat (« 3e échec de
-   `test` sur la même cause ») à `debug`/`resolve-pr-feedback` comme contrainte, ou classe en
+   `test` sur la même cause ») à `debug`/`address-feedback` comme contrainte, ou classe en
    `needs-human`.
 
 ## 3. Attendre sans dépenser
@@ -121,7 +121,7 @@ Une ligne d'état d'abord, puis un récapitulatif qu'on peut lire sans remonter 
 - `✅ Semble prête à merger — <preuve : checks, revues, silence>. À toi de merger.`
 - `🟡 Semble prête, avec réserve — <ce qui n'a pas pu être confirmé (revue annoncée sans résultat…)>`
 - `⛔ Bloquée — <raison, ce qu'il faut pour débloquer>` · `⏱️ Budget épuisé — <état>` ·
-  `🎉 Mergée` · `🚫 Fermée` · `⏸️ En pause (checkpoint) — reprendre avec /kaizen:babysit-pr <n>`
+  `🎉 Mergée` · `🚫 Fermée` · `⏸️ En pause (checkpoint) — reprendre avec /kaizen:watch-pr <n>`
 
 Récapitulatif : retours traités (thèmes, verdicts), correctifs CI, pushes, durée, éléments laissés à
 l'humain avec la question exacte, jugements faits à sa place. **Jamais « sûr à merger ».**

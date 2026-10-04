@@ -7,7 +7,7 @@
   Vidéo de présentation du plugin Kaizen (79,6 s, 1920×1080, 30 fps), rendue avec le plugin motion-studio.
 
   Métaphore : une spirale qui monte au-dessus d'un jardin sec. Chaque tour est un cycle
-  (brainstorm → plan → work → review → ship → compound) et monte plus haut que le précédent
+  (brainstorm → plan → work → review → ship → learn) et monte plus haut que le précédent
   (amélioration continue). Une grue en origami vermillon, l'unité de travail, suit le chemin de pierres
   (les « mille grues » : beaucoup de petits pas qui s'accumulent) ;
   les quatre pierres posées dans le gravier sont les articles de la constitution ; le garde-fou est
@@ -199,7 +199,7 @@
 <!-- 38.6–47.3 · PR (plaque, station ship) -->
 <div class="ov" id="o-pr">
   <div class="num">05</div>
-  <div class="kicker">Ship · babysit-pr</div>
+  <div class="kicker">Ship · watch-pr</div>
   <div class="rule"></div>
   <span class="ex">exemple</span>
   <div class="b" style="font-weight:700">feat(SHOP-412): export CSV des commandes</div>
@@ -214,9 +214,9 @@
 
 <!-- 47.5–56.3 · boucle -->
 <div class="ov" id="o-loop">
-  <div class="kicker"><span class="mincho" style="color:var(--shu);font-weight:700;letter-spacing:0;margin-right:14px">06</span>Compound</div>
+  <div class="kicker"><span class="mincho" style="color:var(--shu);font-weight:700;letter-spacing:0;margin-right:14px">06</span>Learn</div>
   <div class="rule"></div>
-  <div class="mono" style="font-size:30px">docs/solutions/</div>
+  <div class="mono" style="font-size:30px">docs/learnings/</div>
   <div class="b m" style="margin-top:16px">leçons durables, relues par le cycle suivant</div>
 </div>
 
@@ -417,7 +417,7 @@ const rocks = ROCKS.map(([x, z, s], i) => {
 });
 
 // pierres de gué : les stations du chemin
-const NAMES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'compound'];
+const NAMES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'learn'];
 const NUMS = ['01', '02', '03', '04', '05', '06'];
 const KANJI = ['想', '計', '作', '検', '出', '積']; // imaginer · planifier · fabriquer · examiner · expédier · accumuler
 const stations = [];
@@ -829,7 +829,7 @@ function sceneAt(t) { // t = temps du récit
     m.material.color.setHex(hit ? SHU : i % 2 ? 0xf2eee4 : 0x1d1c1a);
   });
 
-  // --- pile du centre : une pierre par passage à compound
+  // --- pile du centre : une pierre par passage à learn
   const drops = [49.3, 52.7, 54.3, 55.5];
   slabs.forEach((m, i) => {
     const k = prog(t, drops[i], 0.7);
