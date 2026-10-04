@@ -14,7 +14,8 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { changedFiles, loadConfig, repoRoot, runVerify, transcriptUsage, withFiles } from './lib.mjs';
+import { readLaunches } from './cycle-agents.mjs';
+import { changedFiles, loadConfig, repoRoot, runVerify, subagentUsage, transcriptUsage, withFiles } from './lib.mjs';
 
 function readStdin() {
   try {
@@ -61,12 +62,14 @@ if (state.since && Date.now() - Date.parse(state.since) > maxAgeMs) {
   process.exit(0);
 }
 
-// Coût du cycle : tokens de la session principale depuis `gate on`, relevés à chaque fin de tour ;
-// `gate off` les consigne dans .kaizen/state/cycles.jsonl pour /kaizen:metrics.
+// Coût du cycle : tokens de la session principale et de ses sous-agents (ventilés par rôle) depuis
+// `gate on`, relevés à chaque fin de tour ; `gate off` les consigne dans .kaizen/state/cycles.jsonl
+// pour /kaizen:metrics.
 if (input.transcript_path) {
   const usage = transcriptUsage(input.transcript_path, state.since);
   if (usage) {
-    state = { ...state, usage };
+    const subagents = subagentUsage(input.transcript_path, state.since, readLaunches(root));
+    state = { ...state, usage, subagents };
     writeFileSync(stateFile, `${JSON.stringify(state, null, 2)}\n`);
   }
 }

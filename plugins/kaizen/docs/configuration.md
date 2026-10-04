@@ -236,11 +236,12 @@ Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
 | Fichier | Rôle |
 |---|---|
 | `gate.json` | état du garde-fou (actif, plan, session, nombre de blocages) |
-| `cycles.jsonl` | un cycle `work`/`autopilot` par ligne, écrit par `gate off` : plan, durée, blocages, tokens (lu par `metrics` → `cycle_cost`) |
+| `cycles.jsonl` | un cycle `work`/`autopilot` par ligne, écrit par `gate off` : plan, durée, blocages, tokens de la session principale et des sous-agents par rôle (lu par `metrics` → `cycle_cost`) |
 | `deployments.jsonl` | déploiements, retours arrière et flags lancés depuis cette machine (les tags git font foi) |
 | `deploy-approvals.json` | approbations de déploiement protégé en attente ou confirmées, 30 min |
 | `monitor.jsonl` | échantillons des signaux (`monitor check` / `watch`), pour la chronologie des post-mortems |
 | `reviews.json` | dernière revue enregistrée par branche (arbre relu, verdict, relecteurs, renonciation) |
+| `agent-runs.jsonl` | sous-agents lancés pendant le cycle en cours (hook sur l'outil `Agent`) : rôle, modèle, id — pour ventiler `cycle_cost` ; effacé par `gate off` |
 | `review-evidence.json` | relecteurs de code réellement lancés (hook sur l'outil `Agent`), 12 h |
 | `waivers.json` | renonciations en attente de confirmation par l'utilisateur, 30 min |
 | `pr/<owner>-<repo>-<n>.json` | ce que `watch-pr` a déjà traité (fils, commentaires, checks) |

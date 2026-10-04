@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { deployments } from './deploy.mjs';
-import { defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, walkMarkdown } from './lib.mjs';
+import { defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, usageTotal, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
 const FIX_RE = /^(fix|hotfix|revert)(\(|!|:)|^Revert "/i;
@@ -177,7 +177,8 @@ function doraFromDeployments(root, from, env) {
 }
 
 // Coût des cycles work/autopilot terminés (`gate off`), relevé localement : durée, blocages du
-// garde-fou, tokens de la session principale. Local à la machine, comme .kaizen/state/.
+// garde-fou, tokens de la session principale et de ses sous-agents, ventilés par rôle (politique de
+// modèles). Local à la machine, comme .kaizen/state/.
 function cycleCost(root, from) {
   let lines = [];
   try {
@@ -195,15 +196,37 @@ function cycleCost(root, from) {
     })
     .filter((c) => c && Date.parse(c.ended) >= from.getTime());
   if (!cycles.length) return null;
-  const tokens = cycles.filter((c) => c.usage).map((c) => c.usage.input_tokens + c.usage.output_tokens + c.usage.cache_creation_input_tokens + c.usage.cache_read_input_tokens);
+  const withUsage = cycles.filter((c) => c.usage);
+  // Les cycles antérieurs au relevé des sous-agents n'ont que la session principale.
+  const withSub = withUsage.filter((c) => c.subagents);
+  const subTotal = (c) => usageTotal(c.subagents?.usage);
+  const mainSum = withSub.reduce((n, c) => n + usageTotal(c.usage), 0);
+  const subSum = withSub.reduce((n, c) => n + subTotal(c), 0);
+  const byRole = {};
+  for (const c of withSub) {
+    for (const [role, u] of Object.entries(c.subagents.by_role || {})) {
+      const r = (byRole[role] ||= { tokens: 0, output_tokens: 0 });
+      r.tokens += usageTotal(u);
+      r.output_tokens += Number(u.output_tokens) || 0;
+    }
+  }
   return {
     cycles: cycles.length,
     minutes_median: round(median(cycles.map((c) => c.minutes))),
-    tokens_median: round(median(tokens), 0),
-    output_tokens_median: round(median(cycles.filter((c) => c.usage).map((c) => c.usage.output_tokens)), 0),
+    tokens_median: round(median(withUsage.map((c) => usageTotal(c.usage) + subTotal(c))), 0),
+    output_tokens_median: round(median(withUsage.map((c) => (c.usage.output_tokens || 0) + (Number(c.subagents?.usage?.output_tokens) || 0))), 0),
+    main_tokens_median: round(median(withUsage.map((c) => usageTotal(c.usage))), 0),
+    subagent_tokens_median: withSub.length ? round(median(withSub.map(subTotal)), 0) : null,
+    subagents_median: withSub.length ? round(median(withSub.map((c) => c.subagents.agents || 0)), 0) : null,
+    subagent_share: mainSum + subSum ? round(subSum / (mainSum + subSum), 2) : null,
+    tokens_by_role: withSub.length ? byRole : null,
     gate_blocks_total: cycles.reduce((n, c) => n + (c.gate_blocks || 0), 0),
     cycles_with_gate_block_share: round(cycles.filter((c) => c.gate_blocks > 0).length / cycles.length, 2),
-    method: 'cycles /kaizen:work et /kaizen:autopilot clos par gate off sur cette machine ; tokens de la session principale (sous-agents non comptés)',
+    method:
+      'cycles /kaizen:work et /kaizen:autopilot clos par gate off sur cette machine ; tokens = session principale + sous-agents ' +
+      '(transcripts <session>/subagents/ de Claude Code, dédoublonnés par message) ; rôle d\'un sous-agent d\'après son lancement ' +
+      'consigné par le hook Agent (id d\'agent, sinon début du prompt), `inconnu` sans correspondance ; part et ventilation ' +
+      `calculées sur ${withSub.length}/${withUsage.length} cycle(s) relevés avec sous-agents`,
   };
 }
 

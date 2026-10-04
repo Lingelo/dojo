@@ -527,12 +527,14 @@ function cmdGate(root, sub) {
             minutes: Math.round((ended - Date.parse(st.since)) / 6000) / 10,
             gate_blocks: st.blocks_total || 0,
             usage: st.usage || null,
+            subagents: st.subagents || null,
           };
           appendFileSync(join(dirname(file), 'cycles.jsonl'), `${JSON.stringify(cycle)}\n`);
         }
       } catch {}
     }
     rmSync(file, { force: true });
+    rmSync(join(dirname(file), 'agent-runs.jsonl'), { force: true });
     out({ active: false, cycle });
   } else if (sub === 'status') {
     out(existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : { active: false });

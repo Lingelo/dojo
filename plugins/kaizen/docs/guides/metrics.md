@@ -34,7 +34,7 @@ Brut : `node $K metrics --since 90d` (ajoutez `--no-github` si `gh` n'est pas au
 | Temps de rétablissement | médiane `detected` → `resolved` des post-mortems | capacité à revenir en arrière |
 | Taille des lots | médiane, 90e centile, part au-dessus de `pr.max_lines` | **le premier levier** selon DORA |
 | **Boucle Kaizen** | leçons totales et nouvelles, **lues** (citées par un plan récent), **appliquées** (citées par un message de commit), jamais citées, exceptions à la constitution, ADR | l'effet cumulatif |
-| **Coût des cycles** | cycles `work`/`autopilot` clos par `gate off` : durée, tokens de la session principale, blocages du garde-fou (local à la machine) | la cérémonie rapporte-t-elle plus qu'elle ne coûte ? |
+| **Coût des cycles** | cycles `work`/`autopilot` clos par `gate off` : durée, tokens de la session principale et des sous-agents, ventilés par rôle, blocages du garde-fou (local à la machine) | la cérémonie rapporte-t-elle plus qu'elle ne coûte ? |
 
 ## Lire honnêtement
 

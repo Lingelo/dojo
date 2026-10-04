@@ -37,7 +37,7 @@ fenêtre trop courte (moins de 10 changements → tendances non significatives).
 | Temps de rétablissement | depuis les post-mortems (`detected` → `resolved`) |
 | Taille des lots | médiane et part au-dessus de `pr.max_lines` — le premier levier selon DORA |
 | Boucle Kaizen | leçons nouvelles, **lues** (citées par un plan récent), **appliquées** (citées par un commit), jamais citées, exceptions à la constitution |
-| Coût des cycles | `cycle_cost` : cycles work/autopilot clos, durée et tokens médians, part des cycles où le garde-fou a bloqué — local à la machine |
+| Coût des cycles | `cycle_cost` : cycles work/autopilot clos, durée et tokens médians (session principale + sous-agents), part des sous-agents (`subagent_share`), tokens par rôle (`tokens_by_role`), part des cycles où le garde-fou a bloqué — local à la machine |
 
 **Réutilisation des leçons** : c'est l'indicateur propre à Kaizen. Des leçons écrites mais jamais
 citées par un plan = la boucle ne se referme pas (leçons introuvables, mal étiquetées, ou
@@ -46,8 +46,10 @@ citées par un plan = la boucle ne se referme pas (leçons introuvables, mal ét
 
 **Coût** : mets-le en regard du gain. Des cycles longs ou chers avec un taux d'échec qui ne baisse pas
 → la cérémonie ne rapporte pas : propose le profil `lean`. Un garde-fou qui bloque dans la plupart des
-cycles → vérifications trop lentes ou instables (`gate.targeted`), ou unités trop grosses. Dis que les
-tokens ne comptent que la session principale (pas les sous-agents) et que la mesure est locale.
+cycles → vérifications trop lentes ou instables (`gate.targeted`), ou unités trop grosses. Lis
+`tokens_by_role` avec la politique de modèles (`node "$K" models`) : un rôle qui pèse lourd sur un modèle
+fort est le premier levier d'économie (profil `lean` ou `models.roles`). Dis que la mesure est locale,
+et qu'un rôle `inconnu` désigne des sous-agents lancés sans être rapprochés de leur lancement.
 
 ## 3. Conclure
 

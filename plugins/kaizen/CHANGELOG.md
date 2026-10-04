@@ -4,6 +4,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
 
 ## [Non publié]
 
+### Ajouté
+- **Coût des sous-agents** dans `cycle_cost` (#15) : le hook Stop additionne aussi les transcripts des
+  sous-agents de la session (`<session>/subagents/agent-*.jsonl`), dédoublonnés par message ; le hook
+  `Agent` consigne chaque lancement pendant un cycle (`.kaizen/state/agent-runs.jsonl` : rôle, modèle,
+  id) pour ventiler les tokens par rôle de la politique de modèles. `metrics` expose le total
+  (principal + sous-agents), `main_tokens_median`, `subagent_tokens_median`, `subagent_share` et
+  `tokens_by_role`.
+
 ### Corrigé
 - Une vérification coupée par son délai (`verify`, garde-fou Stop, signaux `monitor` par commande)
   ne survit plus en arrière-plan : `scripts/run-bounded.mjs` tue tout l'arbre de processus

@@ -508,17 +508,25 @@ export function changedFiles(root, base = diffBase(root)) {
 
 // Consommation de tokens d'une session depuis son transcript (JSONL de Claude Code), à partir d'une
 // date. Un même message peut apparaître plusieurs fois (streaming) : dédoublonné par identifiant.
-// Seule la session principale est comptée : les sous-agents ont leurs propres transcripts.
-export function transcriptUsage(file, since) {
-  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, messages: 0 };
-  let text;
-  try {
-    text = readFileSync(file, 'utf8');
-  } catch {
-    return null;
-  }
-  const from = since ? Date.parse(since) : 0;
-  const seen = new Set();
+// Seule la session principale est comptée ici : les sous-agents ont leurs propres transcripts
+// (voir subagentUsage).
+const USAGE_KEYS = ['input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens'];
+
+export function emptyUsage() {
+  return { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, messages: 0 };
+}
+
+export function usageTotal(usage) {
+  return usage ? USAGE_KEYS.reduce((n, k) => n + (Number(usage[k]) || 0), 0) : 0;
+}
+
+function addUsage(into, usage) {
+  for (const k of USAGE_KEYS) into[k] += Number(usage[k]) || 0;
+  into.messages += usage.messages ?? 1;
+  return into;
+}
+
+function readUsage(text, from, seen, usage = emptyUsage()) {
   for (const line of text.split('\n')) {
     if (!line.includes('"usage"')) continue;
     let entry;
@@ -532,8 +540,85 @@ export function transcriptUsage(file, since) {
     const id = msg.id || entry.uuid;
     if (id && seen.has(id)) continue;
     if (id) seen.add(id);
-    for (const k of Object.keys(usage)) if (k !== 'messages') usage[k] += Number(msg.usage[k]) || 0;
-    usage.messages++;
+    addUsage(usage, msg.usage);
   }
   return usage;
+}
+
+export function transcriptUsage(file, since) {
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+  return readUsage(text, since ? Date.parse(since) : 0, new Set());
+}
+
+// Transcripts des sous-agents d'une session : Claude Code les range à côté du transcript principal,
+// `<projet>/<session>.jsonl` → `<projet>/<session>/subagents/[…/]agent-<id>.jsonl`.
+function subagentTranscripts(file) {
+  const dir = join(file.replace(/\.jsonl$/, ''), 'subagents');
+  const found = [];
+  const walk = (d) => {
+    let entries;
+    try {
+      entries = readdirSync(d, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (e.isDirectory()) walk(join(d, e.name));
+      else if (/^agent-.+\.jsonl$/.test(e.name)) found.push(join(d, e.name));
+    }
+  };
+  walk(dir);
+  return found.sort();
+}
+
+// Début du premier message utilisateur d'un transcript de sous-agent : le prompt qui l'a lancé.
+export function promptKey(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+}
+
+function firstPrompt(text) {
+  for (const line of text.split('\n')) {
+    if (!line.includes('"user"')) continue;
+    try {
+      const entry = JSON.parse(line);
+      if (entry.type !== 'user' && entry.message?.role !== 'user') continue;
+      const c = entry.message?.content;
+      return promptKey(typeof c === 'string' ? c : Array.isArray(c) ? c.filter((p) => p.type === 'text').map((p) => p.text).join('\n') : '');
+    } catch {}
+  }
+  return '';
+}
+
+// Tokens des sous-agents d'une session depuis une date, ventilés par rôle. Chaque transcript est
+// rattaché au lancement consigné par le hook Agent (`launches` : { agent_id, prompt, role }), par
+// identifiant d'agent, sinon par début de prompt ; sans correspondance, le rôle est `inconnu`.
+// → { agents, usage, by_role: { rôle: usage } } ; null si le transcript principal est illisible.
+export function subagentUsage(file, since, launches = []) {
+  if (!file || !existsSync(file)) return null;
+  const from = since ? Date.parse(since) : 0;
+  const seen = new Set();
+  const result = { agents: 0, usage: emptyUsage(), by_role: {} };
+  for (const path of subagentTranscripts(file)) {
+    let text;
+    try {
+      text = readFileSync(path, 'utf8');
+    } catch {
+      continue;
+    }
+    const usage = readUsage(text, from, seen);
+    if (!usage.messages) continue;
+    const id = /agent-(.+)\.jsonl$/.exec(path)[1];
+    const prompt = firstPrompt(text);
+    const launch = launches.find((l) => l.agent_id && l.agent_id === id) || launches.find((l) => prompt && l.prompt && l.prompt === prompt);
+    const role = launch?.role || 'inconnu';
+    result.agents++;
+    addUsage(result.usage, usage);
+    result.by_role[role] = addUsage(result.by_role[role] || emptyUsage(), usage);
+  }
+  return result;
 }
