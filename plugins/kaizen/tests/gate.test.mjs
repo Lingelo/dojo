@@ -93,7 +93,9 @@ test('le garde-fou appartient à la session qui l’a posé', () => {
 test('budget épuisé : les commandes restantes ne sont pas lancées et ne bloquent pas', () => {
   const dir = tempRepo({
     '.kaizen/config.json': {
-      verify: { test: 'node -e "setTimeout(() => {}, 3000)"', lint: 'node -e "process.exit(1)"' },
+      // La commande lente quitte le dossier du dépôt : sous Windows, coupée par le délai, elle survit
+      // quelques secondes au shell et verrouillerait sinon le dossier temporaire au nettoyage (EBUSY).
+      verify: { test: 'node -e "process.chdir(require(\'os\').tmpdir()); setTimeout(() => {}, 3000)"', lint: 'node -e "process.exit(1)"' },
       gate: { budget_seconds: 1.5 },
     },
   });
