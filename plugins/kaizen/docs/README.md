@@ -12,6 +12,7 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 | Savoir quelle commande lancer, là, maintenant | `/kaizen:help` ([guide](guides/help.md)) |
 | Voir Kaizen en une minute | [La vidéo de présentation](media/kaizen-presentation.mp4) |
 | Comprendre Kaizen en 5 minutes | [Le README du plugin](../README.md) |
+| Savoir ce que vaut Kaizen face aux autres SDLC | [Bilan et positionnement](positionnement.md) |
 | Faire un premier cycle complet, pas à pas | [Démarrage](demarrage.md) |
 | Régler Kaizen pour mon projet | [Configuration](configuration.md) |
 | Partager des règles d'équipe entre repos | [Kaizen Packs](packs.md) |

@@ -46,6 +46,7 @@ Kaizen outille ces trois disciplines.
 
 - **[Démarrage](docs/demarrage.md)** — un premier cycle complet, pas à pas
 - **[Guides par skill](docs/README.md)** — quand utiliser chaque commande, ce qu'elle produit, ses options
+- [Bilan et positionnement](docs/positionnement.md) — ce que Kaizen couvre, ses limites, face aux SDLC classiques, à Spec Kit, Kiro, BMAD et Compound Engineering
 - [Configuration](docs/configuration.md) · [Kaizen Packs](docs/packs.md) · [Dépannage](docs/depannage.md) · [Changelog](CHANGELOG.md)
 
 ## Installation
