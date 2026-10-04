@@ -243,6 +243,24 @@ test('metrics : incident après la fenêtre = échec ; rétablissement depuis la
   cleanup(dir);
 });
 
+test('status : incident ouvert d’abord, puis post-mortem manquant', () => {
+  const dir = shopRepo({ deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } } });
+  cli(dir, ['init']);
+  cli(dir, ['deploy', 'run', 'production']);
+  const detected = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  cli(dir, ['monitor', 'incident', 'open', '--env', 'production', '--at', detected, '--summary', 'lenteurs']);
+  const st = () => cli(dir, ['status', '--json']).json;
+  assert.equal(st().next[0].command, '/kaizen:monitor production');
+  assert.match(st().next[0].why, /lenteurs/);
+  assert.equal(st().incidents.open, 1);
+  cli(dir, ['monitor', 'incident', 'resolve', '--env', 'production']);
+  assert.equal(st().next[0].command, '/kaizen:postmortem');
+  const docs = cli(dir, ['root']).json.docs_root || 'docs';
+  writeFiles(dir, { [`${docs}/postmortems/2026-pm.md`]: `---\ntitle: Lenteurs\ndetected: ${detected}\nresolved: ${detected}\n---\n` });
+  assert.ok(!st().next.some((n) => n.command === '/kaizen:postmortem'), 'post-mortem écrit');
+  cleanup(dir);
+});
+
 test('garde-fous : commande de production brute refusée, tag de déploiement forgé refusé', () => {
   const dir = shopRepo();
   const direct = preTool(dir, `cd . && ${MARK} # prod`);

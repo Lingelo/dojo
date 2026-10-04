@@ -581,10 +581,14 @@ function repoStatus(root) {
     if (existsSync(gateFile)) gate = JSON.parse(readFileSync(gateFile, 'utf8'));
   } catch {}
   const review = initialized && branch ? reviewStatus(root) : null;
+  const incidentsState = Object.keys(config.deploy.environments || {}).length ? incidentStatus(root, docs) : null;
 
   // Prochaine étape : la première situation qui s'applique, dans l'ordre de la boucle.
   const next = [];
   const say = (command, why) => next.push({ command, why });
+  // Rétablir passe avant tout le reste ; un incident résolu sans post-mortem vient juste après.
+  for (const i of incidentsState?.open || []) say(`/kaizen:monitor ${i.env}`, `incident ouvert sur ${i.env} depuis ${i.detected_at}${i.summary ? ` (${i.summary})` : ''} : rétablir (retour arrière), puis /kaizen:postmortem`);
+  for (const i of incidentsState?.without_postmortem || []) say('/kaizen:postmortem', `incident ${i.env} du ${i.detected_at} résolu (${i.resolved_by}) sans post-mortem`);
   if (!initialized) say('/kaizen:setup', 'Kaizen n’est pas initialisé dans ce repo');
   else if (!constitution.exists) say('/kaizen:constitution', 'pas de CONSTITUTION.md : plan et revue n’ont que des règles génériques');
   if (gate.active) say('/kaizen:work', `un travail est en cours sous garde-fou${gate.plan ? ` (${gate.plan})` : ''} : le reprendre, ou \`gate off\` s’il est abandonné`);
@@ -614,9 +618,21 @@ function repoStatus(root) {
     learnings,
     gate: { active: Boolean(gate.active), plan: gate.plan || null, since: gate.since || null },
     deploy: Object.keys(config.deploy.environments || {}).length ? { environments: Object.keys(config.deploy.environments), undeployed: undeployed(root, config) } : null,
+    incidents: incidentsState ? { open: incidentsState.open.length, without_postmortem: incidentsState.without_postmortem.length } : null,
     review: review ? { verdict: review.review?.verdict || null, depth: review.review?.depth || null, push_allowed: review.push.allowed, reason: review.push.reason, pending_waiver: Boolean(review.pending_waiver) } : null,
     next,
   };
+}
+
+// Incidents ouverts, et incidents résolus depuis moins de 14 jours sans post-mortem dont la détection
+// (`detected`) tombe à moins de 24 h de la leur.
+function incidentStatus(root, docs) {
+  const all = incidents(root);
+  const open = all.filter((i) => !i.resolved_at);
+  const pms = docs ? walkMarkdown(join(docs, 'postmortems')).map((f) => Date.parse(parseFrontmatter(readFileSync(f, 'utf8')).data?.detected)).filter((t) => !Number.isNaN(t)) : [];
+  const recent = Date.now() - 14 * 86400000;
+  const without_postmortem = all.filter((i) => i.resolved_at && Date.parse(i.resolved_at) >= recent && !pms.some((t) => Math.abs(t - Date.parse(i.detected_at)) <= 86400000));
+  return { open, without_postmortem };
 }
 
 // Commits de la branche courante pas encore déployés sur le premier environnement déclaré (staging
@@ -639,6 +655,7 @@ function cmdStatus(root) {
   out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.valid ? '' : ' (invalide)'}` : ''}`);
   out(`  · ${st.plans} plan(s)${st.latest_plan ? ` — dernier : ${st.latest_plan.path} (${st.latest_plan.stage})` : ''} · ${st.learnings} leçon(s)`);
   if (st.gate.active) out(`  ⚠ garde-fou actif depuis ${st.gate.since}`);
+  if (st.incidents?.open) out(`  ⛔ ${st.incidents.open} incident(s) ouvert(s)`);
   if (st.review) out(`  ${yes(st.review.push_allowed)} push : ${st.review.reason}`);
   out('\nEnsuite :');
   for (const n of st.next) out(`  → ${n.command} — ${n.why}`);

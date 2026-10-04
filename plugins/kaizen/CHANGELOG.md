@@ -21,6 +21,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   court de la détection à la résolution ; `deployments.incidents`. Le post-mortem reprend la détection
   tracée. Le hook refuse aussi les tags `incident/…` et `resolve/…` forgés à la main.
 
+- `status` (et donc `/kaizen:help`) place en tête un incident ouvert (`/kaizen:monitor <env>`), puis
+  un incident résolu depuis moins de 14 jours sans post-mortem (`/kaizen:postmortem`).
+
 ### Corrigé
 - `deploy run`, `deploy rollback` et `deploy flag` ont un délai (`deploy.timeout_seconds`, 30 min, ou
   `environments.<env>.timeout_seconds`) : une commande bloquée est coupée avec tout son arbre de
