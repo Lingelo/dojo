@@ -16,6 +16,7 @@ headless, **remplace le temps** avant l'exécution du moindre script, puis pour 
 | `data-fps` | 60 | Cadence de sortie |
 | `data-duration` | — (obligatoire) | Durée en secondes |
 | `data-seed` | 42 | Graine de `Math.random` |
+| `data-quality` | standard | Niveau de rendu exposé en `window.__quality` (voir plus bas) |
 
 Les options CLI (`--width`, `--fps`, …) priment sur ces attributs.
 
@@ -31,6 +32,41 @@ Les options CLI (`--width`, `--fps`, …) priment sur ces attributs.
 | Animations CSS / transitions / `element.animate()` | temps local = `t − naissance` (naissance = instant virtuel de création) |
 | SVG SMIL (`<animate>`, `<animateTransform>`…) | `svg.setCurrentTime(t − naissance)` |
 | `<video>` / `<audio>` | `currentTime = t − data-start` |
+
+## Niveau de rendu (`--quality draft|standard|high`)
+
+Le renderer expose `window.__quality` avant tout script. La composition décide ce que chaque niveau coûte ;
+**même scène à tous les niveaux, seule la finesse change** (sinon un brouillon ne valide rien) :
+```js
+const QUALITY = window.__quality ?? 'standard';   // aperçu navigateur : standard
+const HQ = QUALITY === 'high';
+if (QUALITY === 'draft') renderer.shadowMap.enabled = false;            // itérer vite
+const tube = new THREE.TubeGeometry(curve, HQ ? 2400 : 900, 0.05, HQ ? 20 : 10);
+if (HQ) { sun.shadow.mapSize.set(4096, 4096); /* + EffectComposer avec GTAOPass (ombres de contact) */ }
+```
+- **Explicite, jamais déduit de la machine** (`hardwareConcurrency`, mesure de vitesse…) : même option = mêmes
+  images partout ; seule la durée du rendu varie d'une machine à l'autre.
+- **Des polygones seuls ne se voient pas** : subdiviser sans ajouter de forme (octave de bruit, chanfrein,
+  pièces manquantes) ne change rien à l'écran. Ajouter de la *forme*, pas seulement des triangles.
+- **Le levier dépend des matières** : une scène mate (pierre, papier, sable) gagne avec l'occlusion ambiante
+  (`GTAOPass`) et des ombres fines ; une carte d'environnement (`RoomEnvironment`) l'éclaire en double, remplit
+  les ombres et la délave — elle sert aux matières brillantes (métal, laque, verre). Comparer par stills.
+- Ordre de grandeur mesuré (Mac Apple Silicon, scène kaizen) : `high` ≈ `standard` en vitesse ; ne pas
+  supposer que « high = lent », mesurer avec `--from/--to`.
+
+## Temps du récit ≠ temps réel (ralentir pour lire)
+
+Pour donner du temps de lecture sans recaler toutes les constantes : écrire la composition en **temps du récit**
+et laisser une table le parcourir plus lentement pendant les passages à lire. Sons et voix suivent la même table.
+```js
+const READ = [[3.6, 8.3], [13.5, 17.5]], SLOW = 0.68, RAMP = 0.5;   // intervalles du récit à lire, vitesse
+const speedAt = (s) => 1 - (1 - SLOW) * Math.max(0, ...READ.map(([a, b]) => sstep(clamp((s - a) / RAMP)) * sstep(clamp((b - s) / RAMP))));
+// REAL[i] = ∫ ds / speedAt(s) (table pas à pas) → realAt(s) par interpolation, storyAt(t) par dichotomie
+window.__seek = (t) => sceneAt(storyAt(t));
+const sfx = (src, at) => window.__sfx?.(src, { at: realAt(at) });  // sons écrits en temps du récit
+```
+Mettre `data-duration` à `realAt(fin)`, et les `"at"` de `narration.json` à `realAt(début de chaque réplique)`.
+Exemple complet : `plugins/kaizen/docs/media/source/kaizen-presentation.html`.
 
 ## Recettes par technologie
 
@@ -85,7 +121,10 @@ window.__seek = (t) => tl.seek(t, false);
   `MeshBasicMaterial({ toneMapped: false })`.
 - **Cadrage** : `camera.setViewOffset(W, H, dx, dy, W, H)` décale le sujet pour laisser la place aux titres HTML
   superposés (plus net que du texte 3D, et `data-sfx` fonctionne dessus).
-- **Déterminisme** : positions aléatoires via `Math.random()` (seedé) ; pas de `THREE.Clock` (lire `t`).
+- **Déterminisme** : pas de `THREE.Clock` (lire `t`). Attention : Three.js consomme `Math.random` pour l'UUID de
+  **chaque objet créé** (et certains modules, comme `Pass.js` d'`EffectComposer`, en créent dès l'import). Ajouter un
+  objet ou un import plus haut décale toute la séquence seedée ; et des objets créés selon `__quality` donnent une
+  séquence différente par niveau. Pour des positions stables, tirer d'un **hachage** (`fract(sin(i·k)·43758.5)`).
 - `preserveDrawingBuffer: true` évite des frames noires à la capture.
 
 **Vidéo embarquée** — `<video src="clip.mp4" data-start="2.5" muted playsinline preload="auto">` : jamais `autoplay`.

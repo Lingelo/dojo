@@ -1,7 +1,7 @@
 {
   "name": "motion-studio",
   "description": "Motion design as code: write HTML/CSS/SVG/Canvas compositions and render them frame by frame into MP4/WebM/GIF/MOV with Playwright + ffmpeg (deterministic virtual clock), with synced sound, voice-over (local TTS) and subtitles",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": {
     "name": "Angelo LIMA",
     "email": "contact@example.com"

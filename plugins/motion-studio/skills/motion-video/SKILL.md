@@ -128,6 +128,7 @@ Les bruitages (`data-sfx`, `__sfx`, `<audio data-start>`) sont toujours mixés ;
 | `--voice voice/voice.json` | Voix off mixée, musique baissée dessous (`--duck -9`), sous-titres incrustés + `.srt/.vtt` à côté de la vidéo |
 | `--subs f.srt` · `--captions bottom\|karaoke\|center\|off` · `--embed-subs` | Sous-titres externes · style · piste souple (mp4/webm) |
 | `--crf 12..23` | Qualité H.264 (défaut 16) |
+| `--quality draft\|standard\|high` | Niveau exposé en `window.__quality` : la composition choisit ombres, polygones, occlusion ambiante (`references/composition-contract.md`) |
 
 Ordre de grandeur : ~9 captures/s en 1080p PNG, ~13 en `--jpeg` → 8 s @60 fps sans blur ≈ 50 s, avec `--motion-blur 4` ≈ 3–4 min.
 Lancer les rendus longs en arrière-plan.
