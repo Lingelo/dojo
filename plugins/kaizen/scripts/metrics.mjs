@@ -144,7 +144,9 @@ function loopHealth(root, from, branch) {
 
 // DORA mesuré sur les vrais déploiements (tags deploy/<env>/… et rollback/<env>/… posés par
 // `kaizen.mjs deploy`), quand il y en a dans la fenêtre : fréquence, délai commit → production, taux
-// d'échec (déploiement suivi d'un retour arrière avant le suivant), temps de rétablissement.
+// d'échec (déploiement suivi d'un retour arrière ou d'un incident avant le suivant), temps de
+// rétablissement (détection de l'incident — ou déploiement, sans incident tracé — → retour arrière ou
+// résolution). Les incidents (`incident/<env>/…`) viennent de monitor watch, patrol ou d'une alerte.
 function doraFromDeployments(root, from, env) {
   const all = deployments(root, { env });
   const deploys = all.filter((d) => d.kind === 'deploy');
@@ -159,20 +161,26 @@ function doraFromDeployments(root, from, env) {
     const times = (git(root, ['log', '--format=%aI', range, '-n', '500'], { allowFail: true }) || '').split('\n').filter(Boolean).map(Date.parse);
     for (const t of times) lead.push((Date.parse(d.at) - t) / 3600000);
     const next = deploys[deploys.indexOf(d) + 1];
-    const rb = all.find((x) => x.kind === 'rollback' && x.at >= d.at && (!next || x.at < next.at));
-    if (rb) {
+    const during = (x) => x.at >= d.at && (!next || x.at < next.at);
+    const rb = all.find((x) => x.kind === 'rollback' && during(x));
+    const inc = all.find((x) => x.kind === 'incident' && during(x));
+    if (rb || inc) {
       failed++;
-      restore.push((Date.parse(rb.at) - Date.parse(d.at)) / 3600000);
+      const start = inc && (!rb || inc.at <= rb.at) ? inc.at : d.at;
+      const end = all.find((x) => (x.kind === 'rollback' || x.kind === 'resolve') && x.at >= start);
+      if (end) restore.push((Date.parse(end.at) - Date.parse(start)) / 3600000);
     }
   }
+  const windowed = (kind) => all.filter((x) => x.kind === kind && Date.parse(x.at) >= from.getTime());
   return {
     env,
     deployments: inWindow.length,
-    rollbacks: all.filter((x) => x.kind === 'rollback' && Date.parse(x.at) >= from.getTime()).length,
+    rollbacks: windowed('rollback').length,
+    incidents: windowed('incident').length,
     lead_time_hours_median: round(median(lead.filter((h) => h >= 0))),
     change_failure_rate: round(failed / inWindow.length, 2),
     time_to_restore_hours_median: round(median(restore)),
-    method: `tags deploy/${env}/… et rollback/${env}/… (kaizen.mjs deploy) : délai = premier commit → déploiement, échec = retour arrière avant le déploiement suivant, rétablissement = déploiement → retour arrière`,
+    method: `tags deploy/${env}/…, rollback/${env}/…, incident/${env}/… et resolve/${env}/… (kaizen.mjs deploy, monitor) : délai = premier commit → déploiement, échec = retour arrière ou incident avant le déploiement suivant, rétablissement = détection de l'incident (à défaut, déploiement) → retour arrière ou résolution`,
   };
 }
 

@@ -11,6 +11,9 @@
 //   node kaizen.mjs deploy detect [--json] | configure <id> [--force]   plateforme reconnue → config
 //   node kaizen.mjs monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]
 //                                                 signaux de production (exit 1 si seuil franchi)
+//   node kaizen.mjs monitor patrol --env e        contrôle planifiable : violation confirmée → incident (exit 1)
+//   node kaizen.mjs monitor alert [--env e] [--file f|-]   alerte Alertmanager/PagerDuty/Datadog/JSON → incident
+//   node kaizen.mjs monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]
 //   node kaizen.mjs config                       configuration effective (JSON)
 //   node kaizen.mjs init [--docs-root d] [--language fr] [--profile lean|standard|full]   initialise .kaizen/ et les dossiers
 //   node kaizen.mjs detect                       stack et commandes de vérification (JSON)
@@ -53,7 +56,7 @@ import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { audit, scaffold } from './audit.mjs';
-import { check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
+import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
 import {
   DEFAULT_CONFIG,
@@ -754,12 +757,38 @@ try {
           onSample: (c) => process.stderr.write(`[kaizen] ${c.at} ${c.ok ? '✔' : '✘'} ${Object.entries(c.signals).map(([n, s]) => `${n}=${s.value ?? '—'}${s.ok ? '' : '!'}`).join(' ')}\n`),
         });
         const config = loadConfig(root);
+        // La violation est un incident daté de sa détection, que le retour arrière éventuel résout.
+        if (r.status === 'breach' && env) r.incident = openIncident(root, env, { at: r.detected_at, source: 'watch', summary: `${r.breached.join(', ')} hors seuil`, signals: r.breached });
         if (r.status === 'breach' && env && config.deploy.auto_rollback && config.deploy.environments?.[env]?.rollback) {
           r.rollback = rollback(root, env, { reason: `monitor : ${r.breached.join(', ')} hors seuil` });
         }
         out(r);
         process.exit(r.status === 'breach' ? 1 : 0);
-      } else die('usage : monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]');
+      } else if (sub === 'patrol') {
+        if (!env) die('usage : monitor patrol --env <env> [--plan p] [--interval 60]');
+        const r = await patrol(root, { env, plan, intervalSeconds: flags.interval });
+        out(r);
+        process.exit(r.status === 'breach' ? 1 : 0);
+      } else if (sub === 'alert') {
+        const file = typeof flags.file === 'string' ? flags.file : '-';
+        const payload = readFileSync(file === '-' ? 0 : file, 'utf8');
+        try {
+          out(handleAlert(root, payload, { env }));
+        } catch (err) {
+          die(err.message);
+        }
+      } else if (sub === 'incident') {
+        const action = positional[2];
+        const opts = { ...(typeof flags.at === 'string' ? { at: flags.at } : {}), ...(typeof flags.summary === 'string' ? { summary: flags.summary } : {}) };
+        try {
+          if (action === 'open') out(openIncident(root, env, { ...opts, source: typeof flags.source === 'string' ? flags.source : 'manuel' }));
+          else if (action === 'resolve') out(resolveIncident(root, env, opts));
+          else if (action === 'list') out(incidents(root, { env }));
+          else die('usage : monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]');
+        } catch (err) {
+          die(err.message);
+        }
+      } else die('usage : monitor check|watch|patrol [--env e] [--plan p] [--minutes 15] [--interval 60] | alert [--env e] [--file f] | incident open|resolve|list');
       break;
     }
     case 'config':

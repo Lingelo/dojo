@@ -34,7 +34,7 @@ fenêtre trop courte (moins de 10 changements → tendances non significatives).
 | Délai de changement | médiane ouverture → merge ; un délai long vient souvent de la revue (DORA 2025) |
 | Taux de reprise | part des changements qui corrigent ; en hausse = on livre des défauts |
 | Taux d'échec des changements | changements suivis d'un correctif sous 7 jours sur les mêmes fichiers |
-| Temps de rétablissement | depuis les post-mortems (`detected` → `resolved`) |
+| Temps de rétablissement | depuis les incidents tracés (`monitor`, détection → résolution) quand il y a des déploiements réels, sinon depuis les post-mortems (`detected` → `resolved`) |
 | Taille des lots | médiane et part au-dessus de `pr.max_lines` — le premier levier selon DORA |
 | Boucle Kaizen | leçons nouvelles, **lues** (citées par un plan récent), **appliquées** (citées par un commit), jamais citées, exceptions à la constitution |
 | Coût des cycles | `cycle_cost` : cycles work/autopilot clos, durée et tokens médians (session principale + sous-agents), part des sous-agents (`subagent_share`), tokens par rôle (`tokens_by_role`), part des cycles où le garde-fou a bloqué — local à la machine |

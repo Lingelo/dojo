@@ -31,7 +31,7 @@ Brut : `node $K metrics --since 90d` (ajoutez `--no-github` si `gh` n'est pas au
 | Délai de changement | médiane ouverture → merge des PR (GitHub), sinon premier commit → merge (git) | un délai long vient souvent de la revue |
 | Taux de reprise | part des changements de type fix, hotfix ou revert | en hausse = on livre des défauts |
 | Taux d'échec des changements | changements suivis, sous 7 jours, d'un fix ou d'un revert sur les mêmes fichiers | instabilité |
-| Temps de rétablissement | médiane `detected` → `resolved` des post-mortems | capacité à revenir en arrière |
+| Temps de rétablissement | médiane détection → résolution des incidents tracés (à défaut, `detected` → `resolved` des post-mortems) | capacité à revenir en arrière |
 | Taille des lots | médiane, 90e centile, part au-dessus de `pr.max_lines` | **le premier levier** selon DORA |
 | **Boucle Kaizen** | leçons totales et nouvelles, **lues** (citées par un plan récent), **appliquées** (citées par un message de commit), jamais citées, exceptions à la constitution, ADR | l'effet cumulatif |
 | **Coût des cycles** | cycles `work`/`autopilot` clos par `gate off` : durée, tokens de la session principale et des sous-agents, ventilés par rôle, blocages du garde-fou (local à la machine) | la cérémonie rapporte-t-elle plus qu'elle ne coûte ? |
@@ -39,8 +39,9 @@ Brut : `node $K metrics --since 90d` (ajoutez `--no-github` si `gh` n'est pas au
 ## Lire honnêtement
 
 - Avec [`/kaizen:deploy`](deploy.md), les indicateurs viennent des **vrais déploiements** de
-  production (tags `deploy/…` et `rollback/…`) : fréquence, délai premier commit → production, taux
-  d'échec (déploiement suivi d'un retour arrière), temps de rétablissement. Sans déploiement tracé, ce
+  production (tags `deploy/…`, `rollback/…` et des incidents `incident/…`, `resolve/…` de
+  [monitor](monitor.md)) : fréquence, délai premier commit → production, taux d'échec (déploiement
+  suivi d'un retour arrière ou d'un incident), temps de rétablissement (détection → résolution). Sans déploiement tracé, ce
   sont des **approximations** depuis la branche par défaut. Chaque indicateur affiche sa méthode.
 - Limites signalées :
   - clone superficiel (`--depth`) ;

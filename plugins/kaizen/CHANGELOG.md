@@ -12,6 +12,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   (principal + sous-agents), `main_tokens_median`, `subagent_tokens_median`, `subagent_share` et
   `tokens_by_role`.
 
+- **Surveillance continue** (#16) : `monitor patrol` (contrôle confirmé à planifier : routine, cron,
+  workflow CI) et `monitor alert` (Alertmanager, PagerDuty, Datadog ou JSON simple, par exemple via
+  `repository_dispatch`) ouvrent un **incident** daté de sa détection — tag `incident/<env>/…`, résolu
+  par un retour arrière ou `monitor incident resolve` (`resolve/<env>/…`). `monitor watch` trace aussi
+  sa violation comme incident. `monitor incident open|resolve|list`.
+- DORA : un incident avant le déploiement suivant compte comme un échec, et le temps de rétablissement
+  court de la détection à la résolution ; `deployments.incidents`. Le post-mortem reprend la détection
+  tracée. Le hook refuse aussi les tags `incident/…` et `resolve/…` forgés à la main.
+
 ### Corrigé
 - Une vérification coupée par son délai (`verify`, garde-fou Stop, signaux `monitor` par commande)
   ne survit plus en arrière-plan : `scripts/run-bounded.mjs` tue tout l'arbre de processus

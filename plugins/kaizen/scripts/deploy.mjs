@@ -5,8 +5,9 @@
 // KAIZEN_ENV, KAIZEN_REF, KAIZEN_SHA dans l'environnement, et laisse une trace partagée :
 //
 // - un **tag git annoté** `deploy/<env>/<horodatage>` sur le commit déployé (`rollback/<env>/…` pour un
-//   retour arrière), poussé si un remote existe (`deploy.push_tags`). C'est la source des vraies
-//   métriques DORA (`metrics`) et de la chronologie des post-mortems ;
+//   retour arrière ; `incident/<env>/…` et `resolve/<env>/…` pour la détection et la résolution d'un
+//   incident, posés par monitor.mjs), poussé si un remote existe (`deploy.push_tags`). C'est la source
+//   des vraies métriques DORA (`metrics`) et de la chronologie des post-mortems ;
 // - une ligne dans `.kaizen/state/deployments.jsonl` (local) pour le suivi immédiat.
 //
 // Un environnement **protégé** (`protected: true`, défaut pour `production`) ne se déploie qu'avec une
@@ -22,7 +23,7 @@ import { join } from 'node:path';
 import { git, loadConfig } from './lib.mjs';
 
 const APPROVAL_MAX_AGE_MS = 30 * 60 * 1000;
-export const DEPLOY_TAG = /^(deploy|rollback)\/([\w.-]+)\/(\d{8}T\d{6}Z)(?:-\d+)?$/;
+export const DEPLOY_TAG = /^(deploy|rollback|incident|resolve)\/([\w.-]+)\/(\d{8}T\d{6}Z)(?:-\d+)?$/;
 
 function stateDir(root) {
   const dir = join(root, '.kaizen', 'state');
@@ -61,8 +62,8 @@ function resolveSha(root, ref) {
 
 const stamp = (d = new Date()) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
 
-function tagDeployment(root, kind, env, sha, note, config) {
-  const base = `${kind}/${env}/${stamp()}`;
+export function tagDeployment(root, kind, env, sha, note, config = loadConfig(root), at = new Date()) {
+  const base = `${kind}/${env}/${stamp(at)}`;
   let tag = base;
   for (let i = 2; git(root, ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}`], { allowFail: true }); i++) tag = `${base}-${i}`;
   git(root, ['tag', '-a', tag, sha, '-m', JSON.stringify(note)]);
@@ -186,7 +187,7 @@ export function flag(root, state, name, { env = null } = {}) {
 
 // Depuis les tags (partagés) : { kind, env, at, sha, tag, note }. Trié chronologiquement.
 export function deployments(root, { env = null } = {}) {
-  const out = git(root, ['for-each-ref', '--format=%(refname:short)%09%(*objectname)%09%(objectname)%09%(contents:subject)', 'refs/tags/deploy', 'refs/tags/rollback'], { allowFail: true }) || '';
+  const out = git(root, ['for-each-ref', '--format=%(refname:short)%09%(*objectname)%09%(objectname)%09%(contents:subject)', 'refs/tags/deploy', 'refs/tags/rollback', 'refs/tags/incident', 'refs/tags/resolve'], { allowFail: true }) || '';
   return out
     .split('\n')
     .filter(Boolean)

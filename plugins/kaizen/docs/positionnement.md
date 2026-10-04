@@ -28,8 +28,10 @@ Quatre limites précises, à connaître avant de l'adopter.
 
 - **Pas une méthode d'équipe.** Pas de cérémonies, pas d'estimation, pas de planification de
   portefeuille, pas de coordination entre équipes.
-- **Pas d'exploitation continue.** La surveillance dure une fenêtre après chaque déploiement. Un
-  incident trois jours plus tard ne remonte que par `/kaizen:monitor` ou par vos propres alertes.
+- **Pas de plateforme d'observabilité.** Kaizen ne collecte ni ne stocke de métriques et ne fait pas
+  d'astreinte : il lit vos signaux et reçoit vos alertes. Au-delà de la fenêtre après déploiement, la
+  détection continue repose sur un contrôle planifié (`monitor patrol`) ou sur vos alertes branchées à
+  `monitor alert` ; sans l'un ou l'autre, un incident tardif ne remonte que par `/kaizen:monitor`.
 - **Des garde-fous contre l'oubli, pas contre un agent malveillant.** Un script intermédiaire suffit
   à les contourner.
 - **Pas encore éprouvé en conditions réelles.** Les 26 évaluations de bout en bout tournent sur des
