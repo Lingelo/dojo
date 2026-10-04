@@ -197,15 +197,20 @@ test('monitor patrol : hors fenêtre, violation confirmée → incident ouvert u
   const again = await cliAsync(dir, ['monitor', 'patrol', '--env', 'production', '--interval', '0']);
   assert.equal(again.json.opened, false, 'incident déjà ouvert : pas de doublon');
   assert.equal(cli(dir, ['monitor', 'incident', 'list']).json.length, 1);
-  // Une alerte antérieure au dernier déploiement vise le commit qui tournait alors.
-  const first = head(dir);
-  cli(dir, ['monitor', 'incident', 'resolve', '--env', 'production']);
+  cleanup(dir);
+});
+
+test('incident rattaché au commit déployé au moment de la détection, pas au dernier déploiement', () => {
+  // Tags de déploiement à dates fixes : les tags sont datés à la seconde, un test minuté serait instable.
+  const dir = shopRepo();
+  gitc(dir, ['tag', '-a', 'deploy/production/20260101T000000Z', '-m', '{}']);
+  const v1 = head(dir);
   writeFiles(dir, { 'app.js': '2\n' });
-  gitc(dir, ['commit', '-qam', 'feat: v2']);
-  cli(dir, ['deploy', 'run', 'production']);
-  const before = cli(dir, ['monitor', 'incident', 'open', '--env', 'production', '--at', new Date(Date.now() - 1000).toISOString()]).json;
-  assert.equal(before.opened, true);
-  assert.equal(before.incident.sha, first);
+  gitc(dir, ['commit', '-qam', 'feat: v2'], ['tag', '-a', 'deploy/production/20260201T000000Z', '-m', '{}']);
+  const open = (at) => cli(dir, ['monitor', 'incident', 'open', '--env', 'production', '--at', at]).json;
+  assert.equal(open('2026-01-15T08:00:00Z').incident.sha, v1, 'alerte antérieure au déploiement v2');
+  cli(dir, ['monitor', 'incident', 'resolve', '--env', 'production', '--at', '2026-01-15T09:00:00Z']);
+  assert.equal(open('2026-02-03T08:00:00Z').incident.sha, head(dir), 'alerte postérieure : v2');
   cleanup(dir);
 });
 

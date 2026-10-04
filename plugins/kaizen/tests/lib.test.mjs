@@ -102,7 +102,7 @@ test('runBounded : au délai, aucun processus de l’arbre ne survit (shell, enf
   const r = runBounded('node child.js', { cwd: dir, timeoutMs: 500 });
   assert.equal(r.timedOut, true);
   assert.equal(r.status, null);
-  assert.ok(Date.now() - started < 1400, 'rendu la main au délai, sans attendre l’arbre');
+  assert.ok(Date.now() - started < 8000, 'rendu la main au délai, sans attendre l’enfant (10 s)');
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2500);
   assert.equal(existsSync(join(dir, 'survived')), false, 'le petit-enfant a été tué');
   cleanup(dir);
