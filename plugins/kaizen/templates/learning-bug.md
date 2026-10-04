@@ -1,37 +1,37 @@
 ---
-title: [Titre clair du problème]
+title: [Clear title of the problem]
 date: [YYYY-MM-DD]
-category: [sous-dossier de learnings/]
-module: [Module ou zone]
-problem_type: [énumération, piste bug]
-component: [valeur du corpus, sinon défaut suggéré]
+category: [subfolder of learnings/]
+module: [Module or area]
+problem_type: [enumeration, bug track]
+component: [corpus value, otherwise suggested default]
 symptoms:
-  - [Symptôme observable 1]
-root_cause: [valeur du corpus, sinon défaut suggéré]
-resolution_type: [énumération]
+  - [Observable symptom 1]
+root_cause: [corpus value, otherwise suggested default]
+resolution_type: [enumeration]
 severity: [critical|high|medium|low]
-tags: [mot-cle-un, mot-cle-deux]
+tags: [keyword-one, keyword-two]
 ---
 
-# [Titre clair du problème]
+# [Clear title of the problem]
 
-## Problème
-[1 à 2 phrases : le problème et son impact visible.]
+## Problem
+[1 to 2 sentences: the problem and its visible impact.]
 
-## Symptômes
-- [Erreur ou comportement observé, message exact si utile]
+## Symptoms
+- [Observed error or behavior, exact message if useful]
 
-## Ce qui n'a pas marché
-- [Tentative et pourquoi elle a échoué — c'est souvent la partie la plus précieuse]
+## What didn't work
+- [Attempt and why it failed — often the most valuable part]
 
 ## Solution
-[Le correctif qui a marché, avec extraits de code si utile.]
+[The fix that worked, with code excerpts if useful.]
 
-## Pourquoi ça marche
-[La cause racine et pourquoi le correctif l'adresse.]
+## Why it works
+[The root cause and why the fix addresses it.]
 
-## Prévention
-- [Pratique, test ou garde-fou concret]
+## Prevention
+- [Concrete practice, test or safeguard]
 
-## Liens
-- [Leçons, tickets, PR liés — ou supprimer la section]
+## Links
+- [Related learnings, tickets, PRs — or delete the section]

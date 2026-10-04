@@ -1,76 +1,76 @@
-# Schéma des leçons (`<root>/learnings/`)
+# Learnings schema (`<root>/learnings/`)
 
-Contrat de frontmatter des leçons écrites par `/kaizen:learn` et entretenues par
-`/kaizen:prune-learnings`. Validation : `node "$K" learnings validate <fichier>` (exit 1 si invalide).
+Frontmatter contract of the learnings written by `/kaizen:learn` and maintained by
+`/kaizen:prune-learnings`. Validation: `node "$K" learnings validate <file>` (exit 1 if invalid).
 
-## Le test de durabilité
+## The durability test
 
-Une leçon n'a sa place que si elle porte un **raisonnement durable** que le code final, les tests, les
-types, les commentaires et la doc existante ne rendent pas évident, et dont la perte ferait
-plausiblement **revenir le problème, prendre un vrai risque, ou refaire une enquête coûteuse**.
+A learning only belongs if it carries **durable reasoning** that the final code, tests, types,
+comments and existing docs do not make obvious, and whose loss would plausibly **bring the problem
+back, take a real risk, or redo a costly investigation**.
 
-> Contrefactuel : si ce document disparaissait, un futur développeur qui lit l'implémentation finale
-> referait-il probablement l'erreur ou la même enquête ?
+> Counterfactual: if this document disappeared, would a future developer reading the final
+> implementation probably make the mistake again, or redo the same investigation?
 
-L'effort fourni, la taille du diff ou le fait d'avoir fini ne suffisent pas. Si le test échoue : on
-n'écrit rien et on dit pourquoi.
+Effort spent, diff size or having finished are not enough. If the test fails: write nothing and say
+why.
 
-## Deux pistes, selon `problem_type`
+## Two tracks, by `problem_type`
 
-| Piste | `problem_type` |
+| Track | `problem_type` |
 |---|---|
-| **Bug** (diagnostiqué et corrigé) | `build_error`, `test_failure`, `runtime_error`, `performance_issue`, `database_issue`, `security_issue`, `ui_bug`, `integration_issue`, `logic_error` |
-| **Savoir** (pratique, motif, décision) | `best_practice`, `documentation_gap`, `workflow_issue`, `developer_experience`, `architecture_pattern`, `design_pattern`, `tooling_decision`, `convention` — prends la valeur la plus précise, `best_practice` en dernier recours |
+| **Bug** (diagnosed and fixed) | `build_error`, `test_failure`, `runtime_error`, `performance_issue`, `database_issue`, `security_issue`, `ui_bug`, `integration_issue`, `logic_error` |
+| **Knowledge** (practice, pattern, decision) | `best_practice`, `documentation_gap`, `workflow_issue`, `developer_experience`, `architecture_pattern`, `design_pattern`, `tooling_decision`, `convention` — take the most precise value, `best_practice` as a last resort |
 
-### Champs requis (les deux pistes)
+### Required fields (both tracks)
 
-- `title` — titre clair, identique au H1
+- `title` — clear title, identical to the H1
 - `date` — `YYYY-MM-DD`
-- `module` — module ou zone touchée
-- `problem_type` — énumération ci-dessus
-- `component` — vocabulaire ouvert (voir « Vocabulaire du corpus d'abord ») ; défauts suggérés :
-  `data_model`, `api_layer`, `service_layer`, `background_job`, `database`, `frontend`, `messaging`,
+- `module` — module or area touched
+- `problem_type` — enumeration above
+- `component` — open vocabulary (see "Corpus vocabulary first"); suggested defaults: `data_model`,
+  `api_layer`, `service_layer`, `background_job`, `database`, `frontend`, `messaging`,
   `infrastructure`, `observability`, `authentication`, `payments`, `development_workflow`,
   `testing_framework`, `documentation`, `tooling`
 - `severity` — `critical` | `high` | `medium` | `low`
 
-### Piste bug — requis en plus
+### Bug track — also required
 
-- `symptoms` — liste de 1 à 5 symptômes observables
-- `root_cause` — vocabulaire ouvert ; défauts : `wrong_api`, `data_integrity`, `concurrency`,
+- `symptoms` — list of 1 to 5 observable symptoms
+- `root_cause` — open vocabulary; defaults: `wrong_api`, `data_integrity`, `concurrency`,
   `async_timing`, `memory_leak`, `config_error`, `logic_error`, `test_isolation`, `missing_validation`,
   `missing_permission`, `missing_workflow_step`, `inadequate_documentation`, `missing_tooling`,
   `incomplete_setup`
 - `resolution_type` — `code_fix` | `migration` | `config_change` | `test_fix` | `dependency_update` |
   `environment_setup` | `workflow_improvement` | `documentation_update` | `tooling_addition` |
   `seed_data_update`
-- optionnel : `framework_version` (ex. `rails 7.1.2`, `node 22.4.0`)
+- optional: `framework_version` (e.g. `rails 7.1.2`, `node 22.4.0`)
 
-### Piste savoir — optionnels
+### Knowledge track — optional
 
 `applies_when` (≤ 5 situations), `symptoms`, `root_cause`, `resolution_type`.
 
-### Optionnels (les deux pistes)
+### Optional (both tracks)
 
-- `category` — sous-dossier de `learnings/`
-- `tags` — ≤ 8 mots-clés en minuscules-avec-tirets
-- `related_components` — autres composants
-- `retire_when` — le changement **hors du repo** qui rendrait la leçon caduque et comment le vérifier
-  (bug amont ouvert, version d'outil…). Une chaîne ; entre guillemets si elle contient ` #` ou `: `.
+- `category` — subfolder of `learnings/`
+- `tags` — ≤ 8 lowercase-with-dashes keywords
+- `related_components` — other components
+- `retire_when` — the change **outside the repo** that would make the learning obsolete and how to
+  check it (open upstream bug, tool version…). A string; quoted if it contains ` #` or `: `.
 
-## Vocabulaire du corpus d'abord
+## Corpus vocabulary first
 
-Un repo qui a déjà des leçons a son propre vocabulaire, et ses recherches s'appuient dessus. Avant de
-classer, échantillonne le frontmatter et les dossiers existants (`node "$K" learnings stats`) :
-- `component` : la valeur que le corpus utilise déjà pour cette zone ;
-- `root_cause` : la valeur déjà utilisée pour **cette même cause**, où qu'elle soit ;
-- en cas de graphies concurrentes, la plus fréquente (égalité : la plus récente) ;
-- les défauts suggérés seulement si rien ne couvre la zone ou la cause. Pas de quasi-synonyme.
-- Dossier : celui qui couvre déjà la zone ; sinon le tableau ci-dessous.
+A repo that already has learnings has its own vocabulary, and its searches rely on it. Before
+classifying, sample the existing frontmatter and folders (`node "$K" learnings stats`):
+- `component`: the value the corpus already uses for this area;
+- `root_cause`: the value already used for **this same cause**, wherever it is;
+- with competing spellings, the most frequent one (tie: the most recent);
+- the suggested defaults only if nothing covers the area or the cause. No near-synonyms.
+- Folder: the one already covering the area; otherwise the table below.
 
-## Dossiers par défaut
+## Default folders
 
-| `problem_type` | Dossier |
+| `problem_type` | Folder |
 |---|---|
 | `build_error` | `learnings/build-errors/` |
 | `test_failure` | `learnings/test-failures/` |
@@ -90,14 +90,14 @@ classer, échantillonne le frontmatter et les dossiers existants (`node "$K" lea
 | `tooling_decision` | `learnings/tooling-decisions/` |
 | `convention` | `learnings/conventions/` |
 
-Nom de fichier : `<slug-du-titre>.md`, sans date (la date est dans le frontmatter).
+File name: `<title-slug>.md`, without a date (the date is in the frontmatter).
 
-## Sûreté YAML
+## YAML safety
 
-Mets entre guillemets doubles tout élément de liste qui commence par `` ` [ * & ! | > % @ ? `` ou qui
-contient `": "`. Exemple : `- "\`npm ci\` échoue avec EINTEGRITY"`.
+Double-quote any list item that starts with `` ` [ * & ! | > % @ ? `` or contains `": "`. Example:
+`- "\`npm ci\` fails with EINTEGRITY"`.
 
-## Gabarits
+## Templates
 
-- Piste bug : `${CLAUDE_PLUGIN_ROOT}/templates/learning-bug.md`
-- Piste savoir : `${CLAUDE_PLUGIN_ROOT}/templates/learning-knowledge.md`
+- Bug track: `${CLAUDE_PLUGIN_ROOT}/templates/learning-bug.md`
+- Knowledge track: `${CLAUDE_PLUGIN_ROOT}/templates/learning-knowledge.md`

@@ -1,5 +1,5 @@
 ---
-title: {{Ce qui s'est passé, en une ligne factuelle}}
+title: {{What happened, in one factual line}}
 date: {{YYYY-MM-DD}}
 severity: {{SEV1 | SEV2 | SEV3}}
 detected: {{YYYY-MM-DDTHH:MM:SSZ}}
@@ -8,37 +8,37 @@ services: [{{service}}]
 artifact: kaizen-postmortem/v1
 ---
 
-# {{Titre}}
+# {{Title}}
 
-> Post-mortem **sans recherche de coupable** : chacun a agi au mieux avec l'information qu'il avait.
-> « Erreur humaine » est le début de l'analyse, jamais sa conclusion.
+> **Blameless** postmortem: everyone did their best with the information they had.
+> "Human error" is the start of the analysis, never its conclusion.
 
-## Résumé
-{{3 à 5 lignes : quoi, qui a été touché, combien de temps, comment c'est revenu.}}
+## Summary
+{{3 to 5 lines: what, who was affected, for how long, how it came back.}}
 
 ## Impact
-- Utilisateurs / clients touchés : …
-- Durée : de {{détection}} à {{résolution}} ({{durée}}) — début réel estimé : …
-- Données : perdues / corrompues / exposées : …
+- Users / customers affected: …
+- Duration: from {{detection}} to {{resolution}} ({{duration}}) — estimated real start: …
+- Data: lost / corrupted / exposed: …
 
-## Chronologie (UTC)
-| Heure | Événement | Source |
+## Timeline (UTC)
+| Time | Event | Source |
 |---|---|---|
-| … | déploiement de `<sha>` | git / CI |
+| … | deployment of `<sha>` | git / CI |
 
-## Facteurs contributifs
-{{Plusieurs, en général. Pour chacun : ce qui l'a rendu possible (processus, outil, test absent,
-alerte manquante, documentation), pas qui.}}
+## Contributing factors
+{{Usually several. For each one: what made it possible (process, tool, missing test, missing alert,
+documentation), not who.}}
 
-## Ce qui a bien marché
-## Ce qui a manqué de peu
+## What went well
+## Near misses
 
 ## Actions
-| Action | Type | Porteur | Échéance | Suivi |
+| Action | Type | Owner | Due | Tracking |
 |---|---|---|---|---|
-| … | prévention / détection / atténuation / processus | … | … | ticket / PR |
+| … | prevention / detection / mitigation / process | … | … | ticket / PR |
 
-## Boucle Kaizen
-- Leçon(s) : `docs/learnings/…` (via /kaizen:learn)
-- Règle de pack ou amendement de constitution proposé : …
-- Test ou contrôle ajouté pour que ça ne repasse pas : …
+## Kaizen loop
+- Learning(s): `docs/learnings/…` (via /kaizen:learn)
+- Proposed pack rule or constitution amendment: …
+- Test or check added so it does not happen again: …
