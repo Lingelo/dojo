@@ -40,6 +40,13 @@ function makeRepo(files, steps) {
     if (step.branch) sh(dir, 'git', ['checkout', '-qb', step.branch]);
     if (step.files) write(step.files);
     if (step.tag) sh(dir, 'git', ['tag', step.tag]);
+    if (step.remote) {
+      // Remote nu à côté du dépôt : de quoi tester un vrai git push sans réseau.
+      const bare = `${dir}-origin.git`;
+      sh(dir, 'git', ['init', '-q', '--bare', bare]);
+      sh(dir, 'git', ['remote', 'add', 'origin', bare]);
+      sh(dir, 'git', ['push', '-q', 'origin', 'main']);
+    }
     if (step.run) execFileSync(process.execPath, [CLI, ...step.run], { cwd: dir, stdio: 'ignore' });
     if (step.commit) {
       sh(dir, 'git', ['add', '-A']);
@@ -153,6 +160,9 @@ for (const f of files) {
   if (!pass || process.env.KAIZEN_EVAL_KEEP) {
     writeFileSync(join(dir, 'eval-output.txt'), out);
     console.log(`    dépôt gardé : ${dir} (sortie dans eval-output.txt)`);
-  } else rmSync(dir, { recursive: true, force: true });
+  } else {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(`${dir}-origin.git`, { recursive: true, force: true });
+  }
 }
 process.exit(failed ? 1 : 0);
