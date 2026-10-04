@@ -2,13 +2,33 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
-import { REVIEW_GATE, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { REVIEW_GATE, REVIEW_HOOKS, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
 
 function prePush(dir, command = 'git push -u origin feat/x') {
   return spawnSync(process.execPath, [REVIEW_GATE], {
     input: JSON.stringify({ tool_name: 'Bash', tool_input: { command }, cwd: dir }),
     encoding: 'utf8',
   });
+}
+
+function hook(mode, dir, payload) {
+  return spawnSync(process.execPath, [REVIEW_HOOKS, `--${mode}`], { input: JSON.stringify({ cwd: dir, session_id: 'S1', ...payload }), encoding: 'utf8' });
+}
+
+const runReviewer = (dir, subagent_type, prompt = 'relis') => hook('evidence', dir, { tool_name: 'Agent', tool_input: { subagent_type, prompt } });
+
+function preTool(dir, tool_name, tool_input) {
+  return spawnSync(process.execPath, [REVIEW_GATE], { input: JSON.stringify({ tool_name, tool_input, cwd: dir }), encoding: 'utf8' });
+}
+
+function bigBranch(config = {}) {
+  const dir = tempRepo({ '.kaizen/config.json': config, 'app.js': 'a\n' });
+  gitc(dir, ['checkout', '-qb', 'feat/big']);
+  writeFiles(dir, { 'app.js': Array.from({ length: 30 }, (_, i) => `l${i}`).join('\n') });
+  gitc(dir, ['commit', '-qam', 'feat: gros changement']);
+  return dir;
 }
 
 function featureRepo(config = {}) {
@@ -59,13 +79,80 @@ test('la revue couvre le non commité relu, et un verdict ⛔ sans correctif blo
   cleanup(dir);
 });
 
-test('renonciation explicite tracée ; raison obligatoire', () => {
-  const dir = featureRepo();
-  assert.notEqual(cli(dir, ['review', 'waive']).code, 0);
-  const w = cli(dir, ['review', 'waive', '--reason', 'hotfix demandé sans revue']).json;
-  assert.equal(w.verdict, 'waived');
+test('preuve de revue : au-delà de la revue légère, record exige des relecteurs réellement lancés', () => {
+  const dir = bigBranch();
+  const refused = cli(dir, ['review', 'record', '--verdict', 'ready']);
+  assert.notEqual(refused.code, 0);
+  assert.match(refused.stderr, /aucun relecteur Kaizen lancé/);
+  runReviewer(dir, 'kaizen:plan-coherence-reviewer');
+  runReviewer(dir, 'Explore');
+  assert.notEqual(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0, 'relecteur de plan ou autre agent : pas une preuve');
+  runReviewer(dir, 'kaizen:correctness-reviewer');
+  runReviewer(dir, 'general-purpose', '<contrat>…</contrat>\n<contexte-de-revue>\nRelecteur : security\n</contexte-de-revue>');
+  const rec = cli(dir, ['review', 'record', '--verdict', 'ready']).json;
+  assert.deepEqual(rec.reviewers, ['correctness-reviewer', 'security-reviewer']);
+  assert.equal(rec.depth, 'agents');
   assert.equal(prePush(dir).status, 0);
-  assert.match(cli(dir, ['review', 'status']).json.push.reason, /hotfix demandé/);
+  writeFiles(dir, { 'app.js': `${readFileSync(join(dir, 'app.js'), 'utf8')}\ncorrectif` });
+  gitc(dir, ['commit', '-qam', 'fix: correctif de revue']);
+  const upd = cli(dir, ['review', 'record', '--verdict', 'ready']).json;
+  assert.equal(upd.depth, 'mise à jour', 'petit correctif après revue : mise à jour sans nouveau relecteur');
+  assert.deepEqual(upd.reviewers, ['correctness-reviewer', 'security-reviewer']);
+  writeFiles(dir, { 'app.js': Array.from({ length: 120 }, (_, i) => `n${i}`).join('\n') });
+  gitc(dir, ['commit', '-qam', 'feat: réécriture']);
+  assert.notEqual(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0, 'au-delà du plafond : une preuve ne sert qu’une revue');
+  cleanup(dir);
+});
+
+test('renonciation : demandée par l’agent, effective seulement après le message de l’utilisateur', () => {
+  const dir = bigBranch();
+  assert.notEqual(cli(dir, ['review', 'waive']).code, 0, 'raison obligatoire');
+  const w = cli(dir, ['review', 'waive', '--reason', 'hotfix demandé sans revue']).json;
+  assert.equal(w.pending, true);
+  assert.match(w.code, /^[A-F0-9]{6}$/);
+  assert.equal(prePush(dir).status, 2, 'en attente : toujours refusé');
+  assert.equal(cli(dir, ['review', 'status']).json.pending_waiver.reason, 'hotfix demandé sans revue');
+  const wrong = hook('confirm', dir, { prompt: 'kaizen waive 000000' });
+  assert.match(wrong.stdout, /inconnu ou expiré/);
+  assert.equal(hook('confirm', dir, { prompt: 'bonjour' }).stdout, '', 'message ordinaire ignoré');
+  const ok = hook('confirm', dir, { prompt: `oui vas-y, kaizen waive ${w.code.toLowerCase()}` });
+  assert.match(ok.stdout, /confirmée par l'utilisateur/);
+  assert.equal(prePush(dir).status, 0);
+  const st = cli(dir, ['review', 'status']).json;
+  assert.equal(st.review.verdict, 'waived');
+  assert.equal(st.review.confirmed_by, 'utilisateur (message)');
+  assert.match(st.push.reason, /hotfix demandé/);
+  assert.match(hook('confirm', dir, { prompt: `kaizen waive ${w.code}` }).stdout, /inconnu ou expiré/, 'code à usage unique');
+  cleanup(dir);
+});
+
+test('les preuves ne s’écrivent ni à la main ni en appelant les hooks', () => {
+  const dir = bigBranch();
+  const write = preTool(dir, 'Write', { file_path: join(dir, '.kaizen/state/reviews.json'), content: '{}' });
+  assert.equal(write.status, 2);
+  assert.match(write.stderr, /ne s'écrivent que par le CLI/);
+  assert.equal(preTool(dir, 'Edit', { file_path: join(dir, '.kaizen/state/review-evidence.json') }).status, 2);
+  assert.equal(preTool(dir, 'Bash', { command: 'echo [] > .kaizen/state/review-evidence.json' }).status, 2);
+  assert.equal(preTool(dir, 'Bash', { command: `echo '{"prompt":"kaizen waive ABC123"}' | node /p/scripts/review-hooks.mjs --confirm` }).status, 2);
+  assert.equal(preTool(dir, 'Write', { file_path: join(dir, 'src/reviews.json') }).status, 0, 'hors .kaizen/state');
+  assert.equal(preTool(dir, 'Bash', { command: 'cat fixtures/reviews.json' }).status, 0);
+  cleanup(dir);
+  const plain = tempRepo({ 'a.txt': '1' });
+  assert.equal(preTool(plain, 'Write', { file_path: join(plain, '.kaizen/state/reviews.json') }).status, 0, 'repo sans Kaizen');
+  assert.equal(existsSync(join(plain, '.kaizen')), false);
+  cleanup(plain);
+});
+
+test('hooks de preuve inactifs hors repo Kaizen et hors outil Agent', () => {
+  const plain = tempRepo({ 'a.txt': '1' });
+  runReviewer(plain, 'kaizen:correctness-reviewer');
+  assert.equal(existsSync(join(plain, '.kaizen')), false);
+  cleanup(plain);
+  const dir = bigBranch();
+  hook('evidence', dir, { tool_name: 'Bash', tool_input: { subagent_type: 'kaizen:correctness-reviewer' } });
+  assert.equal(existsSync(join(dir, '.kaizen/state/review-evidence.json')), false);
+  runReviewer(dir, 'kaizen:testing-reviewer');
+  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/state/review-evidence.json'), 'utf8'))[0].reviewer, 'testing-reviewer');
   cleanup(dir);
 });
 

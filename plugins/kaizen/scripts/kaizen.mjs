@@ -14,8 +14,10 @@
 //   node kaizen.mjs packs [--json] [--refresh]   règles des Kaizen Packs déclarés
 //   node kaizen.mjs pack new <nom>               crée et déclare un pack local
 //   node kaizen.mjs gate on [--plan p] | off | status      garde-fou qualité du hook Stop
-//   node kaizen.mjs review record --verdict ready|reserves|blocked [--run d] | waive --reason "…" | status
-//                                                 état relu par branche, exigé par le hook avant git push
+//   node kaizen.mjs review record --verdict ready|reserves|blocked [--run d] | waive --reason "…" | status | check
+//                                                 état relu par branche, exigé par le hook avant git push ;
+//                                                 record exige des relecteurs réellement lancés (sauf revue
+//                                                 légère), waive attend la confirmation tapée par l'utilisateur
 //   node kaizen.mjs run-dir <type>                dossier de run local (ex. reviews), ignoré par git
 //   node kaizen.mjs constitution [check] [--json] articles de CONSTITUTION.md / validation
 //   node kaizen.mjs plan check <chemin> [--json]  contrôle structurel d'un plan (traçabilité R/AE → U)
@@ -38,7 +40,7 @@ import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
 import { computeMetrics } from './metrics.mjs';
 import { releaseNotes } from './release.mjs';
-import { checkPush, recordReview, reviewStatus } from './review-state.mjs';
+import { checkPush, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
 import {
   DEFAULT_CONFIG,
   PROFILES,
@@ -561,7 +563,7 @@ try {
     case 'review': {
       const root = requireRepo();
       if (sub === 'record') out(recordReview(root, { verdict: flags.verdict, run: typeof flags.run === 'string' ? flags.run : null }));
-      else if (sub === 'waive') out(recordReview(root, { waive: true, reason: typeof flags.reason === 'string' ? flags.reason : null }));
+      else if (sub === 'waive') out(requestWaiver(root, { reason: typeof flags.reason === 'string' ? flags.reason : null }));
       else if (sub === 'status') out(reviewStatus(root));
       else if (sub === 'check') {
         const res = checkPush(root);

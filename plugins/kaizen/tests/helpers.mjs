@@ -9,6 +9,7 @@ export const PLUGIN = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const CLI = join(PLUGIN, 'scripts', 'kaizen.mjs');
 export const GATE = join(PLUGIN, 'scripts', 'quality-gate.mjs');
 export const REVIEW_GATE = join(PLUGIN, 'scripts', 'review-gate.mjs');
+export const REVIEW_HOOKS = join(PLUGIN, 'scripts', 'review-hooks.mjs');
 export const FAKE_GH = join(PLUGIN, 'tests', 'fixtures', 'fake-gh.mjs');
 
 export function tempRepo(files = {}, { branch = 'main', commit = true } = {}) {

@@ -137,7 +137,9 @@ dans un budget de temps sous le délai du hook.
 
 **Revue imposée par hook, pas par consigne.** Un hook `PreToolUse` refuse `git push` d'une branche tant
 que `/kaizen:review` n'a pas enregistré l'état poussé (au-delà de 80 lignes modifiées depuis, nouvelle
-revue). Seul l'utilisateur peut y renoncer, et la renonciation est tracée (`review waive --reason`).
+revue). L'enregistrement exige une preuve : un hook consigne les relecteurs réellement lancés, l'agent
+ne peut pas déclarer une revue qui n'a pas eu lieu. Seul l'utilisateur peut y renoncer, en tapant
+lui-même le code de confirmation, et la renonciation figure dans la PR.
 
 **Adoption par paliers.** `profile` : `lean` (cérémonie minimale, pour commencer), `standard`, `full`.
 Le profil règle la cérémonie (taille du plan, nombre de relecteurs), jamais les garde-fous

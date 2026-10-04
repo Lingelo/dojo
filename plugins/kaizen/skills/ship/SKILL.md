@@ -49,7 +49,8 @@ rend `{ status: shipped|local-only|blocked, pr_url, branch, commits, size, notes
 Commits restants au format conventionnel (`<type>(<JIRA>): …`, clé lue dans la branche), fichiers
 nommés explicitement. Vérifie la revue : `node "$K" review check` — refusé → `kaizen:review`
 (`mode:agent` en `mode:auto`), correctifs P0/P1, puis reprends ; une renonciation n'est possible que sur
-demande explicite de l'utilisateur (`review waive --reason`). Puis `git push -u origin <branche>` (jamais `--force` ; `--force-with-lease`
+demande de l'utilisateur, confirmée par lui (`review waive --reason`, puis il tape `kaizen waive
+<code>`) — jamais en `mode:auto`. Puis `git push -u origin <branche>` (jamais `--force` ; `--force-with-lease`
 seulement sur une branche que cette session a créée et réécrite, avec accord).
 
 ## 4. Description
@@ -80,6 +81,10 @@ seul si le code a divergé :
 
 ## Constitution
 <seulement s'il y a des exceptions : article, raison>
+
+## Revue écartée
+<seulement si `node "$K" review status` montre `verdict: waived` : raison donnée par l'utilisateur,
+date de confirmation, et ce qui n'a donc pas été relu — section obligatoire, jamais supprimée>
 
 ## Points ouverts
 <constats non appliqués, décisions laissées à l'humain — ou supprimer la section>

@@ -129,8 +129,21 @@ Claude Code ouverte sur le même repo n'est pas bloquée.
 Actif seulement dans un repo initialisé (`.kaizen/config.json`), jamais sur la branche par défaut
 (gardée par le plugin `git`), ni pour une suppression de branche ou un push de tags.
 `/kaizen:review` enregistre l'arbre qu'elle a lu (`node $K review record`), y compris le non commité.
-Renoncer à la revue est une décision de l'utilisateur, tracée :
-`node $K review waive --reason "hotfix validé par X"`. État : `node $K review status`.
+
+**Preuve de revue.** Un hook `PostToolUse` sur l'outil `Agent` consigne chaque relecteur de code
+Kaizen réellement lancé. `review record` exige au moins un relecteur lancé depuis la revue précédente
+de la branche. Deux exceptions : la revue légère (diff de la branche ≤ 20 lignes, relue sans
+sous-agents) et la mise à jour après correctifs (≤ `max_unreviewed_lines` depuis l'arbre relu).
+
+**Renonciation confirmée par l'utilisateur.** `node $K review waive --reason "hotfix validé par X"`
+ne fait qu'afficher un code. La renonciation ne prend effet que lorsque **vous** tapez
+`kaizen waive <code>` dans la conversation (hook `UserPromptSubmit`, 30 minutes, usage unique) ;
+Claude ne peut pas la confirmer à votre place. `ship` la rappelle dans une section « Revue écartée »
+de la PR. État : `node $K review status`.
+
+Ces fichiers d'état ne s'écrivent que par le CLI et les hooks : un hook `PreToolUse` refuse leur
+écriture directe et l'appel manuel des hooks de preuve. C'est une protection contre l'oubli et la
+dérive, pas contre un agent décidé à contourner le dispositif.
 
 ### `pr`
 
@@ -154,7 +167,9 @@ Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
 |---|---|
 | `gate.json` | état du garde-fou (actif, plan, session, nombre de blocages) |
 | `cycles.jsonl` | un cycle `work`/`autopilot` par ligne, écrit par `gate off` : plan, durée, blocages, tokens (lu par `metrics` → `cycle_cost`) |
-| `reviews.json` | dernière revue enregistrée par branche (arbre relu, verdict, renonciation) |
+| `reviews.json` | dernière revue enregistrée par branche (arbre relu, verdict, relecteurs, renonciation) |
+| `review-evidence.json` | relecteurs de code réellement lancés (hook sur l'outil `Agent`), 12 h |
+| `waivers.json` | renonciations en attente de confirmation par l'utilisateur, 30 min |
 | `pr/<owner>-<repo>-<n>.json` | ce que `watch-pr` a déjà traité (fils, commentaires, checks) |
 | `reviews/<horodatage>/` | retours bruts des relecteurs d'une revue |
 

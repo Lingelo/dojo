@@ -34,7 +34,7 @@ node "$K" learnings validate [fichiers…]
 node "$K" packs [--json]           # règles des Kaizen Packs déclarés
 node "$K" gate on --plan <p> | off | status     # garde-fou du hook Stop
 node "$K" review record --verdict ready|reserves|blocked [--run <d>]   # état relu, exigé avant git push
-node "$K" review waive --reason "…" | review status | review check   # renonciation tracée / état
+node "$K" review waive --reason "…" | review status | review check   # renonciation (confirmée par l'utilisateur) / état
 node "$K" constitution [check] [--json]         # articles de CONSTITUTION.md / validation
 node "$K" plan check <chemin>      # contrôle structurel d'un plan (traçabilité R/AE → U, constitution)
 node "$K" size [--base <ref>]      # taille du diff vs pr.max_lines (exit 1 au-delà)
@@ -76,11 +76,19 @@ n'a enregistré l'état poussé. Toute skill qui pousse vérifie d'abord `node "
 - refusé → `kaizen:review` (en `mode:agent` dans un flux autonome), correctifs P0/P1, puis push ;
 - `review` enregistre elle-même l'état relu (`review record`), et le ré-enregistre après avoir
   appliqué ses propres correctifs ;
+- **`review record` exige une preuve** : un hook consigne chaque relecteur de code Kaizen réellement
+  lancé par l'outil `Agent`. Sans relecteur lancé depuis la revue précédente, l'enregistrement n'est
+  accepté que pour une revue légère (diff de la branche ≤ 20 lignes) ou une mise à jour après
+  correctifs (≤ `review.max_unreviewed_lines` lignes depuis l'arbre relu) ;
 - au-delà de `review.max_unreviewed_lines` lignes modifiées depuis la revue (80 par défaut), une
   nouvelle revue est exigée ;
-- seul l'utilisateur peut y renoncer, explicitement, dans la session :
-  `node "$K" review waive --reason "<sa demande>"`. Jamais de contournement ni de désactivation
-  (`review.require_before_push: false`) sans sa demande.
+- **seul l'utilisateur peut y renoncer** : sur sa demande, `node "$K" review waive --reason "<sa
+  demande>"` affiche un code ; demande-lui de taper lui-même `kaizen waive <code>` (valable 30 min).
+  Tu ne peux pas le confirmer à sa place, et une renonciation confirmée figure dans la PR (section
+  « Revue écartée »). En mode non interactif, pas de renonciation : arrête-toi et dis pourquoi ;
+- les fichiers d'état de revue (`.kaizen/state/reviews.json`, `review-evidence.json`,
+  `waivers.json`) ne s'écrivent que par le CLI et les hooks. Jamais de contournement ni de
+  désactivation (`review.require_before_push: false`) sans demande de l'utilisateur.
 
 ## Racine des livrables
 

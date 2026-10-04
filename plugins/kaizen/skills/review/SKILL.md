@@ -121,7 +121,9 @@ couverture incomplète ; ✅ sinon.
 **Enregistre la revue** (périmètre = branche courante, dans tous les modes) :
 `node "$K" review record --verdict <ready|reserves|blocked> --run <dossier de run>` (✅ → `ready`,
 ⚠️ → `reserves`, ⛔ → `blocked`). C'est ce que le hook de push exige ; une revue d'une autre PR ou
-d'une autre branche ne s'enregistre pas.
+d'une autre branche ne s'enregistre pas. L'enregistrement est refusé si aucun relecteur n'a
+réellement tourné (un hook consigne chaque appel `Agent` à un relecteur de code) — sauf profondeur
+légère (≤ 20 lignes) : ne le contourne pas, lance les relecteurs.
 
 ## Étape 7 — Appliquer (seulement avec `apply`)
 

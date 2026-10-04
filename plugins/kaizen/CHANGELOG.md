@@ -16,8 +16,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
 - Hook `PreToolUse` `review-gate.mjs` : la revue « obligatoire » de `work`, `autopilot` et `ship` est
   imposée par un contrôle déterministe et non plus seulement par la consigne. `/kaizen:review`
   enregistre l'arbre relu (non commité compris) avec `node $K review record` ; au-delà de
-  `review.max_unreviewed_lines` (80) lignes modifiées depuis, nouvelle revue. Renonciation sur demande
-  explicite de l'utilisateur, tracée : `review waive --reason`. `review status` et `review check`.
+  `review.max_unreviewed_lines` (80) lignes modifiées depuis, nouvelle revue. `review status` et
+  `review check`.
+- **Preuve de revue** : un hook `PostToolUse` sur l'outil `Agent` (`review-hooks.mjs --evidence`)
+  consigne chaque relecteur de code Kaizen réellement lancé ; `review record` le refuse sans relecteur
+  depuis la revue précédente, sauf revue légère (≤ 20 lignes) ou mise à jour après correctifs.
+- **Renonciation confirmée par l'utilisateur** : `review waive --reason` n'affiche qu'un code ; seule
+  la saisie de `kaizen waive <code>` par l'utilisateur (hook `UserPromptSubmit`, 30 min, usage unique)
+  la rend effective. `ship` ajoute une section « Revue écartée » à la PR. Le hook `PreToolUse` refuse
+  l'écriture directe des fichiers d'état de revue et l'appel manuel des hooks de preuve.
 - **Profils d'adoption** `profile: lean | standard | full` (`init --profile`, question dans `setup`) :
   la cérémonie s'ajuste (plan, `doc-review`, relecteurs, raccourci `autopilot` en `lean`), jamais les
   garde-fous déterministes.

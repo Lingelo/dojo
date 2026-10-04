@@ -30,7 +30,8 @@ C'est le hook de revue : dans un repo Kaizen, une branche ne part pas sans revue
 | Pas encore de revue | `/kaizen:review` (elle enregistre l'état relu), puis pousser |
 | « N lignes modifiées depuis la revue » | les changements depuis la revue dépassent `review.max_unreviewed_lines` : nouvelle `/kaizen:review` |
 | « la dernière revue a rendu ⛔ » | corriger les constats bloquants, puis relancer la revue |
-| Vous voulez pousser sans revue (hotfix, branche jetable) | demandez-le à Claude, qui lance `node $K review waive --reason "…"` (tracé) |
+| Vous voulez pousser sans revue (hotfix, branche jetable) | demandez-le à Claude : il lance `node $K review waive --reason "…"` et vous donne un code ; tapez vous-même `kaizen waive <code>` |
+| « aucun relecteur Kaizen lancé » au moment de `review record` | la revue n'a pas lancé ses relecteurs (ou ils ont tourné dans une autre session de plus de 12 h) : relancez `/kaizen:review` |
 | Vous ne voulez pas de cette règle dans ce repo | `"review": { "require_before_push": false }` |
 
 ## `plan check` est rouge
