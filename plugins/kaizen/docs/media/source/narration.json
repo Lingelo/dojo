@@ -9,7 +9,7 @@
     { "id": "gate",    "at": 35.44, "text": "Pendant le travail, un garde-fou bloque la fin de l'étape quand les tests sont rouges." },
     { "id": "review",  "at": 41.69, "text": "Des relecteurs choisis selon le code modifié l'inspectent, et sans leur revue, rien n'est poussé.", "pause": 0.6 },
     { "id": "ship",    "at": 48.87, "text": "La pull request est décrite, sa taille contrôlée, puis elle est suivie jusqu'à être prête.", "caption": "La PR est décrite, sa taille contrôlée, puis elle est suivie jusqu'à être prête." },
-    { "id": "merge",   "at": 57.26, "text": "Le merge, lui, reste à vous.", "pause": 0.7 },
+    { "id": "merge",   "at": 57.26, "text": "Le merge et la mise en production, eux, restent à vous.", "pause": 0.7 },
     { "id": "loop1",   "at": 61.24, "text": "Enfin, les leçons durables sont capitalisées, et relues au cycle suivant." },
     { "id": "loop2",   "at": 67.76, "text": "L'objectif : que chaque unité de travail rende la suivante plus facile.", "pause": 0.8 },
     { "id": "outro",   "at": 74.06, "text": "Kaizen. Pour Claude Code." }
