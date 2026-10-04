@@ -1,58 +1,58 @@
-# Fusion et validation des constats
+# Merging and validating findings
 
-## 1. Normaliser
+## 1. Normalize
 
-Pour chaque retour JSON valide : garde les champs du contrat. Valeur hors énumération → corrige si
-l'intention est évidente (`"high"` → `P1`), sinon rétrograde la confiance à 50. Un constat sans
-`evidence` est rejeté. Un 75/100 dont la première preuve n'est pas une ligne citée avec `fichier:ligne`
-descend à 50 (règle « cite la ligne »).
+For each valid JSON return: keep the contract's fields. Value outside the enumeration → fix it if the
+intent is obvious (`"high"` → `P1`), otherwise lower the confidence to 50. A finding without `evidence`
+is rejected. A 75/100 whose first evidence is not a quoted line with `file:line` drops to 50 ("quote the
+line" rule).
 
-## 2. Dédoublonner
+## 2. Deduplicate
 
-Deux constats sont le même s'ils visent le même fichier, des lignes à ± 3 près, et le **même mode de
-défaillance**. Fusionne : garde la sévérité la plus haute, la meilleure preuve, le correctif le plus
-concret, et liste tous les relecteurs (« security + adversarial »). Deux relecteurs indépendants qui
-convergent renforcent la confiance (+1 ancrage, plafonné à 100) — c'est un signal, pas une preuve.
+Two findings are the same if they target the same file, lines within ± 3, and the **same failure mode**.
+Merge: keep the highest severity, the best evidence, the most concrete fix, and list all reviewers
+("security + adversarial"). Two independent reviewers converging raise confidence (+1 anchor, capped at
+100) — it is a signal, not evidence.
 
-Deux constats **contradictoires** sur la même ligne (l'un veut ajouter, l'autre retirer) : garde les
-deux, signale la tension, ne tranche pas sans preuve.
+Two **contradictory** findings on the same line (one wants to add, the other to remove): keep both,
+report the tension, do not decide without evidence.
 
-## 3. Porte de confiance
+## 3. Confidence gate
 
-| Confiance | Destination |
+| Confidence | Destination |
 |---|---|
-| 100, 75 | constat actionnable |
-| 50 + P0 | constat actionnable (marqué « non confirmé ») |
-| 50 autre | déplacé vers `testing_gaps` ou `residual_risks` s'il a une valeur, sinon abandonné |
-| `pre_existing: true` | section « Préexistants », jamais dans le verdict |
+| 100, 75 | actionable finding |
+| 50 + P0 | actionable finding (marked "unconfirmed") |
+| 50 other | moved to `testing_gaps` or `residual_risks` if it has value, otherwise dropped |
+| `pre_existing: true` | "Pre-existing" section, never in the verdict |
 
-## 4. Valider chaque P0/P1
+## 4. Validate each P0/P1
 
-Avant le rapport, **relis toi-même** les lignes citées de chaque constat P0/P1 (et des P2 à
-`gated_auto` qui seraient appliqués) :
-- la ligne citée existe-t-elle mot pour mot à cet endroit ?
-- la garde, la validation ou le test que le relecteur dit absent n'existe-t-il vraiment nulle part
-  (appelant, middleware, défaut du framework) ? Une recherche ciblée suffit.
-- l'intention : un commentaire, un commit ou le plan indiquent-ils que c'est voulu ?
+Before the report, **reread yourself** the quoted lines of each P0/P1 finding (and of the `gated_auto`
+P2s that would be applied):
+- does the quoted line exist verbatim at that place?
+- does the guard, validation or test the reviewer says is missing really exist nowhere (caller,
+  middleware, framework default)? A targeted search is enough.
+- the intent: does a comment, a commit or the plan indicate it is deliberate?
 
-Résultat par constat : **confirmé** (garde), **réfuté** (retire, en notant la raison dans la
-couverture), **non résolu** (garde, marqué « à vérifier », ne compte pas comme P1 confirmé pour le
-verdict, sauf sujet protégé ci-dessous).
+Result per finding: **confirmed** (keep), **refuted** (remove, noting the reason in the coverage),
+**unresolved** (keep, marked "to verify", does not count as a confirmed P1 for the verdict, except for a
+protected topic below).
 
-Sujets protégés — perte de données, contrôle d'accès/authentification, injection, exposition de
-secrets, crypto, concurrence, contrat public : un tel constat ne se **réfute** que sur une preuve citée
-qui le contredit. À défaut, il reste « non résolu » et compte pour le verdict.
+Protected topics — data loss, access control/authentication, injection, secret exposure, crypto,
+concurrency, public contract: such a finding is only **refuted** on quoted evidence contradicting it.
+Otherwise, it stays "unresolved" and counts for the verdict.
 
-Plus de 8 constats à valider : confie la validation à un sous-agent `general-purpose` (lecture seule)
-par lot, avec la liste des constats et ces règles.
+More than 8 findings to validate: hand the validation to a `general-purpose` subagent (read-only) per
+batch, with the list of findings and these rules.
 
-## 5. Conformité au plan
+## 5. Plan conformance
 
-Pour chaque `R` et `AE` du plan : couvert (fichier + test qui le prouve), couvert autrement que prévu
-(à signaler), ou non couvert (constat P1 si l'exigence est dans le périmètre de la branche, sinon
-note). Une décision `KTD` contournée sans explication est un constat.
+For each `R` and `AE` of the plan: covered (file + test proving it), covered differently than planned
+(to report), or not covered (P1 finding if the requirement is within the branch's scope, otherwise a
+note). A `KTD` decision bypassed without explanation is a finding.
 
-## 6. Classer
+## 6. Rank
 
-Tri : sévérité, puis confiance, puis nombre de relecteurs concordants. Numérote les constats ; le
-numéro sert à l'utilisateur pour dire « applique 1, 3 et 4 ».
+Sort: severity, then confidence, then number of concurring reviewers. Number the findings; the number
+lets the user say "apply 1, 3 and 4".

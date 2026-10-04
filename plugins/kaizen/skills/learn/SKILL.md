@@ -1,108 +1,105 @@
 ---
 name: learn
-description: Capitalise un problème résolu en leçon durable dans docs/learnings/ (frontmatter validé, vocabulaire du corpus, mise à jour plutôt que doublon) pour que le prochain /kaizen:plan et la prochaine /kaizen:review la relisent — c'est l'étape qui fait que chaque cycle rend le suivant plus facile. Utiliser après un travail vérifié qui a produit un raisonnement non évident (piège, cause surprenante, décision coûteuse à retrouver) : « documente ça », « retiens la leçon », /kaizen:learn. Pas pour un correctif de routine que le code explique déjà.
+description: Captures a solved problem as a durable learning in docs/learnings/ (validated frontmatter, corpus vocabulary, update rather than duplicate) so the next /kaizen:plan and the next /kaizen:review read it back — the step that makes each cycle make the next one easier. Use after verified work that produced non-obvious reasoning (a trap, a surprising cause, a decision costly to rediscover): "document this", "remember the lesson", /kaizen:learn. Not for a routine fix the code already explains.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
-argument-hint: "[contexte bref] [mode:auto]"
+argument-hint: "[short context] [mode:auto]"
 ---
 
-# Learn — capitaliser la leçon
+# Learn — capturing the learning
 
-**Résultat :** **une** leçon qualifiée écrite (ou mise à jour) sous `<root>/learnings/`, vérifiée
-contre le code actuel, validée par le CLI, et trouvable par le prochain agent. Si aucune leçon ne
-qualifie : rien n'est écrit et le rapport dit pourquoi.
+**Outcome:** **one** qualified learning written (or updated) under `<root>/learnings/`, checked against
+the current code, validated by the CLI, and findable by the next agent. If no learning qualifies:
+nothing is written and the report says why.
 
-**Une leçon par exécution.** Une session qui en a produit plusieurs = plusieurs exécutions
-successives, jamais un lot (un lot mélange les vocabulaires et produit des documents fourre-tout).
+**One learning per run.** A session that produced several = several successive runs, never a batch (a
+batch mixes vocabularies and produces catch-all documents).
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` et
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` and
 `${CLAUDE_PLUGIN_ROOT}/references/learnings-schema.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:auto`** (posé par `/kaizen:autopilot` ou `/kaizen:work`) : aucune question ; pas de modification
-d'instructions du projet ; termine par exactement `Leçon écrite : <chemin>` ou
-`Leçon non écrite : <raison>`.
+**`mode:auto`** (set by `/kaizen:autopilot` or `/kaizen:work`): no questions; no change to the project's
+instructions; end with exactly `Learning written: <path>` or `Learning not written: <reason>`.
 
-## 1. Préconditions — le test de durabilité
+## 1. Preconditions — the durability test
 
-Le problème est **résolu et vérifié** (tests verts, comportement constaté). Puis applique le
-contrefactuel de `learnings-schema.md` : sans ce document, un futur développeur qui lit le code final
-referait-il l'erreur ou la même enquête ? Juge depuis la session, sans demander. Une invocation
-explicite demande le jugement maintenant, elle n'abaisse pas la barre.
+The problem is **solved and verified** (green tests, observed behavior). Then apply the counterfactual
+from `learnings-schema.md`: without this document, would a future developer reading the final code make
+the mistake again or redo the same investigation? Judge from the session, without asking. An explicit
+invocation asks for the judgment now, it does not lower the bar.
 
-Qualifient typiquement : une cause racine surprenante, un piège d'API ou de framework, ce qui **n'a
-pas** marché et pourquoi, une décision d'architecture coûteuse à reconstituer, une convention établie
-après discussion. Ne qualifient pas : une faute de frappe, un correctif que le test et le message de
-commit expliquent entièrement, une explication de ce que le code dit déjà.
+Typically qualifying: a surprising root cause, an API or framework trap, what **did not** work and why,
+an architecture decision costly to reconstruct, a convention set after discussion. Not qualifying: a
+typo, a fix the test and the commit message fully explain, an explanation of what the code already
+says.
 
-Échec du test → n'écris rien ; dis en une ou deux phrases pourquoi, et où le savoir vit déjà (test,
-commentaire, commit).
+Test failed → write nothing; say in one or two sentences why, and where the knowledge already lives
+(test, comment, commit).
 
-## 2. Rassembler
+## 2. Gather
 
-Depuis la session (et `git log`/`git diff` de la branche) : problème et impact, symptômes exacts
-(messages d'erreur), ce qui a été tenté et a échoué, la solution, **pourquoi** elle marche, comment
-éviter la récidive. En mode interactif, si un élément clé manque (ex. : le message d'erreur exact), une
-seule question.
+From the session (and the branch's `git log`/`git diff`): problem and impact, exact symptoms (error
+messages), what was tried and failed, the solution, **why** it works, how to avoid recurrence.
+Interactively, if a key element is missing (e.g. the exact error message), a single question.
 
-## 3. Chercher l'existant
+## 3. Look for what exists
 
-`node "$K" learnings search <mots-clés>` puis lis les candidates. Une leçon existante sur le **même**
-problème :
-- toujours exacte → complète-la (nouveau symptôme, nouvelle variante) plutôt que d'en créer une ;
-- devenue inexacte ou incomplète → **mets-la à jour** : la laisser tromperait ;
-- un doublon partiel ailleurs → mentionne-le dans le rapport pour `/kaizen:prune-learnings`.
+`node "$K" learnings search <keywords>` then read the candidates. An existing learning on the **same**
+problem:
+- still accurate → complete it (new symptom, new variant) rather than creating one;
+- now inaccurate or incomplete → **update it**: leaving it would mislead;
+- a partial duplicate elsewhere → mention it in the report for `/kaizen:prune-learnings`.
 
-## 4. Classer
+## 4. Classify
 
-`node "$K" learnings stats` pour le vocabulaire du corpus. Choisis la piste (bug / savoir) via
-`problem_type`, puis `component`, `root_cause`, dossier selon la règle « corpus d'abord ». Sévérité =
-gravité de ce que la leçon évite, pas la difficulté de l'enquête.
+`node "$K" learnings stats` for the corpus vocabulary. Choose the track (bug / knowledge) through
+`problem_type`, then `component`, `root_cause`, folder per the "corpus first" rule. Severity = how
+serious what the learning prevents is, not how hard the investigation was.
 
-## 5. Écrire
+## 5. Write
 
-- Gabarit : `${CLAUDE_PLUGIN_ROOT}/templates/learning-bug.md` ou `learning-knowledge.md`, dans la
-  langue configurée (clés de frontmatter inchangées).
-- Chemin : `<root>/learnings/<dossier>/<slug-du-titre>.md`.
-- Chaque affirmation sur le code est **vérifiée contre l'arbre actuel** : chemins qui existent,
-  symboles cités présents, commandes exactes. Pas de chemin absolu, pas de secret, pas de donnée
-  personnelle (remplace par `<REDACTED>`).
-- La section « Ce qui n'a pas marché » est souvent la plus précieuse : ne la saute pas si la session a
-  connu des impasses.
-- `retire_when` seulement si la leçon tient à un état **hors du repo** (bug amont ouvert, version
-  d'outil) — avec la façon de le vérifier.
-- Valide : `node "$K" learnings validate <fichier>` ; corrige jusqu'au vert.
+- Template: `${CLAUDE_PLUGIN_ROOT}/templates/learning-bug.md` or `learning-knowledge.md`, in the
+  configured language (frontmatter keys unchanged).
+- Path: `<root>/learnings/<folder>/<title-slug>.md`.
+- Every claim about the code is **checked against the current tree**: existing paths, quoted symbols
+  present, exact commands. No absolute path, no secret, no personal data (replace with `<REDACTED>`).
+- The "What didn't work" section is often the most valuable: do not skip it if the session hit dead
+  ends.
+- `retire_when` only if the learning depends on a state **outside the repo** (open upstream bug, tool
+  version) — with how to check it.
+- Validate: `node "$K" learnings validate <file>`; fix until green.
 
-## 6. Promouvoir (interactif seulement)
+## 6. Promote (interactive only)
 
-Si la leçon est en réalité une **règle prescriptive** qui vaut pour toute l'équipe (« tout export CSV
-commence par un BOM »), propose de l'ajouter aussi à un Kaizen Pack déclaré (`node "$K" packs`) ou d'en
-créer un (`node "$K" pack new <nom>`) : un fichier de règle avec `title`, `applies_when`, `tags`, et le
-corps qui cite la leçon. Les packs sont relus par plan et review ; la leçon garde l'histoire.
+If the learning is actually a **prescriptive rule** valid for the whole team ("every CSV export starts
+with a BOM"), offer to also add it to a declared Kaizen Pack (`node "$K" packs`) or create one
+(`node "$K" pack new <name>`): a rule file with `title`, `applies_when`, `tags`, and a body citing the
+learning. Packs are read by plan and review; the learning keeps the story.
 
-## 7. Vocabulaire
+## 7. Vocabulary
 
-Si la leçon nomme un concept du domaine utilisé sous plusieurs noms dans le code ou la conversation
-et que `CONCEPTS.md` existe, ajoute ou précise l'entrée (nom canonique, définition en une phrase, alias
-à éviter). Ne crée pas `CONCEPTS.md` ici.
+If the learning names a domain concept used under several names in the code or the conversation and
+`CONCEPTS.md` exists, add or refine the entry (canonical name, one-sentence definition, aliases to
+avoid). Do not create `CONCEPTS.md` here.
 
-## 8. Être trouvable (interactif, avec accord)
+## 8. Be findable (interactive, with approval)
 
-Vérifie que les instructions du projet (`CLAUDE.md`) mènent un agent vers `<root>/learnings/` avant de
-travailler dans une zone documentée. Sinon, propose d'ajouter la plus petite phrase utile, par exemple :
+Check that the project's instructions (`CLAUDE.md`) lead an agent to `<root>/learnings/` before working
+in a documented area. Otherwise, offer to add the smallest useful sentence, for example:
 
-> Avant de planifier ou de déboguer, cherche les leçons du projet : `docs/learnings/` (frontmatter :
+> Before planning or debugging, look for the project's learnings: `docs/learnings/` (frontmatter:
 > module, tags, symptoms, applies_when).
 
-N'édite qu'un fichier d'instructions existant, jamais un nouveau.
+Only edit an existing instructions file, never a new one.
 
-## 9. Rapport
+## 9. Report
 
 ```
-Leçon écrite : docs/learnings/runtime-errors/export-csv-accents-excel.md  (nouvelle | mise à jour)
-- piste : bug · problem_type : runtime_error · module : exports
-- validée ✔ · retrouvable par : csv, excel, encodage, bom
-- relue par : prochains /kaizen:plan et /kaizen:review touchant aux exports
+Learning written: docs/learnings/runtime-errors/csv-export-excel-accents.md  (new | updated)
+- track: bug · problem_type: runtime_error · module: exports
+- validated ✔ · findable by: csv, excel, encoding, bom
+- read by: the next /kaizen:plan and /kaizen:review touching exports
 ```
 
-Ne commite que si l'utilisateur le demande ou si l'appelant (`work`, `autopilot`) gère le commit ; dans ce
-cas, uniquement les fichiers écrits par cette skill.
+Only commit if the user asks or if the caller (`work`, `autopilot`) handles the commit; in that case,
+only the files written by this skill.

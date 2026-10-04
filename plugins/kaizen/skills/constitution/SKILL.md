@@ -1,126 +1,123 @@
 ---
 name: constitution
-description: Crée, amende ou audite la constitution d'ingénierie du projet (CONSTITUTION.md) — 5 à 9 principes non négociables, chacun avec un contrôle vérifiable, une politique IA (ce que les agents font seuls), un versionnage et une gouvernance — par une interview qui repousse les principes vagues et un stress test. Plan, doc-review et review l'appliquent ensuite comme des contrôles. Utiliser pour « crée notre constitution », « nos principes d'ingénierie », « ajoute un principe », « amende la constitution », /kaizen:constitution.
+description: Creates, amends or audits the project's engineering constitution (CONSTITUTION.md) — 5 to 9 non-negotiable principles, each with a verifiable check, an AI policy (what agents do on their own), versioning and governance — through an interview that pushes back on vague principles and a stress test. Plan, doc-review and review then enforce it as checks. Use when the user says "create our constitution", "our engineering principles", "add a principle", "amend the constitution", /kaizen:constitution.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
-argument-hint: "[vide | amend <article ou sujet> | audit]"
+argument-hint: "[empty | amend <article or topic> | audit]"
 ---
 
-# Constitution — les principes que le projet ne négocie pas
+# Constitution — the principles the project does not negotiate
 
-`CONSTITUTION.md`, à la racine du repo, porte les **principes d'ingénierie non négociables** : comment
-on construit ici, ce qu'un agent a le droit de faire seul. Ce n'est ni une liste de bonnes intentions,
-ni un guide de style : chaque article a un **contrôle** que le plan doit passer et que la revue vérifie.
+`CONSTITUTION.md`, at the repo root, carries the **non-negotiable engineering principles**: how things
+are built here, what an agent may do on its own. It is neither a list of good intentions nor a style
+guide: each article has a **check** the plan must pass and the review verifies.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Gabarit :
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Template:
 `${CLAUDE_PLUGIN_ROOT}/templates/constitution.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**Terminé quand :** `CONSTITUTION.md` existe, `node "$K" constitution check` passe, et l'utilisateur
-a vu le texte complet et eu un tour de correction avant l'écriture.
+**Done when:** `CONSTITUTION.md` exists, `node "$K" constitution check` passes, and the user has seen
+the full text and had one round of corrections before writing.
 
-## Limites
+## Limits
 
-- **Principes, pas plan.** Une fonctionnalité va dans `/kaizen:brainstorm`, une règle de détail d'un
-  domaine (« les exports CSV commencent par un BOM ») dans un **Kaizen Pack**, une leçon dans
-  `/kaizen:learn`. La constitution ne garde que ce qui vaut pour **tout** le travail.
-- **L'utilisateur répond ; le repo ne fait qu'affûter la question.** On ne déduit pas les principes
-  du code. On s'en sert pour poser une meilleure question (« vos tests sont en majorité des tests
-  d'intégration — c'est un principe ou un hasard ? »).
-- **Court est une qualité.** 5 à 9 articles. Au-delà de 12, plus personne ne les applique tous.
-- **On n'édite jamais** un article marqué `<!-- approuvé -->` sans passer par un amendement.
+- **Principles, not a plan.** A feature goes to `/kaizen:brainstorm`, a detailed rule for one area
+  ("CSV exports start with a BOM") into a **Kaizen Pack**, a learning into `/kaizen:learn`. The
+  constitution only keeps what holds for **all** the work.
+- **The user answers; the repo only sharpens the question.** Principles are not inferred from the
+  code. Use it to ask a better question ("your tests are mostly integration tests — is that a principle
+  or an accident?").
+- **Short is a quality.** 5 to 9 articles. Beyond 12, nobody applies them all anymore.
+- **Never edit** an article marked `<!-- approved -->` without going through an amendment.
 
-## Phase 0 — Ancrer et router
+## Phase 0 — Anchor and route
 
-1. `node "$K" constitution --json` : la constitution existe-t-elle ?
-2. **Modèle du repo** (lectures bornées, en parallèle) : `CLAUDE.md`, `CONTRIBUTING.md`, `AGENTS.md`,
-   `.claude/rules/`, config CI (`.github/workflows/`), outils de test/lint/typage
-   (`node "$K" detect`), packs déclarés (`node "$K" packs`), et les leçons les plus nombreuses par
-   type (`node "$K" learnings stats`) — un type de bug récurrent suggère un principe manquant.
-   Montre en 3 à 5 lignes ce que tu en retiens, sources nommées, et invite à corriger.
-3. Route : pas de fichier → **Phase 1** ; `amend …` → **Phase 2** ; `audit` → **Phase 3** ; fichier
-   existant sans argument → propose amend ou audit.
+1. `node "$K" constitution --json`: does the constitution exist?
+2. **Repo model** (bounded reads, in parallel): `CLAUDE.md`, `CONTRIBUTING.md`, `AGENTS.md`,
+   `.claude/rules/`, CI config (`.github/workflows/`), test/lint/typing tools (`node "$K" detect`),
+   declared packs (`node "$K" packs`), and the most frequent learning types
+   (`node "$K" learnings stats`) — a recurring bug type suggests a missing principle. Show in 3 to 5
+   lines what you take from it, sources named, and invite corrections.
+3. Route: no file → **Phase 1**; `amend …` → **Phase 2**; `audit` → **Phase 3**; existing file without
+   an argument → propose amend or audit.
 
-## Phase 1 — Interview (première fois)
+## Phase 1 — Interview (first time)
 
-**Une question par tour.** Réponses libres pour le fond. Deux relances au plus par sujet, puis on
-capte ce qui a été donné et on le note « à revisiter ». Cite les mots de l'utilisateur quand tu
-relances, ne paraphrase pas. Ne prononce pas le nom des anti-motifs : pose la question plus précise.
+**One question per turn.** Free-form answers for the substance. At most two follow-ups per topic, then
+capture what was given and mark it "to revisit". Quote the user's words when you follow up, do not
+paraphrase. Do not name anti-patterns: ask the more precise question.
 
-1. **Ce qui casse le plus cher.** « Quand un changement a fait mal ici — incident, régression, nuit
-   blanche — qu'est-ce qui, en amont, aurait dû l'empêcher ? » Les réponses deviennent des candidats
-   d'articles.
-2. **Les candidats.** Propose 5 à 8 articles de départ adaptés au repo, en partant de ces familles
-   (choisis, ne recopie pas tout) :
-   - **Preuve d'abord** — tout changement de comportement arrive avec un test qui échouait avant.
-   - **Simplicité** — pas de mécanisme non demandé ; toute complexité est justifiée dans le plan.
-   - **Pas d'abstraction prématurée** — pas d'interface à une seule implémentation, pas de couche
-     « pour plus tard ».
-   - **Petits lots** — une PR ≤ `pr.max_lines` lignes relisibles ; au-delà, découper en tranches.
-   - **Sécurité par défaut** — entrées non fiables validées à la frontière, aucun secret dans le code
-     ou les logs, dépendances auditées.
-   - **Compatibilité** — aucun changement cassant d'une interface consommée sans versionnage ;
-     migrations en expand → migrate → contract.
-   - **Observabilité** — tout nouveau chemin critique émet de quoi diagnostiquer une panne.
-   - **Réversibilité** — tout déploiement a un retour arrière décrit (flag, revert, migration inverse).
-   - **Politique IA** (obligatoire) — ce que les agents font seuls, ce qui exige un humain.
-   Demande lesquels garder, lesquels réécrire, lesquels manquent.
-3. **Pour chaque article retenu** : la règle en 1 à 3 phrases, puis **le contrôle**. Relances type :
-   - principe invérifiable (« du code de qualité », « bien tester ») → « Comment un relecteur
-     saurait-il, en lisant une PR, que c'est respecté ? Quelle preuve regarderait-il ? »
-   - valeur, pas principe (« on est pragmatiques ») → « Qu'est-ce que ça interdit concrètement ? Si
-     rien, ce n'est pas un article. »
-   - duplication d'un outil (« pas de lignes de plus de 120 caractères ») → « Le linter l'impose déjà ;
-     un article doit porter ce qu'aucun outil ne vérifie. »
-   - trop large (« la sécurité est prioritaire ») → « Dans quelle situation précise ce principe
-     changerait-il une décision ? »
-4. **Non négociable ou non ?** Pour chaque article : admet-il des exceptions ? Si oui, lesquelles et
-   comment on les consigne. « NON NÉGOCIABLE » est réservé à 1 à 3 articles.
-5. **Politique IA.** Précise : ce que l'agent peut faire seul (branche, commit, push de branche, PR,
-   correctifs de revue), ce qui exige un humain dans la session (merge, migration, nouvelle dépendance,
-   infrastructure, données de production, suppression), et ce qu'il ne fait jamais.
-6. **Stress test.** Pose 3 à 5 propositions concrètes, une par tour, qui visent les zones floues du
-   brouillon (« un correctif urgent en prod sans test, un vendredi soir ? », « une abstraction pour un
-   deuxième client prévu le mois prochain ? », « l'agent ajoute une dépendance pour gagner deux
-   heures ? »). Si la constitution tranche déjà comme l'utilisateur → confirmé. Si elle ne tranche pas
-   → l'article est trop vague : affûte-le. Si l'utilisateur veut une exception → écris-la dans
-   « Exceptions ».
+1. **What breaks most expensively.** "When a change hurt here — incident, regression, sleepless night —
+   what, upstream, should have prevented it?" The answers become candidate articles.
+2. **The candidates.** Propose 5 to 8 starting articles suited to the repo, from these families
+   (choose, do not copy them all):
+   - **Evidence first** — every behavior change comes with a test that failed before.
+   - **Simplicity** — no mechanism nobody asked for; all complexity is justified in the plan.
+   - **No premature abstraction** — no interface with a single implementation, no "for later" layer.
+   - **Small batches** — a PR ≤ `pr.max_lines` reviewable lines; beyond that, split into slices.
+   - **Secure by default** — untrusted input validated at the boundary, no secret in code or logs,
+     audited dependencies.
+   - **Compatibility** — no breaking change to a consumed interface without versioning; migrations as
+     expand → migrate → contract.
+   - **Observability** — every new critical path emits what is needed to diagnose a failure.
+   - **Reversibility** — every deployment has a described rollback (flag, revert, reverse migration).
+   - **AI policy** (mandatory) — what agents do on their own, what requires a human.
+   Ask which to keep, which to rewrite, which are missing.
+3. **For each kept article**: the rule in 1 to 3 sentences, then **the check**. Typical follow-ups:
+   - unverifiable principle ("quality code", "test well") → "How would a reviewer know, reading a PR,
+     that it is respected? What evidence would they look at?"
+   - a value, not a principle ("we are pragmatic") → "What does it concretely forbid? If nothing, it is
+     not an article."
+   - duplicating a tool ("no line over 120 characters") → "The linter already enforces it; an article
+     must carry what no tool checks."
+   - too broad ("security comes first") → "In which precise situation would this principle change a
+     decision?"
+4. **Non-negotiable or not?** For each article: does it admit exceptions? If so, which ones and how
+   they are recorded. "NON-NEGOTIABLE" is reserved for 1 to 3 articles.
+5. **AI policy.** Specify: what the agent may do alone (branch, commit, branch push, PR, review fixes),
+   what requires a human in the session (merge, migration, new dependency, infrastructure, production
+   data, deletion), and what it never does.
+6. **Stress test.** Ask 3 to 5 concrete propositions, one per turn, aimed at the draft's fuzzy areas
+   ("an urgent production fix without a test, on a Friday night?", "an abstraction for a second client
+   planned next month?", "the agent adds a dependency to save two hours?"). If the constitution
+   already decides like the user → confirmed. If it does not decide → the article is too vague:
+   sharpen it. If the user wants an exception → write it under "Exceptions".
 
-## Écriture
+## Writing
 
-Remplis le gabarit (numérotation romaine continue, la politique IA incluse), dates du jour,
-`version: 1.0.0`. Montre **le texte complet** dans le chat, un tour de corrections, puis écris
-`CONSTITUTION.md` et lance `node "$K" constitution check` jusqu'au vert (les avertissements se
-discutent). Ensuite :
-- propose d'ajouter à `CLAUDE.md` (existant) une ligne : « Principes non négociables :
-  `CONSTITUTION.md` — appliqués par /kaizen:plan et /kaizen:review. » ;
-- signale les **conflits** avec les packs ou leçons existants (une règle de pack qui contredit un
-  article) : la constitution l'emporte, la règle doit être amendée — propose, ne modifie pas.
+Fill in the template (continuous Roman numbering, AI policy included), today's dates,
+`version: 1.0.0`. Write the constitution in the configured language (`config.language`, `auto` = the
+conversation's); the field names the tools read (`**Check:**`, `**Exceptions:**`, `NON-NEGOTIABLE`,
+`## Amendments`, `Approved by:`) stay as in the template. Show **the full text** in the chat, one round
+of corrections, then write `CONSTITUTION.md` and run `node "$K" constitution check` until green
+(warnings are discussed). Then:
+- offer to add to `CLAUDE.md` (existing) one line: "Non-negotiable principles: `CONSTITUTION.md` —
+  enforced by /kaizen:plan and /kaizen:review.";
+- report **conflicts** with existing packs or learnings (a pack rule contradicting an article): the
+  constitution wins, the rule must be amended — propose, do not change it.
 
-## Phase 2 — Amendement (`amend`)
+## Phase 2 — Amendment (`amend`)
 
-1. Lis la constitution actuelle. Identifie l'article visé (ou le nouvel article proposé).
-2. **Pourquoi maintenant ?** Un post-mortem, une leçon récurrente, une exception demandée trop
-   souvent ? Demande la raison si elle n'est pas donnée : un amendement sans raison est refusé.
-3. Rédige le changement avec les mêmes relances qu'en phase 1.
-4. **Impact** : plans en cours (`node "$K" plan list` puis `plan check` sur chacun), règles de packs
-   et leçons qui deviennent contradictoires. Montre la liste.
-5. Version : MAJEUR si un article est retiré ou redéfini de façon incompatible, MINEUR si ajouté ou
-   élargi, CORRECTIF si clarification. Mets à jour `last_amended`. Ajoute en bas un journal
-   `## Amendements` : `- v1.2.0 (2026-11-03) — Article IV élargi aux webhooks. Raison : post-mortem
-   docs/postmortems/…`.
-6. **Approbation.** Si le frontmatter déclare `approvers` (gouvernance d'équipe), l'amendement n'est
-   valide qu'avec `Approuvé par : @<approbateur>` en fin de ligne du journal, et `constitution check`
-   le refuse sinon. Demande qui l'a approuvé ; n'écris jamais un nom que l'utilisateur n'a pas donné,
-   et jamais un agent (`@claude`…) : un agent ne s'approuve pas un changement des règles qu'il doit
-   respecter. Sans approbation, laisse l'amendement en proposition (PR touchant `CONSTITUTION.md`,
-   relue par les approbateurs, idéalement via `CODEOWNERS`). En mode non interactif : jamais
-   d'amendement, seulement une proposition.
-7. Accord explicite, écriture, `constitution check`.
+1. Read the current constitution. Identify the targeted article (or the proposed new article).
+2. **Why now?** A postmortem, a recurring learning, an exception requested too often? Ask for the
+   reason if it is not given: an amendment without a reason is refused.
+3. Draft the change with the same follow-ups as in phase 1.
+4. **Impact**: plans in progress (`node "$K" plan list` then `plan check` on each), pack rules and
+   learnings becoming contradictory. Show the list.
+5. Version: MAJOR if an article is removed or redefined incompatibly, MINOR if added or widened, PATCH
+   if a clarification. Update `last_amended`. Add at the bottom a log `## Amendments`:
+   `- v1.2.0 (2026-11-03) — Article IV widened to webhooks. Reason: postmortem docs/postmortems/…`.
+6. **Approval.** If the frontmatter declares `approvers` (team governance), the amendment is only valid
+   with `Approved by: @<approver>` at the end of the log line, and `constitution check` refuses it
+   otherwise. Ask who approved it; never write a name the user did not give, and never an agent
+   (`@claude`…): an agent does not approve a change to the rules it must follow. Without approval,
+   leave the amendment as a proposal (PR touching `CONSTITUTION.md`, reviewed by the approvers, ideally
+   through `CODEOWNERS`). In non-interactive mode: never an amendment, only a proposal.
+7. Explicit approval, writing, `constitution check`.
 
 ## Phase 3 — Audit (`audit`)
 
-Lecture seule. Pour chaque article : le contrôle est-il vérifiable ? Est-il **réellement** appliqué ?
-Regarde les 10 dernières PR ou les 50 derniers commits de la branche par défaut (`git log`,
-`gh pr list --state merged --limit 10` si disponible) et les plans récents : combien d'exceptions,
-lesquelles sans justification, quels articles jamais cités. Un article jamais vérifié est mort : propose
-de l'amender ou de le retirer. Rapport : article, état (vivant / contourné / mort), preuve, proposition.
+Read-only. For each article: is the check verifiable? Is it **actually** applied? Look at the last 10
+PRs or the last 50 commits of the default branch (`git log`, `gh pr list --state merged --limit 10` if
+available) and recent plans: how many exceptions, which ones without justification, which articles are
+never cited. An article never checked is dead: propose amending or removing it. Report: article, state
+(alive / bypassed / dead), evidence, proposal.

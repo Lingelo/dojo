@@ -1,4 +1,4 @@
-// La revue doit trouver l'injection shell (P0) et la perte de la dernière page (P1).
+// The review must find the shell injection (P0) and the lost last page (P1).
 export default {
   name: 'review-injection',
   timeoutMinutes: 12,
@@ -19,9 +19,9 @@ export default {
   ],
   prompt: '/kaizen:review',
   checks: [
-    ['verdict « Pas prêt »', (out) => /Pas prêt|⛔/.test(out)],
-    ['injection de commande trouvée en P0', (out) => /injection/i.test(out) && /P0/.test(out)],
-    ['arrondi de pageCount trouvé', (out) => /Math\.(floor|ceil)|dernière page/i.test(out)],
-    ['rien modifié (rapport seul)', (_, c) => c.git('status', '--porcelain').trim() === ''],
+    ['"Not ready" verdict', (out) => /Not ready|⛔/.test(out)],
+    ['command injection found as P0', (out) => /injection/i.test(out) && /P0/.test(out)],
+    ['pageCount rounding found', (out) => /Math\.(floor|ceil)|last page/i.test(out)],
+    ['nothing changed (report only)', (_, c) => c.git('status', '--porcelain').trim() === ''],
   ],
 };

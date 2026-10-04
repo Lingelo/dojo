@@ -1,99 +1,98 @@
 ---
 name: help
-description: Guide d'orientation Kaizen — explique ce qu'est Kaizen (la boucle, les garde-fous, les livrables, les profils) et recommande la commande à utiliser selon la situation décrite et l'état réel du repo (setup fait ?, constitution ?, plan en cours ?, garde-fou actif ?, revue enregistrée ?), avec l'invocation exacte et ce qu'elle produira. Lecture seule. Utiliser pour « quelle commande utiliser ? », « par où commencer ? », « c'est quoi kaizen ? », « je veux corriger un bug / livrer / mesurer, je fais quoi ? », « où en suis-je ? », /kaizen:help [question ou situation].
+description: Kaizen orientation guide — explains what Kaizen is (the loop, the gates, the deliverables, the profiles) and recommends the command to use for the situation described and the repo's actual state (setup done?, constitution?, plan in progress?, gate active?, review recorded?), with the exact invocation and what it will produce. Read-only. Use when the user asks "which command should I use?", "where do I start?", "what is kaizen?", "I want to fix a bug / ship / measure, what do I run?", "where am I?", /kaizen:help [question or situation].
 allowed-tools: Bash(node:*), Bash(git:*), Read, Glob, Grep
-argument-hint: "[vide = présentation + où en est le repo | question | situation]"
+argument-hint: "[empty = overview + where the repo stands | question | situation]"
 ---
 
-# Help — savoir quoi utiliser
+# Help — knowing what to use
 
-**Résultat :** l'utilisateur sait ce qu'est Kaizen et **quelle commande lancer maintenant**, avec
-l'invocation exacte, pourquoi celle-là, et ce qu'elle produira. Lecture seule : aucune écriture,
-aucune commande lancée à sa place.
+**Outcome:** the user knows what Kaizen is and **which command to run now**, with the exact
+invocation, why that one, and what it will produce. Read-only: no writes, no command run on their
+behalf. Answer in the user's language.
 
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-## 1. Diagnostiquer
+## 1. Diagnose
 
-`node "$K" status --json` (hors dépôt git : dis-le, et réponds seulement sur le fond). Il donne
-l'initialisation, le profil, la constitution, le dernier plan et son stade, le garde-fou, l'état de
-la revue de la branche, les incidents ouverts ou sans post-mortem, et `next` : la prochaine étape déduite de l'état. Tu t'en sers comme d'un
-fait, pas comme d'un ordre : la situation décrite par l'utilisateur l'emporte.
+`node "$K" status --json` (outside a git repo: say so, and only answer on the substance). It gives
+initialization, profile, constitution, latest plan and its stage, the gate, the branch's review state,
+open incidents or incidents without a postmortem, and `next`: the next step inferred from the state.
+Use it as a fact, not as an order: the situation the user describes wins.
 
-## 2. Répondre selon l'invocation
+## 2. Answer according to the invocation
 
-**Sans argument** — en moins de 30 lignes :
-1. Kaizen en trois phrases : un cycle de développement assisté par IA, de la constitution du projet
-   jusqu'à la mise en production surveillée ; des garde-fous **déterministes** (tests verts avant de terminer,
-   revue enregistrée avant tout push, taille des PR) ; une boucle d'apprentissage (leçons, ADR,
-   post-mortems) relue au cycle suivant. Le merge reste à l'humain.
-2. Le schéma de la boucle (ci-dessous).
-3. **Où en est ce repo** : 3 à 5 lignes tirées de `status`.
-4. **Ensuite** : la commande recommandée, avec sa raison, et au plus deux alternatives.
+**Without an argument** — in under 30 lines:
+1. Kaizen in three sentences: an AI-assisted development cycle, from the project's constitution to a
+   watched production release; **deterministic** gates (green tests before finishing, recorded review
+   before any push, PR size); a learning loop (learnings, ADRs, postmortems) read back by the next
+   cycle. Merging stays with the human.
+2. The loop diagram (below).
+3. **Where this repo stands**: 3 to 5 lines from `status`.
+4. **Next**: the recommended command, with its reason, and at most two alternatives.
 
-**Avec une question ou une situation** — associe-la au tableau ci-dessous. Réponds par la commande
-(invocation exacte, arguments utiles), une phrase sur ce qu'elle fait et ce qu'elle produit, et ce
-qui viendra après. Si deux commandes conviennent, dis ce qui les départage. Si la situation est
-vraiment ambiguë, une seule question. Pour le détail d'une commande, lis son guide
-`${CLAUDE_PLUGIN_ROOT}/docs/guides/<commande>.md` et cite-le, sans le recopier.
+**With a question or a situation** — match it to the table below. Answer with the command (exact
+invocation, useful arguments), one sentence on what it does and produces, and what comes after. If two
+commands fit, say what tells them apart. If the situation is truly ambiguous, a single question. For a
+command's details, read its guide `${CLAUDE_PLUGIN_ROOT}/docs/guides/<command>.md` and cite it, without
+copying it.
 
-**« C'est quoi / comment marche X »** (un garde-fou, un livrable, une notion) — explique depuis
-`${CLAUDE_PLUGIN_ROOT}/README.md`, `${CLAUDE_PLUGIN_ROOT}/docs/configuration.md` ou
-`${CLAUDE_PLUGIN_ROOT}/docs/depannage.md`, en citant la page à lire ensuite.
+**"What is / how does X work"** (a gate, a deliverable, a notion) — explain from
+`${CLAUDE_PLUGIN_ROOT}/README.md`, `${CLAUDE_PLUGIN_ROOT}/docs/configuration.md` or
+`${CLAUDE_PLUGIN_ROOT}/docs/troubleshooting.md`, citing the page to read next.
 
-## La boucle
+## The loop
 
 ```
-                 CONSTITUTION.md — principes, chacun avec un contrôle vérifiable
+                 CONSTITUTION.md — principles, each with a verifiable check
 ideate → brainstorm → plan ─► doc-review → work → review → ship → watch-pr → learn
                        ▲                                                         │
                        └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
-debug → correctif → review → learn       polish : retouches UI guidées
-release → deploy → monitor ─(seuil franchi)→ rollback → postmortem → leçons, amendements
-decide → ADR     metrics (DORA réel, coût)
-autopilot : de la demande à la PR prête, en autonomie
+debug → fix → review → learn       polish: user-guided UI touch-ups
+release → deploy → monitor ─(threshold breached)→ rollback → postmortem → learnings, amendments
+decide → ADR     metrics (real DORA, cost)
+autopilot: from request to ready PR, autonomously
 ```
 
-## Quelle commande pour quelle situation
+## Which command for which situation
 
-| Situation | Commande | Pourquoi celle-là |
+| Situation | Command | Why that one |
 |---|---|---|
-| Kaizen jamais utilisé dans ce repo | `/kaizen:setup` | config, commandes de vérification, déploiement détecté, profil (`lean` pour commencer) |
-| Mettre en place le SDLC, savoir ce qui manque au projet | `/kaizen:setup audit` | maturité par domaine (CI, tests, secrets, revue, déploiement, monitoring) et corrections guidées par priorité |
-| Choisir ou ajuster le modèle des agents | `node $K models`, puis `models` dans `.kaizen/config.json` | un modèle par rôle selon le profil : recherche économe, jugements critiques au plus fort |
-| Poser les règles du projet | `/kaizen:constitution` | 5 à 9 principes, chacun avec un contrôle que plan et revue appliquent |
-| Ne sait pas quoi faire ensuite | `/kaizen:ideate` | idées ancrées dans le code, critiquées, classées |
-| Une idée de fonctionnalité, encore floue | `/kaizen:brainstorm <idée>` | définit **quoi** : exigences R, exemples d'acceptation AE |
-| Les exigences sont claires | `/kaizen:plan` | décide **comment** : unités, menaces, déploiement, tranches de PR |
-| Un plan à relire avant de coder | `/kaizen:doc-review <plan>` | relecteurs de plan (appelée par `plan`) |
-| Un plan prêt, ou un petit changement précis | `/kaizen:work [plan]` | test d'abord, un commit par unité, garde-fou, revue |
-| Un bug dont la cause est inconnue | `/kaizen:debug <symptôme>` | reproduction, chaîne causale, correctif test d'abord |
-| Retouches visuelles d'une interface | `/kaizen:polish` | serveur de dev, retours appliqués à chaud |
-| Faire relire du code (branche ou PR) | `/kaizen:review [n° PR]` | relecteurs choisis selon le diff ; enregistre la revue exigée au push |
-| Ouvrir la PR | `/kaizen:ship` | vérifications, taille, description tirée du plan |
-| Des commentaires de revue sur la PR | `/kaizen:address-feedback` | verdict, correctif poussé, réponse, fil résolu |
-| Mener une PR jusqu'à « prête » | `/kaizen:watch-pr <url>` | retours, CI, mise à jour de branche ; ne merge jamais |
-| Tout enchaîner sans intervenir | `/kaizen:autopilot <demande>` | de la demande à la PR prête (idéalement après un brainstorm) |
-| Une décision difficile à défaire | `/kaizen:decide <question>` | options comparées sur preuves, puis ADR |
-| On vient de résoudre un problème non évident | `/kaizen:learn` | une leçon que le prochain plan et la prochaine revue reliront |
-| Leçons nombreuses ou périmées | `/kaizen:prune-learnings` | garder, mettre à jour, fusionner, supprimer |
-| Un incident en production | `/kaizen:postmortem` | sans coupable : chronologie, facteurs, actions, leçons |
-| Préparer une version | `/kaizen:release` | notes, SemVer, CHANGELOG, checklist de mise en production |
-| Mettre en production, ou revenir en arrière | `/kaizen:deploy <env> [ref]`, `/kaizen:deploy rollback <env>` | commandes de l'équipe, approbation tapée pour la production, tag, surveillance, retour arrière |
-| La prod va-t-elle bien ? | `/kaizen:monitor [env] [watch n]` | signaux déclarés contre les seuils de la config et des plans |
-| Détecter les incidents en continu, une alerte vient de tomber | `/kaizen:monitor production continu`, `/kaizen:monitor production incidents` | contrôle planifié (`patrol`) ou alertes de l'équipe branchées, incidents datés |
-| Savoir si ça s'améliore | `/kaizen:metrics` | DORA approché, réutilisation des leçons, coût des cycles |
-| Push refusé, garde-fou qui bloque, skill qui ne se déclenche pas | — | `docs/depannage.md`, puis `/kaizen:setup check` |
+| Kaizen never used in this repo | `/kaizen:setup` | config, verification commands, detected deployment, profile (`lean` to start) |
+| Set up the SDLC, find out what the project lacks | `/kaizen:setup audit` | maturity per area (CI, tests, secrets, review, deployment, monitoring) and guided fixes by priority |
+| Choose or adjust the agents' model | `node $K models`, then `models` in `.kaizen/config.json` | one model per role depending on the profile: frugal research, critical judgments on the strongest |
+| Lay down the project's rules | `/kaizen:constitution` | 5 to 9 principles, each with a check that plan and review enforce |
+| Does not know what to do next | `/kaizen:ideate` | ideas grounded in the code, critiqued, ranked |
+| A feature idea, still fuzzy | `/kaizen:brainstorm <idea>` | defines **what**: R requirements, AE acceptance examples |
+| The requirements are clear | `/kaizen:plan` | decides **how**: units, threats, rollout, PR slices |
+| A plan to review before coding | `/kaizen:doc-review <plan>` | plan reviewers (called by `plan`) |
+| A ready plan, or a small precise change | `/kaizen:work [plan]` | test first, one commit per unit, gate, review |
+| A bug with an unknown cause | `/kaizen:debug <symptom>` | reproduction, causal chain, test-first fix |
+| Visual touch-ups to an interface | `/kaizen:polish` | dev server, feedback applied live |
+| Get code reviewed (branch or PR) | `/kaizen:review [PR number]` | reviewers chosen by the diff; records the review required at push |
+| Open the PR | `/kaizen:ship` | checks, size, description from the plan |
+| Review comments on the PR | `/kaizen:address-feedback` | verdict, fix pushed, reply, thread resolved |
+| Drive a PR to "ready" | `/kaizen:watch-pr <url>` | feedback, CI, branch update; never merges |
+| Chain everything without intervening | `/kaizen:autopilot <request>` | from request to ready PR (ideally after a brainstorm) |
+| A decision that is hard to undo | `/kaizen:decide <question>` | options compared on evidence, then an ADR |
+| A non-obvious problem was just solved | `/kaizen:learn` | a learning the next plan and the next review will read |
+| Many or stale learnings | `/kaizen:prune-learnings` | keep, update, merge, delete |
+| A production incident | `/kaizen:postmortem` | blameless: timeline, factors, actions, learnings |
+| Prepare a release | `/kaizen:release` | notes, SemVer, CHANGELOG, production checklist |
+| Deploy to production, or roll back | `/kaizen:deploy <env> [ref]`, `/kaizen:deploy rollback <env>` | the team's commands, typed approval for production, tag, watch, rollback |
+| Is production healthy? | `/kaizen:monitor [env] [watch n]` | declared signals against the config's and plans' thresholds |
+| Detect incidents continuously, an alert just fired | `/kaizen:monitor production continuous`, `/kaizen:monitor production incidents` | scheduled check (`patrol`) or the team's alerts wired in, dated incidents |
+| Know whether things improve | `/kaizen:metrics` | approximated DORA, learning reuse, cycle cost |
+| Push refused, gate blocking, skill not triggering | — | `docs/troubleshooting.md`, then `/kaizen:setup check` |
 
-Repères pour départager :
-- **work ou autopilot** : `work` avance avec l'utilisateur ; `autopilot` va seul jusqu'à la PR.
-- **debug ou work** : cause inconnue → `debug` ; correctif évident → `work`.
-- **brainstorm ou plan** : on ne sait pas encore exactement quoi → `brainstorm` ; on le sait →
-  `plan`.
-- **Profil** : beaucoup de cérémonie pour l'équipe → profil `lean` (`.kaizen/config.json`), qui
-  allège plan et revue sans toucher aux garde-fous.
+Tie-breakers:
+- **work or autopilot**: `work` moves forward with the user; `autopilot` goes alone up to the PR.
+- **debug or work**: unknown cause → `debug`; obvious fix → `work`.
+- **brainstorm or plan**: not sure yet exactly what → `brainstorm`; known → `plan`.
+- **Profile**: too much ceremony for the team → `lean` profile (`.kaizen/config.json`), which lightens
+  plan and review without touching the gates.
 
-## Ce que help ne fait pas
+## What help does not do
 
-Elle ne lance pas la commande recommandée et n'écrit rien : elle oriente. Si l'utilisateur dit
-« vas-y », c'est la commande recommandée qu'il faut invoquer, pas help.
+It does not run the recommended command and writes nothing: it orients. If the user says "go ahead",
+invoke the recommended command, not help.

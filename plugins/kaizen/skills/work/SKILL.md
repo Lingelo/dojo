@@ -1,93 +1,92 @@
 ---
 name: work
-description: Exécute un plan Kaizen (ou une demande concrète) de bout en bout — branche dédiée, unité par unité avec preuve test d'abord, commits conventionnels par unité, garde-fou qualité actif (hook Stop) tant que les vérifications sont rouges, puis simplification, revue obligatoire et livraison. Utiliser pour « implémente le plan », « exécute », /kaizen:work [chemin]. Pour un bug sans cause connue, préférer /kaizen:debug.
+description: Executes a Kaizen plan (or a concrete request) end to end — dedicated branch, unit by unit with test-first evidence, one conventional commit per unit, quality gate active (Stop hook) while checks are red, then simplification, mandatory review and delivery. Use when the user says "implement the plan", "execute", /kaizen:work [path]. For a bug without a known cause, prefer /kaizen:debug.
 allowed-tools: Bash(node:*), Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(yarn:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList
-argument-hint: "[chemin du plan | description | vide = dernier plan] [mode:return]"
+argument-hint: "[plan path | description | empty = latest plan] [mode:return]"
 ---
 
-# Work — exécuter le plan
+# Work — executing the plan
 
-**Résultat :** un ensemble de changements entièrement implémenté et vérifié localement, puis revu et
-livré (ou rendu à l'appelant en `mode:return`).
+**Outcome:** a fully implemented and locally verified set of changes, then reviewed and shipped (or
+returned to the caller in `mode:return`).
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Avant la première écriture de code, lis
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Before writing code for the first time, read
 `${CLAUDE_PLUGIN_ROOT}/skills/work/references/implementation-loop.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:return`** (posé par `/kaizen:autopilot`) : implémentation et vérification locale **seulement** — pas
-de simplification, revue, push ni PR (l'appelant s'en charge), aucune question. Rends :
+**`mode:return`** (set by `/kaizen:autopilot`): implementation and local verification **only** — no
+simplification, review, push or PR (the caller handles them), no questions. Return:
 `{ status: complete|blocked, plan_path, branch, commits: [sha…], units: [{id, status, evidence}],
 verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
 
-## Phase 0 — Triage de l'entrée
+## Phase 0 — Input triage
 
-- **Chemin de plan** → lis-le **en entier**. Pas d'unités (`kaizen:units` absent) → ce n'est qu'un
-  contrat produit : propose `/kaizen:plan` d'abord (en `mode:return` : rends `blocked`).
-- **Vide** → `node "$K" plan latest` ; confirme le plan trouvé avant de l'exécuter (sauf `mode:return`).
-- **Demande sans plan** :
-  - **Triviale** (1–2 fichiers, pas de changement de comportement) → exécute directement, sans liste
-    de tâches, en gardant la vérification (et la revue, même légère, avant tout push).
-  - **Bornée** → déduis 2 à 6 unités toi-même, annonce-les en 5 lignes, puis exécute.
-  - **Floue ou risquée** → propose `/kaizen:plan` (ou `/kaizen:brainstorm`) au lieu d'improviser.
-- Ne renégocie pas un plan validé : une décision à peser devient **une** question, pas un retour au
+- **Plan path** → read it **in full**. No units (`kaizen:units` missing) → it is only a product
+  contract: propose `/kaizen:plan` first (in `mode:return`: return `blocked`).
+- **Empty** → `node "$K" plan latest`; confirm the plan found before executing it (except in
+  `mode:return`).
+- **Request without a plan**:
+  - **Trivial** (1–2 files, no behavior change) → execute directly, without a task list, keeping the
+    verification (and the review, even light, before any push).
+  - **Bounded** → infer 2 to 6 units yourself, announce them in 5 lines, then execute.
+  - **Fuzzy or risky** → propose `/kaizen:plan` (or `/kaizen:brainstorm`) instead of improvising.
+- Do not renegotiate a validated plan: a decision to weigh becomes **one** question, not a return to
   planning.
 
-## Phase 1 — Espace de travail
+## Phase 1 — Workspace
 
-1. `git status --short` : inventorie les fichiers **déjà modifiés** par l'utilisateur. Une unité qui a
-   besoin d'un de ces fichiers → demande une fois s'il faut l'inclure ou l'exclure (en `mode:return` :
-   `blocked` avec la collision).
-2. **Branche** — si tu es sur la branche par défaut (`main`, `master`, ou
-   `git rev-parse --abbrev-ref origin/HEAD` **sans** le préfixe `origin/`), crée une branche
-   `<type>/<topic>` (préfixée de la clé Jira du plan ou de la demande si connue) et dis-le. Jamais
-   d'écriture sur la branche par défaut sans demande explicite dans cette session.
-3. **Garde-fou** — `node "$K" gate on --plan <chemin>` : le hook Stop refusera de terminer tant que
-   les vérifications sont rouges (3 blocages max, puis il laisse passer en le signalant).
-4. **Contexte** — lis les fichiers référencés par le plan, les leçons qu'il cite (`docs/learnings/…`),
-   les règles de packs citées et `CONSTITUTION.md` s'il existe. Une leçon citée est une contrainte
-   d'implémentation ; un article de la constitution est une règle, pas une suggestion.
-   Vérifie le plan une fois : `node "$K" plan check <chemin>` (rouge → `/kaizen:plan` d'abord).
-5. **Tâches** — une tâche par unité (`TaskCreate`), dans l'ordre des dépendances.
+1. `git status --short`: list the files **already modified** by the user. A unit needing one of these
+   files → ask once whether to include or exclude it (in `mode:return`: `blocked` with the collision).
+2. **Branch** — if you are on the default branch (`main`, `master`, or
+   `git rev-parse --abbrev-ref origin/HEAD` **without** the `origin/` prefix), create a branch
+   `<type>/<topic>` (prefixed with the plan's or the request's Jira key if known) and say so. Never
+   write to the default branch without an explicit request in this session.
+3. **Gate** — `node "$K" gate on --plan <path>`: the Stop hook will refuse to finish while checks are
+   red (3 blocks max, then it lets through while saying so).
+4. **Context** — read the files referenced by the plan, the learnings it cites (`docs/learnings/…`),
+   the cited pack rules and `CONSTITUTION.md` if it exists. A cited learning is an implementation
+   constraint; a constitution article is a rule, not a suggestion. Check the plan once:
+   `node "$K" plan check <path>` (red → `/kaizen:plan` first).
+5. **Tasks** — one task per unit (`TaskCreate`), in dependency order.
 
-## Phase 2 — Exécuter
+## Phase 2 — Execute
 
-Suis `implementation-loop.md` pour chaque unité : preuve d'abord, implémentation dans les conventions
-du repo, vérification ciblée, preuve consignée, **commit de l'unité** (fichiers de l'unité seulement,
-format conventionnel avec Jira). Les lectures indépendantes d'une unité partent dans un seul message.
+Follow `implementation-loop.md` for each unit: evidence first, implementation within the repo's
+conventions, targeted verification, evidence recorded, **unit commit** (the unit's files only,
+conventional format with Jira). A unit's independent reads go out in a single message.
 
-Unités **indépendantes** (aucun fichier commun, aucune dépendance) et nombreuses : tu peux en confier à
-des sous-agents `general-purpose` en parallèle (`model` : `node "$K" models --json` → `roles.implement.model`), chacun avec un paquet autonome (unité complète, fichiers,
-motif à imiter, commande de vérification, interdiction de commiter). Tu restes l'intégrateur :
-inspecte le diff réel de chaque résultat, relance la vérification, et fais toi-même les commits. Au
-moindre conflit, repasse en série.
+Many **independent** units (no shared file, no dependency): you may hand some to `general-purpose`
+subagents in parallel (`model`: `node "$K" models --json` → `roles.implement.model`), each with a
+self-contained package (full unit, files, pattern to imitate, verification command, no committing
+allowed). You remain the integrator: inspect the real diff of each result, rerun the verification, and
+make the commits yourself. At the slightest conflict, go back to serial.
 
-## Phase 3 — Qualité (mode autonome uniquement)
+## Phase 3 — Quality (autonomous mode only)
 
-1. **Vérification complète** — `node "$K" verify`. Rouge → corrige la cause racine, jamais en
-   affaiblissant un test. Dépendances ajoutées ou modifiées → `node "$K" verify --only audit` aussi.
-2. **Taille** — `node "$K" size`. Au-delà de `pr.max_lines` : la tranche était trop grosse — propose de
-   la scinder en plusieurs PR (branches empilées, une par groupe d'unités) plutôt que de livrer un
-   bloc que personne ne relira bien. Exception assumée (code généré, migration) → dite dans la PR.
-3. **Couverture du plan** — chaque `R` et chaque `AE` a sa preuve (test ou vérification consignée) ;
-   chaque élément de la « Définition de terminé » est vrai. Sinon, complète.
-4. **Simplification** — si la skill `simplify` est disponible, invoque-la sur le diff de la branche ;
-   sinon, relis toi-même le diff avec trois lentilles (réutilisation d'un utilitaire existant, clarté,
-   efficacité) et applique les simplifications sûres. Re-vérifie.
-5. **Revue obligatoire** — invoque `kaizen:review plan:<chemin>`. Le travail n'est **pas** terminé et
-   rien n'est poussé sans un rapport de revue réellement produit, ou une instruction explicite de
-   l'utilisateur de s'en passer. Une auto-relecture mentale ne compte pas.
-6. Applique les correctifs P0/P1 retenus (ou demande pour ceux marqués `manual`), re-vérifie, commit,
-   puis ré-enregistre la revue avec le verdict après correctifs
-   (`node "$K" review record --verdict …`) : sans cela, le hook de push refusera la livraison.
+1. **Full verification** — `node "$K" verify`. Red → fix the root cause, never by weakening a test.
+   Dependencies added or changed → `node "$K" verify --only audit` too.
+2. **Size** — `node "$K" size`. Above `pr.max_lines`: the slice was too big — propose splitting it into
+   several PRs (stacked branches, one per group of units) rather than shipping a block nobody will
+   review well. Accepted exception (generated code, migration) → stated in the PR.
+3. **Plan coverage** — each `R` and each `AE` has its evidence (test or recorded verification); each
+   item of the "Definition of done" is true. Otherwise, complete it.
+4. **Simplification** — if the `simplify` skill is available, invoke it on the branch diff; otherwise,
+   reread the diff yourself with three lenses (reusing an existing utility, clarity, efficiency) and
+   apply the safe simplifications. Verify again.
+5. **Mandatory review** — invoke `kaizen:review plan:<path>`. The work is **not** done and nothing is
+   pushed without a review report actually produced, or an explicit instruction from the user to skip
+   it. A mental self-review does not count.
+6. Apply the kept P0/P1 fixes (or ask for those marked `manual`), verify again, commit, then record the
+   review again with the post-fix verdict (`node "$K" review record --verdict …`): without it, the push
+   hook will refuse the delivery.
 
-## Phase 4 — Livrer
+## Phase 4 — Deliver
 
 1. `node "$K" gate off`.
-2. Résumé : unités livrées, preuves, commits, constats de revue restants (et pourquoi), décisions
-   prises en route.
-3. Propose (une question) : **livrer** (Recommandé → invoque `kaizen:ship <plan>` : push, PR avec
-   description et guide du relecteur tirés du plan, puis surveillance de la PR proposée) · **garder en
-   local** · **capitaliser une leçon d'abord**.
-4. Si le travail a produit un raisonnement non évident (un piège, une cause surprenante, une décision
-   qui a demandé de l'enquête), propose `/kaizen:learn` — c'est ce qui rend le prochain cycle plus
-   facile.
+2. Summary: units shipped, evidence, commits, remaining review findings (and why), decisions made
+   along the way.
+3. Propose (one question): **ship** (Recommended → invoke `kaizen:ship <plan>`: push, PR with a
+   description and reviewer guide from the plan, then PR watching offered) · **keep it local** ·
+   **capture a learning first**.
+4. If the work produced non-obvious reasoning (a trap, a surprising cause, a decision that took
+   investigation), propose `/kaizen:learn` — that is what makes the next cycle easier.

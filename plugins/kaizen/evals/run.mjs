@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Kaizen — évaluations de bout en bout : chaque scénario prépare un dépôt piégé, lance une skill
-// dans une session Claude Code headless (`claude -p --plugin-dir`), puis vérifie le résultat.
+// Kaizen — end-to-end evaluations: each scenario prepares a trapped repo, runs a skill in a headless
+// Claude Code session (`claude -p --plugin-dir`), then checks the result.
 //
-//   node evals/run.mjs                 tous les scénarios
+//   node evals/run.mjs                 every scenario
 //   node evals/run.mjs review-injection plan-valid
-//   KAIZEN_EVAL_KEEP=1                 garde les dépôts temporaires pour inspection
+//   KAIZEN_EVAL_KEEP=1                 keeps the temporary repos for inspection
 //
-// Coûteux (appels de modèle réels) : à lancer avant une release, pas dans la CI par défaut.
+// Costly (real model calls): run before a release, not in CI by default.
 
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -41,7 +41,7 @@ function makeRepo(files, steps) {
     if (step.files) write(step.files);
     if (step.tag) sh(dir, 'git', ['tag', step.tag]);
     if (step.remote) {
-      // Remote nu à côté du dépôt : de quoi tester un vrai git push sans réseau.
+      // Bare remote next to the repo: enough to test a real git push without network.
       const bare = `${dir}-origin.git`;
       sh(dir, 'git', ['init', '-q', '--bare', bare]);
       sh(dir, 'git', ['remote', 'add', 'origin', bare]);
@@ -59,8 +59,8 @@ function makeRepo(files, steps) {
 function runClaude(dir, prompt, timeoutMs) {
   return new Promise((resolve) => {
     const args = ['--plugin-dir', PLUGIN, '-p', prompt, '--allowedTools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Agent', 'Skill', 'TaskCreate', 'TaskUpdate'];
-    // Session isolée : sans cela, un claude -p lancé depuis une session Claude Code hérite de son
-    // identifiant et écrit dans sa liste de tâches.
+    // Isolated session: otherwise, a claude -p launched from a Claude Code session inherits its id and
+    // writes into its task list.
     const env = { ...process.env };
     for (const k of ['CLAUDE_CODE_SESSION_ID', 'CLAUDE_PID', 'CLAUDE_CODE_CHILD_SESSION']) delete env[k];
     const child = spawn('claude', args, { cwd: dir, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -75,8 +75,8 @@ function runClaude(dir, prompt, timeoutMs) {
   });
 }
 
-// Arrête les process laissés par un scénario (ex. serveur de dev de polish) : ceux dont le dossier
-// courant est dans le dépôt temporaire. Linux seulement (/proc) ; ailleurs, rien n'est fait.
+// Stops the processes left by a scenario (e.g. polish's dev server): those whose current folder is
+// inside the temporary repo. Linux only (/proc); elsewhere, nothing is done.
 function stopLeftovers(dir) {
   let pids = [];
   try {
@@ -159,7 +159,7 @@ for (const f of files) {
   for (const r of results) console.log(`    ${r.ok ? '✔' : '✘'} ${r.label}${r.note ? ` — ${r.note}` : ''}`);
   if (!pass || process.env.KAIZEN_EVAL_KEEP) {
     writeFileSync(join(dir, 'eval-output.txt'), out);
-    console.log(`    dépôt gardé : ${dir} (sortie dans eval-output.txt)`);
+    console.log(`    repo kept: ${dir} (output in eval-output.txt)`);
   } else {
     rmSync(dir, { recursive: true, force: true });
     rmSync(`${dir}-origin.git`, { recursive: true, force: true });

@@ -1,5 +1,5 @@
-// /kaizen:help sur un repo dont la production a un incident ouvert (détecté hors de la fenêtre après
-// déploiement) : rétablir passe avant la fonctionnalité suivante. Lecture seule.
+// /kaizen:help on a repo whose production has an open incident (detected outside the post-deployment
+// window): restoring comes before the next feature. Read-only.
 import { CONSTITUTION, SHOP } from '../fixtures.mjs';
 
 const MARK = `node -e "require('fs').appendFileSync('deployed.log', process.env.KAIZEN_SHA + '\\n')"`;
@@ -15,12 +15,12 @@ export default {
   },
   steps: [
     { run: ['deploy', 'run', 'production'] },
-    { run: ['monitor', 'incident', 'open', '--env', 'production', '--source', 'alerte alertmanager', '--summary', 'taux d’erreur du paiement à 7 %'] },
+    { run: ['monitor', 'incident', 'open', '--env', 'production', '--source', 'alertmanager alert', '--summary', 'payment error rate at 7 %'] },
   ],
-  prompt: '/kaizen:help je voudrais attaquer la prochaine fonctionnalité, je lance quoi ?',
+  prompt: "/kaizen:help I'd like to start on the next feature, what do I run?",
   checks: [
-    ['oriente d’abord vers l’incident ouvert', (out) => /\/kaizen:monitor production|incident/i.test(out) && /rétabli|retour arrière|rollback/i.test(out)],
-    ['cite le symptôme de l’incident', (out) => /paiement|7\s?%/i.test(out)],
-    ['rien n’est modifié, l’incident reste ouvert', (_, c) => c.git('status', '--porcelain').trim() === '' && !/resolve\//.test(c.git('tag', '-l', 'resolve/*'))],
+    ['points to the open incident first', (out) => /\/kaizen:monitor production|incident/i.test(out) && /restor|roll ?back/i.test(out)],
+    ['quotes the incident symptom', (out) => /payment|7\s?%/i.test(out)],
+    ['nothing changed, the incident stays open', (_, c) => c.git('status', '--porcelain').trim() === '' && !/resolve\//.test(c.git('tag', '-l', 'resolve/*'))],
   ],
 };

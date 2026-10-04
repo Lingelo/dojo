@@ -1,107 +1,105 @@
 ---
 name: autopilot
-description: Mode autonome Kaizen — emmène une demande jusqu'au bout sans s'arrêter, par les bonnes skills (plan ou debug, work, simplification, revue avec correctifs, capitalisation, commit, push, PR, surveillance de la CI). Un changement de code se termine en PR ouverte. Utiliser uniquement quand l'utilisateur demande explicitement un travail autonome de bout en bout ou invoque /kaizen:autopilot — idéalement après /kaizen:brainstorm. Pour un suivi étape par étape, utiliser plan, work, debug.
+description: Kaizen autonomous mode — takes a request all the way without stopping, through the right skills (plan or debug, work, simplification, review with fixes, capture, commit, push, PR, CI watching). A code change ends as an open PR. Use only when the user explicitly asks for end-to-end autonomous work or invokes /kaizen:autopilot — ideally after /kaizen:brainstorm. For step-by-step follow-up, use plan, work, debug.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList
-argument-hint: "[fonctionnalité, bug, ticket ou chemin de plan]"
+argument-hint: "[feature, bug, ticket or plan path]"
 ---
 
-# Autopilot — de la demande à la PR, sans s'arrêter
+# Autopilot — from request to PR, without stopping
 
-**Résultat :** la demande atteint l'état final que sa forme appelle, produit par la skill Kaizen dont
-c'est le métier, avec tout ce qui reste non résolu consigné là où l'utilisateur le verra. Un
-changement de code se termine en **PR ouverte** dont tu donnes l'URL, CI tranchée, après avoir été
-implémenté, simplifié, revu (correctifs éligibles appliqués, le reste consigné), capitalisé si
-pertinent, commité et poussé. **Le merge reste à l'utilisateur** sauf autorisation explicite.
+**Outcome:** the request reaches the end state its shape calls for, produced by the Kaizen skill whose
+job it is, with everything left unresolved recorded where the user will see it. A code change ends as
+an **open PR** whose URL you give, CI settled, after being implemented, simplified, reviewed (eligible
+fixes applied, the rest recorded), captured if relevant, committed and pushed. **Merging stays with
+the user** unless explicitly authorized.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
 ## Interaction
 
-On ne questionne l'utilisateur **que** via `/kaizen:brainstorm`, et seulement s'il est présent. Tout le
-reste avance sans attendre : ce qui est réversible est fait et montré (l'utilisateur corrigera
-après) ; seule une action **irréversible** hors de ce qui a été accordé (merge, force-push,
-suppression de données, déploiement) arrête la course.
+The user is **only** questioned through `/kaizen:brainstorm`, and only if they are present. Everything
+else moves on without waiting: what is reversible is done and shown (the user will correct it
+afterwards); only an **irreversible** action outside what was granted (merge, force push, data
+deletion, deployment) stops the run. Report to the user in their language.
 
-## Visibilité
+## Visibility
 
-Crée une tâche par étape (`TaskCreate`) et tiens-les à jour. Une étape n'est terminée qu'après avoir
-réellement tourné ; le retour d'une skill enfant enchaîne l'étape suivante **dans le même tour** ; le
-tour ne se termine pas avant DONE ou un arrêt motivé.
+Create one task per step (`TaskCreate`) and keep them up to date. A step is only done after it really
+ran; a child skill's return chains the next step **in the same turn**; the turn does not end before
+DONE or a motivated stop.
 
-## Routage
+## Routing
 
-Associe la demande à la skill dont c'est le métier :
-- un **chemin de plan**, ou un plan écrit dans cette session → route plan (étape 2 directement) ;
-- un **bug concret** (symptôme, test rouge, ticket de bug) → `kaizen:debug mode:return` ;
-- une **forme produit ambiguë** (plusieurs lectures plausibles) → `kaizen:brainstorm mode:return` si un
-  humain est présent, sinon `kaizen:plan mode:return` qui consignera ses hypothèses ;
-- un résultat **qui n'est pas du code** (idées, explication) → la skill concernée, et c'est tout ;
-- tout autre changement de code → `kaizen:plan mode:return`.
+Match the request to the skill whose job it is:
+- a **plan path**, or a plan written in this session → plan route (step 2 directly);
+- a **concrete bug** (symptom, red test, bug ticket) → `kaizen:debug mode:return`;
+- an **ambiguous product shape** (several plausible readings) → `kaizen:brainstorm mode:return` if a
+  human is present, otherwise `kaizen:plan mode:return` which will record its assumptions;
+- an outcome **that is not code** (ideas, explanation) → the skill concerned, and that is all;
+- any other code change → `kaizen:plan mode:return`.
 
-**Pas de raccourci « changement trivial ».** Même pour cinq lignes, la course passe par une source de
-travail (un plan, court s'il le faut), `work` sous garde-fou, `node "$K" verify` et `kaizen:review`.
-Seule la simplification (étape 3) se saute pour un petit diff, et la livraison (9-10) sans remote.
-Qui veut un changement sans cérémonie utilise `/kaizen:work` directement, pas `autopilot`.
-**Seule exception : profil `lean`** (`node "$K" config` → `profile`) — un changement de ≤ ~30 lignes
-sans surface à risque (voir `conventions.md`) part en `kaizen:work mode:return` avec ses 2 à 6 unités
-annoncées, sans plan écrit ; garde-fou, `verify`, revue et livraison restent identiques.
+**No "trivial change" shortcut.** Even for five lines, the run goes through a work source (a plan,
+short if need be), `work` under the gate, `node "$K" verify` and `kaizen:review`. Only simplification
+(step 3) is skipped for a small diff, and delivery (9-10) without a remote. Whoever wants a change
+without ceremony uses `/kaizen:work` directly, not `autopilot`. **Only exception: `lean` profile**
+(`node "$K" config` → `profile`) — a change of ≤ ~30 lines with no risk surface (see `conventions.md`)
+goes to `kaizen:work mode:return` with its 2 to 6 announced units, without a written plan; gate,
+`verify`, review and delivery stay identical.
 
-En cas de doute, la route qui exige le plus de preuves. **Jamais** de plan improvisé par-dessus un plan
-existant, ni de plan pioché au hasard dans le dossier des plans.
+When in doubt, the route requiring the most evidence. **Never** an improvised plan on top of an
+existing plan, nor a plan picked at random from the plans folder.
 
-## La course (routes qui changent le code)
+## The run (code-changing routes)
 
-1. **Source de travail** — un plan prêt à implémenter (vérifie `<!-- kaizen:units -->`), ou un retour
-   `fixed` de `kaizen:debug`. `blocked`, `needs-human`, `settled-decision-invalidated` → **arrêt**.
-2. **Implémenter** — `kaizen:work mode:return <plan>` (route debug : déjà fait, passe à 3). Seul
-   `status: complete` avance. Le garde-fou qualité reste actif pendant toute la course
-   (`node "$K" gate on --plan <plan>`, retiré à la fin).
-3. **Simplifier** — skill `simplify` si disponible, sinon une passe toi-même (réutilisation, clarté,
-   efficacité) ; sauté pour un diff de documentation ou de moins de ~10 lignes. Re-vérifie.
-4. **Revue** — `kaizen:review mode:agent plan:<plan>` (sans `plan:` sur la route debug). Un constat qui
-   montre qu'une décision acquise **ne peut pas marcher** (infaisable, mauvaise cible, destructrice)
-   arrête la course avant tout push.
-5. **Appliquer les correctifs** — P0/P1 confirmés et `gated_auto` P2 : applique, re-vérifie
-   (`node "$K" verify`), commite (`fix(<JIRA>): corrections de revue`). Rien ne reste seulement dans
-   l'arbre de travail. Ré-enregistre la revue avec le verdict après correctifs
-   (`node "$K" review record --verdict …`) : le hook de push l'exige.
-6. **Consigner le reste** — chaque constat actionnable non appliqué, chaque décision signalée en route :
-   dans la description de la PR (section « Points ouverts »), ou dans le rapport final s'il n'y a pas
-   de PR.
-7. **Capitaliser** — `kaizen:learn mode:auto` si la course a produit un raisonnement durable que le
-   code, les tests et le plan ne portent pas. « Leçon non écrite » est un succès. La leçon part dans la
-   PR.
-8. **Tests navigateur** — changement d'UI et outil navigateur disponible (plugin `playwright`, MCP) :
-   parcours des exemples d'acceptation touchés ; échec → correctif, re-vérification.
+1. **Work source** — an implementation-ready plan (check `<!-- kaizen:units -->`), or a `fixed` return
+   from `kaizen:debug`. `blocked`, `needs-human`, `settled-decision-invalidated` → **stop**.
+2. **Implement** — `kaizen:work mode:return <plan>` (debug route: already done, go to 3). Only
+   `status: complete` moves on. The quality gate stays active during the whole run
+   (`node "$K" gate on --plan <plan>`, removed at the end).
+3. **Simplify** — `simplify` skill if available, otherwise one pass yourself (reuse, clarity,
+   efficiency); skipped for a documentation diff or one under ~10 lines. Verify again.
+4. **Review** — `kaizen:review mode:agent plan:<plan>` (without `plan:` on the debug route). A finding
+   showing that a settled decision **cannot work** (infeasible, wrong target, destructive) stops the
+   run before any push.
+5. **Apply the fixes** — confirmed P0/P1 and `gated_auto` P2: apply, verify again (`node "$K" verify`),
+   commit (`fix(<JIRA>): review fixes`). Nothing stays only in the working tree. Record the review
+   again with the post-fix verdict (`node "$K" review record --verdict …`): the push hook requires it.
+6. **Record the rest** — every actionable finding not applied, every decision flagged along the way:
+   in the PR description ("Open points" section), or in the final report if there is no PR.
+7. **Capture** — `kaizen:learn mode:auto` if the run produced durable reasoning the code, tests and
+   plan do not carry. "Learning not written" is a success. The learning goes into the PR.
+8. **Browser tests** — UI change and a browser tool available (`playwright` plugin, MCP): walk through
+   the acceptance examples touched; failure → fix, verify again.
 
-**Précondition de livraison** (à partir de 9) : `git remote` vide → tout reste en commits locaux, on
-saute push, PR et CI. Ce n'est pas une erreur.
+**Delivery precondition** (from 9 on): empty `git remote` → everything stays in local commits, push, PR
+and CI are skipped. That is not an error.
 
-9. **Livrer** — `kaizen:ship <plan> mode:auto` : vérifications, taille (`node "$K" size` ; au-delà du
-   plafond, la PR le justifie), push de la branche (jamais la branche par défaut, jamais `--force`),
-   PR avec description, guide du relecteur, déploiement et retour arrière, points ouverts. Une PR
-   existante pour la branche est mise à jour, pas dupliquée.
-10. **Mener la PR** — `kaizen:watch-pr <url> mode:pipeline` : retours de revue traités, CI réparée
-    (au plus 2 correctifs par cause, aucune désactivation de test, aucun commit vide), branche mise à
-    jour seulement si GitHub le demande. Il rend `looks-ready`, un blocage motivé ou ses résidus :
-    consigne-les dans la PR (« Points ouverts ») et termine.
-11. `node "$K" gate off`, puis rapport final et `DONE`.
+9. **Ship** — `kaizen:ship <plan> mode:auto`: checks, size (`node "$K" size`; above the limit, the PR
+   justifies it), branch push (never the default branch, never `--force`), PR with description,
+   reviewer guide, rollout and rollback, open points. An existing PR for the branch is updated, not
+   duplicated.
+10. **Drive the PR** — `kaizen:watch-pr <url> mode:pipeline`: review feedback handled, CI repaired (at
+    most 2 fixes per cause, no test disabled, no empty commit), branch updated only if GitHub asks for
+    it. It returns `looks-ready`, a motivated blocker or its residuals: record them in the PR ("Open
+    points") and finish.
+11. `node "$K" gate off`, then the final report and `DONE`.
 
-**Pas de déploiement.** La course s'arrête à la PR prête ; mettre en production passe par
-`/kaizen:deploy`, avec l'approbation tapée par l'utilisateur pour un environnement protégé.
+**No deployment.** The run stops at the ready PR; releasing to production goes through
+`/kaizen:deploy`, with the approval typed by the user for a protected environment.
 
-## Arrêts (dire pourquoi)
+## Stops (say why)
 
-Source de travail impossible à produire · retour enfant autre que complet et étayé · décision acquise
-invalidée · processus de livraison du projet non satisfait. Un arrêt ne pousse rien qui ne l'était
-déjà ; il retire le garde-fou (`gate off`) et résume l'état exact et la reprise possible.
+Work source impossible to produce · child return other than complete and substantiated · settled
+decision invalidated · the project's delivery process not satisfied. A stop pushes nothing that was not
+already pushed; it removes the gate (`gate off`) and summarizes the exact state and the possible
+resume.
 
-## Rapport final
+## Final report
 
 ```
-DONE — <titre>
-PR : <url> — ✅ semble prête | 🟡 réserve : … | ⛔ bloquée : … (watch-pr)
-Plan : <chemin> · Unités : 4/4 · Revue : 1 P1 corrigé, 2 P3 consignés · Leçon : <chemin | aucune>
-Points ouverts : …
+DONE — <title>
+PR: <url> — ✅ looks ready | 🟡 reservation: … | ⛔ blocked: … (watch-pr)
+Plan: <path> · Units: 4/4 · Review: 1 P1 fixed, 2 P3 recorded · Learning: <path | none>
+Open points: …
 ```

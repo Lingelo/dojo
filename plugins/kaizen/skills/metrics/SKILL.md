@@ -1,62 +1,62 @@
 ---
 name: metrics
-description: Mesure la santé de la livraison et de la boucle Kaizen — indicateurs DORA approchés depuis git et GitHub (fréquence de livraison, délai de changement, taux de reprise, taux d'échec des changements, temps de rétablissement), taille des lots, et effet cumulatif (leçons créées et réutilisées par les plans, exceptions à la constitution) — puis les interprète avec 1 à 3 actions. Utiliser pour « où en est-on », « nos métriques DORA », « est-ce que kaizen sert à quelque chose », rétrospective, /kaizen:metrics [fenêtre].
+description: Measures the health of delivery and of the Kaizen loop — DORA metrics approximated from git and GitHub (delivery frequency, change lead time, rework rate, change failure rate, time to restore), batch size, and the compounding effect (learnings created and reused by plans, constitution exceptions) — then interprets them with 1 to 3 actions. Use when the user asks "where do we stand", "our DORA metrics", "is kaizen any use", a retrospective, /kaizen:metrics [window].
 allowed-tools: Bash(node:*), Bash(git:*), Bash(gh:*), Read, Write, Glob
-argument-hint: "[fenêtre : 30d | 12w | 6m — défaut 90d] [comparer]"
+argument-hint: "[window: 30d | 12w | 6m — default 90d] [compare]"
 ---
 
-# Metrics — est-ce qu'on s'améliore vraiment ?
+# Metrics — are we really improving?
 
-Kaizen promet que chaque cycle rend le suivant plus facile. Cette skill le **vérifie**. DORA 2025 :
-l'IA augmente le débit **et** l'instabilité ; seules les équipes qui gardent de petits lots et un
-retour d'expérience transforment l'un sans payer l'autre.
+Kaizen promises that each cycle makes the next one easier. This skill **checks** it. DORA 2025: AI
+increases throughput **and** instability; only teams that keep small batches and real feedback turn
+one into gains without paying the other.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-## 1. Mesurer
+## 1. Measure
 
-`node "$K" metrics --since <fenêtre>` (ajoute `--no-github` si `gh` n'est pas authentifié). Avec
-`comparer`, lance aussi la fenêtre précédente de même durée — le CLI mesure depuis aujourd'hui, donc
-calcule la précédente en lisant deux fenêtres (ex. `--since 180d` et `--since 90d`) et en déduisant
-la première moitié ; dis que c'est une approximation.
+`node "$K" metrics --since <window>` (add `--no-github` if `gh` is not authenticated). With `compare`,
+also run the previous window of the same length — the CLI measures from today, so compute the previous
+one by reading two windows (e.g. `--since 180d` and `--since 90d`) and deducing the first half; say it
+is an approximation.
 
-## 2. Lire honnêtement
+## 2. Read honestly
 
-Chaque indicateur a sa **méthode** dans la sortie : restitue-la. Ce sont des approximations depuis la
-branche par défaut, pas une mesure du système de déploiement. Signale les limites visibles :
-historique superficiel (clone `--depth`), merges squash sans accès GitHub (délai indisponible),
-fenêtre trop courte (moins de 10 changements → tendances non significatives).
+Each metric has its **method** in the output: report it. These are approximations from the default
+branch, unless real deployments exist (`deploy/` tags). Report the visible limits: shallow history
+(`--depth` clone), squash merges without GitHub access (lead time unavailable), window too short (fewer
+than 10 changes → trends not significant).
 
-| Indicateur | Lecture |
+| Metric | Reading |
 |---|---|
-| Fréquence de livraison | plus haute et régulière = petits lots qui s'intègrent vite |
-| Délai de changement | médiane ouverture → merge ; un délai long vient souvent de la revue (DORA 2025) |
-| Taux de reprise | part des changements qui corrigent ; en hausse = on livre des défauts |
-| Taux d'échec des changements | changements suivis d'un correctif sous 7 jours sur les mêmes fichiers |
-| Temps de rétablissement | depuis les incidents tracés (`monitor`, détection → résolution) quand il y a des déploiements réels, sinon depuis les post-mortems (`detected` → `resolved`) |
-| Taille des lots | médiane et part au-dessus de `pr.max_lines` — le premier levier selon DORA |
-| Boucle Kaizen | leçons nouvelles, **lues** (citées par un plan récent), **appliquées** (citées par un commit), jamais citées, exceptions à la constitution |
-| Coût des cycles | `cycle_cost` : cycles work/autopilot clos, durée et tokens médians (session principale + sous-agents), part des sous-agents (`subagent_share`), tokens par rôle (`tokens_by_role`), part des cycles où le garde-fou a bloqué — local à la machine |
+| Delivery frequency | higher and regular = small batches integrating fast |
+| Change lead time | median PR opened → merged, or first commit → deployment; a long lead time often comes from review (DORA 2025) |
+| Rework rate | share of changes that fix; rising = we ship defects |
+| Change failure rate | changes followed by a fix within 7 days on the same files, or deployments followed by a rollback or an incident |
+| Time to restore | from recorded incidents (`monitor`, detection → resolution) when there are real deployments, otherwise from postmortems (`detected` → `resolved`) |
+| Batch size | median and share above `pr.max_lines` — the first lever according to DORA |
+| Kaizen loop | new learnings, **read** (cited by a recent plan), **applied** (cited by a commit), never cited, constitution exceptions |
+| Cycle cost | `cycle_cost`: closed work/autopilot cycles, median duration and tokens (main session + subagents), subagent share (`subagent_share`), tokens per role (`tokens_by_role`), share of cycles where the gate blocked — local to the machine |
 
-**Réutilisation des leçons** : c'est l'indicateur propre à Kaizen. Des leçons écrites mais jamais
-citées par un plan = la boucle ne se referme pas (leçons introuvables, mal étiquetées, ou
-`learnings-researcher` non lancé) → `/kaizen:prune-learnings` (en commençant par
-`learnings_never_cited_sample`) et vérifier la trouvabilité depuis `CLAUDE.md`.
+**Learning reuse**: this is Kaizen's own metric. Learnings written but never cited by a plan = the loop
+does not close (learnings not findable, badly tagged, or `learnings-researcher` not launched) →
+`/kaizen:prune-learnings` (starting with `learnings_never_cited_sample`) and check findability from
+`CLAUDE.md`.
 
-**Coût** : mets-le en regard du gain. Des cycles longs ou chers avec un taux d'échec qui ne baisse pas
-→ la cérémonie ne rapporte pas : propose le profil `lean`. Un garde-fou qui bloque dans la plupart des
-cycles → vérifications trop lentes ou instables (`gate.targeted`), ou unités trop grosses. Lis
-`tokens_by_role` avec la politique de modèles (`node "$K" models`) : un rôle qui pèse lourd sur un modèle
-fort est le premier levier d'économie (profil `lean` ou `models.roles`). Dis que la mesure est locale,
-et qu'un rôle `inconnu` désigne des sous-agents lancés sans être rapprochés de leur lancement.
+**Cost**: weigh it against the gain. Long or expensive cycles with a failure rate that does not drop →
+the ceremony does not pay off: propose the `lean` profile. A gate blocking in most cycles → checks too
+slow or unstable (`gate.targeted`), or units too big. Read `tokens_by_role` with the model policy
+(`node "$K" models`): a role weighing heavily on a strong model is the first savings lever (`lean`
+profile or `models.roles`). Say the measurement is local, and that an `unknown` role designates
+subagents not matched to their launch.
 
-## 3. Conclure
+## 3. Conclude
 
-Rapport court (≤ 30 lignes) : tableau des valeurs, 2 à 3 constats, et **1 à 3 actions** concrètes
-reliées à une skill (« 62 % des PR dépassent 400 lignes → découper en tranches dans /kaizen:plan,
-`size` bloquant dans ship » ; « 0 leçon citée sur 14 → prune-learnings + étiquettes »). Pas de jugement
-« bon/mauvais » sans référence : compare à la fenêtre précédente quand c'est possible.
+Short report (≤ 30 lines), in the user's language: table of values, 2 to 3 findings, and **1 to 3
+concrete actions** tied to a skill ("62 % of PRs exceed 400 lines → split into slices in /kaizen:plan,
+`size` blocking in ship"; "0 learnings cited out of 14 → prune-learnings + tags"). No "good/bad"
+judgment without a reference: compare to the previous window when possible.
 
-Propose d'enregistrer le rapport dans `<root>/metrics/YYYY-MM-DD.md` pour suivre la tendance (une
-ligne de frontmatter `date`, `since` ; pas de données personnelles).
+Offer to save the report in `<root>/metrics/YYYY-MM-DD.md` to follow the trend (frontmatter with
+`date`, `since`; no personal data).

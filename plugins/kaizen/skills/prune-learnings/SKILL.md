@@ -1,101 +1,103 @@
 ---
 name: prune-learnings
-description: Entretient les leçons de docs/learnings/ contre le code actuel — détecte les leçons périmées (chemins, symboles, comportements disparus), doublons, chevauchements et contradictions, puis applique Garder / Mettre à jour / Fusionner / Remplacer / Supprimer avec preuves, et rend un rapport complet. Utiliser pour « nettoie les leçons », « audit de docs/learnings », après un gros refactor, ou quand une leçon s'est révélée fausse : /kaizen:prune-learnings [zone]. Ne modifie jamais le code produit.
+description: Maintains the learnings in docs/learnings/ against the current code — detects stale learnings (vanished paths, symbols, behaviors), duplicates, overlaps and contradictions, then applies Keep / Update / Merge / Replace / Delete with evidence, and returns a full report. Use when the user says "clean up the learnings", "audit docs/learnings", after a big refactor, or when a learning turned out wrong: /kaizen:prune-learnings [area]. Never changes product code.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
-argument-hint: "[zone : dossier, fichier, module ou mot-clé] [élaguer] [mode:auto]"
+argument-hint: "[area: folder, file, module or keyword] [prune] [mode:auto]"
 ---
 
-# Prune learnings — garder les leçons dignes de confiance
+# Prune learnings — keeping the learnings trustworthy
 
-Les leçons ne cumulent de la valeur que si **chacune** est fiable : une leçon fausse est pire
-qu'aucune, car `/kaizen:plan` et `/kaizen:review` l'appliquent. Cette skill audite le corpus contre le
-code actuel, applique les actions que les preuves justifient, et rend un rapport.
+Learnings only compound value if **each one** is reliable: a wrong learning is worse than none, because
+`/kaizen:plan` and `/kaizen:review` apply it. This skill audits the corpus against the current code,
+applies the actions the evidence justifies, and returns a report.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` et
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` and
 `${CLAUDE_PLUGIN_ROOT}/references/learnings-schema.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**Deux limites, quelles que soient les preuves :** cette skill ne modifie **jamais** le code produit,
-et ne modifie **jamais** une skill, un runbook ou un fichier d'instructions — quand une leçon contredit
-une consigne, elle le **signale**.
+**Two limits, whatever the evidence:** this skill **never** changes product code, and **never** changes
+a skill, a runbook or an instructions file — when a learning contradicts an instruction, it **reports**
+it.
 
-**Modes.** Interactif (défaut) : applique Garder/Mettre à jour/Fusionner sans demander, **demande**
-avant Remplacer et Supprimer. `mode:auto` : applique Garder/Mettre à jour/Fusionner, et pour
-Remplacer/Supprimer se contente d'ajouter en tête de la leçon
-`> ⚠️ Possiblement périmée (prune-learnings du <date>) : <raison>` et de les lister en « Recommandé ».
+**Modes.** Interactive (default): applies Keep/Update/Merge without asking, **asks** before Replace and
+Delete. `mode:auto`: applies Keep/Update/Merge, and for Replace/Delete only adds at the top of the
+learning `> ⚠️ Possibly stale (prune-learnings of <date>): <reason>` and lists them under
+"Recommended".
 
-## 1. Périmètre
+## 1. Scope
 
-Candidats : les `.md` sous `<root>/learnings/` (hors `README.md`). Un indice de zone filtre (dossier,
-module, mot-clé via `node "$K" learnings search`) ; un indice qui ne correspond à rien **n'élargit
-jamais** le périmètre : dis-le et arrête. Corpus vide : dis-le et suggère `/kaizen:learn`.
-Commence par `node "$K" learnings validate` (frontmatter cassé = mise à jour à faire).
+Candidates: the `.md` files under `<root>/learnings/` (excluding `README.md`). An area hint filters
+(folder, module, keyword through `node "$K" learnings search`); a hint matching nothing **never widens**
+the scope: say so and stop. Empty corpus: say so and suggest `/kaizen:learn`. Start with
+`node "$K" learnings validate` (broken frontmatter = an update to make).
 
-## 2. Enquêter
+## 2. Investigate
 
-Pour chaque leçon, contre l'arbre actuel :
-- **Ancrages** — les chemins, fichiers, fonctions, commandes, options et versions cités existent-ils
-  encore ? (`Glob`, `Grep`, `git log --follow` pour un fichier déplacé)
-- **Comportement** — la cause et la solution décrites sont-elles toujours vraies ? Le correctif est-il
-  toujours dans le code, ou a-t-il été retiré/remplacé ? Un test couvre-t-il maintenant le cas ?
-- **`retire_when`** — la condition externe est-elle remplie (bug amont corrigé, version dépassée) ?
-- **Consignes nommées** — si une leçon de la piste savoir nomme un fichier de consignes (une skill, un
-  runbook, `CLAUDE.md`), lis-le ; s'il prescrit autre chose, rapporte les deux citations et ce que fait
-  le code — sans éditer la consigne.
-- **Ensemble** — doublons, chevauchements, leçons qui se remplacent, **contradictions** (une
-  contradiction trompe activement : elle passe avant la péremption individuelle).
+For each learning, against the current tree:
+- **Anchors** — do the cited paths, files, functions, commands, options and versions still exist?
+  (`Glob`, `Grep`, `git log --follow` for a moved file)
+- **Behavior** — are the described cause and solution still true? Is the fix still in the code, or was
+  it removed/replaced? Does a test now cover the case?
+- **`retire_when`** — is the external condition met (upstream bug fixed, version superseded)?
+- **Named instructions** — if a knowledge-track learning names an instructions file (a skill, a runbook,
+  `CLAUDE.md`), read it; if it prescribes something else, report both quotes and what the code does —
+  without editing the instruction.
+- **As a whole** — duplicates, overlaps, learnings superseding each other, **contradictions** (a
+  contradiction actively misleads: it comes before individual staleness).
 
-Plus de 8 leçons : répartis l'enquête entre des agents `general-purpose` en parallèle (lecture seule),
-par lots thématiques, chacun rendant pour chaque leçon : ancrages vérifiés/cassés avec preuve,
-comportement toujours vrai/faux/invérifiable avec preuve, chevauchements repérés.
+More than 8 learnings: spread the investigation across `general-purpose` agents in parallel (read-only),
+by thematic batches, each returning for each learning: anchors verified/broken with evidence, behavior
+still true/false/unverifiable with evidence, overlaps spotted.
 
-**Invérifiable n'est pas faux.** Une leçon qu'on ne peut ni confirmer ni réfuter (comportement de prod,
-service externe) reste, avec une note.
+**Unverifiable is not false.** A learning that can be neither confirmed nor refuted (production
+behavior, external service) stays, with a note.
 
-## 3. Classer — une issue par leçon
+## 3. Classify — one outcome per learning
 
-| Issue | Quand |
+| Outcome | When |
 |---|---|
-| **Garder** | exacte et distincte |
-| **Mettre à jour** | le fond tient, des détails ont dérivé (chemin déplacé, nom changé, frontmatter invalide, lien mort) |
-| **Fusionner** | deux leçons ou plus disent la même chose : on garde la meilleure, on y intègre l'apport unique des autres, on supprime les autres |
-| **Remplacer** | le fond est devenu faux mais la zone mérite une leçon : réécriture d'après le code actuel |
-| **Supprimer** | le problème ne peut plus se produire (code supprimé, contrainte disparue) et la leçon n'apprend plus rien d'utile |
+| **Keep** | accurate and distinct |
+| **Update** | the substance holds, details drifted (moved path, changed name, invalid frontmatter, dead link) |
+| **Merge** | two or more learnings say the same thing: keep the best one, fold in the others' unique contribution, delete the others |
+| **Replace** | the substance became wrong but the area deserves a learning: rewrite from the current code |
+| **Delete** | the problem can no longer happen (code deleted, constraint gone) and the learning teaches nothing useful anymore |
 
-Frontière Mettre à jour / Remplacer : si un lecteur de l'ancienne version prendrait une **mauvaise
-décision**, c'est Remplacer. Pas d'archivage en place : l'historique git est l'archive.
+Update / Replace boundary: if a reader of the old version would make a **wrong decision**, it is
+Replace. No in-place archiving: git history is the archive.
 
-**Élagage (« élaguer », sur confirmation explicite)** : en plus de l'exactitude, juge la **valeur** :
-supprime ou raccourcit une leçon exacte dont le raisonnement est désormais porté par un test, un
-commentaire ou le fichier d'instructions — chaque coupe **cite** ce fichier. Sans demande explicite,
-une leçon exacte n'est jamais supprimée pour redondance.
+**Pruning ("prune", on explicit confirmation)**: besides accuracy, judge **value**: delete or shorten an
+accurate learning whose reasoning is now carried by a test, a comment or the instructions file — each
+cut **quotes** that file. Without an explicit request, an accurate learning is never deleted for
+redundancy.
 
-## 4. Exécuter
+## 4. Execute
 
-Une action par leçon, selon sa classe. Mise à jour et remplacement : gabarit et schéma en vigueur,
-`node "$K" learnings validate` jusqu'au vert. Fusion : mets à jour les liens des autres leçons vers les
-fichiers supprimés. Après une suppression ou un déplacement, `Grep` les références au chemin (plans,
-autres leçons, README) et corrige-les.
+One action per learning, per its class. Update and replace: current template and schema,
+`node "$K" learnings validate` until green. Merge: update other learnings' links to the deleted files.
+After a deletion or a move, `Grep` the references to the path (plans, other learnings, README) and fix
+them.
 
-## 5. Rapport (le livrable)
+## 5. Report (the deliverable)
+
+In the user's language:
 
 ```markdown
-## Élagage de docs/learnings/<zone> — <date>
-Examinées : N · Gardées : a · Mises à jour : b · Fusionnées : c · Remplacées : d · Supprimées : e
+## Pruning of docs/learnings/<area> — <date>
+Examined: N · Kept: a · Updated: b · Merged: c · Replaced: d · Deleted: e
 
-### Appliqué
-- `chemin` — **Mise à jour** : <ce qui a changé> (preuve : `fichier:ligne`)
-### Recommandé (non appliqué)
-- `chemin` — **Supprimer ?** <raison, preuve> 
-### Contradictions avec des consignes
-- `leçon` vs `consigne` — « citation A » / « citation B » — le code suit : …
-### Régressions possibles
-- leçon exacte mais le code ne la respecte plus → à vérifier côté produit
+### Applied
+- `path` — **Update**: <what changed> (evidence: `file:line`)
+### Recommended (not applied)
+- `path` — **Delete?** <reason, evidence>
+### Contradictions with instructions
+- `learning` vs `instruction` — "quote A" / "quote B" — the code follows: …
+### Possible regressions
+- accurate learning but the code no longer respects it → to check on the product side
 ```
 
-## 6. Commit et trouvabilité
+## 6. Commit and findability
 
-Rien n'a changé → pas de commit. Sinon, indexe **uniquement** les fichiers modifiés par cette skill et
-commite (`docs(<JIRA>): prune-learnings des leçons <zone>`) — sur une branche dédiée si tu es sur la branche
-par défaut et en interactif, sinon demande. Enfin, vérifie que `CLAUDE.md` mène bien vers
-`<root>/learnings/` (même règle que `/kaizen:learn`, avec accord).
+Nothing changed → no commit. Otherwise, stage **only** the files changed by this skill and commit
+(`docs(<JIRA>): prune learnings in <area>`) — on a dedicated branch if you are on the default branch
+and interactive, otherwise ask. Finally, check that `CLAUDE.md` does lead to `<root>/learnings/` (same
+rule as `/kaizen:learn`, with approval).

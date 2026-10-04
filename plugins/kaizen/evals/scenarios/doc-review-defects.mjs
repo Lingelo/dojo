@@ -1,17 +1,17 @@
-// /kaizen:doc-review corrige le mécanique (traçabilité) et remonte le reste : dépendance contraire
-// à la constitution, fichier de référence inexistant. Aucun code écrit.
+// /kaizen:doc-review fixes what is mechanical (traceability) and surfaces the rest: a dependency
+// contrary to the constitution, a reference file that does not exist. No code written.
 import { SHOP, CSV_PLAN } from '../fixtures.mjs';
 
-const PLAN = 'docs/plans/2026-10-02-001-feat-export-csv-commandes-plan.md';
+const PLAN = 'docs/plans/2026-10-02-001-feat-orders-csv-export-plan.md';
 const DEFECTIVE = CSV_PLAN
-  // mécanique : U2 ne déclare plus ce qu'elle couvre → R3/AE3 orphelins pour plan check
-  .replace('- **Couvre :** R3, AE3\n', '')
-  // fond : dépendance non justifiée, contraire à l'article II
-  .replace("- KTD1. Fonction pure dans \\`src/csv.js\\`, sans dépendance ; réutilise \\`totalCents\\`. Couvre R1.".replace(/\\`/g, '`'),
-    '- KTD1. Utiliser la bibliothèque `csv-stringify` (nouvelle dépendance) pour sérialiser. Couvre R1.')
-  // fond : motif à suivre qui n'existe pas
-  .replace('- `src/orders.js` — `totalCents` donne le total TTC en centimes.',
-    '- `src/orders.js` — `totalCents` donne le total TTC en centimes.\n- `src/customers-csv.js` — export existant à imiter (en-têtes, formatage).');
+  // mechanical: U2 no longer declares what it covers → R3/AE3 orphaned for plan check
+  .replace('- **Covers:** R3, AE3\n', '')
+  // substance: unjustified dependency, contrary to article II
+  .replace('- KTD1. Pure function in `src/csv.js`, no dependency; reuses `totalCents`. Covers R1.',
+    '- KTD1. Use the `csv-stringify` library (new dependency) to serialize. Covers R1.')
+  // substance: a pattern to follow that does not exist
+  .replace('- `src/orders.js` — `totalCents` gives the total including tax in cents.',
+    '- `src/orders.js` — `totalCents` gives the total including tax in cents.\n- `src/customers-csv.js` — existing export to imitate (headers, formatting).');
 
 export default {
   name: 'doc-review-defects',
@@ -19,10 +19,10 @@ export default {
   files: { ...SHOP, [PLAN]: DEFECTIVE },
   prompt: `/kaizen:doc-review ${PLAN} mode:auto`,
   checks: [
-    ['le plan de départ est bien défectueux', () => DEFECTIVE.includes('csv-stringify') && !/U2[\s\S]*Couvre :\*\* R3/.test(DEFECTIVE)],
-    ['plan check passe après correction mécanique', (_, c) => { const r = c.kaizen('plan', 'check', PLAN); return { ok: r.code === 0, note: r.out.split('\n')[0] }; }],
-    ['la dépendance est rattachée à la constitution', (out, c) => /csv-stringify/.test(out + c.read(PLAN)) && /(article II|art\. ?II|Simplicité)/i.test(out)],
-    ['le fichier de référence inexistant est signalé', (out) => /customers-csv/.test(out) && /(n'existe|inexistant|introuvable|absent|n.est pas dans)/i.test(out)],
-    ['aucun code de production écrit', (_, c) => c.git('status', '--porcelain', 'src', 'package.json').trim() === ''],
+    ['the starting plan is defective', () => DEFECTIVE.includes('csv-stringify') && !/U2[\s\S]*Covers:\*\* R3/.test(DEFECTIVE)],
+    ['plan check passes after the mechanical fix', (_, c) => { const r = c.kaizen('plan', 'check', PLAN); return { ok: r.code === 0, note: r.out.split('\n')[0] }; }],
+    ['the dependency is tied to the constitution', (out, c) => /csv-stringify/.test(out + c.read(PLAN)) && /(article II|art\. ?II|Simplicity)/i.test(out)],
+    ['the nonexistent reference file is reported', (out) => /customers-csv/.test(out) && /(does not exist|doesn't exist|nonexistent|not found|missing|absent)/i.test(out)],
+    ['no production code written', (_, c) => c.git('status', '--porcelain', 'src', 'package.json').trim() === ''],
   ],
 };

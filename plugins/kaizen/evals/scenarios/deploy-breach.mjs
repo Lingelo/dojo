@@ -1,24 +1,24 @@
-// /kaizen:deploy staging : le déploiement part, le signal du plan se dégrade après coup, la
-// surveillance le voit et le retour arrière suit, puis le post-mortem est proposé.
+// /kaizen:deploy staging: the deployment goes out, the plan's signal degrades afterwards, the watch
+// sees it and the rollback follows, then the postmortem is proposed.
 import { HEADLESS, SHOP } from '../fixtures.mjs';
 
 const MARK = (what) => `node -e "require('fs').appendFileSync('deployed.log', '${what} ' + process.env.KAIZEN_SHA + '\\n')"`;
-// Taux d'erreur : sain tant que rien n'est déployé, dégradé dès que le dernier événement est un déploiement.
+// Error rate: healthy as long as nothing is deployed, degraded as soon as the last event is a deployment.
 const ERROR_RATE = `node -e "const fs=require('fs');const l=fs.existsSync('deployed.log')?fs.readFileSync('deployed.log','utf8').trim().split('\\n').pop():'';console.log(l.startsWith('deploy')?0.08:0.001)"`;
 
 const PLAN = `---
-title: Remise fidélité - Plan
+title: Loyalty discount - Plan
 type: feat
 date: 2026-10-01
-topic: remise-fidelite
+topic: loyalty-discount
 artifact: kaizen-plan/v1
 ---
 <!-- kaizen:rollout -->
-## Déploiement et retour arrière
+## Rollout and rollback
 
-- **Exposition** : directe.
-- **Retour arrière** : redéploiement de la version précédente.
-- **Signal** : \`error_rate\` > 2 % → retour arrière.
+- **Exposure**: direct.
+- **Rollback**: redeploy the previous version.
+- **Signal**: \`error_rate\` > 2 % → rollback.
 `;
 
 export default {
@@ -33,12 +33,12 @@ export default {
       monitor: { signals: { error_rate: { command: ERROR_RATE, max: 0.05 } }, interval_seconds: 5, consecutive: 2 },
     },
   },
-  steps: [{ files: { 'docs/plans/2026-10-01-feat-remise-fidelite-plan.md': PLAN, 'src/fidelite.js': 'export const remise = (t) => t * 0.95;\n' }, commit: 'feat(SHOP-20): remise fidélité\n\nUnité U1 du plan docs/plans/2026-10-01-feat-remise-fidelite-plan.md' }],
+  steps: [{ files: { 'docs/plans/2026-10-01-feat-loyalty-discount-plan.md': PLAN, 'src/loyalty.js': 'export const discount = (t) => t * 0.95;\n' }, commit: 'feat(SHOP-20): loyalty discount\n\nUnit U1 of plan docs/plans/2026-10-01-feat-loyalty-discount-plan.md' }],
   prompt: `${HEADLESS} /kaizen:deploy staging`,
   checks: [
-    ['déployé et tracé par un tag', (_, c) => /deploy\/staging\//.test(c.git('tag', '-l', 'deploy/*'))],
-    ['seuil du plan franchi détecté', (_, c) => c.read('.kaizen/state/monitor.jsonl').includes('"ok":false')],
-    ['retour arrière exécuté et tracé', (_, c) => /rollback\/staging\//.test(c.git('tag', '-l', 'rollback/*')) && /rollback/.test(c.read('deployed.log'))],
-    ['post-mortem proposé', (out) => /postmortem|post-mortem/i.test(out)],
+    ['deployed and traced by a tag', (_, c) => /deploy\/staging\//.test(c.git('tag', '-l', 'deploy/*'))],
+    ['plan threshold breach detected', (_, c) => c.read('.kaizen/state/monitor.jsonl').includes('"ok":false')],
+    ['rollback run and traced', (_, c) => /rollback\/staging\//.test(c.git('tag', '-l', 'rollback/*')) && /rollback/.test(c.read('deployed.log'))],
+    ['postmortem proposed', (out) => /postmortem|post-mortem/i.test(out)],
   ],
 };

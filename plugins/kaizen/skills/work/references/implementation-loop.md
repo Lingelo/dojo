@@ -1,99 +1,97 @@
-# Boucle d'implémentation
+# Implementation loop
 
-## Pour chaque unité, dans l'ordre
+## For each unit, in order
 
 ```
-tant qu'il reste des unités :
-  - marquer la tâche « en cours »
-  - lire les fichiers de l'unité, le motif à imiter, les leçons citées (lectures en parallèle)
-  - déjà fait ? (fichiers présents, capacité attendue, vérification déjà vraie) → vérifier, marquer
-    terminé, passer : ne jamais réimplémenter en silence
-  - trouver les tests existants des fichiers touchés (découverte des tests, ci-dessous)
-  - choisir la stratégie de preuve (tableau ci-dessous)
-  - preuve d'abord : écrire/renforcer le test, le lancer, CONSTATER L'ÉCHEC pour la bonne raison
-  - implémenter en suivant les conventions et le motif cité
-  - lancer les tests ciblés, puis l'impact transverse (appelants, sérialisation, migrations, docs)
-  - consigner la preuve (ci-dessous)
-  - commit de l'unité
-  - marquer la tâche « terminée »
+while units remain:
+  - mark the task "in progress"
+  - read the unit's files, the pattern to imitate, the cited learnings (parallel reads)
+  - already done? (files present, expected capability, verification already true) → verify, mark
+    done, move on: never silently reimplement
+  - find the existing tests of the touched files (test discovery, below)
+  - choose the evidence strategy (table below)
+  - evidence first: write/strengthen the test, run it, OBSERVE THE FAILURE for the right reason
+  - implement following the conventions and the cited pattern
+  - run the targeted tests, then the cross-cutting impact (callers, serialization, migrations, docs)
+  - record the evidence (below)
+  - commit the unit
+  - mark the task "done"
 ```
 
-Dépendance hors repo (réglage d'une console, DNS, données en base…) : décide d'après l'état **observé**
-du livrable, jamais d'après un arbre git propre. Ré-appliquer seulement si c'est sûr ou autorisé ;
-sinon demander ou bloquer.
+Dependency outside the repo (console setting, DNS, data in a database…): decide from the **observed**
+state of the deliverable, never from a clean git tree. Re-apply only if safe or authorized; otherwise
+ask or block.
 
-## Stratégie de preuve
+## Evidence strategy
 
 | Situation | Action |
 |---|---|
-| Un test existant échoue déjà pour le comportement visé | c'est la preuve rouge ; pas de doublon |
-| Un test existant possède ce comportement | le renforcer, constater l'échec, puis implémenter |
-| Comportement nouveau, emplacement de test naturel | nouveau test qui échoue d'abord |
-| Code existant sans tests qu'on va modifier | test de **caractérisation** d'abord (capturer l'existant) |
-| Renommage, config pure, style, fichiers générés, surface manuelle | exception : consigner la raison et la vérification de remplacement |
+| An existing test already fails for the targeted behavior | that is the red evidence; no duplicate |
+| An existing test owns this behavior | strengthen it, observe the failure, then implement |
+| New behavior, natural test location | new test that fails first |
+| Existing code without tests that will be changed | **characterization** test first (capture what exists) |
+| Rename, pure config, style, generated files, manual surface | exception: record the reason and the replacement check |
 
-Règles :
-- Ne jamais écrire le test et l'implémentation dans la même étape en mode test d'abord.
-- Un test doit échouer quand le comportement qu'il nomme casse, et continuer de passer quand seule
-  l'implémentation change. Il ne vaut rien si sa valeur attendue vient du code testé, si un mock fournit
-  le résultat attendu, ou s'il affirme des appels internes au lieu de ce que le code renvoie, stocke ou
-  envoie.
-- Pas d'export, drapeau ou hook de production utilisé seulement par les tests quand le vrai point
-  d'entrée peut piloter le comportement.
-- Pas de nouveau test en doublon quand un test existant est le bon foyer : renforce-le.
+Rules:
+- Never write the test and the implementation in the same step in test-first mode.
+- A test must fail when the behavior it names breaks, and keep passing when only the implementation
+  changes. It is worthless if its expected value comes from the tested code, if a mock provides the
+  expected result, or if it asserts internal calls instead of what the code returns, stores or sends.
+- No production export, flag or hook used only by tests when the real entry point can drive the
+  behavior.
+- No new duplicate test when an existing test is the right home: strengthen it.
 
-## Découverte des tests
+## Test discovery
 
-Avant de modifier un fichier, trouve ses tests (fichiers qui l'importent ou partagent son nom :
-`*.test.*`, `*_spec.*`, `test_*.py`, `*Test.java`…). Les scénarios du plan sont un point de départ ;
-vérifie s'il en existe d'autres. Nouveau comportement → nouveaux tests ; comportement changé → tests
-modifiés ; comportement supprimé → tests retirés.
+Before changing a file, find its tests (files importing it or sharing its name: `*.test.*`, `*_spec.*`,
+`test_*.py`, `*Test.java`…). The plan's scenarios are a starting point; check whether others exist. New
+behavior → new tests; changed behavior → changed tests; removed behavior → tests removed.
 
-## Construis ce qui est demandé
+## Build what is asked
 
-Les unités et le périmètre du plan définissent ce qui se construit. N'ajoute un mécanisme non demandé
-(garde, retry, repli, validation, option, abstraction) que si un contrat existant l'exige, ou si :
-- son absence laisse un dommage arriver avant que quiconque le remarque (trace que c'est possible ici) ;
-- l'ajouter plus tard coûterait cher (données stockées ou leur format, interface publique, argent,
-  sécurité).
+The plan's units and scope define what gets built. Only add an unrequested mechanism (guard, retry,
+fallback, validation, option, abstraction) if an existing contract requires it, or if:
+- its absence lets harm happen before anyone notices (trace that it is possible here);
+- adding it later would be expensive (stored data or its format, public interface, money, security).
 
-Alors dans sa plus petite forme ; sinon, ne le construis pas et signale-le en une ligne (« envisagé,
-non construit : … »). Ne réduis jamais le comportement demandé pour loger un garde-fou. Un élément listé
-hors périmètre reste non construit, sauf preuve nouvelle — dis laquelle.
+Then in its smallest form; otherwise, do not build it and report it in one line ("considered, not
+built: …"). Never reduce the requested behavior to fit a safeguard. An item listed out of scope stays
+unbuilt, unless there is new evidence — say which.
 
-Quand tu remplaces une fonction, un type ou un module dont **tous** les appelants sont dans le repo,
-mets à jour les appelants et supprime l'ancienne version dans le même changement (pas d'alias). Une
-interface utilisée hors du repo, ou que le plan dit de garder, continue de fonctionner.
+When you replace a function, a type or a module whose **all** callers are in the repo, update the
+callers and delete the old version in the same change (no alias). An interface used outside the repo,
+or that the plan says to keep, keeps working.
 
-## Quand ça résiste
+## When it resists
 
-- Deux correctifs successifs pour le même échec n'ont pas marché → **arrête de patcher** : nomme
-  l'hypothèse commune aux deux et vérifie-la. Si elle vient du plan et que la corriger reste dans le
-  périmètre, corrige-la et note le changement ; sinon c'est un bloquant (décision acquise remise en
-  cause, autorité manquante, information que seul l'utilisateur a).
-- Bug dont la cause n'est pas évidente → applique la discipline de `/kaizen:debug` (chaîne causale
-  complète avant de corriger).
+- Two successive fixes for the same failure did not work → **stop patching**: name the assumption
+  common to both and check it. If it comes from the plan and fixing it stays in scope, fix it and note
+  the change; otherwise it is a blocker (settled decision challenged, missing authority, information
+  only the user has).
+- Bug whose cause is not obvious → apply the `/kaizen:debug` discipline (full causal chain before
+  fixing).
 
-## Preuve consignée (par unité)
+## Recorded evidence (per unit)
 
-Comportement changé ? · tests existants inspectés · tests ajoutés/modifiés/inchangés · échec rouge
-constaté (ou caractérisation) · vérification lancée et résultat · exception et sa raison. Garde-la dans
-la tâche et reprends-la dans le résumé final (et dans le retour en `mode:return`).
+Behavior changed? · existing tests inspected · tests added/changed/unchanged · red failure observed (or
+characterization) · verification run and result · exception and its reason. Keep it in the task and
+carry it into the final summary (and into the return in `mode:return`).
 
 ## Commits
 
-Un commit par unité, après vérification verte de l'unité :
+One commit per unit, after the unit's verification is green:
 ```bash
-git add <fichiers de l'unité>          # jamais -A, jamais commit -a
-git commit -m "<type>(<JIRA>): <description à l'impératif>" -m "Unité U3 du plan <chemin>. Couvre R2, AE1."
+git add <unit files>          # never -A, never commit -a
+git commit -m "<type>(<JIRA>): <imperative description>" -m "Unit U3 of plan <path>. Covers R2, AE1."
 ```
-Une unité qui applique une leçon citée par le plan ajoute au corps du commit
-`-m "Applique docs/learnings/<…>.md"` : c'est le signal « leçon appliquée » de `/kaizen:metrics`.
-Clé Jira extraite de la branche (`[A-Z][A-Z0-9]+-\d+`), sinon `<type>: …`. Aucun fichier du
-travail en cours de l'utilisateur dans un commit sans son accord.
+A unit applying a learning cited by the plan adds to the commit body
+`-m "Applies docs/learnings/<…>.md"`: that is the "learning applied" signal of `/kaizen:metrics`. Jira
+key extracted from the branch (`[A-Z][A-Z0-9]+-\d+`), otherwise `<type>: …`. No file from the user's
+work in progress in a commit without their approval. Commit messages follow the repo's existing
+language and conventions.
 
-## Interface utilisateur
+## User interface
 
-Changement visible : vérifie dans un navigateur si un outil est disponible (plugin `playwright` du
-marketplace, MCP navigateur) — rendu, états vide/erreur/chargement, clavier, petit écran. Sinon,
-consigne la vérification manuelle à faire.
+Visible change: check in a browser if a tool is available (the marketplace's `playwright` plugin, a
+browser MCP) — rendering, empty/error/loading states, keyboard, small screen. Otherwise, record the
+manual check to do.
