@@ -7,7 +7,8 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { CLI, REVIEW_GATE, REVIEW_HOOKS, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
 
-const MARK = 'node -e "require(\'fs\').appendFileSync(\'deployed.log\', process.env.KAIZEN_ENV + \' \' + process.env.KAIZEN_SHA + \'\\\\n\')"';
+// Aucun antislash dans la commande : cmd.exe (Windows) ne les interprète pas comme bash.
+const MARK = 'node -e "require(\'fs\').appendFileSync(\'deployed.log\', process.env.KAIZEN_ENV + \' \' + process.env.KAIZEN_SHA + String.fromCharCode(10))"';
 
 function shopRepo(extra = {}) {
   const dir = tempRepo({

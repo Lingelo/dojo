@@ -45,5 +45,7 @@ export function cli(dir, args, { env = {}, input } = {}) {
 }
 
 export function cleanup(dir) {
-  rmSync(dir, { recursive: true, force: true });
+  // Sous Windows, un processus coupé par un délai peut survivre quelques secondes et verrouiller le
+  // dossier (EBUSY) : on réessaie plutôt que d'échouer.
+  rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 }
