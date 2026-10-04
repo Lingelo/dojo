@@ -42,29 +42,29 @@ function onePoleLP(freq) { let y = 0; const a = 1 - Math.exp(-TAU * freq / SR); 
 // ---------------------------------------------------------------- sound library
 // Each generator: (params) => Float32Array (mono). Params are numbers (strings coerced).
 export const SOUNDS = {
-  pop: { desc: 'Bulle / apparition (UI, icône, logo)', params: { pitch: 1, dur: 0.18 }, gen: ({ pitch, dur }) => {
+  pop: { desc: 'Bubble / appearance (UI, icon, logo)', params: { pitch: 1, dur: 0.18 }, gen: ({ pitch, dur }) => {
     const o = buf(dur); let ph = 0;
     for (let i = 0; i < o.length; i++) { const t = i / SR; ph += TAU * expLerp(900 * pitch, 260 * pitch, Math.min(1, t / 0.07)) / SR; o[i] = Math.sin(ph) * expEnv(t, 0.002, 0.045); }
     return o; } },
 
-  tick: { desc: 'Tic sec (lettres, compteurs, stagger)', params: { pitch: 1, dur: 0.05 }, gen: ({ pitch, dur }) => {
+  tick: { desc: 'Dry tick (letters, counters, stagger)', params: { pitch: 1, dur: 0.05 }, gen: ({ pitch, dur }) => {
     const o = buf(dur), n = rng(7), f = svf(); let ph = 0;
     for (let i = 0; i < o.length; i++) { const t = i / SR; ph += TAU * 2400 * pitch / SR; o[i] = (0.5 * Math.sin(ph) + 0.6 * f(n(), 5000 * pitch, 2).bp) * expEnv(t, 0.0005, 0.008); }
     return o; } },
 
-  click: { desc: 'Clic d\'interface (bouton, curseur)', params: { pitch: 1, dur: 0.04 }, gen: ({ pitch, dur }) => {
+  click: { desc: 'Interface click (button, cursor)', params: { pitch: 1, dur: 0.04 }, gen: ({ pitch, dur }) => {
     const o = buf(dur), n = rng(3), f = svf();
     for (let i = 0; i < o.length; i++) { const t = i / SR; o[i] = f(n(), 3200 * pitch, 4).bp * 1.6 * expEnv(t, 0.0003, 0.004) + Math.sin(TAU * 1100 * pitch * t) * 0.3 * expEnv(t, 0.0003, 0.01); }
     return o; } },
 
-  whoosh: { desc: 'Souffle de passage (transition, élément qui traverse)', params: { dur: 0.6, from: 300, to: 3500, seed: 11 }, gen: ({ dur, from, to, seed }) => {
+  whoosh: { desc: 'Passing whoosh (transition, element crossing)', params: { dur: 0.6, from: 300, to: 3500, seed: 11 }, gen: ({ dur, from, to, seed }) => {
     const o = buf(dur), n = rng(seed), f = svf();
     for (let i = 0; i < o.length; i++) { const x = i / o.length; const env = Math.pow(Math.sin(Math.PI * Math.pow(x, 0.7)), 2); o[i] = f(n(), expLerp(from, to, x), 1.8).bp * env * 2.2; }
     return o; } },
 
-  swoosh: { desc: 'Whoosh descendant (sortie, fermeture)', params: { dur: 0.5, seed: 12 }, gen: ({ dur, seed }) => SOUNDS.whoosh.gen({ dur, from: 4000, to: 250, seed }) },
+  swoosh: { desc: 'Falling whoosh (exit, closing)', params: { dur: 0.5, seed: 12 }, gen: ({ dur, seed }) => SOUNDS.whoosh.gen({ dur, from: 4000, to: 250, seed }) },
 
-  riser: { desc: 'Montée de tension (se termine sur le cue avec align=end)', params: { dur: 2, from: 150, to: 2400, seed: 5 }, gen: ({ dur, from, to, seed }) => {
+  riser: { desc: 'Tension rise (ends on the cue with align=end)', params: { dur: 2, from: 150, to: 2400, seed: 5 }, gen: ({ dur, from, to, seed }) => {
     const o = buf(dur), n = rng(seed), f = svf(); let ph1 = 0, ph2 = 0;
     for (let i = 0; i < o.length; i++) {
       const x = i / o.length, fr = expLerp(from, to, x * x);
@@ -75,7 +75,7 @@ export const SOUNDS = {
     }
     return o; } },
 
-  impact: { desc: 'Impact grave cinéma (révélation, logo, drop)', params: { dur: 1.6, seed: 9 }, gen: ({ dur, seed }) => {
+  impact: { desc: 'Deep cinematic impact (reveal, logo, drop)', params: { dur: 1.6, seed: 9 }, gen: ({ dur, seed }) => {
     const o = buf(dur), n = rng(seed), lp = onePoleLP(900); let ph = 0;
     for (let i = 0; i < o.length; i++) {
       const t = i / SR; ph += TAU * expLerp(110, 38, Math.min(1, t / 0.4)) / SR;
@@ -83,27 +83,27 @@ export const SOUNDS = {
     }
     return o; } },
 
-  chime: { desc: 'Carillon cristallin (succès, tagline, CTA)', params: { note: 81, dur: 1.8 }, gen: ({ note, dur }) => {
+  chime: { desc: 'Crystal chime (success, tagline, CTA)', params: { note: 81, dur: 1.8 }, gen: ({ note, dur }) => {
     const o = buf(dur), f0 = midi(note), partials = [[1, 1, 0.9], [2.76, 0.45, 0.5], [5.4, 0.25, 0.28], [8.93, 0.12, 0.16]];
     for (let i = 0; i < o.length; i++) { const t = i / SR; let s = 0; for (const [r, a, d] of partials) s += Math.sin(TAU * f0 * r * t) * a * expEnv(t, 0.002, d); o[i] = s * 0.55; }
     return o; } },
 
-  glitch: { desc: 'Glitch numérique court', params: { dur: 0.25, seed: 21 }, gen: ({ dur, seed }) => {
+  glitch: { desc: 'Short digital glitch', params: { dur: 0.25, seed: 21 }, gen: ({ dur, seed }) => {
     const o = buf(dur), n = rng(seed); let hold = 0, v = 0;
     for (let i = 0; i < o.length; i++) { if (hold-- <= 0) { hold = 40 + ((n() + 1) * 400) | 0; v = n() > 0.2 ? Math.sign(n()) * 0.5 : 0; } o[i] = v * (1 - i / o.length); }
     return o; } },
 
-  kick: { desc: 'Grosse caisse', params: { dur: 0.45 }, gen: ({ dur }) => {
+  kick: { desc: 'Kick drum', params: { dur: 0.45 }, gen: ({ dur }) => {
     const o = buf(dur); let ph = 0;
     for (let i = 0; i < o.length; i++) { const t = i / SR; ph += TAU * expLerp(160, 48, Math.min(1, t / 0.06)) / SR; o[i] = Math.tanh(2 * Math.sin(ph) * expEnv(t, 0.001, 0.16)) * 0.9; }
     return o; } },
 
-  hat: { desc: 'Charleston fermé', params: { dur: 0.06, seed: 4 }, gen: ({ dur, seed }) => {
+  hat: { desc: 'Closed hi-hat', params: { dur: 0.06, seed: 4 }, gen: ({ dur, seed }) => {
     const o = buf(dur), n = rng(seed), f = svf();
     for (let i = 0; i < o.length; i++) { const t = i / SR; o[i] = f(n(), 9000, 0.9).hp * 0.35 * expEnv(t, 0.0005, 0.015); }
     return o; } },
 
-  pad: { desc: 'Nappe (accord soutenu) — note = racine MIDI', params: { note: 50, dur: 4, minor: 1 }, gen: ({ note, dur, minor }) => {
+  pad: { desc: 'Pad (sustained chord) — note = MIDI root', params: { note: 50, dur: 4, minor: 1 }, gen: ({ note, dur, minor }) => {
     const o = buf(dur), notes = [0, minor ? 3 : 4, 7, 12].map((x) => midi(note + x)), f = svf();
     const ph = notes.flatMap(() => [0, 0]);
     for (let i = 0; i < o.length; i++) {
@@ -184,9 +184,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   for (let i = 0; i < rest.length; i++) if (rest[i].startsWith('-')) opts[rest[i].replace(/^--?/, '')] = rest[i + 1]?.startsWith('-') ? true : rest[++i];
   const out = opts.o || opts.out || `${cmd}.wav`;
   if (!cmd || cmd === 'list' || cmd === 'help') {
-    console.log('Sons disponibles (node sfx.mjs <nom> [--param v] -o out.wav) :\n');
+    console.log('Available sounds (node sfx.mjs <name> [--param v] -o out.wav):\n');
     for (const [k, v] of Object.entries(SOUNDS)) console.log(`  ${k.padEnd(8)} ${v.desc}\n  ${' '.repeat(8)} params: ${Object.entries(v.params).map(([a, b]) => `${a}=${b}`).join(' ')}`);
-    console.log('\n  bed      Musique sur grille de tempo : --bpm 120 --duration 8 --start 0 --root 45 (JSON des beats sur stdout)');
+    console.log('\n  bed      Music on a tempo grid: --bpm 120 --duration 8 --start 0 --root 45 (beats JSON on stdout)');
   } else if (cmd === 'bed') {
     const b = bed({ bpm: +(opts.bpm ?? 120), duration: +(opts.duration ?? 8), start: +(opts.start ?? 0), root: +(opts.root ?? 45) });
     writeWav(out, b.left, b.right);

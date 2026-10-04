@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>motion-studio — démo 3D + voix off + sous-titres</title>
+<title>motion-studio — 3D demo + voice-over + subtitles</title>
 <!--
-  Démo 30 s : scène Three.js, voix off (Piper) et sous-titres karaoké, musique qui pilote l'image.
-  La timeline suit les phrases mesurées dans voice/voice.json (voir PHASES ci-dessous).
-  Rendu complet (depuis ce dossier) :
-    node ../../scripts/voice-setup.mjs install piper --lang fr          # une fois
+  30-second demo: Three.js scene, voice-over (Piper) and karaoke subtitles, music driving the picture.
+  The timeline follows the narration lines, pinned with "at" in narration.json (see PHASES below).
+  Full render (from this folder):
+    node ../../scripts/voice-setup.mjs install piper --lang en          # once
     node ../../scripts/voice.mjs narration.json -o voice
     node ../../scripts/sfx.mjs bed --bpm 120 --duration 31 --start 2.45 -o bed.wav > bed.json
-    node ../../scripts/render.mjs demo-3d-voix.html --voice voice/voice.json --captions karaoke \
+    node ../../scripts/render.mjs demo-3d-voice.html --voice voice/voice.json --captions karaoke \
          --audio bed.wav --beats bed.json --embed-subs -o demo.mp4
 -->
 <script type="importmap">
@@ -60,40 +60,40 @@
   import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
   import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-  // ---------- titre HTML (tics spatialisés)
+  // ---------- HTML title (spatialized ticks)
   const title = document.getElementById('title');
   [...'Motion Studio'].forEach((ch, i) => title.insertAdjacentHTML('beforeend',
     ch === ' ' ? '<span style="width:.3em"></span>'
       : `<span class="${i > 6 ? 'accent' : ''}" style="--i:${i}" data-sfx="tick?pitch=${(0.8 + i * 0.05).toFixed(2)}" data-sfx-gain=".25" data-sfx-pan="auto">${ch}</span>`));
 
-  // ---------- temps
+  // ---------- time
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const seg = (t, a, b) => clamp((t - a) / (b - a));
   const smooth = (x) => x * x * (3 - 2 * x);
   const easeOutExpo = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
   const spring = (t, k = 170, c = 14) => { if (t <= 0) return 0; const w0 = Math.sqrt(k), z = c / (2 * w0), wd = w0 * Math.sqrt(1 - z * z);
     return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t)); };
-  /** Interpolation lissée entre points-clés [[t, v], …] */
+  /** Smoothed interpolation between keyframes [[t, v], …] */
   const kf = (t, pts) => { if (t <= pts[0][0]) return pts[0][1]; for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) return pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * smooth(seg(t, pts[i - 1][0], pts[i][0])); return pts.at(-1)[1]; };
-  const audio = window.__audio;                       // musique analysée (absent dans un navigateur)
+  const audio = window.__audio;                       // analyzed music (absent in a browser)
   const bass = (t) => (audio ? audio.bass(t) : 0.5 + 0.5 * Math.sin(t * 12.6) ** 8);
   const level = (t) => (audio ? audio.level(t) : 0.5);
   const pulse = (t) => (audio ? audio.beat(t).pulse : 0);
 
-  // ---------- timeline calée sur les phrases de voice/voice.json
-  const HIT = 2.45;                                   // début de « Une vidéo s'écrit… » = impact + entrée de la batterie
-  const PHASES = [                                    // [début, fin, libellé HTML]
+  // ---------- timeline aligned on the narration lines (narration.json, "at")
+  const HIT = 2.45;                                   // start of "A video is written…" = impact + drums come in
+  const PHASES = [                                    // [start, end, HTML label]
     [2.6, 7.4, 'HTML · CSS · SVG · Canvas'],
     [7.6, 11.5, '<b>Three.js</b> · WebGL'],
-    [11.7, 16.4, 'Horloge virtuelle <b class="mono" id="clock"></b>'],
-    [16.7, 22.1, 'La musique pilote l’image · <b>120 BPM</b>'],
-    [22.4, 25.3, 'Son <b>→</b> image · impacts'],
-    [25.6, 29.0, 'Voix · sous-titres · son'],
+    [11.7, 16.4, 'Virtual clock <b class="mono" id="clock"></b>'],
+    [16.7, 22.1, 'Music drives the picture · <b>120 BPM</b>'],
+    [22.4, 25.3, 'Sound <b>→</b> picture · impacts'],
+    [25.6, 29.0, 'Voice · subtitles · sound'],
   ];
-  const SHOCKS = [HIT, 22.45, 23.45, 24.45, 29.24];   // ondes de choc (impacts sonores aux mêmes instants)
+  const SHOCKS = [HIT, 22.45, 23.45, 24.45, 29.24];   // shock waves (sound impacts at the same instants)
   const BIG = new Set([HIT, 24.45]);
 
-  // ---------- son (cues horodatés au temps virtuel → synchro exacte)
+  // ---------- sound (cues timestamped in virtual time → exact sync)
   const sfx = window.__sfx;
   sfx?.('whoosh?dur=1.9&from=120&to=1400', { at: 0.1, gain: 0.45 });
   sfx?.('riser?dur=1.6', { at: HIT, align: 'end', gain: 0.4 });
@@ -102,7 +102,7 @@
   sfx?.('swoosh?dur=1', { at: 25.4, gain: 0.35 });
   sfx?.('chime', { at: 29.3, gain: 0.5 });
 
-  // ---------- rendu
+  // ---------- rendering
   const W = 1920, H = 1080;
   const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -112,7 +112,7 @@
   scene.background = new THREE.Color(0x07080c);
   scene.fog = new THREE.FogExp2(0x07080c, 0.045);
   const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 200);
-  camera.setViewOffset(W, H, -230, 40, W, H);          // sujet à droite, titre à gauche, sous-titres libres en bas
+  camera.setViewOffset(W, H, -230, 40, W, H);          // subject on the right, title on the left, bottom free for subtitles
 
   scene.add(new THREE.AmbientLight(0x404660, 0.6));
   const key = new THREE.DirectionalLight(0xffe2cc, 2.2); key.position.set(4, 6, 5); scene.add(key);
@@ -167,7 +167,7 @@
     const t = ms / 1000;
     const hit = seg(t, HIT, HIT + 0.6);
 
-    // ----- caméra : arrivée → orbite continue, avec des points-clés de distance / hauteur
+    // ----- camera: arrival → continuous orbit, with distance / height keyframes
     const arrive = smooth(seg(t, 0, HIT));
     const orbit = 0.35 + 0.19 * t + 0.35 * smooth(seg(t, 7.5, 11.5));
     const dist = kf(t, [[0, 26], [HIT, 10.5], [7.5, 10.5], [11, 8.2], [16.5, 9.5], [22, 8.8], [25.4, 9.5], [28.5, 17], [30.6, 12]]);
@@ -175,7 +175,7 @@
     camera.position.set(Math.sin(orbit) * dist, height, Math.cos(orbit) * dist);
     camera.lookAt(0, 0.1, 0);
 
-    // ----- cristal : grossit vers l'impact, ressort, pulse sur les beats
+    // ----- crystal: grows toward the impact, springs, pulses on the beats
     const pre = 0.35 + 0.25 * smooth(seg(t, 0.4, HIT));
     const pop = t < HIT ? pre : pre + (1 - pre) * spring(t - HIT);
     let flash = 0;
@@ -188,7 +188,7 @@
     shell.material.opacity = 0.55 * kf(t, [[HIT, 0], [HIT + 0.6, 1], [28.5, 1], [30, 0.3]]);
     shell2.scale.setScalar(1 + 0.04 * bass(t));
     shell2.rotation.set(t * 0.12, -t * 0.18, t * 0.07);
-    shell2.material.opacity = 0.4 * kf(t, [[7.5, 0], [8.4, 1], [11.5, 1], [12.5, 0.35]]);   // « troisième dimension » : 2e coque filaire
+    shell2.material.opacity = 0.4 * kf(t, [[7.5, 0], [8.4, 1], [11.5, 1], [12.5, 0.35]]);   // "three-dimensional": 2nd wireframe shell
 
     // ----- ondes de choc
     shocks.forEach((m, i) => {
@@ -197,7 +197,7 @@
       m.material.opacity = t < SHOCKS[i] ? 0 : (1 - k) * (BIG.has(SHOCKS[i]) ? 0.6 : 0.4);
     });
 
-    // ----- égaliseur : s'éveille à l'impact, plein régime pendant « la musique pilote l'image »
+    // ----- equalizer: wakes up at the impact, full power during "music drives the picture"
     const alive = easeOutExpo(seg(t, HIT, HIT + 0.7)) * kf(t, [[HIT, 0.45], [16.5, 0.45], [17.5, 1], [25.4, 1], [26.5, 0.55]]);
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2;
@@ -216,14 +216,14 @@
     cool.position.set(Math.cos(t * 1.1 + Math.PI) * 3, -0.5, Math.sin(t * 1.1 + Math.PI) * 3);
     bloom.strength = 0.4 + 0.45 * bass(t) * alive + 0.5 * flash;
 
-    // ----- libellé de phase (HTML) : fondu manuel, déterministe
+    // ----- phase label (HTML): manual fade, deterministic
     const p = PHASES.findIndex(([a, b]) => t >= a && t < b);
     if (p !== phase) { phase = p; label.innerHTML = p >= 0 ? PHASES[p][2] : ''; clockEl = document.getElementById('clock'); }
     if (p >= 0) {
       const [a, b] = PHASES[p];
       label.style.opacity = Math.min(seg(t, a, a + 0.35), seg(t, b, b - 0.35));
       label.style.transform = `translateY(${(1 - smooth(seg(t, a, a + 0.5))) * 14}px)`;
-      if (clockEl) clockEl.textContent = `t = ${t.toFixed(2)} s · image ${Math.round(t * 30)}`;
+      if (clockEl) clockEl.textContent = `t = ${t.toFixed(2)} s · frame ${Math.round(t * 30)}`;
     } else label.style.opacity = 0;
 
     curtain.style.opacity = seg(t, 30.3, 31);   // fondu final

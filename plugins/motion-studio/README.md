@@ -1,11 +1,12 @@
-# Motion Studio Plugin
+# Motion Studio plugin
 
-Motion design en code pour Claude Code : Claude écrit la vidéo comme une page web (HTML, CSS, SVG, Canvas 2D/WebGL,
-WAAPI, GSAP…), puis un renderer la filme **image par image** dans Chromium headless et l'encode avec ffmpeg,
-avec un **son synchronisé à l'échantillon près** (bruitages synthétisés + musique analysée).
+Motion design as code for Claude Code: Claude writes the video like a web page (HTML, CSS, SVG, Canvas
+2D/WebGL, WAAPI, GSAP…), then a renderer films it **frame by frame** in headless Chromium and encodes it
+with ffmpeg, with **sample-accurate synced sound** (synthesized sound effects + analyzed music), voice-over
+and subtitles.
 
-Pas de capture temps réel (`recordVideo` de Playwright = 25 fps variables, WebM compressé) : le temps est
-**virtualisé**, chaque frame est calculée exactement, le rendu est reproductible au pixel près.
+No real-time capture (Playwright's `recordVideo` = variable 25 fps, compressed WebM): time is
+**virtualized**, each frame is computed exactly, the render is reproducible to the pixel.
 
 ## Installation
 
@@ -17,42 +18,53 @@ Pas de capture temps réel (`recordVideo` de Playwright = 25 fps variables, WebM
 }
 ```
 
-### Dépendances : automatiques
+### Dependencies: automatic
 
-Seul prérequis : **Node ≥ 18 + npm**. Au premier `/motion-video` (ou premier rendu), `scripts/setup.mjs`
-détecte ce qui existe et installe **uniquement ce qui manque** dans `${CLAUDE_PLUGIN_DATA}`
-(`~/.claude/plugins/data/motion-studio-…`, conservé entre mises à jour, supprimé à la désinstallation) :
+Only prerequisite: **Node ≥ 18 + npm**. On the first `/motion-video` (or first render), `scripts/setup.mjs`
+detects what exists and installs **only what is missing** into `${CLAUDE_PLUGIN_DATA}`
+(`~/.claude/plugins/data/motion-studio-…`, kept across updates, removed on uninstall):
 
-| Besoin | Réutilisé si présent | Sinon installé automatiquement |
-|--------|----------------------|--------------------------------|
-| Pilotage navigateur | `playwright` / `playwright-core` du projet ou global | `playwright-core` (npm, ~10 Mo) |
-| Navigateur | Chromium de Playwright (cache partagé avec le MCP Playwright), Chrome ou Edge installés | Chrome Headless Shell (~100 Mo) |
-| Encodage vidéo/audio | `ffmpeg` du PATH, `imageio-ffmpeg`, `FFMPEG_PATH` | `ffmpeg-static` (binaire statique libx264/AAC/VP9/Opus, macOS/Linux/Windows, ~70 Mo) |
+| Need | Reused if present | Otherwise installed automatically |
+|---|---|---|
+| Browser automation | the project's or global `playwright` / `playwright-core` | `playwright-core` (npm, ~10 MB) |
+| Browser | Playwright's Chromium (cache shared with the Playwright MCP), installed Chrome or Edge | Chrome Headless Shell (~100 MB) |
+| Video/audio encoding | `ffmpeg` on the PATH, `imageio-ffmpeg`, `FFMPEG_PATH` | `ffmpeg-static` (static libx264/AAC/VP9/Opus binary, macOS/Linux/Windows, ~70 MB) |
 
-Premier lancement sur machine vierge : ~20 s. Ensuite < 1 s (résultat mémorisé dans `env.json`, revalidé à chaque rendu).
+First run on a clean machine: ~20 s. Then < 1 s (result remembered in `env.json`, revalidated on every
+render).
 
 ```bash
-node plugins/motion-studio/scripts/setup.mjs            # installer / réparer
-node plugins/motion-studio/scripts/setup.mjs --check    # diagnostic seul
+node plugins/motion-studio/scripts/setup.mjs            # install / repair
+node plugins/motion-studio/scripts/setup.mjs --check    # diagnosis only
 ```
-Variables : `MOTION_STUDIO_HOME` (dossier des deps), `MOTION_STUDIO_NO_INSTALL=1` (jamais d'installation auto),
-`MOTION_STUDIO_ISOLATED=1` (ignorer les installations système), `CHROMIUM_PATH`, `FFMPEG_PATH`.
-Seul cas non automatisable : Linux sans les bibliothèques système de Chromium → `sudo npx playwright install-deps chromium` (le setup l'indique).
 
-> **Et le MCP Playwright ?** Il n'est pas adapté au rendu : chaque frame serait un appel d'outil passant par
-> le modèle (1 920 appels pour 8 s), sans script d'initialisation pour l'horloge virtuelle ni flux vers ffmpeg.
-> Il reste utile pour *explorer* une page ; et s'il a déjà téléchargé Chromium, `setup.mjs` le réutilise.
+| Variable | Role |
+|---|---|
+| `MOTION_STUDIO_HOME` | dependency folder (default `${CLAUDE_PLUGIN_DATA}`, or `--home`) |
+| `MOTION_STUDIO_NO_INSTALL=1` | never install automatically |
+| `MOTION_STUDIO_ISOLATED=1` | ignore system installations |
+| `CHROMIUM_PATH` | browser to use |
+| `FFMPEG_PATH` | ffmpeg to use |
+| `PIPER_MODEL` | Piper voice (`.onnx`) to use for the voice-over |
+
+Only case that cannot be automated: Linux without Chromium's system libraries →
+`sudo npx playwright install-deps chromium` (setup says so).
+
+> **What about the Playwright MCP?** It is not suited to rendering: each frame would be a tool call going
+> through the model (1,920 calls for 8 s), with no init script for the virtual clock and no stream to
+> ffmpeg. It stays useful to *explore* a page; and if it already downloaded Chromium, `setup.mjs` reuses it.
 
 ## Skill
 
 ### /motion-video
 
 ```bash
-/motion-video Intro 6s de notre produit, 16:9, fond sombre, accent orange, logo SVG fourni
+/motion-video 6-second intro for our product, 16:9, dark background, orange accent, SVG logo provided
 ```
 
-Workflow : brief → storyboard (beats horodatés) → composition HTML → **stills de contrôle relus par Claude**
-→ brouillon rapide → rendu final → vérification des frames.
+Workflow: brief → (voice-over) → storyboard (timed beats) → HTML composition → **control stills read by
+Claude** → quick draft → final render → frame check. Claude talks to you in your language; the texts in
+the video follow the language you ask for.
 
 ## Renderer
 
@@ -65,92 +77,132 @@ node plugins/motion-studio/scripts/render.mjs composition.html [options]
   --beats beats.json --lufs -14 --cues cues.json   --no-sfx
   --voice voice.json --duck -9  --subs f.srt  --captions bottom|karaoke|center|off  --embed-subs
 
-node plugins/motion-studio/scripts/sfx.mjs list | <son> -o x.wav | bed --bpm 120 --duration 8
+node plugins/motion-studio/scripts/sfx.mjs list | <sound> -o x.wav | bed --bpm 120 --duration 8
 node plugins/motion-studio/scripts/audio.mjs analyze music.mp3     # tempo, beats, onsets
-node plugins/motion-studio/scripts/voice-setup.mjs [install piper|edge]   # moteurs de voix
-node plugins/motion-studio/scripts/voice.mjs narration.json -o voice/       # voix off + sous-titres
+node plugins/motion-studio/scripts/voice-setup.mjs [install piper|edge|espeak] [--lang en]   # voice engines
+node plugins/motion-studio/scripts/voice.mjs narration.json -o voice/       # voice-over + subtitles
+node plugins/motion-studio/scripts/inspect.mjs out.mp4 [--frames 2.1,3.6 -o check/]   # duration, fps, LUFS, frames
 ```
 
-Comment ça marche, pour chaque frame :
-1. un script injecté avant la page remplace `performance.now`, `Date`, `requestAnimationFrame`,
-   `setTimeout/setInterval` et `Math.random` (seedé) par une horloge virtuelle ;
-2. l'horloge avance jusqu'à `t` (timers échus, puis un tick rAF), `window.__seek(t)` est appelé s'il existe ;
-3. toutes les animations CSS / transitions / WAAPI sont mises en pause et positionnées à `t − naissance`,
-   les SVG SMIL via `setCurrentTime`, les `<video>` via `currentTime` ;
-4. capture CDP `Page.captureScreenshot` → pipe PNG → ffmpeg (H.264 bt709 `crf 16`, VP9, GIF palette, ProRes 4444) ;
-5. motion blur = N sous-frames fusionnées (`tmix`), supersampling = `deviceScaleFactor` + downscale Lanczos.
+How it works, for each frame:
+1. a script injected before the page replaces `performance.now`, `Date`, `requestAnimationFrame`,
+   `setTimeout/setInterval` and `Math.random` (seeded) with a virtual clock;
+2. the clock advances to `t` (due timers, then one rAF tick), `window.__seek(t)` is called if it exists;
+3. all CSS animations / transitions / WAAPI are paused and positioned at `t − birth`, SVG SMIL through
+   `setCurrentTime`, `<video>` through `currentTime`;
+4. CDP capture `Page.captureScreenshot` → PNG pipe → ffmpeg (H.264 bt709 `crf 16`, VP9, palette GIF,
+   ProRes 4444);
+5. motion blur = N merged sub-frames (`tmix`), supersampling = `deviceScaleFactor` + Lanczos downscale.
 
-## Son synchronisé
+## Synced sound
 
-| Direction | Mécanisme |
-|-----------|-----------|
-| **Le son suit l'image** | `data-sfx="whoosh"` sur un élément animé → cue au démarrage exact de son animation ; `window.__sfx('riser', {at: 2.1, align: 'end'})` ; `<audio data-start>` |
-| **L'image suit le son** | `--audio music.mp3` est analysé (tempo, beats, onsets, énergie basses) et exposé en `window.__audio` : `nextBeat(t)`, `beat(t).pulse`, `bass(t)` |
+| Direction | Mechanism |
+|---|---|
+| **Sound follows picture** | `data-sfx="whoosh"` on an animated element → cue at the exact start of its animation; `window.__sfx('riser', {at: 2.1, align: 'end'})`; `<audio data-start>` |
+| **Picture follows sound** | `--audio music.mp3` is analyzed (tempo, beats, onsets, bass energy) and exposed as `window.__audio`: `nextBeat(t)`, `beat(t).pulse`, `bass(t)` |
 
-Les cues sont horodatés en temps virtuel pendant le rendu, puis mixés en JS à l'échantillon près (48 kHz),
-normalisés à −14 LUFS et muxés (AAC / Opus / PCM). Les bruitages sont **synthétisés en code** (`sfx.mjs` :
-pop, tick, click, whoosh, swoosh, riser, impact, chime, glitch, kick, hat, pad + générateur de musique `bed`),
-donc sans banque de sons ni licence. Détails : `skills/motion-video/references/sound-design.md`.
+Cues are timestamped in virtual time during the render, then mixed in JS sample-accurately (48 kHz),
+normalized to −14 LUFS and muxed (AAC / Opus / PCM). Sound effects are **synthesized in code**
+(`sfx.mjs`: pop, tick, click, whoosh, swoosh, riser, impact, chime, glitch, kick, hat, pad + the `bed`
+music generator), so no sound bank and no license. Details:
+[`skills/motion-video/references/sound-design.md`](skills/motion-video/references/sound-design.md).
 
-## Voix off et sous-titres
+## Voice-over and subtitles
 
-| Besoin | Commande |
-|--------|----------|
-| Faire **lire** un texte | `node scripts/voice.mjs narration.json -o voice/` → `narration.wav`, `voice.json` (timeline réelle), `subs.srt/.vtt` |
-| Mixer la voix (musique baissée dessous) + sous-titres incrustés | `node scripts/render.mjs comp.html --voice voice/voice.json` |
-| Sous-titres d'un `.srt/.vtt` existant, style karaoké, piste souple | `--subs fr.srt --captions karaoke --embed-subs` |
+| Need | Command |
+|---|---|
+| Have a text **read aloud** | `node scripts/voice.mjs narration.json -o voice/` → `narration.wav`, `voice.json` (real timeline), `subs.srt/.vtt` |
+| Mix the voice (music ducked under it) + burned-in subtitles | `node scripts/render.mjs comp.html --voice voice/voice.json` |
+| Subtitles from an existing `.srt/.vtt`, karaoke style, soft track | `--subs en.srt --captions karaoke --embed-subs` |
 
-Moteurs de voix : `say` (macOS), SAPI (Windows), **Piper** (neuronal, local, gratuit — recommandé), **Edge TTS** (neuronal,
-en ligne, gratuit sans clé, le texte part chez Microsoft : jamais choisi automatiquement) et eSpeak NG (robotique). Installation guidée :
-`node scripts/voice-setup.mjs` (état), `... install piper|edge|espeak` (venv Python privé + voix, sans sudo ; prérequis : Python ≥ 3.8).
-Une ligne peut aussi référencer un enregistrement existant (`"file"`). Les durées de chaque phrase sont **mesurées** sur l'audio : le storyboard se cale dessus, les sous-titres
-suivent (temps par mot estimés pour le karaoké). Les `.srt`/`.vtt` sont écrits à côté de la vidéo.
-`window.__captions` expose cues, mot actif et `speaking(t)` aux compositions. Détails : `skills/motion-video/references/voice-and-subtitles.md`.
+Voice engines: `say` (macOS), SAPI (Windows), **Piper** (neural, local, free — recommended), **Edge TTS**
+(neural, online, free with no key, the text goes to Microsoft: never chosen automatically) and eSpeak NG
+(robotic). Guided installation: `node scripts/voice-setup.mjs` (status), `... install piper|edge|espeak`
+(private Python venv + voice, no sudo; prerequisite: Python ≥ 3.8). Default language: English (`--lang`
+or `"lang"` in the script for another one: fr, es, de, it…). A line can also reference an existing
+recording (`"file"`). The duration of each sentence is **measured** on the audio: the storyboard is
+aligned on it, the subtitles follow (word timings estimated for karaoke). The `.srt`/`.vtt` files are
+written next to the video. `window.__captions` exposes the cues, the active word and `speaking(t)` to
+compositions. Details:
+[`skills/motion-video/references/voice-and-subtitles.md`](skills/motion-video/references/voice-and-subtitles.md).
 
-## Exemple
+## Examples
 
-`examples/sketch-intro.html` — 8 s, 1920×1080, 60 fps, mélange Canvas (particules), SVG (tracé + SMIL),
-CSS keyframes (ressort `linear()`), WAAPI déclenché par timer, et 21 sons synchronisés : riser → impact
-sur le logo, tic par lettre (spatialisé), pop par carte **calé sur les croches de la musique**, carillon
-sur un temps fort ; le halo respire avec la basse et le logo pulse sur chaque beat.
+### 2D intro
+
+`examples/sketch-intro.html` — 8 s, 1920×1080, 60 fps, mixing Canvas (particles), SVG (stroke + SMIL),
+CSS keyframes (`linear()` spring), timer-triggered WAAPI, and 21 synced sounds: riser → impact on the
+logo, a tick per letter (spatialized), a pop per card **aligned on the music's eighth notes**, a chime on
+a strong beat; the halo breathes with the bass and the logo pulses on every beat.
 
 ```bash
 cd plugins/motion-studio/examples
 node ../scripts/sfx.mjs bed --bpm 120 --duration 8 --start 2.1 -o bed.wav > bed.json
 node ../scripts/render.mjs sketch-intro.html --audio bed.wav --beats bed.json --motion-blur 4
-# → 1920×1080 60 fps + AAC stéréo −14 LUFS, 8 s, ≈ 3.5 min de rendu (1920 captures)
+# → 1920×1080 60 fps + stereo AAC −14 LUFS, 8 s, ≈ 3.5 min of rendering (1,920 captures)
 ```
 
-## Pourquoi un navigateur (Playwright) ?
+### 3D
 
-C'est l'approche de tout l'écosystème (HyperFrames, Remotion, claude-motion-design) : seul un vrai moteur
-de rendu calcule fidèlement CSS, SVG, polices, filtres et Canvas. Playwright n'est qu'une fine couche de
-pilotage (lancement de Chromium + session CDP) ; il est remplaçable par Puppeteer ou CDP brut sans rien changer
-au principe. Le cœur, c'est l'horloge virtuelle. Les alternatives sans navigateur (node-canvas, resvg, ffmpeg
-`drawtext`) ne couvrent qu'une technique chacune et perdent le CSS.
-
-### Exemple 3D
-
-`examples/sketch-3d.html` — Three.js (WebGL) : cristal, coque filaire, onde de choc à l'impact, anneau de 72 barres
-piloté par la musique (basses + niveau), bloom qui respire sur les beats, caméra en vol puis en orbite, titres HTML
-superposés avec tics spatialisés. Three.js est importé depuis jsDelivr ; au rendu, ces URLs (jsDelivr, unpkg, esm.sh)
-sont servies depuis un cache npm local → rendu hors ligne, version figée, page toujours ouvrable dans un navigateur.
+`examples/sketch-3d.html` — Three.js (WebGL): crystal, wireframe shell, shock wave at the impact, ring of
+72 bars driven by the music (bass + level), bloom breathing on the beats, camera flying in then orbiting,
+HTML titles on top with spatialized ticks. Three.js is imported from jsDelivr; at render time, these URLs
+(jsDelivr, unpkg, esm.sh) are served from a local npm cache → offline render, pinned version, page still
+openable in a browser.
 
 ```bash
 node ../scripts/render.mjs sketch-3d.html --audio bed.wav --beats bed.json --motion-blur 2
-# WebGL headless = CPU : ~2.4 captures/s en 1080p avec bloom (≈ 7 min pour 8 s @60 fps, blur ×2)
+# headless WebGL = CPU: ~2.4 captures/s in 1080p with bloom (≈ 7 min for 8 s @60 fps, blur ×2)
 ```
 
-## Écosystème (état de l'art, sept. 2026)
+### 3D + voice-over + subtitles
 
-| Projet | Approche | Ce qu'on en retient |
-|--------|----------|---------------------|
-| [HyperFrames](https://github.com/heygen-com/hyperframes) (HeyGen, Apache-2.0) | HTML + attributs `data-start/duration`, adaptateurs GSAP/Lottie/Three/WAAPI, plugin Claude Code officiel | Contrat « seekable », CLI `snapshot/check/render`, lint des compositions |
-| [claude-motion-design](https://github.com/howseen-ai/claude-motion-design) | Skill : tout dérive de `seek(t)`, Playwright + ffmpeg, motion blur `tmix`, calage sur le beat | Stills d'approbation avant rendu, ressorts en forme close, loudness -14 LUFS |
-| [launch-video-skills](https://github.com/anudeepadi/launch-video-skills) | Skill vidéo de lancement SaaS, HTML/CSS → Playwright → ffmpeg + TTS local | Scènes par templates, voix off sans API |
-| Remotion | React + composants, rendu frame par frame | Modèle `useCurrentFrame()`, mais licence commerciale et stack React |
-| timesnap / timecut | Override du temps JS dans Puppeteer | L'idée d'horloge virtuelle (non maintenus) |
+[`examples/demo-3d-voice/`](examples/demo-3d-voice/README.md) — 30 s, English voice-over, karaoke
+subtitles, music driving the picture; each narration line is pinned to its scene.
 
-Ce plugin prend l'approche la plus légère : **zéro framework imposé**, un seul script Node, et la
-virtualisation du temps couvre n'importe quelle page (CSS pur, SVG, Canvas, GSAP…) sans adaptateur.
-Pour des projets longs avec montage multi-pistes, HyperFrames reste le choix plus complet.
+### A real production
+
+The [Kaizen presentation video](../kaizen/docs/media/kaizen-presentation.mp4) (source:
+[`kaizen-presentation.html`](../kaizen/docs/media/source/kaizen-presentation.html)) was rendered with this
+plugin: Three.js scene, story time slowed down for reading, Piper voice-over, burned-in subtitles.
+
+## Why a browser (Playwright)?
+
+It is the approach of the whole ecosystem (HyperFrames, Remotion, claude-motion-design): only a real
+rendering engine computes CSS, SVG, fonts, filters and Canvas faithfully. Playwright is only a thin
+automation layer (launching Chromium + a CDP session); it could be replaced by Puppeteer or raw CDP
+without changing the principle. The core is the virtual clock. Browser-free alternatives (node-canvas,
+resvg, ffmpeg `drawtext`) each cover a single technique and lose CSS.
+
+## Ecosystem (state of the art, Sept. 2026)
+
+| Project | Approach | What we take from it |
+|---|---|---|
+| [HyperFrames](https://github.com/heygen-com/hyperframes) (HeyGen, Apache-2.0) | HTML + `data-start/duration` attributes, GSAP/Lottie/Three/WAAPI adapters, official Claude Code plugin | "Seekable" contract, `snapshot/check/render` CLI, composition lint |
+| [claude-motion-design](https://github.com/howseen-ai/claude-motion-design) | Skill: everything derives from `seek(t)`, Playwright + ffmpeg, `tmix` motion blur, beat alignment | Approval stills before rendering, closed-form springs, −14 LUFS loudness |
+| [launch-video-skills](https://github.com/anudeepadi/launch-video-skills) | SaaS launch video skill, HTML/CSS → Playwright → ffmpeg + local TTS | Template scenes, voice-over without an API |
+| Remotion | React + components, frame-by-frame render | The `useCurrentFrame()` model, but a commercial license and a React stack |
+| timesnap / timecut | JS time override in Puppeteer | The virtual clock idea (unmaintained) |
+
+This plugin takes the lightest approach: **no imposed framework**, a single Node script, and time
+virtualization covers any page (pure CSS, SVG, Canvas, GSAP…) without an adapter. For long projects with
+multi-track editing, HyperFrames remains the more complete choice.
+
+## Structure
+
+```
+motion-studio/
+├── .claude-plugin/plugin.json
+├── package.json                 # runtime deps, installed on demand into ${CLAUDE_PLUGIN_DATA}
+├── skills/motion-video/
+│   ├── SKILL.md
+│   ├── references/              # composition contract, motion design, sound design, voice & subtitles
+│   └── assets/starter.html
+├── scripts/
+│   ├── setup.mjs  deps.mjs      # self-sufficient dependency resolution
+│   ├── render.mjs               # virtual clock, capture, encoding, mixing, subtitles
+│   ├── sfx.mjs  audio.mjs       # synthesized sounds, music bed, beat/energy analysis
+│   ├── voice.mjs  voice-setup.mjs  voice-env.mjs  captions.mjs   # TTS, engines, SRT/VTT
+│   └── inspect.mjs              # check a render without a system ffmpeg
+└── examples/                    # sketch-intro, sketch-3d, demo-3d-voice
+```

@@ -14,14 +14,14 @@
 
 // Type A: ANGER — swear words, insults, blame
 const ANGER_PATTERNS = [
-  // French jurons
+  // French swear words
   /\bputain\b/i, /\bmerde\b/i, /\bbordel\b/i, /\bfait\s+chier\b/i,
   /\bsaloperie\b/i, /\bconnerie\b/i, /\bnom\s+de\s+dieu\b/i,
   /\bputain\s+de\s+merde\b/i, /\bbordel\s+de\s+merde\b/i,
   /\benculé/i, /\bchiotte/i, /\bnique\b/i,
   /\bc'est\s+de\s+la\s+merde\b/i, /\bc'est\s+quoi\s+cette?\s+merde\b/i,
   /\bc'est\s+quoi\s+ce\s+bordel\b/i,
-  /\btu\s+fais\s+n'importe\s+quoi\b/i, /\btu\s+as\s+tout\s+cassé\b/i,
+  /\btu\s+fais\s+n'importe\s+quoi\b/i, /\btu\s+as\s+tout\s+cassé(?![\wÀ-ſ])/i,
   /\btu\s+régresses\b/i, /\bc'était\s+mieux\s+avant\b/i,
   /\bputain\s+de\s+bordel\b/i,
   // SMS/censored French
@@ -67,17 +67,17 @@ const SHORT_IMPATIENCE_PATTERNS = [
 // Type C: CONFUSION / HELPLESSNESS
 const CONFUSION_PATTERNS = [
   // French
-  /\bça\s+marche\s+pas\b/i, /\bça\s+fonctionne\s+pas\b/i,
-  /\bc'est\s+cassé\b/i, /\bc'est\s+pété\b/i, /\bc'est\s+nul\b/i,
+  /(?<![\wÀ-ſ])ça\s+marche\s+pas\b/i, /(?<![\wÀ-ſ])ça\s+fonctionne\s+pas\b/i,
+  /\bc'est\s+cassé(?![\wÀ-ſ])/i, /\bc'est\s+pété(?![\wÀ-ſ])/i, /\bc'est\s+nul\b/i,
   /\bje\s+comprends?\s+pas\b/i, /\bje\s+comprends?\s+rien\b/i,
-  /\bj'y\s+arrive\s+pas\b/i, /\bça\s+veut\s+pas\b/i,
+  /\bj'y\s+arrive\s+pas\b/i, /(?<![\wÀ-ſ])ça\s+veut\s+pas\b/i,
   /\bje\s+suis\s+perdu/i, /\bje\s+suis\s+bloqué/i, /\bje\s+suis\s+coincé/i,
   /\bc'est\s+la\s+galère\b/i, /\bc'est\s+l'enfer\b/i,
   /\bpourquoi\s+ça\s+marche\s+pas\b/i, /\bmais\s+pourquoi\b/i,
   /\bje\s+pige\s+pas\b/i, /\bje\s+capte\s+pas\b/i,
   /\bc'est\s+incompréhensible\b/i,
   /\bj'en\s+ai\s+marre\b/i, /\bj'en\s+ai\s+ras\s+le\s+bol\b/i,
-  /\bça\s+me\s+saoule\b/i, /\bça\s+me\s+gonfle\b/i, /\bça\s+me\s+gave\b/i,
+  /(?<![\wÀ-ſ])ça\s+me\s+saoule\b/i, /(?<![\wÀ-ſ])ça\s+me\s+gonfle\b/i, /(?<![\wÀ-ſ])ça\s+me\s+gave\b/i,
   /\brien\s+ne\s+marche\b/i, /\bj'abandonne\b/i, /\bj'en\s+peux\s+plus\b/i,
   /\bon\s+tourne\s+en\s+rond\b/i,
   /\btoujours\s+le\s+même\s+(bug|problème|erreur)\b/i,
@@ -129,12 +129,12 @@ const PASSIVE_AGGRESSIVE_PATTERNS = [
   // French
   /\bcomme\s+je\s+t'ai\s+dit\b/i, /\bje\s+t'ai\s+déjà\s+dit\b/i,
   /\bje\s+l'ai\s+déjà\s+dit\b/i, /\brelis\s+ce\s+que\b/i,
-  /\bc'est\s+pas\s+ce\s+que\s+j'ai\s+demandé\b/i,
+  /\bc'est\s+pas\s+ce\s+que\s+j'ai\s+demandé(?![\wÀ-ſ])/i,
   /\bt'as\s+pas\s+compris\b/i, /\btu\s+comprends?\s+pas\b/i,
-  /\bencore\s*\?!\b/i, /\bça\s+fait\s+\d+\s+fois\b/i,
+  /\bencore\s*\?!\b/i, /(?<![\wÀ-ſ])ça\s+fait\s+\d+\s+fois\b/i,
   /\btu\s+fais\s+n'importe\s+quoi\b/i,
   /\bc'est\s+pas\s+ça\b/i, /\bnon\s+non\s+non\b/i,
-  /\bécoute-moi\b/i, /\bconcentre-toi\b/i,
+  /(?<![\wÀ-ſ])écoute-moi\b/i, /\bconcentre-toi\b/i,
   // English
   /\bi\s+already\s+told\s+you\b/i, /\bi\s+said\s+this\s+before\b/i,
   /\blike\s+i\s+said\b/i, /\bas\s+i\s+mentioned\b/i,
@@ -150,35 +150,35 @@ const PASSIVE_AGGRESSIVE_PATTERNS = [
 
 const INJECTIONS = {
   anger: [
-    "L'utilisateur est frustré. Mode action maximale :",
-    "- ZÉRO préambule, ZÉRO excuse, ZÉRO \"je comprends\".",
-    "- Produire UNIQUEMENT le fix/code. Si tu as causé le problème, corrige silencieusement.",
-    "- Réponse la plus courte possible. Code blocks only. Une phrase de contexte max.",
-    "- Biais vers l'action : éditer le fichier, lancer la commande, montrer le résultat.",
+    "The user is frustrated. Maximum action mode:",
+    "- ZERO preamble, ZERO apology, ZERO \"I understand\".",
+    "- Produce ONLY the fix/code. If you caused the problem, fix it silently.",
+    "- Shortest possible answer. Code blocks only. One sentence of context at most.",
+    "- Bias toward action: edit the file, run the command, show the result.",
   ].join(' '),
 
   impatience: [
-    "L'utilisateur veut de la brevité. Jusqu'à nouvel ordre :",
-    "- Élimine TOUTE explication, caveat et préambule. Output = code et actions uniquement.",
-    "- Ne demande pas confirmation — fais des choix raisonnables et exécute.",
-    "- Une phrase max de contexte. Jamais de bullet points ni de prose structurée.",
-    "- Complète la tâche en ENTIER dans cette réponse.",
+    "The user wants brevity. Until further notice:",
+    "- Remove ALL explanations, caveats and preambles. Output = code and actions only.",
+    "- Do not ask for confirmation — make reasonable choices and execute.",
+    "- One sentence of context at most. Never bullet points or structured prose.",
+    "- Complete the WHOLE task in this response.",
   ].join(' '),
 
   confusion: [
-    "L'utilisateur est bloqué/confus. Ajuste ton approche :",
-    "- Diagnostic bref de la cause racine (1-2 phrases max), puis applique le fix immédiatement.",
-    "- Si le problème est conceptuel, utilise un exemple concret minimal (3-5 lignes de code).",
-    "- Évite le jargon non utilisé par l'utilisateur. Pas de mur de texte.",
-    "- En cas de doute, corrige le problème le plus probable et indique brièvement ton hypothèse.",
+    "The user is stuck/confused. Adjust your approach:",
+    "- Brief diagnosis of the root cause (1-2 sentences max), then apply the fix immediately.",
+    "- If the problem is conceptual, use a minimal concrete example (3-5 lines of code).",
+    "- Avoid jargon the user does not use. No wall of text.",
+    "- When in doubt, fix the most likely problem and state your hypothesis briefly.",
   ].join(' '),
 
   sarcasm: [
-    "L'utilisateur est sarcastique ou résigné — il perd confiance.",
-    "- Si une erreur a été commise, la corriger immédiatement sans commentaire superflu.",
-    "- Proposer une solution concrète en 1 phrase. Ne pas s'excuser longuement.",
-    "- Montrer par l'action que la situation est sous contrôle.",
-    "- Si l'utilisateur demande un revert/undo, le faire d'abord, proposer une alternative ensuite.",
+    "The user is sarcastic or resigned — they are losing trust.",
+    "- If a mistake was made, fix it immediately without superfluous comment.",
+    "- Propose a concrete solution in 1 sentence. Do not apologize at length.",
+    "- Show through action that the situation is under control.",
+    "- If the user asks for a revert/undo, do it first, then propose an alternative.",
   ].join(' '),
 };
 
@@ -248,7 +248,7 @@ function detect(text) {
   }
 
   if (amplified) {
-    message += ' [SIGNAL FORT : le ton est très intense — réponse ultra-concise exigée]';
+    message += ' [STRONG SIGNAL: the tone is very intense — ultra-concise answer required]';
   }
 
   return { type: primary, all: detected, message, amplified };

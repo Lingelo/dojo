@@ -1,79 +1,79 @@
-# Son synchronisé
+# Synced sound
 
-Deux directions, combinables. Dans les deux cas la synchro est **exacte à l'échantillon près** : les
-cues sont horodatés avec le temps virtuel du renderer, puis mixés en JS (48 kHz) et normalisés à −14 LUFS.
+Two directions, which can be combined. In both cases the sync is **sample-accurate**: cues are
+timestamped with the renderer's virtual time, then mixed in JS (48 kHz) and normalized to −14 LUFS.
 
-## 1. Le son suit l'image (bruitages)
+## 1. Sound follows picture (sound effects)
 
-### Déclaratif : `data-sfx` sur un élément animé
-Le son part **au démarrage de l'animation** de l'élément (naissance + `animation-delay` / `delay` WAAPI).
+### Declarative: `data-sfx` on an animated element
+The sound fires **when the element's animation starts** (birth + `animation-delay` / WAAPI `delay`).
 ```html
-<h1 class="title" data-sfx="whoosh" data-sfx-gain=".6">Titre</h1>
+<h1 class="title" data-sfx="whoosh" data-sfx-gain=".6">Title</h1>
 <path class="logo" data-sfx="impact" …/>
 <span data-sfx="tick?pitch=1.2" data-sfx-pan="auto">A</span>
 ```
-| Attribut | Rôle |
-|----------|------|
-| `data-sfx` | Son synthétisé (`pop`, `whoosh?dur=.8`…) ou fichier (`sfx/click.wav`, relatif à la composition) |
-| `data-sfx-on` | Nom(s) d'animation déclencheurs (`rise,leave`) ; défaut = la première animation de l'élément |
+| Attribute | Role |
+|---|---|
+| `data-sfx` | Synthesized sound (`pop`, `whoosh?dur=.8`…) or file (`sfx/click.wav`, relative to the composition) |
+| `data-sfx-on` | Name(s) of the triggering animation(s) (`rise,leave`); default = the element's first animation |
 | `data-sfx-gain` | Volume 0..1+ |
-| `data-sfx-pan` | −1 (gauche) … 1 (droite), ou `auto` = position horizontale de l'élément |
-| `data-sfx-offset` | Décalage en s (ex. `-0.05` pour anticiper un impact) |
+| `data-sfx-pan` | −1 (left) … 1 (right), or `auto` = horizontal position of the element |
+| `data-sfx-offset` | Offset in s (e.g. `-0.05` to anticipate an impact) |
 
-### Impératif : `window.__sfx(src, { at, gain, pan, align, id })`
+### Imperative: `window.__sfx(src, { at, gain, pan, align, id })`
 ```js
-__sfx('riser?dur=2', { at: 2.1, align: 'end' });   // se TERMINE à 2.1 s (montée vers l'impact)
-__sfx('glitch', { gain: .4 });                       // maintenant (temps virtuel courant)
+__sfx('riser?dur=2', { at: 2.1, align: 'end' });   // ENDS at 2.1 s (rise toward the impact)
+__sfx('glitch', { gain: .4 });                       // now (current virtual time)
 ```
-Idempotent (clé `src@at` ou `id`) : on peut l'appeler depuis `__seek` ou un rAF à chaque frame.
-Utiliser `window.__sfx?.(…)` pour que la page reste jouable dans un navigateur normal.
+Idempotent (key `src@at` or `id`): it can be called from `__seek` or a rAF on every frame.
+Use `window.__sfx?.(…)` so the page stays playable in a normal browser.
 
-### Pistes : `<audio src="voix.mp3" data-start="1.5" data-volume=".9">`
-Mixée à partir de `data-start` (voix off, jingle). Jamais `autoplay`.
+### Tracks: `<audio src="voice.mp3" data-start="1.5" data-volume=".9">`
+Mixed from `data-start` (voice-over, jingle). Never `autoplay`.
 
-## 2. L'image suit le son (musique)
+## 2. Picture follows sound (music)
 
-`--audio music.mp3` mixe la piste **et** l'analyse (tempo, beats, onsets, énergie) puis injecte
-`window.__audio` avant les scripts de la page :
+`--audio music.mp3` mixes the track **and** analyzes it (tempo, beats, onsets, energy), then injects
+`window.__audio` before the page's scripts:
 
-| API | Retour |
-|-----|--------|
-| `__audio.bpm`, `.beats[]`, `.onsets[]` | Tempo, grille de temps (s), attaques détectées (s) |
-| `__audio.level(t)` / `.bass(t)` | Énergie globale / basses 0..1 à l'instant t (100 Hz, interpolé) |
-| `__audio.beat(t)` | `{ index, since, phase 0..1, pulse }` — `pulse` = 1 sur le beat, décroît vite |
-| `__audio.nextBeat(t)` | Premier beat ≥ t (caler une entrée sur la musique) |
+| API | Returns |
+|---|---|
+| `__audio.bpm`, `.beats[]`, `.onsets[]` | Tempo, time grid (s), detected attacks (s) |
+| `__audio.level(t)` / `.bass(t)` | Overall / bass energy 0..1 at time t (100 Hz, interpolated) |
+| `__audio.beat(t)` | `{ index, since, phase 0..1, pulse }` — `pulse` = 1 on the beat, decays fast |
+| `__audio.nextBeat(t)` | First beat ≥ t (align an entrance on the music) |
 
 ```js
 const a = window.__audio;
-setTimeout(showCards, (a ? a.nextBeat(3.6) : 3.6) * 1000);          // entrée calée sur un temps
-el.style.scale = 1 + 0.05 * (a ? a.beat(t).pulse : 0);               // pulsation sur le beat
-glow = base * (1 + a.bass(t));                                         // halo qui respire avec la basse
+setTimeout(showCards, (a ? a.nextBeat(3.6) : 3.6) * 1000);          // entrance aligned on a beat
+el.style.scale = 1 + 0.05 * (a ? a.beat(t).pulse : 0);               // pulse on the beat
+glow = base * (1 + a.bass(t));                                         // halo breathing with the bass
 ```
-Précision de l'analyse : ±10 ms sur une musique rythmée. Pour une grille exacte : `--beats beats.json`
-(`{ "bpm": 120, "beats": [...] }`, produit par `sfx.mjs bed` ou saisi à la main).
+Analysis accuracy: ±10 ms on rhythmic music. For an exact grid: `--beats beats.json`
+(`{ "bpm": 120, "beats": [...] }`, produced by `sfx.mjs bed` or typed by hand).
 
-## Bibliothèque de sons synthétisés (`scripts/sfx.mjs`)
+## Library of synthesized sounds (`scripts/sfx.mjs`)
 
-`node sfx.mjs list` — tous générés en code, déterministes, sans licence :
+`node sfx.mjs list` — all generated in code, deterministic, license-free:
 `pop` · `tick` · `click` · `whoosh` · `swoosh` · `riser` · `impact` · `chime` · `glitch` · `kick` · `hat` · `pad`.
-Paramètres en query string : `whoosh?dur=1.2&from=200&to=3000`, `tick?pitch=1.3`, `chime?note=76`.
+Parameters as a query string: `whoosh?dur=1.2&from=200&to=3000`, `tick?pitch=1.3`, `chime?note=76`.
 
-Musique de fond sur grille de tempo (pad + kick + hat + basse, i–VI–III–VII) :
+Background music on a tempo grid (pad + kick + hat + bass, i–VI–III–VII):
 ```bash
-node sfx.mjs bed --bpm 120 --duration 8 --start 2.1 -o bed.wav > bed.json   # drums entrent à 2.1 s
+node sfx.mjs bed --bpm 120 --duration 8 --start 2.1 -o bed.wav > bed.json   # drums come in at 2.1 s
 ```
 
-## Grammaire sonore (ce qui marche)
+## Sound grammar (what works)
 
-| Événement visuel | Son | Astuce |
-|------------------|-----|--------|
-| Révélation logo / titre | `riser` (align end) → `impact` | Le riser se termine *exactement* sur l'impact |
-| Élément qui traverse / transition | `whoosh` (durée ≈ mouvement) | Commencer 50–100 ms avant le mouvement |
-| Apparition de cartes, icônes | `pop` pitch croissant | Stagger sur les croches (`60/bpm/2`) |
-| Lettres, compteurs | `tick` gain .3, pitch croissant, pan auto | Faible volume, sinon mitraillette |
-| Tagline / CTA / succès | `chime` | Sur un temps fort de la musique |
-| Erreur, rupture | `glitch` | Avec un glitch visuel de 2–4 frames |
+| Visual event | Sound | Tip |
+|---|---|---|
+| Logo / title reveal | `riser` (align end) → `impact` | The riser ends *exactly* on the impact |
+| Element crossing / transition | `whoosh` (duration ≈ movement) | Start 50–100 ms before the movement |
+| Cards, icons appearing | `pop` with rising pitch | Stagger on the eighth notes (`60/bpm/2`) |
+| Letters, counters | `tick` gain .3, rising pitch, pan auto | Low volume, otherwise machine-gun |
+| Tagline / CTA / success | `chime` | On a strong beat of the music |
+| Error, break | `glitch` | With a 2–4-frame visual glitch |
 
-- Mixer les bruitages **sous** la musique (gain .3–.7), l'impact seul peut être à 1.
-- Pas plus de 2–3 sons simultanés ; laisser respirer entre deux actions.
-- Couper les entrées sur les temps forts (beat 1 de la mesure) ; les détails sur les croches.
+- Mix the sound effects **under** the music (gain .3–.7); the impact alone can be at 1.
+- No more than 2–3 simultaneous sounds; let it breathe between two actions.
+- Put entrances on the strong beats (beat 1 of the bar); details on the eighth notes.

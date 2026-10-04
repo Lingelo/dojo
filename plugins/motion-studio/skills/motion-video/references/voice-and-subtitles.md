@@ -1,103 +1,105 @@
-# Voix off et sous-titres
+# Voice-over and subtitles
 
-Deux briques indépendantes, combinables avec le son synchronisé (`sound-design.md`) :
+Two independent building blocks, which can be combined with synced sound (`sound-design.md`):
 
-| Besoin | Outil | Résultat |
-|--------|-------|----------|
-| Faire **lire** un texte (voix off) | `scripts/voice.mjs` | `narration.wav` + `voice.json` (timeline réelle) + `subs.srt/.vtt` |
-| **Sous-titres** incrustés | `render.mjs --voice voice.json` ou `--subs fichier.srt` | texte brûlé dans l'image + `.srt/.vtt` à côté de la vidéo |
+| Need | Tool | Result |
+|---|---|---|
+| Have a text **read aloud** (voice-over) | `scripts/voice.mjs` | `narration.wav` + `voice.json` (real timeline) + `subs.srt/.vtt` |
+| Burned-in **subtitles** | `render.mjs --voice voice.json` or `--subs file.srt` | text burned into the picture + `.srt/.vtt` next to the video |
 
-## 1. Voix off
+## 1. Voice-over
 
-Écrire le script (`video/narration.json`) — **une phrase par ligne**, courte (le minutage intra-ligne est estimé) :
+Write the script (`video/narration.json`) — **one sentence per line**, short (timing within a line is
+estimated):
 ```json
-{ "lang": "fr", "voice": "Thomas", "rate": 1, "gap": 0.35, "start": 0.4,
+{ "lang": "en", "voice": "Samantha", "rate": 1, "gap": 0.35, "start": 0.4,
   "lines": [
-    "Bienvenue dans Motion Studio.",
-    { "text": "Tout s'écrit comme une page web.", "pause": 0.6 },
-    { "id": "cta", "text": "Essayez-le.", "at": 9.5 },
-    { "text": "Texte affiché", "file": "ma-voix.wav" }
+    "Welcome to Motion Studio.",
+    { "text": "Everything is written like a web page.", "pause": 0.6 },
+    { "id": "cta", "text": "Try it.", "at": 9.5 },
+    { "text": "Displayed text", "file": "my-voice.wav" }
   ] }
 ```
-| Champ | Rôle |
-|-------|------|
-| `lang` | `fr`, `en`, `es`… (choix de la voix par défaut) |
-| `voice` | Nom de voix du moteur (`Thomas`, `Amelie`, `fr`, nom SAPI…) — facultatif |
-| `rate` | Vitesse (1 = normal, 0.9 = posé) ; par ligne possible |
-| `gap` / `pause` | Silence après chaque ligne (défaut 0.35 s) / pour une ligne |
-| `start` | Début de la 1re ligne (défaut 0.4 s) |
-| `at` | Temps absolu d'une ligne (ex. caler sur une scène) — prévient en cas de chevauchement |
-| `file` | Enregistrement existant (n'importe quelle voix / service) au lieu de synthétiser ; `text` sert au sous-titre |
-| `caption` | Texte du sous-titre s'il diffère de ce qui est dit (ex. chiffres, sigles à épeler) |
-| `engine` | Moteur imposé (`piper`, `say`…) : à épingler pour qu'une voix publiée reste la même sur toute machine (`auto` choisit `say` sur Mac) |
+| Field | Role |
+|---|---|
+| `lang` | `en`, `fr`, `es`… (picks the default voice; default `en`) |
+| `voice` | Engine voice name (`Samantha`, `Thomas`, `en`, SAPI name…) — optional |
+| `rate` | Speed (1 = normal, 0.9 = measured); can be set per line |
+| `gap` / `pause` | Silence after each line (default 0.35 s) / for one line |
+| `start` | Start of the 1st line (default 0.4 s) |
+| `at` | Absolute time of a line (e.g. to align on a scene) — warns on overlap |
+| `file` | Existing recording (any voice / service) instead of synthesis; `text` is used for the subtitle |
+| `caption` | Subtitle text if it differs from what is said (e.g. numbers, acronyms to spell out) |
+| `engine` | Forced engine (`piper`, `say`…): pin it so that a published voice stays the same on every machine (`auto` picks `say` on a Mac) |
 
-**Prononciation** : une voix française lit les anglicismes à la française (« brainstorm » → « brin-storm »).
-Réécrire *ce qui est dit* phonétiquement et garder l'orthographe dans `caption` :
-`{ "text": "Le brène-storm définit…", "caption": "Le brainstorm définit…" }`. Faire écouter 3–4 variantes
-(`say -v Thomas -o v1.aiff "…"`, ou le moteur final) à l'utilisateur : la meilleure graphie dépend du moteur.
+**Pronunciation**: a voice reads foreign words with its own language's rules (a French voice says
+"brainstorm" as "brin-storm"). Rewrite *what is said* phonetically and keep the spelling in `caption`:
+`{ "text": "The brane-storm defines…", "caption": "The brainstorm defines…" }`. Have the user listen to
+3–4 variants (`say -v Samantha -o v1.aiff "…"`, or the final engine): the best spelling depends on the
+engine.
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" engines                       # moteurs détectés
+node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" engines                       # detected engines
 node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" video/narration.json -o video/voice --home "${CLAUDE_PLUGIN_DATA}"
 ```
-Sortie : le début/fin **réels** de chaque ligne. **Construire le storyboard sur ces temps** (pas
-l'inverse) : la scène « logo » commence quand la phrase « voici… » commence. Les lignes sont mises en
-cache (hash du texte + voix) : relancer est instantané tant que le texte ne change pas.
-Un fichier texte brut (une ligne = une phrase) est aussi accepté à la place du JSON.
+Output: the **real** start/end of each line. **Build the storyboard on these times** (not the other way
+around): the "logo" scene starts when the sentence "here is…" starts. Lines are cached (hash of text +
+voice): running again is instant as long as the text does not change.
+A plain text file (one line = one sentence) is also accepted instead of the JSON.
 
-### Moteurs et installation guidée
+### Engines and guided installation
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" --lang fr                 # état + recommandation
-node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install piper --lang fr   # puis edge | espeak
+node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" --lang en                 # status + recommendation
+node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install piper --lang en   # then edge | espeak
 ```
-| Moteur | Où | Qualité | Prérequis / installation |
-|--------|----|---------|--------------------------|
-| `say` | macOS | bonne (`Thomas`, `Amelie`) | préinstallé |
-| `sapi` | Windows | correcte | préinstallé |
-| `piper` | **local**, gratuit, tous OS | **très bonne** (neuronal) | Python ≥ 3.8 ; `install piper` crée un venv privé, `pip install piper-tts`, télécharge la voix (~60 Mo : fr, en, es, de, it). Sans sudo. |
-| `edge` | **en ligne**, gratuit, sans clé | très bonne (`fr-FR-DeniseNeural`, `fr-FR-HenriNeural`, `en-US-AriaNeural`…) | Python ≥ 3.8 ; `install edge`. Le **texte part chez Microsoft**, service non officiel (peut changer). Jamais choisi en `auto` : `--engine edge` ou `"engine": "edge"` dans le script. |
-| `espeak` | Linux | robotique, dépannage | `sudo apt install espeak-ng` (le script le fait seul si root/sudo sans mot de passe, sinon donne la commande) |
+| Engine | Where | Quality | Prerequisites / installation |
+|---|---|---|---|
+| `say` | macOS | good (`Samantha`, `Thomas`, `Amelie`) | preinstalled |
+| `sapi` | Windows | fair | preinstalled |
+| `piper` | **local**, free, every OS | **very good** (neural) | Python ≥ 3.8; `install piper` creates a private venv, `pip install piper-tts`, downloads the voice (~60 MB: en, fr, es, de, it). No sudo. |
+| `edge` | **online**, free, no key | very good (`en-US-AriaNeural`, `en-GB-RyanNeural`, `fr-FR-DeniseNeural`…) | Python ≥ 3.8; `install edge`. The **text goes to Microsoft**, unofficial service (may change). Never chosen by `auto`: `--engine edge` or `"engine": "edge"` in the script. |
+| `espeak` | Linux | robotic, fallback | `sudo apt install espeak-ng` (the script does it by itself if root/passwordless sudo, otherwise it gives the command) |
 
-Choix `auto` (moteurs locaux uniquement) : piper > say > sapi > espeak. Forcer avec `--engine`. Les paquets Python sont dans
-`${CLAUDE_PLUGIN_DATA}/voice-venv`, les voix Piper dans `${CLAUDE_PLUGIN_DATA}/voices` (désinstallés avec le plugin).
-Autre voix Piper : poser un `.onnx` (+ `.onnx.json`) dans `voices/` ou `PIPER_MODEL=/chemin/voix.onnx`.
-Avec `espeak` seul, **prévenir** que la voix sera mécanique et proposer Piper. Pour une voix de qualité « studio » :
-l'utilisateur fournit un enregistrement (champ `file`).
+`auto` choice (local engines only): piper > say > sapi > espeak. Force one with `--engine`. Python packages
+live in `${CLAUDE_PLUGIN_DATA}/voice-venv`, Piper voices in `${CLAUDE_PLUGIN_DATA}/voices` (uninstalled
+with the plugin). Another Piper voice: drop an `.onnx` (+ `.onnx.json`) in `voices/` or set
+`PIPER_MODEL=/path/voice.onnx`. With `espeak` only, **warn** that the voice will be mechanical and propose
+Piper. For a "studio" quality voice: the user provides a recording (`file` field).
 
-## 2. Sous-titres
+## 2. Subtitles
 
 ```bash
-# voix off + sous-titres (style par défaut : bas de l'écran)
+# voice-over + subtitles (default style: bottom of the screen)
 node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" video/intro.html --voice video/voice/voice.json -o video/intro.mp4
-# karaoké (mot courant mis en accent), piste souple en plus, sans voix off
-node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" video/intro.html --subs video/fr.srt --captions karaoke --embed-subs -o video/intro.mp4
+# karaoke (current word highlighted), plus a soft track, without voice-over
+node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" video/intro.html --subs video/en.srt --captions karaoke --embed-subs -o video/intro.mp4
 ```
-| Option | Rôle |
-|--------|------|
-| `--voice voice.json` | Mixe la narration au-dessus, **baisse la musique** pendant qu'elle parle (`--duck -9` dB, `off`), sous-titres repris de `voice.json` |
-| `--subs f.srt\|.vtt\|.json` | Sous-titres d'une source externe (remplace ceux de `voice.json`). JSON : `[{ "start": 1, "end": 3, "text": "…" }]` |
-| `--captions bottom\|karaoke\|center\|off` | Style incrusté ; `off` = rien d'incrusté (la page dessine ses propres sous-titres) |
-| `--embed-subs` | Ajoute aussi une piste souple activable dans le lecteur (mp4 `mov_text`, webm `webvtt`) |
+| Option | Role |
+|---|---|
+| `--voice voice.json` | Mixes the narration on top, **ducks the music** while it speaks (`--duck -9` dB, `off`), subtitles taken from `voice.json` |
+| `--subs f.srt\|.vtt\|.json` | Subtitles from an external source (replaces those of `voice.json`). JSON: `[{ "start": 1, "end": 3, "text": "…" }]` |
+| `--captions bottom\|karaoke\|center\|off` | Burned-in style; `off` = nothing burned in (the page draws its own subtitles) |
+| `--embed-subs` | Also adds a soft track the player can turn on (mp4 `mov_text`, webm `webvtt`) |
 
-Toujours produits à côté de la vidéo : `<sortie>.srt` et `<sortie>.vtt` (recalés si `--from/--to`).
-Les `.srt` peuvent être traduits puis ré-incrustés via `--subs`. Pas de sous-titres dans un GIF.
+Always produced next to the video: `<output>.srt` and `<output>.vtt` (re-timed with `--from/--to`).
+The `.srt` files can be translated, then burned in again with `--subs`. No subtitles in a GIF.
 
-L'incrustation est pilotée par le temps virtuel (fondu de 0,12 s, aucun état) ; elle hérite de la police
-du `body` et de `--accent` (variable CSS de `:root`) pour le mot actif. Taille ≈ 4,6 % de la hauteur ;
-en 9:16 elle remonte à 17 % du bas pour éviter l'interface des réseaux. Garder cette zone libre dans la composition.
-Ajuster la longueur des cues avec `"maxChars"` dans le script (défaut 42 ; **24–28 en 9:16**).
+Burn-in is driven by virtual time (0.12 s fade, no state); it inherits the `body` font and `--accent`
+(CSS variable on `:root`) for the active word. Size ≈ 4.6 % of the height; in 9:16 it moves up to 17 %
+from the bottom to avoid social media UI. Keep that area free in the composition. Adjust the cue length
+with `"maxChars"` in the script (default 42; **24–28 in 9:16**).
 
-### Sous-titres dessinés par la composition (`--captions off`, ou en plus)
+### Subtitles drawn by the composition (`--captions off`, or in addition)
 
-`window.__captions` est injecté avant la page quand des sous-titres existent :
+`window.__captions` is injected before the page when subtitles exist:
 
-| API | Retour |
-|-----|--------|
+| API | Returns |
+|---|---|
 | `__captions.cues[]` | `{ start, end, text, words: [{ w, start, end }] }` |
-| `__captions.at(t)` / `.word(t)` | cue / mot actif à t (ou `null`) |
-| `__captions.line(t)` | ligne **dite** active (`{ id, text, start, end }`) — l'image suit la voix |
-| `__captions.speaking(t)` | `true` pendant la parole (ex. baisser une animation d'arrière-plan) |
+| `__captions.at(t)` / `.word(t)` | active cue / word at t (or `null`) |
+| `__captions.line(t)` | active **spoken** line (`{ id, text, start, end }`) — picture follows voice |
+| `__captions.speaking(t)` | `true` while speaking (e.g. tone down a background animation) |
 
 ```js
 window.__seek = (t) => {
@@ -106,13 +108,13 @@ window.__seek = (t) => {
   mouth.style.scale = window.__captions?.speaking(t) ? 1 : 0.6;
 };
 ```
-Les temps par mot sont **estimés** (proportionnels aux lettres) : précis à ~100 ms sur une phrase courte, pas un alignement
-forcé. Pour un karaoké exact, garder des lignes courtes.
+Word timings are **estimated** (proportional to letters): accurate to ~100 ms on a short sentence, not a
+forced alignment. For exact karaoke, keep lines short.
 
-## Règles
+## Rules
 
-1. **Texte d'abord** : rédiger la narration (~2,5 mots/s en français parlé), puis `voice.mjs`, puis storyboard sur la durée réelle.
-2. Un sous-titre ≤ 42 caractères, 1–2 lignes, ≥ 1 s à l'écran ; ne pas dupliquer un gros titre déjà lisible à l'écran.
-3. Laisser 0,4 s avant la 1re phrase et 0,5 s après la dernière : `data-duration` ≥ `voice.duration + 0,5`.
-4. Les bruitages se mixent sous la voix : gain .3–.5 pendant la narration, pas de riser qui couvre une phrase.
-5. Vérifier par stills **à l'intérieur d'une phrase** (`--stills`) : lisibilité, contraste, zone sûre, pas de collision avec le contenu.
+1. **Text first**: write the narration (~2.5 words/s spoken), then `voice.mjs`, then the storyboard on the real duration.
+2. One subtitle ≤ 42 characters, 1–2 lines, ≥ 1 s on screen; do not duplicate a big title already readable on screen.
+3. Leave 0.4 s before the 1st sentence and 0.5 s after the last one: `data-duration` ≥ `voice.duration + 0.5`.
+4. Sound effects are mixed under the voice: gain .3–.5 during the narration, no riser covering a sentence.
+5. Check with stills **inside a sentence** (`--stills`): legibility, contrast, safe area, no collision with the content.

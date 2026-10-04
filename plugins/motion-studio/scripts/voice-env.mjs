@@ -17,7 +17,7 @@ export function venvBin(name) {
 }
 
 /** Piper model for `lang`: PIPER_MODEL, else an installed <home>/voices/<lang>_*.onnx. */
-export function piperModel(lang = 'fr') {
+export function piperModel(lang = 'en') {
   if (process.env.PIPER_MODEL && fs.existsSync(process.env.PIPER_MODEL)) return process.env.PIPER_MODEL;
   try {
     const f = fs.readdirSync(voicesDir()).find((n) => n.endsWith('.onnx') && n.toLowerCase().startsWith(String(lang).toLowerCase().slice(0, 2) + '_'));

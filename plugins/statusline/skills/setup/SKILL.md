@@ -1,71 +1,77 @@
 ---
 name: statusline-setup
-description: Configure et installe la statusline Claude Code. Utiliser quand l'utilisateur demande d'installer, configurer ou setup la statusline, /statusline-setup, ou veut avoir une status line.
+description: Configures and installs the Claude Code statusline (cost, context, 5-hour window, burn rate, sessions). Use when the user asks to install, configure or set up the statusline, says /statusline-setup, or wants a status line.
 allowed-tools: Bash, Read, Edit, Write, Glob, AskUserQuestion
 ---
 
-# Configuration Statusline v2.1.0
+# Statusline setup v2.1.0
 
-Configure la statusline Claude Code basee sur [hell0github/claude-statusline](https://github.com/hell0github/claude-statusline).
+Configures the Claude Code statusline based on [hell0github/claude-statusline](https://github.com/hell0github/claude-statusline).
 
-## Apercu
+Talk to the user in their language; the commands and messages below are given in English.
+
+## Overview
 
 ```
 marketplace | 140k/168k [████████░░] | $19/$140 [███░░░│░░░] 13% | 16:46/18:00 | 235/min | ×1
      │              │                      │                          │            │       │
-     │              │                      │                          │            │       └─ Sessions actives
+     │              │                      │                          │            │       └─ Active sessions
      │              │                      │                          │            └─ Burn rate (tokens/min)
-     │              │                      │                          └─ Heure actuelle / Reset fenetre 5h
-     │              │                      └─ Fenetre 5h : cout / limite, % utilise
-     │              └─ Context window : tokens / limite (168K)
-     └─ Nom du projet
+     │              │                      │                          └─ Current time / 5-hour window reset
+     │              │                      └─ 5-hour window: cost / limit, % used
+     │              └─ Context window: tokens / limit (168K)
+     └─ Project name
 ```
 
-## Bugs connus et solutions
+## Known bugs and fixes
 
-### macOS : Erreur `date -d`
+### macOS: `date -d` error
 
-Le repo source utilise `date -d` (syntaxe GNU/Linux) qui n'existe pas sur macOS.
+The source repo uses `date -d` (GNU/Linux syntax), which does not exist on macOS.
 
-**Solution automatique** : Le skill installe `coreutils` via Homebrew et patche les scripts pour utiliser `gdate`.
+**Automatic fix**: the skill installs `coreutils` through Homebrew and patches the scripts to use `gdate`.
 
-### show_monthly necessite payment_cycle_start_date
+### show_monthly requires payment_cycle_start_date
 
-Si `show_monthly: true`, le champ `tracking.payment_cycle_start_date` est obligatoire.
+If `show_monthly: true`, the `tracking.payment_cycle_start_date` field is required.
 
-**Solution** : Le skill demande la date de debut de cycle si l'utilisateur active le suivi mensuel.
+**Fix**: the skill asks for the cycle start date if the user turns monthly tracking on.
+
+### `sed -i ''` on Linux
+
+The `sed -i ''` commands below are the macOS (BSD) syntax. On Linux, use `sed -i` without `''`.
 
 ## Instructions
 
-### Phase 1 : Nettoyage de l'installation existante
+### Phase 1: Clean up the existing installation
 
-**OBLIGATOIRE** : Toujours nettoyer avant d'installer pour eviter les conflits.
+**REQUIRED**: always clean up before installing, to avoid conflicts.
 
 ```bash
-echo "=== Nettoyage statusline existante ===" && \
-rm -f ~/.claude/statusline.sh 2>/dev/null && echo "  Shim supprime" || true && \
-rm -rf ~/Projects/cc-statusline 2>/dev/null && echo "  Repo supprime" || true && \
-echo "=== Nettoyage termine ==="
+echo "=== Cleaning up the existing statusline ===" && \
+rm -f ~/.claude/statusline.sh 2>/dev/null && echo "  Shim removed" || true && \
+rm -rf ~/Projects/cc-statusline 2>/dev/null && echo "  Repo removed" || true && \
+echo "=== Cleanup done ==="
 ```
 
-Ensuite, lire `~/.claude/settings.json` et **supprimer la section `statusLine`** si elle existe.
+Then read `~/.claude/settings.json` and **remove the `statusLine` section** if it exists.
 
-### Phase 2 : Verification et installation des prerequis
+### Phase 2: Check and install the prerequisites
 
 ```bash
-echo "=== Verification des prerequis ===" && \
+echo "=== Checking prerequisites ===" && \
 echo "OS: $(uname -s)" && \
-echo "jq: $(which jq > /dev/null 2>&1 && echo '✅' || echo '❌ REQUIS')" && \
-echo "ccusage: $(which ccusage > /dev/null 2>&1 && echo '✅' || echo '⚠️ Recommande')" && \
-echo "git: $(which git > /dev/null 2>&1 && echo '✅' || echo '❌ REQUIS')" && \
+echo "jq: $(which jq > /dev/null 2>&1 && echo '✅' || echo '❌ REQUIRED')" && \
+echo "ccusage: $(which ccusage > /dev/null 2>&1 && echo '✅' || echo '⚠️ Recommended')" && \
+echo "git: $(which git > /dev/null 2>&1 && echo '✅' || echo '❌ REQUIRED')" && \
 if [ "$(uname -s)" = "Darwin" ]; then
-  echo "gdate: $(which gdate > /dev/null 2>&1 && echo '✅' || echo '❌ REQUIS sur macOS')"
+  echo "gdate: $(which gdate > /dev/null 2>&1 && echo '✅' || echo '❌ REQUIRED on macOS')"
 fi
 ```
 
-**Installation automatique des prerequis manquants :**
+**Automatic installation of missing prerequisites:**
 
-Si `jq` manque :
+If `jq` is missing:
 ```bash
 # macOS
 brew install jq
@@ -73,155 +79,155 @@ brew install jq
 sudo apt install jq
 ```
 
-Si `ccusage` manque (recommande mais optionnel) :
+If `ccusage` is missing (recommended but optional):
 ```bash
 npm install -g ccusage
 ```
 
-**Sur macOS, si `gdate` manque, installer automatiquement coreutils :**
+**On macOS, if `gdate` is missing, install coreutils automatically:**
 ```bash
 if [ "$(uname -s)" = "Darwin" ] && ! which gdate > /dev/null 2>&1; then
-  echo "Installation de coreutils (gdate)..."
+  echo "Installing coreutils (gdate)..."
   brew install coreutils
 fi
 ```
 
-### Phase 3 : Choix du mode de facturation
+### Phase 3: Choose the billing mode
 
-Utiliser AskUserQuestion :
+Use AskUserQuestion:
 
 | Option | Description |
-|--------|-------------|
-| `api` | Pay-as-you-go / API Usage - Pas de limite hebdomadaire |
-| `max20x` | Claude Max 20x - $200/mois, 220K tokens/5h, $850/semaine |
-| `max5x` | Claude Max 5x - $100/mois, 88K tokens/5h, $500/semaine |
-| `pro` | Claude Pro - $20/mois, 19K tokens/5h, $300/semaine |
+|---|---|
+| `api` | Pay-as-you-go / API usage - no weekly limit |
+| `max20x` | Claude Max 20x - $200/month, 220K tokens/5h, $850/week |
+| `max5x` | Claude Max 5x - $100/month, 88K tokens/5h, $500/week |
+| `pro` | Claude Pro - $20/month, 19K tokens/5h, $300/week |
 
-### Phase 4 : Installation
+### Phase 4: Install
 
 ```bash
 mkdir -p ~/Projects && \
 git clone https://github.com/hell0github/claude-statusline.git ~/Projects/cc-statusline && \
 mkdir -p ~/Projects/cc-statusline/data && \
 cp ~/Projects/cc-statusline/config/config.example.json ~/Projects/cc-statusline/config/config.json && \
-echo "✅ Repo clone dans ~/Projects/cc-statusline"
+echo "✅ Repo cloned into ~/Projects/cc-statusline"
 ```
 
-### Phase 5 : Patch macOS (si Darwin)
+### Phase 5: macOS patch (if Darwin)
 
-**IMPORTANT** : Cette phase est obligatoire sur macOS pour corriger le bug `date -d`.
+**IMPORTANT**: this phase is required on macOS to fix the `date -d` bug.
 
-Verifier si on est sur macOS et appliquer le patch automatiquement :
+Check whether we are on macOS and apply the patch automatically:
 
 ```bash
 if [ "$(uname -s)" = "Darwin" ]; then
   sed -i '' 's/date -d/gdate -d/g' ~/Projects/cc-statusline/src/statusline-utils.sh
   sed -i '' 's/date -d/gdate -d/g' ~/Projects/cc-statusline/src/statusline.sh
-  echo "✅ Patch macOS applique (date -> gdate)"
+  echo "✅ macOS patch applied (date -> gdate)"
 fi
 ```
 
-Verifier que le patch a ete applique :
+Check that the patch was applied:
 ```bash
 grep -c "gdate -d" ~/Projects/cc-statusline/src/statusline-utils.sh
-# Doit retourner 8
+# Should return 8
 ```
 
-### Phase 6 : Choix du format d'heure
+### Phase 6: Choose the time format
 
-Utiliser AskUserQuestion :
+Use AskUserQuestion:
 
-| Option | Exemple | Description |
-|--------|---------|-------------|
-| `24h` (Recommande) | 17:30/18:00 | Format 24 heures |
-| `12h` | 5:30PM/6PM | Format 12 heures avec AM/PM |
+| Option | Example | Description |
+|---|---|---|
+| `24h` (Recommended) | 17:30/18:00 | 24-hour format |
+| `12h` | 5:30PM/6PM | 12-hour format with AM/PM |
 
-**Appliquer le patch selon le choix :**
+**Apply the patch matching the choice:**
 
-Si l'utilisateur choisit **24h**, appliquer ce patch :
+If the user picks **24h**, apply this patch:
 
 ```bash
-# Patch format 24h pour CURRENT_TIME
+# 24h patch for CURRENT_TIME
 sed -i '' 's/date "+%-l:%M%p"/date "+%H:%M"/g' ~/Projects/cc-statusline/src/statusline.sh
 sed -i '' 's/date "+%I:%M%p"/date "+%H:%M"/g' ~/Projects/cc-statusline/src/statusline.sh
 
-# Patch format 24h pour RESET_TIME (gdate sur macOS)
+# 24h patch for RESET_TIME (gdate on macOS)
 sed -i '' 's/"+%-l%p"/"+%H:%M"/g' ~/Projects/cc-statusline/src/statusline.sh
 
-echo "✅ Format 24h applique"
+echo "✅ 24h format applied"
 ```
 
-Si l'utilisateur choisit **12h**, ne rien faire (c'est le format par defaut).
+If the user picks **12h**, do nothing (it is the default format).
 
-### Phase 7 : Configuration selon le mode
+### Phase 7: Configure for the mode
 
-Lire et modifier `~/Projects/cc-statusline/config/config.json` :
+Read and edit `~/Projects/cc-statusline/config/config.json`:
 
-#### Mode API (pay-as-you-go)
+#### API mode (pay-as-you-go)
 
-Modifier ces champs :
-- `user.plan` : garder `"max20x"` (valeur fictive, pas de limites)
-- `sections.show_five_hour_window` : `false`
-- `sections.show_daily` : `false`
-- `sections.show_weekly` : `false`
-- `sections.show_monthly` : `false`
-- `sections.show_timer` : `false`
+Change these fields:
+- `user.plan`: keep `"max20x"` (placeholder value, no limits)
+- `sections.show_five_hour_window`: `false`
+- `sections.show_daily`: `false`
+- `sections.show_weekly`: `false`
+- `sections.show_monthly`: `false`
+- `sections.show_timer`: `false`
 
-#### Modes Subscription (pro, max5x, max20x)
+#### Subscription modes (pro, max5x, max20x)
 
-Demander les preferences avec AskUserQuestion :
+Ask for the preferences with AskUserQuestion:
 
-**Question 1 - Sections a afficher :**
-- "Recommande" : Context + 5h window + Weekly + Timer + Burn rate + Sessions
-- "Complet" : Toutes les sections incluant Monthly
-- "Minimal" : Context + Burn rate uniquement
+**Question 1 - Sections to show:**
+- "Recommended": Context + 5h window + Weekly + Timer + Burn rate + Sessions
+- "Full": all sections including Monthly
+- "Minimal": Context + Burn rate only
 
-**Question 2 - Weekly display mode :**
-- `recommend` : % journalier recommande [Recommande]
-- `usage` : % d'utilisation hebdomadaire
-- `avail` : % restant disponible
+**Question 2 - Weekly display mode:**
+- `recommend`: recommended daily % [Recommended]
+- `usage`: weekly usage %
+- `avail`: remaining available %
 
-**Question 3 - Suivi mensuel (si "Complet" ou demande explicite) :**
-- "Oui" : Activer le suivi du cout mensuel
-- "Non" : Desactiver (par defaut)
+**Question 3 - Monthly tracking (if "Full" or explicitly asked):**
+- "Yes": turn monthly cost tracking on
+- "No": turn it off (default)
 
-**Si suivi mensuel active**, demander la date de debut du cycle de facturation avec AskUserQuestion :
+**If monthly tracking is on**, ask for the billing cycle start date with AskUserQuestion:
 
-Options predefinies :
-- "Le 1er du mois" : Cycle commence le 1er
-- "Le 15 du mois" : Cycle commence le 15
-- "Desactiver monthly" : Ne pas activer le suivi mensuel
+Predefined options:
+- "The 1st of the month": the cycle starts on the 1st
+- "The 15th of the month": the cycle starts on the 15th
+- "Turn monthly off": do not turn monthly tracking on
 
-L'utilisateur peut aussi choisir "Other" pour saisir un jour personnalise (ex: "le 28", "7", "23").
+The user can also pick "Other" to type a custom day (e.g. "the 28th", "7", "23").
 
-**Construction de la date ISO** a partir du jour choisi :
-- Prendre le jour du mois (1-31)
-- Construire la date avec le mois courant et la timezone locale
-- Format : `YYYY-MM-DDTHH:MM:SS-HH:MM`
+**Building the ISO date** from the chosen day:
+- Take the day of the month (1-31)
+- Build the date with the current month and the local timezone
+- Format: `YYYY-MM-DDTHH:MM:SS-HH:MM`
 
-Exemple :
+Example:
 ```bash
-# Si l'utilisateur dit "le 28" ou choisit le 28
-# Construire : 2025-01-28T00:00:00-08:00
+# If the user says "the 28th" or picks the 28th
+# Build: 2025-01-28T00:00:00-08:00
 
-# Obtenir la timezone locale
+# Get the local timezone
 TZ_OFFSET=$(date +%z | sed 's/\(..\)$/:\1/')
-# Ex: -08:00 pour PST
+# E.g. -08:00 for PST
 ```
 
-Modifier `~/Projects/cc-statusline/config/config.json` :
+Edit `~/Projects/cc-statusline/config/config.json`:
 
-1. Changer `user.plan` vers le plan choisi (`pro`, `max5x`, ou `max20x`)
+1. Set `user.plan` to the chosen plan (`pro`, `max5x` or `max20x`)
 
-2. Configurer les sections selon le choix
+2. Configure the sections according to the choice
 
-3. Configurer `weekly_display_mode` selon le choix
+3. Configure `weekly_display_mode` according to the choice
 
-4. **Si suivi mensuel active** :
-   - Mettre `sections.show_monthly: true`
-   - Configurer `tracking.payment_cycle_start_date` avec la date ISO fournie
+4. **If monthly tracking is on**:
+   - Set `sections.show_monthly: true`
+   - Set `tracking.payment_cycle_start_date` to the ISO date
 
-   Exemple :
+   Example:
    ```json
    {
      "sections": {
@@ -233,7 +239,7 @@ Modifier `~/Projects/cc-statusline/config/config.json` :
    }
    ```
 
-### Phase 8 : Creation du shim
+### Phase 8: Create the shim
 
 ```bash
 cat > ~/.claude/statusline.sh << 'EOF'
@@ -241,12 +247,12 @@ cat > ~/.claude/statusline.sh << 'EOF'
 exec "$HOME/Projects/cc-statusline/src/statusline.sh" "$@"
 EOF
 chmod +x ~/.claude/statusline.sh && \
-echo "✅ Shim cree dans ~/.claude/statusline.sh"
+echo "✅ Shim created in ~/.claude/statusline.sh"
 ```
 
-### Phase 9 : Configuration settings.json
+### Phase 9: Configure settings.json
 
-Lire `~/.claude/settings.json` et ajouter/verifier la section `statusLine` :
+Read `~/.claude/settings.json` and add/check the `statusLine` section:
 
 ```json
 {
@@ -258,132 +264,132 @@ Lire `~/.claude/settings.json` et ajouter/verifier la section `statusLine` :
 }
 ```
 
-### Phase 10 : Test
+### Phase 10: Test
 
 ```bash
 echo '{"workspace":{"current_dir":"~"},"transcript_path":""}' | ~/.claude/statusline.sh
 ```
 
-**Si le test echoue avec "ERROR in statusline.sh"** :
-- Sur macOS : Verifier que le patch gdate a ete applique (Phase 5)
-- Verifier que `gdate` est installe (`brew install coreutils`)
+**If the test fails with "ERROR in statusline.sh"**:
+- On macOS: check that the gdate patch was applied (Phase 5)
+- Check that `gdate` is installed (`brew install coreutils`)
 
-**Si le test echoue avec "Configuration validation failed"** :
-- Lire le message d'erreur et corriger le config.json en consequence
-- Si "payment_cycle_start_date is required" : mettre `show_monthly: false`
+**If the test fails with "Configuration validation failed"**:
+- Read the error message and fix config.json accordingly
+- If "payment_cycle_start_date is required": set `show_monthly: false`
 
-### Phase 11 : Confirmation
+### Phase 11: Confirmation
 
-Afficher ce resume :
-
-```
-✅ Statusline v2.1.0 configuree !
-
-Mode : <api | pro | max5x | max20x>
-Sections actives : <liste>
-Weekly mode : <recommend | usage | avail>
-Format heure : <24h | 12h>
-<Si monthly actif : Cycle depuis <date>>
-<Si macOS : Patch gdate applique ✅>
-
-Fichiers :
-- Config : ~/Projects/cc-statusline/config/config.json
-- Shim : ~/.claude/statusline.sh
-
-⚠️ Redemarrez Claude Code pour appliquer.
-```
-
-**Puis afficher le guide de lecture de la statusline :**
+Show this summary:
 
 ```
-📊 Comprendre la statusline :
+✅ Statusline v2.1.0 configured!
 
-Exemple : marketplace | 140k/168k [████░░] | $15/$140 [██│░░░] 10% | weekly 77% | total $135 | 17:26/19:00 (1h 33m) | 56/min | ×2
+Mode: <api | pro | max5x | max20x>
+Active sections: <list>
+Weekly mode: <recommend | usage | avail>
+Time format: <24h | 12h>
+<If monthly is on: Cycle since <date>>
+<If macOS: gdate patch applied ✅>
+
+Files:
+- Config: ~/Projects/cc-statusline/config/config.json
+- Shim: ~/.claude/statusline.sh
+
+⚠️ Restart Claude Code to apply.
+```
+
+**Then show the guide to reading the statusline:**
+
+```
+📊 Reading the statusline:
+
+Example: marketplace | 140k/168k [████░░] | $15/$140 [██│░░░] 10% | weekly 77% | total $135 | 17:26/19:00 (1h 33m) | 56/min | ×2
 
 ┌─────────────────────┬────────────────────────────────────────────────────────┐
-│ Segment             │ Signification                                          │
+│ Segment             │ Meaning                                                │
 ├─────────────────────┼────────────────────────────────────────────────────────┤
-│ marketplace         │ Nom du projet (dossier courant)                        │
-│ 140k/168k [████░░]  │ Context window : tokens utilises / limite (168K)       │
-│ $15/$140 [██│░░] 10%│ Fenetre 5h : cout actuel / limite, % de la limite      │
-│ weekly 77%          │ Utilisation hebdomadaire (mode usage)                  │
-│   ou recom 14%      │ % journalier recommande pour finir le budget (mode recommend) │
-│   ou avail 23%      │ % restant disponible cette semaine (mode avail)        │
-│ total $135          │ Cout total du mois (depuis date cycle)                 │
-│ 17:26/19:00 (1h 33m)│ Heure actuelle / reset 5h, temps restant               │
-│ 56/min              │ Burn rate : tokens consommes par minute                │
-│ ×2                  │ Nombre de sessions Claude Code actives                 │
+│ marketplace         │ Project name (current folder)                          │
+│ 140k/168k [████░░]  │ Context window: tokens used / limit (168K)             │
+│ $15/$140 [██│░░] 10%│ 5-hour window: current cost / limit, % of the limit    │
+│ weekly 77%          │ Weekly usage (usage mode)                              │
+│   or recom 14%      │ Recommended daily % to finish the budget (recommend)   │
+│   or avail 23%      │ Remaining % available this week (avail mode)           │
+│ total $135          │ Total cost of the month (since the cycle date)         │
+│ 17:26/19:00 (1h 33m)│ Current time / 5h reset, time left                     │
+│ 56/min              │ Burn rate: tokens consumed per minute                  │
+│ ×2                  │ Number of active Claude Code sessions                  │
 └─────────────────────┴────────────────────────────────────────────────────────┘
 
-Couleurs :
-- Vert : usage normal
-- Orange : attention, approche des limites
-- Rouge : limite atteinte ou depassee
+Colors:
+- Green: normal usage
+- Orange: careful, approaching the limits
+- Red: limit reached or exceeded
 ```
 
 ```
-⚠️ Difference entre statusline et interface Claude (/status) :
+⚠️ Difference between the statusline and the Claude interface (/status):
 
 ┌─────────────────────┬─────────────────────────────────────────────────────────┐
-│ Source              │ Ce qu'elle mesure                                       │
+│ Source              │ What it measures                                        │
 ├─────────────────────┼─────────────────────────────────────────────────────────┤
-│ Interface Claude    │ Usage API reel mesure par Anthropic (serveur)           │
-│ (/status)           │ = donnees officielles, peut inclure usage web/mobile    │
+│ Claude interface    │ Real API usage measured by Anthropic (server)           │
+│ (/status)           │ = official data, may include web/mobile usage           │
 ├─────────────────────┼─────────────────────────────────────────────────────────┤
-│ Statusline          │ Cout estime localement par ccusage depuis les           │
+│ Statusline          │ Cost estimated locally by ccusage from the              │
 │ (ccusage)           │ transcripts (~/.claude/projects/)                       │
-│                     │ = uniquement Claude Code, pas web/mobile                │
+│                     │ = Claude Code only, not web/mobile                      │
 └─────────────────────┴─────────────────────────────────────────────────────────┘
 
-Calcul du % weekly dans la statusline : cout_estime / limite_hebdo_plan
+Weekly % in the statusline: estimated_cost / plan_weekly_limit
 
-Limites hebdomadaires par plan :
+Weekly limits per plan:
 ┌──────────┬──────────────┬─────────────────┬─────────────────────────────────┐
-│ Plan     │ Limite hebdo │ Tokens/5h       │ Exemple                         │
+│ Plan     │ Weekly limit │ Tokens/5h       │ Example                         │
 ├──────────┼──────────────┼─────────────────┼─────────────────────────────────┤
-│ pro      │ $300/semaine │ 19K tokens/5h   │ $150 depenses = 50% weekly      │
-│ max5x    │ $500/semaine │ 88K tokens/5h   │ $390 depenses = 78% weekly      │
-│ max20x   │ $850/semaine │ 220K tokens/5h  │ $425 depenses = 50% weekly      │
-│ api      │ Pas de limite│ Pay-as-you-go   │ weekly desactive                │
+│ pro      │ $300/week    │ 19K tokens/5h   │ $150 spent = 50% weekly         │
+│ max5x    │ $500/week    │ 88K tokens/5h   │ $390 spent = 78% weekly         │
+│ max20x   │ $850/week    │ 220K tokens/5h  │ $425 spent = 50% weekly         │
+│ api      │ No limit     │ Pay-as-you-go   │ weekly off                      │
 └──────────┴──────────────┴─────────────────┴─────────────────────────────────┘
 
-Note : Un ecart entre les 2 sources est normal (methodes de calcul differentes).
+Note: a gap between the two sources is normal (different calculation methods).
 ```
 
 ```
-Commandes utiles :
-- Modifier config : edit ~/Projects/cc-statusline/config/config.json
-- Mise a jour : cd ~/Projects/cc-statusline && git pull
-- Reconfigurer : demander "installe la statusline"
+Useful commands:
+- Edit the config: edit ~/Projects/cc-statusline/config/config.json
+- Update: cd ~/Projects/cc-statusline && git pull
+- Reconfigure: ask "install the statusline"
 ```
 
-## Depannage
+## Troubleshooting
 
-### Erreur "gdate: command not found" sur macOS
+### "gdate: command not found" on macOS
 
-Installer coreutils :
+Install coreutils:
 ```bash
 brew install coreutils
 ```
 
-### Erreur "ERROR in statusline.sh" sur macOS apres patch
+### "ERROR in statusline.sh" on macOS after the patch
 
-Verifier que le patch a ete applique :
+Check that the patch was applied:
 ```bash
 grep "gdate -d" ~/Projects/cc-statusline/src/statusline-utils.sh
 ```
 
-Si aucun resultat, reappliquer le patch :
+If there is no result, apply the patch again:
 ```bash
 sed -i '' 's/date -d/gdate -d/g' ~/Projects/cc-statusline/src/statusline-utils.sh
 sed -i '' 's/date -d/gdate -d/g' ~/Projects/cc-statusline/src/statusline.sh
 ```
 
-### Erreur "payment_cycle_start_date is required"
+### "payment_cycle_start_date is required"
 
-Mettre `show_monthly: false` dans config.json.
+Set `show_monthly: false` in config.json.
 
-### La statusline ne s'affiche pas
+### The statusline does not show
 
 ```bash
 ls -la ~/.claude/statusline.sh
@@ -391,35 +397,35 @@ cat ~/.claude/settings.json | jq '.statusLine'
 echo '{"workspace":{"current_dir":"~"},"transcript_path":""}' | ~/.claude/statusline.sh
 ```
 
-### Changer le format d'heure apres installation
+### Changing the time format after installation
 
-Pour passer en 24h :
+To switch to 24h:
 ```bash
 sed -i '' 's/date "+%-l:%M%p"/date "+%H:%M"/g' ~/Projects/cc-statusline/src/statusline.sh
 sed -i '' 's/date "+%I:%M%p"/date "+%H:%M"/g' ~/Projects/cc-statusline/src/statusline.sh
 sed -i '' 's/"+%-l%p"/"+%H:%M"/g' ~/Projects/cc-statusline/src/statusline.sh
 ```
 
-Pour revenir en 12h (AM/PM), reinstaller le repo et reappliquer les patches.
+To go back to 12h (AM/PM), reinstall the repo and apply the patches again.
 
-### Reinstaller
+### Reinstalling
 
-Relancer ce skill - le nettoyage est automatique en Phase 1.
+Run this skill again - cleanup is automatic in Phase 1.
 
-### Mise a jour du repo (attention aux patches)
+### Updating the repo (mind the patches)
 
-Apres un `git pull`, les patches macOS et format heure seront ecrases. Re-appliquer :
+After a `git pull`, the macOS and time format patches are overwritten. Apply them again:
 ```bash
 cd ~/Projects/cc-statusline
 git pull
 
-# Re-appliquer patch macOS si Darwin
+# Apply the macOS patch again if Darwin
 if [ "$(uname -s)" = "Darwin" ]; then
   sed -i '' 's/date -d/gdate -d/g' src/statusline-utils.sh
   sed -i '' 's/date -d/gdate -d/g' src/statusline.sh
 fi
 
-# Re-appliquer patch 24h si souhaite
+# Apply the 24h patch again if wanted
 sed -i '' 's/date "+%-l:%M%p"/date "+%H:%M"/g' src/statusline.sh
 sed -i '' 's/date "+%I:%M%p"/date "+%H:%M"/g' src/statusline.sh
 sed -i '' 's/"+%-l%p"/"+%H:%M"/g' src/statusline.sh

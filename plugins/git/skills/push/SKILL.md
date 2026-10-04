@@ -1,132 +1,133 @@
 ---
 name: push
-description: Pousse les commits vers le remote avec un verrou de securite qui bloque les push vers origin/main et origin/master. Utiliser quand l'utilisateur demande de faire un push, /push, ou veut pousser ses changements.
+description: Pushes commits to the remote with a safety lock that blocks pushes to origin/main and origin/master. Use when the user asks to push, says /push, or wants to push their changes.
+allowed-tools: Bash(git *)
 ---
 
-# Push Securise
+# Safe push
 
-Pousse les commits vers le remote avec un verrou de securite qui empeche les push directs vers les branches protegees (main/master).
+Pushes commits to the remote with a safety lock that prevents direct pushes to the protected branches
+(main/master).
 
-## Verrou de Securite
+## Safety lock
 
-**IMPORTANT : Ce skill REFUSE systematiquement de pousser vers :**
+**IMPORTANT: this skill ALWAYS REFUSES to push to:**
 - `origin/main`
 - `origin/master`
 
-Ce verrou est une mesure de securite pour eviter les push accidentels sur les branches principales.
+The lock is a safety measure against accidental pushes to the main branches.
 
 ## Instructions
 
-### 1. Verifier la branche courante
+### 1. Check the current branch
 
 ```bash
 git branch --show-current
 ```
 
-### 2. Verifier le statut
+### 2. Check the status
 
 ```bash
 git status
 ```
 
-Verifier :
-- S'il y a des commits a pousser
-- Si la branche track un remote
-- L'etat de la branche par rapport au remote
+Check:
+- whether there are commits to push;
+- whether the branch tracks a remote;
+- the state of the branch compared to the remote.
 
-### 3. Appliquer le verrou de securite
+### 3. Apply the safety lock
 
-**AVANT tout push, verifier la branche cible :**
+**BEFORE any push, check the target branch:**
 
 ```bash
 git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || echo "no-upstream"
 ```
 
-**BLOQUER le push si la branche courante est `main` ou `master` :**
+**BLOCK the push if the current branch, or its upstream, is `main` or `master`:**
 
-Si la branche courante est `main` ou `master` :
-1. **NE PAS executer le push**
-2. Afficher un message d'erreur clair
-3. Suggerer de creer une branche de feature
+1. **DO NOT run the push**
+2. Show a clear error message
+3. Suggest creating a feature branch
 
-**Message a afficher :**
+**Message to show:**
 ```
-ERREUR : Push vers origin/main ou origin/master bloque
+ERROR: Push to origin/main or origin/master blocked
 
-Le push direct vers les branches principales est interdit pour des raisons de securite.
+Pushing directly to the main branches is forbidden for safety reasons.
 
-Pour pousser vos changements :
-1. Creez une branche de feature : git checkout -b feature/ma-feature
-2. Poussez sur cette branche : git push -u origin feature/ma-feature
-3. Creez une Merge Request / Pull Request
+To push your changes:
+1. Create a feature branch: git checkout -b feature/my-feature
+2. Push that branch: git push -u origin feature/my-feature
+3. Open a Merge Request / Pull Request
 ```
 
-### 4. Executer le push (si autorise)
+### 4. Run the push (if allowed)
 
-Si la branche n'est PAS `main` ou `master` :
+If the branch is NOT `main` or `master`:
 
-**Premier push (nouvelle branche) :**
+**First push (new branch):**
 ```bash
 git push -u origin <branch-name>
 ```
 
-**Push subsequent :**
+**Later pushes:**
 ```bash
 git push
 ```
 
-**Push avec tags :**
+**Push with tags:**
 ```bash
 git push --follow-tags
 ```
 
-## Workflow complet
+## Full workflow
 
-1. Obtenir le nom de la branche courante
-2. **VERIFIER que ce n'est PAS `main` ou `master`**
-3. Si `main` ou `master` → BLOQUER et afficher le message d'erreur
-4. Sinon → executer le push normalement
-5. Confirmer le succes du push
+1. Get the current branch name
+2. **CHECK that it is NOT `main` or `master`**
+3. If `main` or `master` → BLOCK and show the error message
+4. Otherwise → run the push normally
+5. Confirm the push succeeded
 
-## Exemples
+## Examples
 
-### Push autorise
-
-```
-Branche : feature/MOJ-1234-add-login
-→ Push autorise vers origin/feature/MOJ-1234-add-login
-```
+### Push allowed
 
 ```
-Branche : fix/UNIV-456-bugfix
-→ Push autorise vers origin/fix/UNIV-456-bugfix
-```
-
-### Push bloque
-
-```
-Branche : main
-→ BLOQUE - Afficher message d'erreur
+Branch: feature/MOJ-1234-add-login
+→ Push allowed to origin/feature/MOJ-1234-add-login
 ```
 
 ```
-Branche : master
-→ BLOQUE - Afficher message d'erreur
+Branch: fix/UNIV-456-bugfix
+→ Push allowed to origin/fix/UNIV-456-bugfix
 ```
 
-## Options supportees
+### Push blocked
+
+```
+Branch: main
+→ BLOCKED - show the error message
+```
+
+```
+Branch: master
+→ BLOCKED - show the error message
+```
+
+## Supported options
 
 | Option | Description |
-|--------|-------------|
-| `--force` | Force push (utiliser avec precaution) |
-| `--force-with-lease` | Force push securise |
-| `--tags` | Pousse aussi les tags |
-| `--follow-tags` | Pousse les tags annotes |
-| `-u` / `--set-upstream` | Configure le tracking de la branche |
+|---|---|
+| `--force-with-lease` | Safe force push (only on your own branch, after asking the user) |
+| `--force` | Force push (avoid; prefer `--force-with-lease`) |
+| `--tags` | Also pushes the tags |
+| `--follow-tags` | Pushes the annotated tags |
+| `-u` / `--set-upstream` | Sets the branch tracking |
 
-## Notes importantes
+## Important notes
 
-- Le verrou sur main/master est **NON NEGOCIABLE**
-- Si l'utilisateur insiste pour pousser sur main/master, **REFUSER** et expliquer pourquoi
-- Suggerer toujours le workflow via Merge Request / Pull Request
-- Ce verrou protege contre les erreurs humaines, pas contre les intentions malveillantes
+- The lock on main/master is **NON-NEGOTIABLE**
+- If the user insists on pushing to main/master, **REFUSE** and explain why
+- Always suggest the Merge Request / Pull Request workflow
+- This lock protects against human error, not against malicious intent

@@ -24,7 +24,7 @@ const probe = (cmd, args) => { const r = spawnSync(cmd, args, { stdio: 'ignore' 
 const argv = process.argv.slice(2).filter((a, i, all) => a !== '--home' && all[i - 1] !== '--home');
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
 const [cmd, what] = argv.filter((a, i) => !a.startsWith('-') && !argv[i - 1]?.startsWith('--'));
-const lang = String(opt('--lang', 'fr')).toLowerCase().slice(0, 2);
+const lang = String(opt('--lang', 'en')).toLowerCase().slice(0, 2);
 
 const MODELS = { fr: 'fr/fr_FR/siwis/medium/fr_FR-siwis-medium', en: 'en/en_US/lessac/medium/en_US-lessac-medium', es: 'es/es_ES/davefx/medium/es_ES-davefx-medium', de: 'de/de_DE/thorsten/medium/de_DE-thorsten-medium', it: 'it/it_IT/paola/medium/it_IT-paola-medium' };
 
@@ -32,24 +32,24 @@ const python = () => ['python3', 'python', ...(process.platform === 'win32' ? ['
 
 /** Private venv + one pip package. Returns true when `bin` is then available in it. */
 function pipInstall(pkg, bin) {
-  if (venvBin(bin)) { out(`  ✔ ${pkg} déjà installé`); return true; }
+  if (venvBin(bin)) { out(`  ✔ ${pkg} already installed`); return true; }
   const py = python();
   if (!py) {
-    out('  ✖ Python ≥ 3.8 introuvable. Installer Python (https://www.python.org/downloads/, brew install python, sudo apt install python3 python3-venv) puis relancer.');
+    out('  ✖ Python ≥ 3.8 not found. Install Python (https://www.python.org/downloads/, brew install python, sudo apt install python3 python3-venv), then run again.');
     return false;
   }
   if (!fs.existsSync(venvDir())) {
-    out(`  … création du venv Python (${venvDir()})`);
+    out(`  … creating the Python venv (${venvDir()})`);
     fs.mkdirSync(home(), { recursive: true });
     if (run(py, ['-m', 'venv', venvDir()]).status !== 0) {
       fs.rmSync(venvDir(), { recursive: true, force: true });
-      out('  ✖ « python -m venv » a échoué.' + (process.platform === 'linux' ? ' Sur Debian/Ubuntu : sudo apt install python3-venv, puis relancer.' : ''));
+      out('  ✖ "python -m venv" failed.' + (process.platform === 'linux' ? ' On Debian/Ubuntu: sudo apt install python3-venv, then run again.' : ''));
       return false;
     }
   }
   const vpy = process.platform === 'win32' ? path.join(venvDir(), 'Scripts', 'python.exe') : path.join(venvDir(), 'bin', 'python');
   out(`  … pip install ${pkg}`);
-  if (run(vpy, ['-m', 'pip', 'install', '--quiet', '--disable-pip-version-check', pkg]).status !== 0) { out(`  ✖ pip install ${pkg} a échoué (réseau ? voir message ci-dessus)`); return false; }
+  if (run(vpy, ['-m', 'pip', 'install', '--quiet', '--disable-pip-version-check', pkg]).status !== 0) { out(`  ✖ pip install ${pkg} failed (network? see the message above)`); return false; }
   return !!venvBin(bin);
 }
 
@@ -67,37 +67,37 @@ async function download(url, file) {
 }
 
 async function installPiper() {
-  out(`Piper — voix neuronale locale (${lang})`);
-  if (!MODELS[lang]) { out(`  ✖ pas de voix prévue pour « ${lang} » (dispo : ${Object.keys(MODELS).join(', ')}). Télécharger un modèle sur https://huggingface.co/rhasspy/piper-voices puis : PIPER_MODEL=/chemin/voix.onnx`); return false; }
+  out(`Piper — local neural voice (${lang})`);
+  if (!MODELS[lang]) { out(`  ✖ no voice planned for "${lang}" (available: ${Object.keys(MODELS).join(', ')}). Download a model from https://huggingface.co/rhasspy/piper-voices, then: PIPER_MODEL=/path/voice.onnx`); return false; }
   if (!pipInstall('piper-tts', 'piper')) return false;
   if (!piperModel(lang)) {
     const base = `https://huggingface.co/rhasspy/piper-voices/resolve/main/${MODELS[lang]}`;
     const file = path.join(voicesDir(), path.basename(MODELS[lang]) + '.onnx');
-    out(`  … téléchargement de la voix ${path.basename(MODELS[lang])} (~60 Mo)`);
+    out(`  … downloading the voice ${path.basename(MODELS[lang])} (~60 MB)`);
     try { await download(`${base}.onnx`, file); await download(`${base}.onnx.json`, `${file}.json`); }
-    catch (e) { fs.rmSync(file, { force: true }); out(`  ✖ téléchargement impossible : ${e.message}`); return false; }
+    catch (e) { fs.rmSync(file, { force: true }); out(`  ✖ download failed: ${e.message}`); return false; }
   }
-  out(`  ✔ Piper prêt (${piperModel(lang)})`);
+  out(`  ✔ Piper ready (${piperModel(lang)})`);
   return true;
 }
 
 function installEdge() {
-  out('Edge TTS — voix neuronale en ligne, gratuite, sans clé (le texte est envoyé à Microsoft)');
+  out('Edge TTS — online neural voice, free, no key (the text is sent to Microsoft)');
   if (!pipInstall('edge-tts', 'edge-tts')) return false;
-  out('  ✔ edge-tts prêt — utiliser : node voice.mjs script.json --engine edge   (voix : fr-FR-DeniseNeural, fr-FR-HenriNeural…)');
+  out('  ✔ edge-tts ready — use: node voice.mjs script.json --engine edge   (voices: en-US-AriaNeural, en-GB-RyanNeural, fr-FR-DeniseNeural…)');
   return true;
 }
 
 function installEspeak() {
-  out('eSpeak NG — voix robotique (dépannage)');
-  if (process.platform !== 'linux') { out('  ✔ inutile : cette plateforme a une voix système (say / SAPI).'); return true; }
-  if (probe('espeak-ng', ['--version'])) { out('  ✔ déjà installé'); return true; }
+  out('eSpeak NG — robotic voice (fallback)');
+  if (process.platform !== 'linux') { out('  ✔ not needed: this platform has a system voice (say / SAPI).'); return true; }
+  if (probe('espeak-ng', ['--version'])) { out('  ✔ already installed'); return true; }
   const root = process.getuid?.() === 0;
   if ((root || probe('sudo', ['-n', 'true'])) && probe('apt-get', ['--version'])) {
     const apt = ['apt-get', 'install', '-y', 'espeak-ng'];
     return (root ? run(apt[0], apt.slice(1)) : run('sudo', ['-n', ...apt])).status === 0;
   }
-  out('  ✖ droits administrateur requis. Lancer toi-même : sudo apt install espeak-ng   (Fedora : sudo dnf install espeak-ng)');
+  out('  ✖ administrator rights required. Run it yourself: sudo apt install espeak-ng   (Fedora: sudo dnf install espeak-ng)');
   return false;
 }
 
@@ -110,11 +110,11 @@ if (cmd === 'install') {
 }
 
 const found = detectEngines(lang);
-out(`motion-studio voix off — moteurs détectés (${lang})`);
-const rows = { say: 'macOS say (préinstallé)', sapi: 'Windows SAPI (préinstallé)', piper: 'Piper — neuronal local   → install piper', edge: 'Edge TTS — neuronal EN LIGNE → install edge', espeak: 'eSpeak NG — robotique    → install espeak' };
+out(`motion-studio voice-over — detected engines (${lang})`);
+const rows = { say: 'macOS say (preinstalled)', sapi: 'Windows SAPI (preinstalled)', piper: 'Piper — local neural     → install piper', edge: 'Edge TTS — ONLINE neural  → install edge', espeak: 'eSpeak NG — robotic      → install espeak' };
 for (const [k, label] of Object.entries(rows)) out(`  ${found.includes(k) ? '✔' : '✖'} ${k.padEnd(7)} ${label}`);
 const best = ['piper', 'say', 'sapi', 'espeak'].find((k) => found.includes(k));
-if (!best) out('\nAucune voix locale. Recommandé : node voice-setup.mjs install piper');
-else if (best === 'espeak') out('\nSeul eSpeak est disponible (robotique). Pour mieux : node voice-setup.mjs install piper');
-else out(`\nPrêt : le moteur utilisé par défaut sera « ${best} ».`);
+if (!best) out('\nNo local voice. Recommended: node voice-setup.mjs install piper');
+else if (best === 'espeak') out('\nOnly eSpeak is available (robotic). For better: node voice-setup.mjs install piper');
+else out(`\nReady: the default engine will be "${best}".`);
 process.exit(best ? 0 : 1);

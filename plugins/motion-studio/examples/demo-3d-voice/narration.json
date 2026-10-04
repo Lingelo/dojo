@@ -1,0 +1,15 @@
+{
+  "lang": "en",
+  "start": 0.8,
+  "gap": 0.3,
+  "lines": [
+    { "id": "intro", "text": "Meet Motion Studio.", "at": 0.8 },
+    { "id": "web", "text": "A video is written like a web page, then filmed frame by frame.", "at": 2.45 },
+    { "id": "three", "text": "Here, a three-dimensional scene computed with Three.js.", "at": 7.55 },
+    { "id": "time", "text": "Every movement depends only on time, so the result is always identical.", "at": 11.65 },
+    { "id": "music", "text": "Music drives the picture: the bars follow the bass, the crystal pulses on every beat.", "at": 16.65 },
+    { "id": "sfx", "text": "Sound effects land exactly on the impacts.", "at": 22.35 },
+    { "id": "sync", "text": "Voice, subtitles and sound are synced to the frame.", "at": 25.55 },
+    { "id": "cta", "text": "Your turn.", "at": 29.2, "pause": 1 }
+  ]
+}

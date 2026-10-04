@@ -1,6 +1,7 @@
-# Plugin Security
+# Security plugin
 
-Bloque l'accès de Claude Code aux fichiers sensibles et scanne les commits git pour détecter les secrets avant qu'ils ne soient poussés en production.
+Blocks Claude Code's access to sensitive files and scans git commits for secrets before they leave the
+machine.
 
 ## Installation
 
@@ -8,63 +9,103 @@ Bloque l'accès de Claude Code aux fichiers sensibles et scanne les commits git 
 /plugin install security@angelo-plugins
 ```
 
-## Fonctionnalités
+Prerequisite: Node.js (any LTS version). No npm dependency.
 
-### 1. Blocage des fichiers sensibles
+## Features
 
-Intercepte et bloque automatiquement l'accès aux fichiers sensibles via un hook `PreToolUse`.
+### 1. Blocking sensitive files
 
-#### Patterns de fichiers bloqués
+A `PreToolUse` hook (`scripts/block-sensitive-files.js`) intercepts and blocks access to sensitive files.
 
-| Catégorie | Patterns |
-|----------|----------|
-| Environnement | `.env`, `.env.*`, `.env.local`, `.env.production` |
-| Secrets | `secrets/`, `credentials/`, `.secrets` |
-| Clés | `.pem`, `.key`, `.p12`, `id_rsa`, `id_ed25519` |
-| Cloud | `.aws/credentials`, `.kube/config`, `firebase*.json`, `service-account*.json` |
-| Auth | `.npmrc`, `.pypirc`, `.netrc`, `.htpasswd` |
+#### Blocked file patterns
 
-#### Outils interceptés
+| Category | Patterns |
+|---|---|
+| Environment | `.env`, `.env.*` (`.env.local`, `.env.development`, `.env.production`, `.env.test`…) |
+| Secrets | `secret/`, `secrets/`, `credential/`, `credentials/`, `.secret`, `.secrets`, `.credential`, `.credentials` |
+| Keys and certificates | `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.jks`, `id_rsa`, `id_ed25519`, `id_ecdsa`, `id_dsa` |
+| Package managers and tools | `.npmrc`, `.pypirc`, `.netrc`, `.docker/config.json` |
+| Cloud | `.aws/credentials`, `.aws/config`, `.kube/config`, `firebase*.json`, `service-account*.json` / `service_account*.json`, `gcloud*.json` |
+| Other | `.htpasswd`, `.pgpass`, `.my.cnf` |
 
-- `Read` - Lecture de fichiers
-- `Edit` - Modification de fichiers
-- `Write` - Création de fichiers
-- `Bash` - Commandes comme `cat`, `head`, `tail` sur fichiers sensibles
+Allowed despite the patterns: `.env.example`.
 
-### 2. Secret Scanner (pre-commit)
+#### Intercepted tools
 
-Scanne le contenu des fichiers stagés (`git diff --cached`) avant chaque `git commit` pour détecter les clés API, tokens et credentials qui pourraient fuiter.
+- `Read` — reading files
+- `Edit` — modifying files
+- `Write` — creating files
+- `Bash` — `cat`, `head`, `tail`, `less`, `more`, `vi`, `vim`, `nano`, `code`, `open` on a sensitive file
 
-#### Patterns de secrets détectés (~30 regex)
+When access is refused, Claude is told to ask you for the information it needs directly.
 
-| Catégorie | Secrets détectés |
-|-----------|-----------------|
-| AI / ML | Anthropic API Key (`sk-ant-api`), Anthropic Admin Key (`sk-ant-admin`), OpenAI (`sk-`), HuggingFace (`hf_`) |
-| Cloud | AWS Access Key (`AKIA`), AWS Secret Key, Google API (`AIza`), DigitalOcean (`dop_v1_`), HashiCorp Vault (`hvs.`, `hvb.`) |
-| Git | GitHub PAT (`ghp_`), OAuth (`gho_`), App (`ghs_`), Fine-grained (`github_pat_`), GitLab PAT (`glpat-`), Pipeline (`glptt-`), Runner (`glrt-`) |
-| CI/CD | npm (`npm_`), PyPI (`pypi-`) |
-| Communication | Slack (`xox[bpars]-`, `xapp-`, webhooks), Discord bot tokens |
-| Paiements | Stripe (`sk_live_`, `pk_live_`), Shopify (`shpat_`, `shpca_`, `shppa_`, `shpss_`) |
-| Auth | JWT (`eyJ...`), Private Keys (RSA, EC, DSA, OPENSSH), Generic API Key patterns |
-| Services | Twilio (`SK`), SendGrid (`SG.`), Mailgun (`key-`), Sentry (`sntrys_`) |
-| Data | Database URLs avec mots de passe (postgres, mysql, mongodb) |
+### 2. Secret scanner (pre-commit)
 
-#### Protections supplémentaires
+A second `PreToolUse` hook (`scripts/secret-scanner.js`) scans the staged changes (`git diff --cached`)
+before each `git commit` and blocks the commit if API keys, tokens or credentials are about to leak.
 
-- **Blocage de `--no-verify`** : empêche Claude de contourner les hooks git via `git commit --no-verify`
-- **Mitigation des faux positifs** : les valeurs contenant `example`, `test`, `dummy`, `placeholder`, `changeme`, `fake`, `sample`, `mock` sont ignorées
-- **Exclusion de paths** : les fichiers dans `vendor/`, `node_modules/`, `*.lock`, `*.min.js`, `*.map` sont ignorés
-- **Fail-open** : si `git diff --cached` échoue (pas un repo git), le commit est autorisé
-- **Scan des ajouts uniquement** : seules les lignes `+` du diff sont scannées (supprimer un secret ne bloque pas)
+#### Detected secrets (~30 patterns)
 
-## Fonctionnement
+| Category | Detected secrets |
+|---|---|
+| AI / ML | Anthropic API key (`sk-ant-api`), Anthropic admin key (`sk-ant-admin`), OpenAI (`sk-`), Hugging Face (`hf_`) |
+| Cloud | AWS access key ID (`AKIA`), AWS secret key (`aws_secret_access_key=`), Google API (`AIza`), DigitalOcean (`dop_v1_`), HashiCorp Vault (`hvs.`, `hvb.`) |
+| Git platforms | GitHub PAT (`ghp_`), OAuth (`gho_`), App (`ghs_`), fine-grained (`github_pat_`), GitLab PAT (`glpat-`), pipeline trigger (`glptt-`), runner (`glrt-`) |
+| CI/CD and registries | npm (`npm_`), PyPI (`pypi-`) |
+| Communication | Slack (`xox[bpars]-`, `xapp-`, `hooks.slack.com/services/…` webhooks), Discord bot tokens |
+| Payments | Stripe (`sk_live_`, `pk_live_`), Shopify (`shpat_`, `shpca_`, `shppa_`, `shpss_`) |
+| Auth | JWT (`eyJ…`), private keys (RSA, EC, DSA, OPENSSH), generic `api_key = "…"` assignments |
+| Services | Twilio (`SK…`), SendGrid (`SG.`), Mailgun (`key-`), Sentry (`sntrys_`) |
+| Data | Database URLs with an embedded password (postgres, mysql, mongodb) |
 
-Le plugin utilise deux hooks `PreToolUse` :
+The report shows the secret type, the file and the first 8 characters of the match, never the whole
+value.
 
-1. **block-sensitive-files.js** — s'exécute sur Read, Edit, Write, Bash. Bloque l'accès aux fichiers sensibles.
-2. **secret-scanner.js** — s'exécute sur Bash uniquement. Intercepte les `git commit`, scanne le diff stagé pour détecter les secrets.
+#### Additional protections
 
-Les deux hooks utilisent le code de sortie `2` pour bloquer et envoient un message sur stderr pour informer Claude.
+- **`--no-verify` blocked**: Claude cannot bypass git hooks with `git commit --no-verify`.
+- **False-positive mitigation**: matches containing `example`, `test`, `dummy`, `placeholder`,
+  `changeme`, `xxx`, `todo`, `your_`, `insert_`, `replace_`, `fake`, `sample`, `mock` are ignored.
+- **Path exclusions**: `vendor/`, `node_modules/`, `*.lock`, `*.sum`, `*.min.js`, `*.min.css`, `*.map`,
+  `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`.
+- **Fail-open**: if `git diff --cached` fails (not a git repo), the commit is allowed.
+- **Additions only**: only the diff's `+` lines are scanned (removing a secret never blocks).
+
+### 3. Circuit breaker (utility)
+
+`scripts/circuit-breaker.js` is a reusable module (simplified Netflix Hystrix pattern) for hooks and
+scripts calling an unreliable external service: after `threshold` consecutive failures it stops calling
+for `cooldownMs`, then lets a single probe through.
+
+```js
+const { CircuitBreaker } = require('./circuit-breaker');
+const breaker = new CircuitBreaker({ threshold: 3, cooldownMs: 10000 });
+const result = await breaker.exec(() => callService(), (err) => fallbackValue);
+```
+
+States: `CLOSED` (normal) → `OPEN` (calls rejected, fallback used) → `HALF_OPEN` (one probe) → `CLOSED`.
+The state lives in memory, per process; `getState()` and `reset()` are available.
+
+## How it works
+
+The plugin declares two `PreToolUse` hooks in `hooks/hooks.json`:
+
+1. **block-sensitive-files.js** — runs on `Read`, `Edit`, `Write`, `Bash`. Blocks access to sensitive
+   files.
+2. **secret-scanner.js** — runs on `Bash` only. Intercepts `git commit`, scans the staged diff for
+   secrets.
+
+Both hooks exit with code `2` to block and write a message on stderr to inform Claude; any unexpected
+error lets the operation through (exit `0`).
+
+Why hooks rather than `deny` rules in `settings.json`: deny rules have
+[known bugs](https://github.com/anthropics/claude-code/issues/6699); a hook is always run.
+
+## Limits
+
+- Bash detection reads the command's tokens: a path built dynamically (variables, `$(…)`) is not seen.
+- The scanner relies on patterns: an unknown secret format, or a secret whose value contains one of
+  the allowlisted words, goes through. It complements, not replaces, server-side secret scanning.
 
 ## Structure
 
@@ -76,6 +117,7 @@ security/
 │   └── hooks.json
 ├── scripts/
 │   ├── block-sensitive-files.js
-│   └── secret-scanner.js
+│   ├── secret-scanner.js
+│   └── circuit-breaker.js
 └── README.md
 ```
