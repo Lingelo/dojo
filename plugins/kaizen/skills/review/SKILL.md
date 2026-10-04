@@ -110,7 +110,7 @@ constat P0/P1 par relecture des lignes citées, classement, et compte rendu des 
 ### Trous de tests · Risques résiduels
 ### Préexistants (hors diff, pour information)
 ### À capitaliser
-- <constat qui révèle un piège récurrent → candidat à /kaizen:compound ou à une règle de pack>
+- <constat qui révèle un piège récurrent → candidat à /kaizen:learn ou à une règle de pack>
 ```
 
 Verdict : ⛔ s'il reste un P0, ou un P1 confirmé ; ⚠️ s'il reste des P1/P2 non bloquants ou une
@@ -123,7 +123,7 @@ vérification ciblée après chacun (`node "$K" verify`) ; annule un correctif q
 Les `manual` restent listés avec leur proposition. Commit des correctifs au format conventionnel
 (`fix(<JIRA>): corrections de revue …`), fichiers concernés seulement. Résume appliqué / non appliqué.
 
-## `mode:agent` (pour /kaizen:work et /kaizen:lfg)
+## `mode:agent` (pour /kaizen:work et /kaizen:autopilot)
 
 Aucune prose : rends le JSON fusionné
 `{ verdict, coverage: {ran, failed, skipped}, findings: [...], plan_conformance: [...],

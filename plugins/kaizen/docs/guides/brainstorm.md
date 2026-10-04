@@ -15,7 +15,7 @@ première version du **plan unifié** : un seul fichier qui commence avec les ex
 | **Quand l'utiliser** | Une idée ou une demande encore floue ; un périmètre contesté ; plusieurs lectures possibles |
 | **Quand ne pas l'utiliser** | Bug avec symptôme (→ [debug](debug.md)) ; « donne-moi des idées » (→ [ideate](ideate.md)) ; travail déjà spécifié (→ [plan](plan.md)) |
 | **Ce qu'elle produit** | Petit travail : une conclusion dans le chat. Sinon `docs/plans/AAAA-MM-JJ-HHMM-<type>-<sujet>-plan.md` avec capsule d'objectif et contrat produit (R1…, AE1…) |
-| **Et ensuite** | Menu : planifier (recommandé), tout enchaîner (`lfg`), affiner, s'arrêter |
+| **Et ensuite** | Menu : planifier (recommandé), tout enchaîner (`autopilot`), affiner, s'arrêter |
 
 ## Exemples
 
@@ -72,9 +72,9 @@ Le contrat complet est dans [`references/plan-contract.md`](../../references/pla
   demandé va en « Hors périmètre » ou en question ouverte.
 - Si la demande mélange plusieurs sujets, Claude propose d'en traiter un. Les autres deviennent du
   contexte dans la section « Comment ce travail s'articule ».
-- `mode:return` (utilisé par `lfg`) : même dialogue, mais un résultat structuré au lieu du menu
+- `mode:return` (utilisé par `autopilot`) : même dialogue, mais un résultat structuré au lieu du menu
   final.
 
 ## Voir aussi
 
-[plan](plan.md) · [ideate](ideate.md) · [lfg](lfg.md)
+[plan](plan.md) · [ideate](ideate.md) · [autopilot](autopilot.md)

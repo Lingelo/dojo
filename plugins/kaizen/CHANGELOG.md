@@ -2,6 +2,28 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [SemVer](https://semver.org/lang/fr/).
 
+## [2.0.0] - 2026-10-04
+
+### Modifié (rupture)
+- Nommage propre à Kaizen pour les skills et le dossier qui reprenaient le vocabulaire de Compound
+  Engineering (l'attribution, elle, ne change pas) :
+
+  | Avant | Après |
+  |---|---|
+  | `compound` | `/kaizen:learn` |
+  | `refresh` | `/kaizen:prune-learnings` |
+  | `lfg` | `/kaizen:autopilot` |
+  | `babysit-pr` | `/kaizen:watch-pr` |
+  | `resolve-pr-feedback` | `/kaizen:address-feedback` |
+  | `docs/solutions/` | `docs/learnings/` |
+
+- `node $K root` renvoie `learnings` au lieu de `solutions`.
+
+### Compatibilité
+- Un repo qui n'a que `docs/solutions/` (Kaizen 1.x ou format Compound Engineering) continue d'être
+  lu tel quel : `learnings`, `metrics` et `init` l'utilisent tant que `docs/learnings/` n'existe pas.
+  Pour migrer : `git mv docs/solutions docs/learnings`.
+
 ## [1.1.0] - 2026-10-02
 
 ### Ajouté
@@ -19,8 +41,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   adversarial, design.
 - **Livraison** :
   - `/kaizen:ship`, avec description tirée du plan et guide du relecteur ;
-  - `/kaizen:resolve-pr-feedback` ;
-  - `/kaizen:babysit-pr`, qui s'appuie sur `scripts/pr.mjs` : instantané paginé, état des éléments
+  - `resolve-pr-feedback` ;
+  - `babysit-pr`, qui s'appuie sur `scripts/pr.mjs` : instantané paginé, état des éléments
     traités, veilleur sans tokens, mise à jour de la branche seulement sur `BEHIND`.
 - `/kaizen:polish` : détection et lancement du serveur de dev, retouches guidées par l'utilisateur.
 - **Apprentissage** :
@@ -40,7 +62,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
 
 ### Modifié
 - `/kaizen:work` : contrôle de taille, audit des dépendances, livraison via `/kaizen:ship`.
-- `/kaizen:lfg` : livraison via `ship`, puis suivi par `babysit-pr`.
+- `lfg` : livraison via `ship`, puis suivi par `babysit-pr`.
 - `learnings-researcher` lit aussi les ADR et les post-mortems.
 - Le parseur de frontmatter ignore les commentaires YAML en fin de ligne.
 - Corrections issues des évaluations de bout en bout :

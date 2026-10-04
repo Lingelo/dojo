@@ -41,6 +41,7 @@ import {
   diffSize,
   detectStack,
   docsRoot,
+  learningsDir,
   expandHome,
   loadConfig,
   parseFrontmatter,
@@ -94,7 +95,7 @@ function paths(root) {
     repo: root,
     docs_root: rel(root, docs),
     plans: rel(root, join(docs, 'plans')),
-    solutions: rel(root, join(docs, 'solutions')),
+    learnings: rel(root, learningsDir(root, config)),
     ideation: rel(root, join(docs, 'ideation')),
     debug: rel(root, join(docs, 'debug')),
     config_file: existsSync(join(root, '.kaizen', 'config.json')) ? '.kaizen/config.json' : null,
@@ -121,8 +122,8 @@ function cmdInit(root) {
   }
   ensureStateDir(root);
   const docs = docsRoot(root);
-  for (const sub of ['plans', 'solutions', 'ideation']) {
-    const d = join(docs, sub);
+  // un docs/solutions/ hérité reste le dossier des leçons : on ne crée pas un learnings/ vide qui le masquerait
+  for (const d of [join(docs, 'plans'), learningsDir(root), join(docs, 'ideation')]) {
     if (!existsSync(d)) {
       mkdirSync(d, { recursive: true });
       writeFileSync(join(d, '.gitkeep'), '');
@@ -238,7 +239,7 @@ function cmdPlan(root, sub) {
 }
 
 // ---------------------------------------------------------------------------
-// learnings (docs/solutions)
+// learnings (docs/learnings)
 // ---------------------------------------------------------------------------
 
 export const SCHEMA = {
@@ -272,7 +273,7 @@ function validateLearning(file) {
 }
 
 function loadLearnings(root) {
-  const dir = join(docsRoot(root), 'solutions');
+  const dir = learningsDir(root);
   return walkMarkdown(dir).map((file) => {
     const text = readFileSync(file, 'utf8');
     const { data, body } = parseFrontmatter(text);
@@ -291,7 +292,7 @@ function cmdLearnings(root, sub) {
   if (sub === 'validate') {
     const files = positional.slice(2).length
       ? positional.slice(2).map((f) => resolve(f))
-      : walkMarkdown(join(docsRoot(root), 'solutions'));
+      : walkMarkdown(learningsDir(root));
     let bad = 0;
     for (const f of files) {
       const errors = validateLearning(f);

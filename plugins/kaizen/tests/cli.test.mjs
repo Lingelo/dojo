@@ -44,7 +44,7 @@ test('init crée la config, les dossiers et ignore config.local', () => {
   const r = cli(dir, ['init', '--language', 'fr']);
   assert.equal(r.code, 0, r.stderr);
   assert.ok(existsSync(join(dir, '.kaizen/config.json')));
-  for (const d of ['plans', 'solutions', 'ideation']) assert.ok(existsSync(join(dir, 'docs', d)));
+  for (const d of ['plans', 'learnings', 'ideation']) assert.ok(existsSync(join(dir, 'docs', d)));
   assert.match(readFileSync(join(dir, '.gitignore'), 'utf8'), /\.kaizen\/config\.local\.json/);
   assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/config.json'), 'utf8')).language, 'fr');
   // Idempotent : une seconde exécution ne réécrit rien.
@@ -129,20 +129,32 @@ test('constitution : lecture, validation et défauts', () => {
 
 test('learnings : validation par piste et recherche classée', () => {
   const dir = tempRepo({
-    'docs/solutions/runtime-errors/csv-bom.md':
+    'docs/learnings/runtime-errors/csv-bom.md':
       '---\ntitle: Excel casse les accents des exports CSV\ndate: 2026-09-12\nmodule: exports\nproblem_type: runtime_error\ncomponent: service_layer\nsymptoms:\n  - "Accents illisibles"\nroot_cause: wrong_api\nresolution_type: code_fix\nseverity: medium\ntags: [csv, excel, bom]\n---\n# x\n',
-    'docs/solutions/conventions/naming.md':
+    'docs/learnings/conventions/naming.md':
       '---\ntitle: Nommer les jobs par verbe\ndate: 2026-09-01\nmodule: jobs\nproblem_type: convention\ncomponent: background_job\nseverity: low\n---\n# y\n',
-    'docs/solutions/bad.md': '---\ntitle: Mauvais\ndate: 12/09/2026\nproblem_type: runtime_error\nseverity: urgent\n---\n',
+    'docs/learnings/bad.md': '---\ntitle: Mauvais\ndate: 12/09/2026\nproblem_type: runtime_error\nseverity: urgent\n---\n',
   });
   const v = cli(dir, ['learnings', 'validate']);
   assert.equal(v.code, 1);
-  assert.match(v.stdout, /✘ docs\/solutions\/bad\.md/);
-  assert.match(v.stdout, /✔ docs\/solutions\/conventions\/naming\.md/);
+  assert.match(v.stdout, /✘ docs\/learnings\/bad\.md/);
+  assert.match(v.stdout, /✔ docs\/learnings\/conventions\/naming\.md/);
   assert.match(v.stdout, /piste bug : champ requis manquant : symptoms/);
   const s = cli(dir, ['learnings', 'search', 'export', 'CSV', 'excel', '--json']).json;
-  assert.equal(s[0].path, 'docs/solutions/runtime-errors/csv-bom.md');
+  assert.equal(s[0].path, 'docs/learnings/runtime-errors/csv-bom.md');
   assert.equal(cli(dir, ['learnings', 'search', 'kubernetes', '--json']).json.length, 0);
+  cleanup(dir);
+});
+
+test('learnings : un docs/solutions/ hérité reste lu, et init ne le masque pas', () => {
+  const dir = tempRepo({
+    'docs/solutions/conventions/naming.md':
+      '---\ntitle: Nommer les jobs par verbe\ndate: 2026-09-01\nmodule: jobs\nproblem_type: convention\ncomponent: background_job\nseverity: low\n---\n# y\n',
+  });
+  assert.equal(cli(dir, ['init']).code, 0);
+  assert.ok(!existsSync(join(dir, 'docs/learnings')));
+  assert.equal(cli(dir, ['root']).json.learnings, 'docs/solutions');
+  assert.equal(cli(dir, ['learnings', 'search', 'jobs', '--json']).json[0].path, 'docs/solutions/conventions/naming.md');
   cleanup(dir);
 });
 

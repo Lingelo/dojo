@@ -11,7 +11,7 @@
 | **Quand l'utiliser** | Un plan prêt (`plan check` vert) ; une demande concrète et bornée |
 | **Quand ne pas l'utiliser** | Exigences floues (→ [brainstorm](brainstorm.md)) ; plan non prêt (→ [plan](plan.md)) ; bug sans cause connue (→ [debug](debug.md)) |
 | **Ce qu'elle produit** | Une branche, un commit conventionnel par unité, des preuves consignées, un rapport de revue |
-| **Et ensuite** | Livrer avec `/kaizen:ship` (recommandé), garder en local, ou capitaliser d'abord (`/kaizen:compound`) |
+| **Et ensuite** | Livrer avec `/kaizen:ship` (recommandé), garder en local, ou capitaliser d'abord (`/kaizen:learn`) |
 
 ## Exemples
 
@@ -73,7 +73,7 @@ il la corrige et le dit. Sinon, il vous rapporte un bloquant.
 
 | Option | Effet |
 |---|---|
-| `mode:return` | implémentation et vérification locale seulement ; pas de revue, de push ni de question ; résultat structuré (utilisé par `lfg`) |
+| `mode:return` | implémentation et vérification locale seulement ; pas de revue, de push ni de question ; résultat structuré (utilisé par `autopilot`) |
 
 ## Bon à savoir
 

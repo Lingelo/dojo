@@ -39,6 +39,6 @@ alerte manquante, documentation), pas qui.}}
 | … | prévention / détection / atténuation / processus | … | … | ticket / PR |
 
 ## Boucle Kaizen
-- Leçon(s) : `docs/solutions/…` (via /kaizen:compound)
+- Leçon(s) : `docs/learnings/…` (via /kaizen:learn)
 - Règle de pack ou amendement de constitution proposé : …
 - Test ou contrôle ajouté pour que ça ne repasse pas : …

@@ -85,5 +85,5 @@ Quand l'utilisateur dit qu'il a fini :
    commit.
 3. Rapport : retouches appliquées, bloquées (et pourquoi), commit(s), URL du serveur **toujours en
    marche** et comment l'arrêter : son PID exact (`kill <pid>`), jamais un `pkill` par motif qui
-   toucherait les serveurs d'autres projets. Suggère `/kaizen:ship` pour livrer, et `/kaizen:compound` si une
+   toucherait les serveurs d'autres projets. Suggère `/kaizen:ship` pour livrer, et `/kaizen:learn` si une
    retouche a révélé une règle d'UI à retenir (ou une règle de pack « design »).

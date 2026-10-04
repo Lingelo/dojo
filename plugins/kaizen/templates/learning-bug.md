@@ -1,7 +1,7 @@
 ---
 title: [Titre clair du problème]
 date: [YYYY-MM-DD]
-category: [sous-dossier de solutions/]
+category: [sous-dossier de learnings/]
 module: [Module ou zone]
 problem_type: [énumération, piste bug]
 component: [valeur du corpus, sinon défaut suggéré]

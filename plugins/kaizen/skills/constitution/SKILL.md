@@ -22,7 +22,7 @@ a vu le texte complet et eu un tour de correction avant l'écriture.
 
 - **Principes, pas plan.** Une fonctionnalité va dans `/kaizen:brainstorm`, une règle de détail d'un
   domaine (« les exports CSV commencent par un BOM ») dans un **Kaizen Pack**, une leçon dans
-  `/kaizen:compound`. La constitution ne garde que ce qui vaut pour **tout** le travail.
+  `/kaizen:learn`. La constitution ne garde que ce qui vaut pour **tout** le travail.
 - **L'utilisateur répond ; le repo ne fait qu'affûter la question.** On ne déduit pas les principes
   du code. On s'en sert pour poser une meilleure question (« vos tests sont en majorité des tests
   d'intégration — c'est un principe ou un hasard ? »).

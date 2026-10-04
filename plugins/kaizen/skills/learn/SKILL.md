@@ -1,13 +1,13 @@
 ---
-name: compound
-description: Capitalise un problème résolu en leçon durable dans docs/solutions/ (frontmatter validé, vocabulaire du corpus, mise à jour plutôt que doublon) pour que le prochain /kaizen:plan et la prochaine /kaizen:review la relisent — c'est l'étape qui fait que chaque cycle rend le suivant plus facile. Utiliser après un travail vérifié qui a produit un raisonnement non évident (piège, cause surprenante, décision coûteuse à retrouver) : « documente ça », « retiens la leçon », /kaizen:compound. Pas pour un correctif de routine que le code explique déjà.
+name: learn
+description: Capitalise un problème résolu en leçon durable dans docs/learnings/ (frontmatter validé, vocabulaire du corpus, mise à jour plutôt que doublon) pour que le prochain /kaizen:plan et la prochaine /kaizen:review la relisent — c'est l'étape qui fait que chaque cycle rend le suivant plus facile. Utiliser après un travail vérifié qui a produit un raisonnement non évident (piège, cause surprenante, décision coûteuse à retrouver) : « documente ça », « retiens la leçon », /kaizen:learn. Pas pour un correctif de routine que le code explique déjà.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
 argument-hint: "[contexte bref] [mode:auto]"
 ---
 
-# Compound — capitaliser la leçon
+# Learn — capitaliser la leçon
 
-**Résultat :** **une** leçon qualifiée écrite (ou mise à jour) sous `<root>/solutions/`, vérifiée
+**Résultat :** **une** leçon qualifiée écrite (ou mise à jour) sous `<root>/learnings/`, vérifiée
 contre le code actuel, validée par le CLI, et trouvable par le prochain agent. Si aucune leçon ne
 qualifie : rien n'est écrit et le rapport dit pourquoi.
 
@@ -18,7 +18,7 @@ Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` et
 `${CLAUDE_PLUGIN_ROOT}/references/learnings-schema.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:auto`** (posé par `/kaizen:lfg` ou `/kaizen:work`) : aucune question ; pas de modification
+**`mode:auto`** (posé par `/kaizen:autopilot` ou `/kaizen:work`) : aucune question ; pas de modification
 d'instructions du projet ; termine par exactement `Leçon écrite : <chemin>` ou
 `Leçon non écrite : <raison>`.
 
@@ -50,7 +50,7 @@ seule question.
 problème :
 - toujours exacte → complète-la (nouveau symptôme, nouvelle variante) plutôt que d'en créer une ;
 - devenue inexacte ou incomplète → **mets-la à jour** : la laisser tromperait ;
-- un doublon partiel ailleurs → mentionne-le dans le rapport pour `/kaizen:refresh`.
+- un doublon partiel ailleurs → mentionne-le dans le rapport pour `/kaizen:prune-learnings`.
 
 ## 4. Classer
 
@@ -62,7 +62,7 @@ gravité de ce que la leçon évite, pas la difficulté de l'enquête.
 
 - Gabarit : `${CLAUDE_PLUGIN_ROOT}/templates/learning-bug.md` ou `learning-knowledge.md`, dans la
   langue configurée (clés de frontmatter inchangées).
-- Chemin : `<root>/solutions/<dossier>/<slug-du-titre>.md`.
+- Chemin : `<root>/learnings/<dossier>/<slug-du-titre>.md`.
 - Chaque affirmation sur le code est **vérifiée contre l'arbre actuel** : chemins qui existent,
   symboles cités présents, commandes exactes. Pas de chemin absolu, pas de secret, pas de donnée
   personnelle (remplace par `<REDACTED>`).
@@ -87,10 +87,10 @@ et que `CONCEPTS.md` existe, ajoute ou précise l'entrée (nom canonique, défin
 
 ## 8. Être trouvable (interactif, avec accord)
 
-Vérifie que les instructions du projet (`CLAUDE.md`) mènent un agent vers `<root>/solutions/` avant de
+Vérifie que les instructions du projet (`CLAUDE.md`) mènent un agent vers `<root>/learnings/` avant de
 travailler dans une zone documentée. Sinon, propose d'ajouter la plus petite phrase utile, par exemple :
 
-> Avant de planifier ou de déboguer, cherche les leçons du projet : `docs/solutions/` (frontmatter :
+> Avant de planifier ou de déboguer, cherche les leçons du projet : `docs/learnings/` (frontmatter :
 > module, tags, symptoms, applies_when).
 
 N'édite qu'un fichier d'instructions existant, jamais un nouveau.
@@ -98,11 +98,11 @@ N'édite qu'un fichier d'instructions existant, jamais un nouveau.
 ## 9. Rapport
 
 ```
-Leçon écrite : docs/solutions/runtime-errors/export-csv-accents-excel.md  (nouvelle | mise à jour)
+Leçon écrite : docs/learnings/runtime-errors/export-csv-accents-excel.md  (nouvelle | mise à jour)
 - piste : bug · problem_type : runtime_error · module : exports
 - validée ✔ · retrouvable par : csv, excel, encodage, bom
 - relue par : prochains /kaizen:plan et /kaizen:review touchant aux exports
 ```
 
-Ne commite que si l'utilisateur le demande ou si l'appelant (`work`, `lfg`) gère le commit ; dans ce
+Ne commite que si l'utilisateur le demande ou si l'appelant (`work`, `autopilot`) gère le commit ; dans ce
 cas, uniquement les fichiers écrits par cette skill.

@@ -39,7 +39,7 @@ Voir la configuration effective : `node $K config`. Créer le fichier : `/kaizen
 
 ### `docs_root`
 
-Défaut : `"docs"`. Dossier racine des documents : `plans/`, `solutions/`, `ideation/`, `adr/`,
+Défaut : `"docs"`. Dossier racine des documents : `plans/`, `learnings/`, `ideation/`, `adr/`,
 `postmortems/` et `metrics/` vivent dessous. Le chemin doit être relatif, rester dans le repo, et ne
 pas être `.git`. Une valeur invalide est **refusée**, jamais remplacée en silence par `docs`.
 Changez-la si `docs/` est déjà un site de documentation publié, par exemple `"engineering"`.
@@ -93,7 +93,7 @@ Voir ce qui est détecté : `node $K detect`.
 | `timeout_seconds` | `600` | délai maximum par commande de vérification |
 | `max_age_hours` | `24` | un garde-fou actif depuis plus longtemps (session interrompue) se désactive tout seul |
 
-Le garde-fou n'agit que s'il a été activé par `/kaizen:work` ou `/kaizen:lfg` (fichier
+Le garde-fou n'agit que s'il a été activé par `/kaizen:work` ou `/kaizen:autopilot` (fichier
 `.kaizen/state/gate.json`). Le reste du temps, il ne coûte rien.
 
 ### `pr`
@@ -117,7 +117,7 @@ Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
 | Fichier | Rôle |
 |---|---|
 | `gate.json` | état du garde-fou (actif, plan, nombre de blocages) |
-| `pr/<owner>-<repo>-<n>.json` | ce que `babysit-pr` a déjà traité (fils, commentaires, checks) |
+| `pr/<owner>-<repo>-<n>.json` | ce que `watch-pr` a déjà traité (fils, commentaires, checks) |
 | `reviews/<horodatage>/` | retours bruts des relecteurs d'une revue |
 
 Supprimer `.kaizen/state/` est sans danger : le seul effet est d'oublier le travail en cours.

@@ -1,11 +1,11 @@
 ---
-name: lfg
-description: Mode autonome Kaizen — emmène une demande jusqu'au bout sans s'arrêter, par les bonnes skills (plan ou debug, work, simplification, revue avec correctifs, capitalisation, commit, push, PR, surveillance de la CI). Un changement de code se termine en PR ouverte. Utiliser uniquement quand l'utilisateur demande explicitement un travail autonome de bout en bout ou invoque /kaizen:lfg — idéalement après /kaizen:brainstorm. Pour un suivi étape par étape, utiliser plan, work, debug.
+name: autopilot
+description: Mode autonome Kaizen — emmène une demande jusqu'au bout sans s'arrêter, par les bonnes skills (plan ou debug, work, simplification, revue avec correctifs, capitalisation, commit, push, PR, surveillance de la CI). Un changement de code se termine en PR ouverte. Utiliser uniquement quand l'utilisateur demande explicitement un travail autonome de bout en bout ou invoque /kaizen:autopilot — idéalement après /kaizen:brainstorm. Pour un suivi étape par étape, utiliser plan, work, debug.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList
 argument-hint: "[fonctionnalité, bug, ticket ou chemin de plan]"
 ---
 
-# LFG — de la demande à la PR, sans s'arrêter
+# Autopilot — de la demande à la PR, sans s'arrêter
 
 **Résultat :** la demande atteint l'état final que sa forme appelle, produit par la skill Kaizen dont
 c'est le métier, avec tout ce qui reste non résolu consigné là où l'utilisateur le verra. Un
@@ -42,7 +42,7 @@ Associe la demande à la skill dont c'est le métier :
 **Pas de raccourci « changement trivial ».** Même pour cinq lignes, la course passe par une source de
 travail (un plan, court s'il le faut), `work` sous garde-fou, `node "$K" verify` et `kaizen:review`.
 Seule la simplification (étape 3) se saute pour un petit diff, et la livraison (9-10) sans remote.
-Qui veut un changement sans cérémonie utilise `/kaizen:work` directement, pas `lfg`.
+Qui veut un changement sans cérémonie utilise `/kaizen:work` directement, pas `autopilot`.
 
 En cas de doute, la route qui exige le plus de preuves. **Jamais** de plan improvisé par-dessus un plan
 existant, ni de plan pioché au hasard dans le dossier des plans.
@@ -65,7 +65,7 @@ existant, ni de plan pioché au hasard dans le dossier des plans.
 6. **Consigner le reste** — chaque constat actionnable non appliqué, chaque décision signalée en route :
    dans la description de la PR (section « Points ouverts »), ou dans le rapport final s'il n'y a pas
    de PR.
-7. **Capitaliser** — `kaizen:compound mode:auto` si la course a produit un raisonnement durable que le
+7. **Capitaliser** — `kaizen:learn mode:auto` si la course a produit un raisonnement durable que le
    code, les tests et le plan ne portent pas. « Leçon non écrite » est un succès. La leçon part dans la
    PR.
 8. **Tests navigateur** — changement d'UI et outil navigateur disponible (plugin `playwright`, MCP) :
@@ -78,7 +78,7 @@ saute push, PR et CI. Ce n'est pas une erreur.
    plafond, la PR le justifie), push de la branche (jamais la branche par défaut, jamais `--force`),
    PR avec description, guide du relecteur, déploiement et retour arrière, points ouverts. Une PR
    existante pour la branche est mise à jour, pas dupliquée.
-10. **Mener la PR** — `kaizen:babysit-pr <url> mode:pipeline` : retours de revue traités, CI réparée
+10. **Mener la PR** — `kaizen:watch-pr <url> mode:pipeline` : retours de revue traités, CI réparée
     (au plus 2 correctifs par cause, aucune désactivation de test, aucun commit vide), branche mise à
     jour seulement si GitHub le demande. Il rend `looks-ready`, un blocage motivé ou ses résidus :
     consigne-les dans la PR (« Points ouverts ») et termine.
@@ -94,7 +94,7 @@ déjà ; il retire le garde-fou (`gate off`) et résume l'état exact et la repr
 
 ```
 DONE — <titre>
-PR : <url> — ✅ semble prête | 🟡 réserve : … | ⛔ bloquée : … (babysit-pr)
+PR : <url> — ✅ semble prête | 🟡 réserve : … | ⛔ bloquée : … (watch-pr)
 Plan : <chemin> · Unités : 4/4 · Revue : 1 P1 corrigé, 2 P3 consignés · Leçon : <chemin | aucune>
 Points ouverts : …
 ```

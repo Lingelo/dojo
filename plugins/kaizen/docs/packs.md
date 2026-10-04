@@ -4,10 +4,10 @@ Un **pack** est un dossier de règles prescriptives : ce que le travail dans un 
 respecter. Exemples : « tout export CSV commence par un BOM UTF-8 », « les pages reçoivent leurs
 données en props serveur, jamais par un endpoint JSON parallèle ».
 
-| | Une leçon (`docs/solutions/`) | Une règle de pack | La constitution |
+| | Une leçon (`docs/learnings/`) | Une règle de pack | La constitution |
 |---|---|---|---|
 | Dit | ce qu'un problème passé a appris | ce qu'il faut faire dans un domaine | ce qui vaut pour **tout** le travail |
-| Écrite par | `/kaizen:compound` après coup | l'équipe, délibérément | `/kaizen:constitution` |
+| Écrite par | `/kaizen:learn` après coup | l'équipe, délibérément | `/kaizen:constitution` |
 | Portée | un repo | un ou plusieurs repos (packs git) | un repo |
 | Poids | contrainte | règle | règle non négociable |
 
@@ -18,7 +18,7 @@ Hiérarchie en cas de conflit : **constitution > packs > leçons > préférences
 - `/kaizen:brainstorm` et `/kaizen:plan` comparent l'`applies_when` de chaque règle au travail en
   cours. Une règle qui s'applique devient une contrainte du plan, citée `(pack: <id>, <fichier>)`.
 - `/kaizen:review` (relecteur `standards`) signale un diff qui contredit une règle applicable.
-- `/kaizen:compound` propose de transformer une leçon en règle quand elle vaut pour toute l'équipe.
+- `/kaizen:learn` propose de transformer une leçon en règle quand elle vaut pour toute l'équipe.
 
 Les packs sont **déclarés, jamais découverts** : sans clé `packs` dans la config, rien ne change.
 
@@ -42,7 +42,7 @@ tags: [csv, export, excel]
 ---
 
 Excel n'interprète l'UTF-8 qu'avec un BOM, et attend « ; » en locale française.
-Voir docs/solutions/runtime-errors/export-csv-accents-excel.md.
+Voir docs/learnings/runtime-errors/export-csv-accents-excel.md.
 ```
 
 Vérifiez avec `node $K packs` :

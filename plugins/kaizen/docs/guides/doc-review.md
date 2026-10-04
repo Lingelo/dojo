@@ -22,7 +22,7 @@ présenté, une question à la fois. Un plan déjà bon ne reçoit aucun changem
 ```text
 /kaizen:doc-review                                    # dernier plan
 /kaizen:doc-review docs/plans/2026-10-02-1430-feat-export-csv-commandes-plan.md
-/kaizen:doc-review docs/plans/… mode:auto             # sans question (utilisé par plan et lfg)
+/kaizen:doc-review docs/plans/… mode:auto             # sans question (utilisé par plan et autopilot)
 ```
 
 ## L'équipe de relecture

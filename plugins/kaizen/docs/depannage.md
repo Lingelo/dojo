@@ -8,7 +8,7 @@ vérification, leçons invalides, packs, constitution, garde-fou resté actif.
 **Symptôme** : à la fin d'un tour, Claude reçoit `[kaizen] Garde-fou qualité (1/3) : le travail en
 cours n'est pas vert` et continue de travailler.
 
-C'est voulu pendant `/kaizen:work` et `/kaizen:lfg` : tant que test, lint ou typage sont rouges, le
+C'est voulu pendant `/kaizen:work` et `/kaizen:autopilot` : tant que test, lint ou typage sont rouges, le
 travail n'est pas fini. Mais :
 
 | Situation | Que faire |
@@ -38,7 +38,7 @@ Le plus simple : `/kaizen:doc-review <plan>`, qui corrige seul ce qui est mécan
 
 ## `gh` n'est pas authentifié
 
-**Symptôme** : `ship`, `resolve-pr-feedback` ou `babysit-pr` échouent avec `gh … : Failed to log in`
+**Symptôme** : `ship`, `address-feedback` ou `watch-pr` échouent avec `gh … : Failed to log in`
 ou `dépôt GitHub introuvable`.
 
 - Lancez `gh auth login`, puis vérifiez avec `gh auth status`.
@@ -47,7 +47,7 @@ ou `dépôt GitHub introuvable`.
 - Sans `gh`, `ship` donne l'URL de création de la PR et son corps à coller ; le suivi de PR n'est
   pas possible.
 
-## `babysit-pr` tourne en rond ou ne dit jamais « prête »
+## `watch-pr` tourne en rond ou ne dit jamais « prête »
 
 - **Un commentaire reste « à traiter »** : il n'a pas été marqué après passage. Lancez
   `node $K pr snapshot` et regardez `attention`. Si un élément a vraiment été traité :
@@ -56,19 +56,19 @@ ou `dépôt GitHub introuvable`.
   ouverte, la PR n'est jamais déclarée prête : c'est voulu.
 - **`blocked-external`** : la CI attend l'approbation d'un mainteneur (PR de fork). Kaizen ne
   l'approuve jamais.
-- **Revue annoncée (👀) sans résultat** : `babysit-pr` attend au plus 30 minutes, puis rapporte ce
+- **Revue annoncée (👀) sans résultat** : `watch-pr` attend au plus 30 minutes, puis rapporte ce
   qu'il n'a pas pu confirmer.
 - Repartir de zéro : supprimez `.kaizen/state/pr/<owner>-<repo>-<n>.json`.
 
 ## Les leçons ne sont pas réutilisées
 
-`/kaizen:metrics` montre `learnings_cited_by_new_plans: 0` alors que `docs/solutions/` est rempli.
+`/kaizen:metrics` montre `learnings_cited_by_new_plans: 0` alors que `docs/learnings/` est rempli.
 
 1. `node $K learnings validate` : un frontmatter invalide rend une leçon difficile à trouver.
 2. Les mots du titre, des `tags` et des `symptoms` correspondent-ils à ceux qu'utiliseraient vos
    demandes ? Testez avec `node $K learnings search <mots d'une demande typique>`.
-3. `CLAUDE.md` mentionne-t-il `docs/solutions/` ? `/kaizen:setup` propose la ligne.
-4. `/kaizen:refresh` pour corriger les leçons périmées ou en double.
+3. `CLAUDE.md` mentionne-t-il `docs/learnings/` ? `/kaizen:setup` propose la ligne.
+4. `/kaizen:prune-learnings` pour corriger les leçons périmées ou en double.
 
 ## Une skill ne se déclenche pas
 

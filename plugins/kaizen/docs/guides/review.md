@@ -9,7 +9,7 @@
 |---|---|
 | **Ce qu'elle fait** | Périmètre → intention et plan → sélection des relecteurs → lancement en parallèle → fusion, filtrage par confiance, vérification des P0/P1 → rapport avec verdict |
 | **Quand l'utiliser** | Avant de livrer (obligatoire dans `work`) ; sur une PR à relire ; après un correctif non trivial |
-| **Quand ne pas l'utiliser** | Relire un **plan** (→ [doc-review](doc-review.md)) ; traiter des commentaires déjà postés sur une PR (→ [resolve-pr-feedback](resolve-pr-feedback.md)) |
+| **Quand ne pas l'utiliser** | Relire un **plan** (→ [doc-review](doc-review.md)) ; traiter des commentaires déjà postés sur une PR (→ [address-feedback](address-feedback.md)) |
 | **Ce qu'elle produit** | Un rapport : verdict ✅ prêt / ⚠️ réserves / ⛔ pas prêt, constats numérotés, respect de la constitution, conformité au plan, trous de tests, risques, problèmes préexistants, ce qui mérite une leçon |
 | **Et ensuite** | `apply` pour appliquer les correctifs, ou « applique 1, 3 et 4 » |
 
@@ -64,7 +64,7 @@ relecteurs.
 | Option | Effet |
 |---|---|
 | `apply` | applique les correctifs `gated_auto`, un par un, en revérifiant après chacun ; les `manual` restent listés |
-| `mode:agent` | retour JSON sans prose ni modification (utilisé par `work` et `lfg`) |
+| `mode:agent` | retour JSON sans prose ni modification (utilisé par `work` et `autopilot`) |
 | `plan:<chemin>` | plan de référence pour la conformité |
 | `base:<ref>` | base de comparaison |
 

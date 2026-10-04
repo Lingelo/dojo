@@ -15,7 +15,7 @@ réel, avec un **guide du relecteur**.
 | **Quand l'utiliser** | À la fin de `/kaizen:work` (proposé automatiquement) ; « ouvre la PR » ; « mets à jour la description » |
 | **Quand ne pas l'utiliser** | Travail non vérifié ou non revu : `ship` lancera la revue d'abord |
 | **Ce qu'elle produit** | Une branche poussée, une PR ouverte (ou mise à jour) et son URL |
-| **Et ensuite** | `/kaizen:babysit-pr <url>` pour la mener jusqu'à « prête » |
+| **Et ensuite** | `/kaizen:watch-pr <url>` pour la mener jusqu'à « prête » |
 
 ## Exemples
 
@@ -47,7 +47,7 @@ réel, avec un **guide du relecteur**.
 ## Points ouverts
 ```
 
-Elle se termine par le marqueur `<!-- kaizen -->`, qui empêche `babysit-pr` de prendre ce texte
+Elle se termine par le marqueur `<!-- kaizen -->`, qui empêche `watch-pr` de prendre ce texte
 pour un retour à traiter. Le titre est un commit conventionnel de 72 caractères au plus :
 `feat(SHOP-412): export CSV des commandes filtrées`.
 
@@ -58,7 +58,7 @@ pour un retour à traiter. Le titre est un commit conventionnel de 72 caractère
 | `description-only` | rédige et affiche ; ne publie que si vous le demandez |
 | `refresh-description` | met à jour la description d'une PR existante si elle a dérivé |
 | `draft` | ouvre la PR en brouillon |
-| `mode:auto` | aucune question (utilisé par `work`, `lfg`, `babysit-pr`) |
+| `mode:auto` | aucune question (utilisé par `work`, `autopilot`, `watch-pr`) |
 
 ## Bon à savoir
 
@@ -69,4 +69,4 @@ pour un retour à traiter. Le titre est un commit conventionnel de 72 caractère
 
 ## Voir aussi
 
-[babysit-pr](babysit-pr.md) · [review](review.md) · [Configuration de `pr`](../configuration.md#pr)
+[watch-pr](watch-pr.md) · [review](review.md) · [Configuration de `pr`](../configuration.md#pr)

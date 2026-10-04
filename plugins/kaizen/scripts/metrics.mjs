@@ -7,7 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, walkMarkdown } from './lib.mjs';
+import { defaultBranch, docsRoot, ghCommand, git, learningsDir, loadConfig, parseFrontmatter, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
 const FIX_RE = /^(fix|hotfix|revert)(\(|!|:)|^Revert "/i;
@@ -79,7 +79,7 @@ function loopHealth(root, from) {
   } catch {
     return null;
   }
-  const learnings = walkMarkdown(join(docs, 'solutions')).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
+  const learnings = walkMarkdown(learningsDir(root, config)).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
   const plans = walkMarkdown(join(docs, 'plans'));
   const recentPlans = plans.filter((f) => {
     const d = parseFrontmatter(readFileSync(f, 'utf8')).data?.date;
@@ -89,7 +89,7 @@ function loopHealth(root, from) {
   let exceptions = 0;
   for (const p of recentPlans) {
     const text = readFileSync(p, 'utf8');
-    for (const m of text.matchAll(/solutions\/[\w./-]+\.md/g)) cited.add(m[0]);
+    for (const m of text.matchAll(/(?:learnings|solutions)\/[\w./-]+\.md/g)) cited.add(m[0]);
     const cc = text.split('<!-- kaizen:constitution -->')[1]?.split(/<!-- kaizen:[a-z-]+ -->/)[0] || '';
     exceptions += (cc.match(/⚠️/g) || []).length;
   }

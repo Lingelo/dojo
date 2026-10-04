@@ -78,4 +78,4 @@ remplace un autre met l'ancien en `superseded`. Gabarit : [`templates/adr.md`](.
 
 ## Voir aussi
 
-[plan](plan.md) · [constitution](constitution.md) · [compound](compound.md)
+[plan](plan.md) · [constitution](constitution.md) · [learn](learn.md)

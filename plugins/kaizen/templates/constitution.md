@@ -11,7 +11,7 @@ artifact: kaizen-constitution/v1
 {{1 à 2 lignes : ce que cette constitution gouverne (ce repo, ce service…) et pour qui elle est écrite
 (humains et agents).}}
 
-Hiérarchie : **constitution > règles des Kaizen Packs > leçons de `docs/solutions/` > préférences.**
+Hiérarchie : **constitution > règles des Kaizen Packs > leçons de `docs/learnings/` > préférences.**
 Un plan qui s'écarte d'un article le justifie dans son contrôle constitutionnel ; un article
 **NON NÉGOCIABLE** n'admet aucune exception sans amendement.
 

@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Livre le travail Kaizen en PR relisible — vérifications vertes, taille sous le plafond (sinon découpage en PR empilées), commits conventionnels avec Jira, push de la branche (jamais la branche par défaut), PR avec description tirée du plan (objectif, exigences couvertes, preuves, contrôle constitutionnel, déploiement et retour arrière) et guide du relecteur ; propose ensuite /kaizen:babysit-pr. Sait aussi seulement rédiger ou rafraîchir une description de PR. Utiliser pour « ouvre la PR », « livre », « pousse et crée la PR », « mets à jour la description de la PR », /kaizen:ship.
+description: Livre le travail Kaizen en PR relisible — vérifications vertes, taille sous le plafond (sinon découpage en PR empilées), commits conventionnels avec Jira, push de la branche (jamais la branche par défaut), PR avec description tirée du plan (objectif, exigences couvertes, preuves, contrôle constitutionnel, déploiement et retour arrière) et guide du relecteur ; propose ensuite /kaizen:watch-pr. Sait aussi seulement rédiger ou rafraîchir une description de PR. Utiliser pour « ouvre la PR », « livre », « pousse et crée la PR », « mets à jour la description de la PR », /kaizen:ship.
 allowed-tools: Bash(node:*), Bash(git:*), Bash(gh:*), Read, Write, Edit, Glob, Grep, AskUserQuestion
 argument-hint: "[chemin du plan] [description-only | refresh-description] [draft] [mode:auto]"
 ---
@@ -13,7 +13,7 @@ est petite, se raconte d'elle-même, et dit au relecteur où regarder.
 Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:auto`** (posé par `/kaizen:work`, `/kaizen:lfg`, `/kaizen:babysit-pr`) : aucune question ;
+**`mode:auto`** (posé par `/kaizen:work`, `/kaizen:autopilot`, `/kaizen:watch-pr`) : aucune question ;
 rend `{ status: shipped|local-only|blocked, pr_url, branch, commits, size, notes }`.
 
 ## Modes
@@ -96,5 +96,5 @@ d'en ouvrir une seconde. Sinon `gh pr create --title … --body-file … [--draf
 
 ## 6. Suite
 
-Donne l'URL. Propose `/kaizen:babysit-pr <url>` (Recommandé) pour la mener jusqu'à « prête à merger »
+Donne l'URL. Propose `/kaizen:watch-pr <url>` (Recommandé) pour la mener jusqu'à « prête à merger »
 — commentaires traités, CI réparée — sans jamais merger à la place de l'humain.

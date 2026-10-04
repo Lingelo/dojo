@@ -1,4 +1,4 @@
-# `/kaizen:lfg`
+# `/kaizen:autopilot`
 
 > De la demande à la PR « semble prête », en autonomie : la bonne skill à chaque étape, rien qui
 > s'arrête sans raison, rien d'irréversible sans votre accord.
@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Route la demande, produit une source de travail (plan ou correctif), puis enchaîne work → simplification → revue avec correctifs → compound → tests navigateur → ship → babysit-pr |
+| **Ce qu'elle fait** | Route la demande, produit une source de travail (plan ou correctif), puis enchaîne work → simplification → revue avec correctifs → learn → tests navigateur → ship → watch-pr |
 | **Quand l'utiliser** | Vous voulez explicitement un travail de bout en bout sans suivi pas à pas, idéalement **après un brainstorm** |
 | **Quand ne pas l'utiliser** | Vous voulez valider chaque étape (→ `plan`, `work`, `ship` séparément) ; la demande est encore floue et vous n'êtes pas là pour répondre |
 | **Ce qu'elle produit** | Une PR ouverte, revue et suivie jusqu'à un état vrai, et le rapport `DONE` |
@@ -17,9 +17,9 @@
 
 ```text
 /kaizen:brainstorm export CSV des commandes
-/kaizen:lfg                                     # sur le plan que le brainstorm vient d'écrire
-/kaizen:lfg docs/plans/…-plan.md
-/kaizen:lfg le test orders_csv_spec échoue depuis la montée de version de Rails
+/kaizen:autopilot                                     # sur le plan que le brainstorm vient d'écrire
+/kaizen:autopilot docs/plans/…-plan.md
+/kaizen:autopilot le test orders_csv_spec échoue depuis la montée de version de Rails
 ```
 
 ## Le routage
@@ -45,16 +45,16 @@ Seules la simplification (petit diff) et la livraison (pas de remote) peuvent ê
    avant tout push.
 5. Correctifs P0/P1 et `gated_auto` P2, vérifiés et commités.
 6. Le reste est consigné dans la PR (« Points ouverts »).
-7. `compound mode:auto`, si la course a produit une leçon durable.
+7. `learn mode:auto`, si la course a produit une leçon durable.
 8. Tests navigateur si l'interface est touchée et qu'un outil est disponible.
 9. `ship mode:auto`.
-10. `babysit-pr mode:pipeline` : au plus 2 correctifs par cause, aucun test désactivé.
+10. `watch-pr mode:pipeline` : au plus 2 correctifs par cause, aucun test désactivé.
 11. `gate off`, rapport, `DONE`.
 
 ```text
 DONE — Export CSV des commandes
 PR : https://github.com/acme/shop/pull/42 — ✅ semble prête
-Plan : docs/plans/…-plan.md · Unités : 3/3 · Revue : 1 P1 corrigé, 2 P3 consignés · Leçon : docs/solutions/…
+Plan : docs/plans/…-plan.md · Unités : 3/3 · Revue : 1 P1 corrigé, 2 P3 consignés · Leçon : docs/learnings/…
 ```
 
 ## Bon à savoir
@@ -70,9 +70,9 @@ Plan : docs/plans/…-plan.md · Unités : 3/3 · Revue : 1 P1 corrigé, 2 P3 co
 
   Un arrêt ne pousse rien de nouveau et explique comment reprendre.
 - Sans remote : tout reste en commits locaux.
-- La qualité de `lfg` dépend de la qualité du plan. Lancez-le après un brainstorm plutôt que sur une
+- La qualité de `autopilot` dépend de la qualité du plan. Lancez-le après un brainstorm plutôt que sur une
   phrase.
 
 ## Voir aussi
 
-[brainstorm](brainstorm.md) · [plan](plan.md) · [work](work.md) · [babysit-pr](babysit-pr.md)
+[brainstorm](brainstorm.md) · [plan](plan.md) · [work](work.md) · [watch-pr](watch-pr.md)

@@ -1,6 +1,6 @@
 ---
 name: learnings-researcher
-description: Chercheur Kaizen de savoir institutionnel — retrouve dans docs/solutions/ (et les Kaizen Packs déclarés) les leçons et règles qui s'appliquent au travail en cours, et les convertit en contraintes, pièges à éviter et tests à prévoir. Lancé par /kaizen:plan, /kaizen:brainstorm, /kaizen:review et /kaizen:debug ; c'est lui qui referme la boucle.
+description: Chercheur Kaizen de savoir institutionnel — retrouve dans docs/learnings/ (et les Kaizen Packs déclarés) les leçons et règles qui s'appliquent au travail en cours, et les convertit en contraintes, pièges à éviter et tests à prévoir. Lancé par /kaizen:plan, /kaizen:brainstorm, /kaizen:review et /kaizen:debug ; c'est lui qui referme la boucle.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 color: green
@@ -17,7 +17,7 @@ contexte de l'appelant qui décide quelle forme importe, ne privilégie pas les 
 
 L'appelant te donne :
 - le **contexte du travail** (activité, concepts, décisions envisagées, modules touchés) ;
-- la **racine des leçons** (`<root>/solutions/`, chemin résolu) ;
+- la **racine des leçons** (`<root>/learnings/`, chemin résolu) ;
 - éventuellement les **packs** (id + dossier + liste des règles avec `applies_when`) ;
 - éventuellement le chemin du CLI : `node <plugin>/scripts/kaizen.mjs`.
 
@@ -47,7 +47,7 @@ L'appelant te donne :
 7. **Pertinence** — garde ce qui changerait réellement une décision, une séquence, un test ou un risque.
    Une leçon sur le même module mais un problème sans rapport n'est pas pertinente.
 8. **Fraîcheur** — si une leçon cite des fichiers ou du code, vérifie rapidement qu'ils existent encore.
-   Une leçon visiblement périmée est signalée comme telle (candidate à `/kaizen:refresh`), pas
+   Une leçon visiblement périmée est signalée comme telle (candidate à `/kaizen:prune-learnings`), pas
    appliquée aveuglément. `retire_when` renseigné : dis si la condition semble remplie.
 
 ## Retour (markdown, concis)
@@ -55,7 +55,7 @@ L'appelant te donne :
 ```markdown
 ## Leçons applicables
 
-### 1. <titre>  — `docs/solutions/…/fichier.md`   (ou **Pack** : <id>, `fichier.md`)
+### 1. <titre>  — `docs/learnings/…/fichier.md`   (ou **Pack** : <id>, `fichier.md`)
 - **Pertinence :** pourquoi ça s'applique ici (1 ligne)
 - **Contrainte / consigne :** ce que le travail doit faire ou éviter
 - **Piège connu :** ce qui n'a pas marché la dernière fois (si présent)
@@ -65,7 +65,7 @@ L'appelant te donne :
 - `chemin` — raison en quelques mots (seulement les candidates sérieuses)
 
 ## Signaux d'entretien
-- leçon périmée, doublon ou contradiction repérés → à passer à /kaizen:refresh
+- leçon périmée, doublon ou contradiction repérés → à passer à /kaizen:prune-learnings
 
 ## Fichiers de pack ignorés
 - `<pack>/<fichier>` — frontmatter sans title/applies_when

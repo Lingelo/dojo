@@ -14,7 +14,7 @@ par des contrôles mécaniques plutôt que par des rappels.
 |---|---|
 | **Ce qu'elle fait** | Interview (avec relances et stress test) qui produit 5 à 9 articles, une politique IA et une gouvernance. Elle sait aussi amender et auditer. |
 | **Quand l'utiliser** | Au démarrage de Kaizen sur un projet ; après un post-mortem qui révèle un principe manquant ; quand une exception revient trop souvent |
-| **Quand ne pas l'utiliser** | Pour une règle de domaine précise (→ [pack](../packs.md)) ; pour une leçon (→ [compound](compound.md)) ; pour une fonctionnalité (→ [brainstorm](brainstorm.md)) |
+| **Quand ne pas l'utiliser** | Pour une règle de domaine précise (→ [pack](../packs.md)) ; pour une leçon (→ [learn](learn.md)) ; pour une fonctionnalité (→ [brainstorm](brainstorm.md)) |
 | **Ce qu'elle produit** | `CONSTITUTION.md` à la racine, versionnée en SemVer, validée par `node $K constitution check` |
 | **Et ensuite** | `/kaizen:brainstorm` : la constitution cadre désormais chaque plan et chaque revue |
 

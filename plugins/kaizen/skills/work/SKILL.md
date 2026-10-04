@@ -14,7 +14,7 @@ Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Avant la première écrit
 `${CLAUDE_PLUGIN_ROOT}/skills/work/references/implementation-loop.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:return`** (posé par `/kaizen:lfg`) : implémentation et vérification locale **seulement** — pas
+**`mode:return`** (posé par `/kaizen:autopilot`) : implémentation et vérification locale **seulement** — pas
 de simplification, revue, push ni PR (l'appelant s'en charge), aucune question. Rends :
 `{ status: complete|blocked, plan_path, branch, commits: [sha…], units: [{id, status, evidence}],
 verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
@@ -43,7 +43,7 @@ verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
    d'écriture sur la branche par défaut sans demande explicite dans cette session.
 3. **Garde-fou** — `node "$K" gate on --plan <chemin>` : le hook Stop refusera de terminer tant que
    les vérifications sont rouges (3 blocages max, puis il laisse passer en le signalant).
-4. **Contexte** — lis les fichiers référencés par le plan, les leçons qu'il cite (`docs/solutions/…`),
+4. **Contexte** — lis les fichiers référencés par le plan, les leçons qu'il cite (`docs/learnings/…`),
    les règles de packs citées et `CONSTITUTION.md` s'il existe. Une leçon citée est une contrainte
    d'implémentation ; un article de la constitution est une règle, pas une suggestion.
    Vérifie le plan une fois : `node "$K" plan check <chemin>` (rouge → `/kaizen:plan` d'abord).
@@ -87,5 +87,5 @@ moindre conflit, repasse en série.
    description et guide du relecteur tirés du plan, puis surveillance de la PR proposée) · **garder en
    local** · **capitaliser une leçon d'abord**.
 4. Si le travail a produit un raisonnement non évident (un piège, une cause surprenante, une décision
-   qui a demandé de l'enquête), propose `/kaizen:compound` — c'est ce qui rend le prochain cycle plus
+   qui a demandé de l'enquête), propose `/kaizen:learn` — c'est ce qui rend le prochain cycle plus
    facile.

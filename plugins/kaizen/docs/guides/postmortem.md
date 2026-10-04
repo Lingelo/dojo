@@ -46,7 +46,7 @@ jamais sa conclusion. Un post-mortem vaut par ses **actions suivies**, pas par s
 5. **Actions** : 3 à 7, chacune avec un type, un porteur, une échéance et un suivi. Une action sans
    porteur n'existe pas.
 6. **Boucle Kaizen** :
-   - leçon avec `/kaizen:compound` ;
+   - leçon avec `/kaizen:learn` ;
    - test de non-régression ;
    - règle de pack ;
    - `/kaizen:constitution amend` si un principe manquait ou a été contourné.
@@ -66,4 +66,4 @@ contributifs · Ce qui a bien marché · Ce qui a manqué de peu · Actions · B
 
 ## Voir aussi
 
-[debug](debug.md) · [compound](compound.md) · [constitution](constitution.md) · [metrics](metrics.md)
+[debug](debug.md) · [learn](learn.md) · [constitution](constitution.md) · [metrics](metrics.md)

@@ -16,7 +16,7 @@ fichiers elles touchent, quels tests doivent passer, et comment revenir en arri�
 | **Quand l'utiliser** | Après un brainstorm ; une demande claire mais non triviale ; un ticket ou une spec à transformer en travail exécutable ; approfondir un plan existant |
 | **Quand ne pas l'utiliser** | Idée encore floue (→ [brainstorm](brainstorm.md)) ; bug sans cause connue (→ [debug](debug.md)) ; changement d'une ligne : demandez-le directement |
 | **Ce qu'elle produit** | Le plan unifié enrichi **sur place** (ou un nouveau fichier `docs/plans/…-plan.md`) ; pour un petit travail, un énoncé direct ou un brief dans le chat |
-| **Et ensuite** | « Plan prêt : `<chemin>`. Que veux-tu faire ? » → `work` (recommandé), `lfg`, approfondir, relire soi-même |
+| **Et ensuite** | « Plan prêt : `<chemin>`. Que veux-tu faire ? » → `work` (recommandé), `autopilot`, approfondir, relire soi-même |
 
 ## Exemples
 
@@ -78,7 +78,7 @@ Exemple complet : [`templates/plan-example.md`](../../templates/plan-example.md)
 | Option | Effet |
 |---|---|
 | `deepen <chemin>` | approfondit les sections faibles par une recherche ciblée, intégrée sur place ; ajoute `deepened:` au frontmatter |
-| `mode:return` | aucune question : hypothèses consignées, résultat structuré (utilisé par `lfg`) |
+| `mode:return` | aucune question : hypothèses consignées, résultat structuré (utilisé par `autopilot`) |
 
 ## Bon à savoir
 

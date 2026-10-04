@@ -81,8 +81,8 @@ Questions ouvertes, pas dans les exigences.
 
 - **Décisions techniques clés** — `KTD1. <décision>` : raison, alternative écartée, `couvre R…`.
 - **Contexte et motifs à suivre** — fichiers et motifs existants à imiter (chemins exacts).
-- **Leçons et règles appliquées** — chaque leçon de `<root>/solutions/` ou règle de pack qui contraint
-  le plan, citée (`docs/solutions/…` ou `(pack: id, fichier)`), avec ce qu'elle change ici.
+- **Leçons et règles appliquées** — chaque leçon de `<root>/learnings/` ou règle de pack qui contraint
+  le plan, citée (`docs/learnings/…` ou `(pack: id, fichier)`), avec ce qu'elle change ici.
 - Selon la matière : Conception technique (diagramme si la structure le mérite) · Impact transverse ·
   Risques et dépendances · Notes de doc / exploitation.
 
@@ -130,7 +130,7 @@ Des paquets de travail dimensionnés pour un commit chacun, ordonnés par dépen
 - **Fichiers :** `app/exports/orders_csv.rb` (nouveau), `spec/exports/orders_csv_spec.rb` (nouveau)
 - **Approche :** … (suit `app/exports/customers_csv.rb`)
 - **Preuve :** test d'abord | caractérisation d'abord | exception (raison + vérification de remplacement)
-- **Scénarios de test :** cas nominal ; commande sans lignes ; caractères accentués (BOM, docs/solutions/…)
+- **Scénarios de test :** cas nominal ; commande sans lignes ; caractères accentués (BOM, docs/learnings/…)
 - **Vérification :** `bundle exec rspec spec/exports/orders_csv_spec.rb` vert
 - **Tranche :** T1
 ```

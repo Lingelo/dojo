@@ -4,10 +4,10 @@
 
 ```
                  CONSTITUTION.md (principes non négociables, appliqués comme contrôles)
-ideate → brainstorm → plan ─► doc-review → work → review → ship → babysit-pr → compound
-                       ▲                                                          │
-                       └──────────── docs/solutions/ · docs/adr/ ◄────────────────┘
-debug → fix → review → compound      polish : retouches UI guidées      refresh : entretien des leçons
+ideate → brainstorm → plan ─► doc-review → work → review → ship → watch-pr → learn
+                       ▲                                                         │
+                       └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
+debug → fix → review → learn      polish : retouches UI guidées      prune-learnings : entretien des leçons
 decide → ADR      postmortem → leçons, packs, amendements      metrics : DORA + réutilisation      release
 ```
 
@@ -23,7 +23,7 @@ Toutes les opérations déterministes passent par le CLI, jamais par une réimpl
 
 ```bash
 K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"
-node "$K" root                     # chemins : docs_root, plans, solutions, ideation (JSON)
+node "$K" root                     # chemins : docs_root, plans, learnings, ideation (JSON)
 node "$K" config                   # configuration effective
 node "$K" detect                   # stack + commandes de vérification
 node "$K" verify [--only test]     # lance les vérifications (exit 1 si rouge)
@@ -51,18 +51,20 @@ depuis le chemin de ce fichier (le dossier parent de `references/`).
 
 ## Racine des livrables
 
-Lis `node "$K" root` avant de composer un chemin. Par défaut tout vit sous `docs/` :
+Lis `node "$K" root` avant de composer un chemin. Par défaut tout vit sous `docs/`. Les leçons sont
+dans le chemin `learnings` qu'il renvoie : `<root>/learnings/`, ou `<root>/solutions/` dans un repo
+qui n'a que ce dossier hérité (Kaizen 1.x, Compound Engineering) — écris-y, ne le déplace pas.
 
 | Dossier | Contenu | Écrit par |
 |---|---|---|
 | `<root>/plans/` | plan unifié : exigences puis plan d'implémentation, **un seul fichier** qui grossit | brainstorm, plan |
-| `<root>/solutions/` | leçons capitalisées, une par fichier, frontmatter validé | compound, refresh |
+| `<root>/learnings/` | leçons capitalisées, une par fichier, frontmatter validé | learn, prune-learnings |
 | `<root>/ideation/` | idées classées | ideate |
 | `<root>/adr/` | décisions d'architecture numérotées (`NNNN-titre.md`) | decide |
 | `<root>/postmortems/` | post-mortems d'incident | postmortem |
 | `<root>/metrics/` | rapports de mesure (optionnel) | metrics |
 | `CONSTITUTION.md` | principes d'ingénierie non négociables, versionnés | constitution |
-| `kaizen-packs/<pack>/` | règles prescriptives d'équipe | setup, compound (sur accord) |
+| `kaizen-packs/<pack>/` | règles prescriptives d'équipe | setup, learn (sur accord) |
 | `.kaizen/config.json` | configuration versionnée (`config.local.json` = surcharge perso, ignorée par git) | setup |
 | `.kaizen/state/` | état local (garde-fou, revues) — auto-ignoré par git | CLI |
 

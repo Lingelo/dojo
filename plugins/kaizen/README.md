@@ -21,12 +21,12 @@ Kaizen outille ces trois disciplines.
 
 ```
                      CONSTITUTION.md — principes non négociables, appliqués comme contrôles
- ideate → brainstorm → plan ─► doc-review → work → review → ship → babysit-pr → compound
-                        ▲                                                            │
-                        └──────────── docs/solutions/ · docs/adr/ ◄──────────────────┘
- debug → correctif → review → compound        polish : retouches UI guidées par l'utilisateur
+ ideate → brainstorm → plan ─► doc-review → work → review → ship → watch-pr → learn
+                        ▲                                                         │
+                        └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
+ debug → correctif → review → learn        polish : retouches UI guidées par l'utilisateur
  decide → ADR      postmortem → leçons · packs · amendements      metrics (DORA)      release
- lfg : de la demande à la PR prête, en autonomie                   refresh : entretien des leçons
+ autopilot : de la demande à la PR prête, en autonomie      prune-learnings : entretien des leçons
 ```
 
 > Inspiré très fortement du plugin [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)
@@ -86,16 +86,16 @@ Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans
 |---|---|
 | `/kaizen:review` | Revue multi-agents choisis selon le diff. **Constitution appliquée**, filtrage par confiance, chaque P0/P1 vérifié par l'orchestrateur, conformité au plan. |
 | `/kaizen:ship` | PR relisible : vérifications, taille (sinon PR empilées), description tirée du plan, **guide du relecteur**, retour arrière, exceptions à la constitution. |
-| `/kaizen:resolve-pr-feedback` | Chaque retour de revue reçoit un verdict, un correctif poussé **avant** la réponse, une réponse qui cite le retour, et la résolution du fil. Les décisions humaines restent ouvertes. |
-| `/kaizen:babysit-pr` | Mène une PR jusqu'à « semble prête » : retours **avant** la CI, réparation de la CI (jamais de test désactivé). Mise à jour depuis la base seulement sur signal de GitHub, contrôle qu'aucune revue n'est encore en route, budget de 8 h. **Ne merge jamais.** |
+| `/kaizen:address-feedback` | Chaque retour de revue reçoit un verdict, un correctif poussé **avant** la réponse, une réponse qui cite le retour, et la résolution du fil. Les décisions humaines restent ouvertes. |
+| `/kaizen:watch-pr` | Mène une PR jusqu'à « semble prête » : retours **avant** la CI, réparation de la CI (jamais de test désactivé). Mise à jour depuis la base seulement sur signal de GitHub, contrôle qu'aucune revue n'est encore en route, budget de 8 h. **Ne merge jamais.** |
 | `/kaizen:release` | Notes de version depuis les commits conventionnels, version SemVer vérifiée, CHANGELOG, checklist de mise en production. Ne tague jamais sans accord. |
 
 ### Apprendre et mesurer
 
 | Commande | Rôle |
 |---|---|
-| `/kaizen:compound` | Capitalise **une** leçon durable dans `docs/solutions/`, si elle passe le test « sans ce document, referait-on l'erreur ? ». |
-| `/kaizen:refresh` | Audite les leçons contre le code actuel : garder, mettre à jour, fusionner, remplacer ou supprimer, avec preuves. |
+| `/kaizen:learn` | Capitalise **une** leçon durable dans `docs/learnings/`, si elle passe le test « sans ce document, referait-on l'erreur ? ». |
+| `/kaizen:prune-learnings` | Audite les leçons contre le code actuel : garder, mettre à jour, fusionner, remplacer ou supprimer, avec preuves. |
 | `/kaizen:postmortem` | Post-mortem sans recherche de coupable : chronologie depuis git et la CI, facteurs contributifs, actions avec porteurs. Puis leçon, règle de pack et amendement de constitution. |
 | `/kaizen:metrics` | Indicateurs DORA approchés depuis git et GitHub (fréquence, délai, taux de reprise, taux d'échec, rétablissement), taille des lots, **réutilisation des leçons**. |
 
@@ -103,7 +103,7 @@ Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans
 
 | Commande | Rôle |
 |---|---|
-| `/kaizen:lfg` | Autonome : plan ou debug → work → simplification → revue avec correctifs → compound → ship → babysit-pr. S'arrête à « semble prête ». |
+| `/kaizen:autopilot` | Autonome : plan ou debug → work → simplification → revue avec correctifs → learn → ship → watch-pr. S'arrête à « semble prête ». |
 | `/kaizen:setup` | Configuration, détection de la stack, trouvabilité depuis `CLAUDE.md`, création de packs (`pack:<nom>`), bilan de santé (`check`). |
 
 ## Ce qui garantit la qualité
@@ -130,11 +130,11 @@ vérifie la conformité du code au plan, et la PR reprend les exigences couverte
 - plugin `security` du marketplace pour les secrets ;
 - texte des commentaires de PR traité comme non fiable.
 
-**Garde-fou par hook `Stop`.** Pendant `work` et `lfg`, Claude ne peut pas terminer tant que test,
+**Garde-fou par hook `Stop`.** Pendant `work` et `autopilot`, Claude ne peut pas terminer tant que test,
 lint ou typage sont rouges. Le hook bloque 3 fois au maximum puis laisse passer en exigeant que
 l'échec soit signalé, et s'éteint seul après 24 h.
 
-**L'effet cumulatif, mesuré.** Les leçons (`docs/solutions/`), les ADR et les post-mortems sont
+**L'effet cumulatif, mesuré.** Les leçons (`docs/learnings/`), les ADR et les post-mortems sont
 relus par `learnings-researcher` à chaque plan, revue et debug. `/kaizen:metrics` compte combien de
 leçons sont **réellement citées** par les plans récents. Une leçon jamais réutilisée signale une
 boucle qui ne se referme pas.
@@ -160,7 +160,7 @@ CONSTITUTION.md              principes non négociables (versionnés)
 .kaizen/config.json          configuration (config.local.json = surcharge perso, ignorée par git)
 .kaizen/state/               état local : garde-fou, suivi de PR, revues — auto-ignoré par git
 docs/plans/                  plans unifiés (exigences → plan prêt), un fichier par sujet
-docs/solutions/              leçons capitalisées
+docs/learnings/              leçons capitalisées
 docs/adr/                    décisions d'architecture (NNNN-titre.md)
 docs/postmortems/            post-mortems
 docs/ideation/  docs/metrics/
@@ -221,12 +221,12 @@ node plugins/kaizen/evals/run.mjs              # évaluations de bout en bout (c
   - que la revue trouve une injection et une erreur d'arrondi ;
   - que la revue applique la constitution ;
   - qu'un plan autonome passe `plan check` ;
-  - que `compound` refuse une leçon sans valeur.
+  - que `learn` refuse une leçon sans valeur.
 - **CI** (`.github/workflows/kaizen.yml`) : Linux et macOS, Node 18 et 22.
 
 ## Intégration au marketplace
 
 - **git** : même format de commit (`<type>(<JIRA>): …`, clé Jira lue dans la branche).
 - **security** : ses hooks restent actifs ; aucun secret dans les rapports (`<REDACTED>`).
-- **playwright** : utilisé par `polish`, `work` et `lfg` pour voir et vérifier l'interface.
+- **playwright** : utilisé par `polish`, `work` et `autopilot` pour voir et vérifier l'interface.
 - **experts** : l'agent `architect` reste disponible pour les décisions lourdes (avec `/kaizen:decide`).

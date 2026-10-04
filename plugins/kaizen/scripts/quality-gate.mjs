@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Kaizen — hook Stop : refuse de terminer tant que les vérifications sont rouges
-// pendant un /kaizen:work (ou /kaizen:lfg). Inactif en dehors : il ne coûte rien.
+// pendant un /kaizen:work (ou /kaizen:autopilot). Inactif en dehors : il ne coûte rien.
 //
 // Activation : `kaizen.mjs gate on` (posé par /kaizen:work), retrait : `gate off`.
 // Exit 0 = laisser terminer ; exit 2 = bloquer (le message stderr est renvoyé à Claude).
