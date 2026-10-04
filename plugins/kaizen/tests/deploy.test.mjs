@@ -197,6 +197,15 @@ test('monitor patrol : hors fenêtre, violation confirmée → incident ouvert u
   const again = await cliAsync(dir, ['monitor', 'patrol', '--env', 'production', '--interval', '0']);
   assert.equal(again.json.opened, false, 'incident déjà ouvert : pas de doublon');
   assert.equal(cli(dir, ['monitor', 'incident', 'list']).json.length, 1);
+  // Une alerte antérieure au dernier déploiement vise le commit qui tournait alors.
+  const first = head(dir);
+  cli(dir, ['monitor', 'incident', 'resolve', '--env', 'production']);
+  writeFiles(dir, { 'app.js': '2\n' });
+  gitc(dir, ['commit', '-qam', 'feat: v2']);
+  cli(dir, ['deploy', 'run', 'production']);
+  const before = cli(dir, ['monitor', 'incident', 'open', '--env', 'production', '--at', new Date(Date.now() - 1000).toISOString()]).json;
+  assert.equal(before.opened, true);
+  assert.equal(before.incident.sha, first);
   cleanup(dir);
 });
 
@@ -217,6 +226,7 @@ test('monitor alert : Alertmanager, PagerDuty, Datadog et JSON simple ; détecti
   assert.equal(inc.resolved_by, 'resolve');
   assert.equal(inc.hours, 2);
 
+  assert.equal(inc.sha, head(dir), 'commit déployé au moment de la détection');
   const pd = alert({ event: { event_type: 'incident.triggered', occurred_at: end, data: { title: 'API down' } } });
   assert.equal(pd.json.alert.format, 'pagerduty');
   assert.equal(pd.json.opened, true);

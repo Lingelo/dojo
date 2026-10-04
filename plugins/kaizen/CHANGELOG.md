@@ -25,8 +25,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   un incident résolu depuis moins de 14 jours sans post-mortem (`/kaizen:postmortem`).
 - `audit` contrôle la détection continue des incidents ; `audit fix monitor_patrol` et
   `audit fix monitor_alert` génèrent les workflows GitHub Actions correspondants (`--env`, `--ref`).
+- Évaluations de bout en bout `monitor-alert`, `help-incident` et `cycle-cost-subagents` (29 au total).
+  La dernière confirme sur une vraie session que la réponse de l'outil `Agent` porte l'identifiant
+  d'agent : les sous-agents sont rattachés à leur rôle par id, pas seulement par prompt.
+- Consigne de `/kaizen:monitor` précisée : sans personne pour répondre, le retour arrière est le
+  défaut même si `deploy.auto_rollback` est désactivé, sauf si l'incident précède le dernier déploiement.
 
 ### Corrigé
+- Un incident est rattaché au commit déployé **au moment de sa détection**, et non au dernier
+  déploiement : une alerte antérieure à un déploiement ne l'incrimine plus.
 - `deploy run`, `deploy rollback` et `deploy flag` ont un délai (`deploy.timeout_seconds`, 30 min, ou
   `environments.<env>.timeout_seconds`) : une commande bloquée est coupée avec tout son arbre de
   processus, le déploiement est en échec sans tag et le rapport signale un état incertain.

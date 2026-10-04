@@ -40,8 +40,10 @@ Restitue chaque signal : valeur, seuil, source du seuil (plan ou config), ✅ ou
 
 1. Le dernier déploiement (`node "$K" deploy list --env <env>`) est-il récent et lié ? Montre-le.
 2. Rétablir passe avant comprendre : propose `/kaizen:deploy rollback <env>` (ou le flag à couper
-   que prévoit le plan). En mode non interactif, ou si `deploy.auto_rollback` est actif, le retour
-   arrière est le défaut prudent ; sinon une question.
+   que prévoit le plan). Le retour arrière est le défaut prudent quand personne ne peut répondre
+   (mode non interactif) **ou** quand `deploy.auto_rollback` est actif — l'un suffit ; sinon une
+   question. Exception : l'incident vise un commit (`sha` de l'incident) antérieur au dernier
+   déploiement — revenir au déploiement précédent ne le corrigerait pas ; dis-le et ne reviens pas.
 3. La violation est un **incident** (`watch` et `patrol` l'ouvrent ; sinon
    `node "$K" monitor incident open --env <env> --summary "…"`, avec `--at` si la détection réelle est
    antérieure). Le retour arrière le résout ; un correctif déployé, ou un rétablissement sans

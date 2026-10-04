@@ -178,15 +178,18 @@ function requireEnv(env) {
   return env;
 }
 
-// Ouvre un incident daté de sa détection, sur le commit du dernier déploiement de l'environnement.
+// Ouvre un incident daté de sa détection, sur le commit déployé à ce moment-là dans l'environnement.
 // Idempotent tant que l'incident précédent n'est pas résolu : on ne compte pas deux fois une panne.
 export function openIncident(root, env, { at = new Date(), source = 'manuel', summary = null, signals = null } = {}) {
   requireEnv(env);
   const open = incidents(root, { env }).find((i) => !i.resolved_at);
   if (open) return { opened: false, incident: open };
-  const sha = deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1)?.sha || git(root, ['rev-parse', 'HEAD']);
   let when = new Date(at);
   if (Number.isNaN(when.getTime())) throw new Error(`date de détection illisible : ${at}`);
+  // Une alerte peut dater d'avant le dernier déploiement : le commit en cause est celui qui tournait.
+  const detectedIso = when.toISOString().replace(/\.\d+Z$/, 'Z');
+  const live = deployments(root, { env }).filter((d) => d.kind === 'deploy' && d.at <= detectedIso).at(-1);
+  const sha = live?.sha || git(root, ['rev-parse', 'HEAD']);
   // Les tags sont datés à la seconde : un incident daté au plus tard de la dernière résolution passerait
   // pour déjà résolu. Il est donc placé juste après elle.
   const last = deployments(root, { env }).filter((d) => d.kind === 'resolve' || d.kind === 'rollback').at(-1);

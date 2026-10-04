@@ -34,7 +34,7 @@ Quatre limites précises, à connaître avant de l'adopter.
   `monitor alert` ; sans l'un ou l'autre, un incident tardif ne remonte que par `/kaizen:monitor`.
 - **Des garde-fous contre l'oubli, pas contre un agent malveillant.** Un script intermédiaire suffit
   à les contourner.
-- **Pas encore éprouvé en conditions réelles.** Les 26 évaluations de bout en bout tournent sur des
+- **Pas encore éprouvé en conditions réelles.** Les 29 évaluations de bout en bout tournent sur des
   projets de démonstration, pas en équipe sur la durée.
 
 ## Face aux SDLC classiques
