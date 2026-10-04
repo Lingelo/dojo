@@ -34,6 +34,9 @@ Options (CLI overrides the <body data-*> attributes of the composition):
       --scale <n>         Supersampling factor: render at n× then downscale (default 1)
       --motion-blur <n>   Sub-frames blended per frame (default 1 = off, 4-8 = cinematic)
       --crf <n>           Quality (mp4 default 16, webm default 20; lower = better)
+      --quality <q>       draft | standard | high (data-quality, default standard) — exposed to the page
+                          as window.__quality; the composition decides what it costs (shadows, env map,
+                          samples…). Explicit on purpose: same flag = same frames on every machine
       --audio <file>      Music / voice track: mixed in, AND analyzed (tempo, beats, energy)
                           and exposed to the page as window.__audio (image follows sound)
       --audio-gain <g>    Gain of --audio in the mix (default 1)
@@ -356,13 +359,15 @@ try {
     scale: num(args.scale, 1),
     blur: Math.max(1, Math.round(num(args.motionBlur, 1))),
     seed: num(args.seed ?? meta.seed, 42),
+    quality: String(args.quality ?? meta.quality ?? 'standard'),
   };
+  if (!['draft', 'standard', 'high'].includes(cfg.quality)) die(`--quality must be draft, standard or high (got "${cfg.quality}")`);
   if (!Number.isFinite(cfg.duration) && !args.stills) die('No duration: add data-duration="6" on <body> or pass --duration 6');
 
   // 2. real page, virtual time installed before any script
   const context = await browser.newContext({ viewport: { width: cfg.width, height: cfg.height }, deviceScaleFactor: cfg.scale, reducedMotion: 'no-preference' });
   await context.addInitScript({
-    content: `globalThis.__realSetTimeout = setTimeout;\n` + VIRTUAL_TIME.replace('__SEED__', String(cfg.seed)) +
+    content: `globalThis.__realSetTimeout = setTimeout;\nglobalThis.__quality = ${JSON.stringify(cfg.quality)};\n` + VIRTUAL_TIME.replace('__SEED__', String(cfg.seed)) +
       (audioData ? AUDIO_API.replace('__DATA__', JSON.stringify(audioData)) : '') +
       (captionData ? CAPTIONS_API.replace('__DATA__', () => JSON.stringify(captionData)).replace('__STYLE__', JSON.stringify(captionStyle)) : ''),
   });
@@ -427,7 +432,7 @@ try {
     const proc = spawn(ffmpeg, ff, { stdio: ['pipe', 'inherit', 'inherit'] });
     const done = new Promise((res, rej) => proc.on('close', (c) => (c === 0 ? res() : rej(new Error(`ffmpeg exited with ${c}`)))));
 
-    log(`▶ ${path.basename(input)} → ${path.basename(out)}  ${cfg.width}×${cfg.height} @${cfg.fps}fps  ${(to - from).toFixed(2)}s  scale×${cfg.scale}  blur×${cfg.blur}  (${total} captures)`);
+    log(`▶ ${path.basename(input)} → ${path.basename(out)}  ${cfg.width}×${cfg.height} @${cfg.fps}fps  ${(to - from).toFixed(2)}s  scale×${cfg.scale}  blur×${cfg.blur}  ${cfg.quality}  (${total} captures)`);
     const t0 = Date.now();
     let lastLog = 0;
     for (let i = 0; i < total; i++) {

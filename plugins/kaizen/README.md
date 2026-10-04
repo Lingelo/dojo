@@ -2,16 +2,16 @@
 
 **Un SDLC assisté par IA où chaque unité de travail rend la suivante plus facile.**
 
-<a href="docs/media/kaizen-presentation.mp4"><img src="docs/media/kaizen-presentation.jpg" alt="Présentation de Kaizen en une minute : la spirale du cycle au-dessus d'un jardin sec" width="100%"></a>
+<a href="docs/media/kaizen-presentation.mp4"><img src="docs/media/kaizen-presentation.jpg" alt="Présentation de Kaizen en 80 secondes : la spirale du cycle au-dessus d'un jardin sec" width="100%"></a>
 
-*Présentation en une minute, avec voix off : [regarder la vidéo (MP4)](docs/media/kaizen-presentation.mp4)
+*Présentation en 80 secondes, avec voix off : [regarder la vidéo (MP4)](docs/media/kaizen-presentation.mp4)
 · [sous-titres](docs/media/kaizen-presentation.srt). Source reproductible :
 [docs/media/source/](docs/media/source/kaizen-presentation.html), rendue avec le plugin `motion-studio`.*
 
 Kaizen structure le travail avec Claude Code de la constitution du projet jusqu'à la PR prête à
 merger, puis **referme la boucle** : ce qui a été appris est écrit là où le prochain cycle le relira.
 
-DORA 2025 montre que l'IA **amplifie**. Elle augmente le débit, mais aussi l'instabilité, sauf
+DORA 2025 (confirmé par son rapport ROI de 2026) montre que l'IA **amplifie**. Elle augmente le débit, mais aussi l'instabilité, sauf
 pour les équipes qui gardent trois disciplines :
 - des principes clairs ;
 - de **petits lots** ;

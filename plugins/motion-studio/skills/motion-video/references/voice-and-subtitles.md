@@ -29,6 +29,12 @@ Deux briques indépendantes, combinables avec le son synchronisé (`sound-design
 | `at` | Temps absolu d'une ligne (ex. caler sur une scène) — prévient en cas de chevauchement |
 | `file` | Enregistrement existant (n'importe quelle voix / service) au lieu de synthétiser ; `text` sert au sous-titre |
 | `caption` | Texte du sous-titre s'il diffère de ce qui est dit (ex. chiffres, sigles à épeler) |
+| `engine` | Moteur imposé (`piper`, `say`…) : à épingler pour qu'une voix publiée reste la même sur toute machine (`auto` choisit `say` sur Mac) |
+
+**Prononciation** : une voix française lit les anglicismes à la française (« brainstorm » → « brin-storm »).
+Réécrire *ce qui est dit* phonétiquement et garder l'orthographe dans `caption` :
+`{ "text": "Le brène-storm définit…", "caption": "Le brainstorm définit…" }`. Faire écouter 3–4 variantes
+(`say -v Thomas -o v1.aiff "…"`, ou le moteur final) à l'utilisateur : la meilleure graphie dépend du moteur.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" engines                       # moteurs détectés

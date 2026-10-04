@@ -61,7 +61,7 @@ node plugins/motion-studio/scripts/render.mjs composition.html [options]
 
   -o out.mp4 | .webm | .gif | .mov     --fps 60      --duration 8
   --motion-blur 4    --scale 2    --transparent    --audio music.mp3
-  --stills 0.5,2,4   --from 2 --to 5   --jpeg      --crf 16    --seed 42
+  --stills 0.5,2,4   --from 2 --to 5   --jpeg      --crf 16    --seed 42   --quality draft|standard|high
   --beats beats.json --lufs -14 --cues cues.json   --no-sfx
   --voice voice.json --duck -9  --subs f.srt  --captions bottom|karaoke|center|off  --embed-subs
 
