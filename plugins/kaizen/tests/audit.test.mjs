@@ -45,6 +45,7 @@ test('projet outillé : chaque contrôle au vert (protection de branche non vér
     'src/app.test.js': '',
     '.gitignore': 'node_modules\n.env\n',
     '.github/workflows/ci.yml': 'on: [pull_request]\njobs:\n  t:\n    steps:\n      - run: npm test\n',
+    '.github/workflows/kaizen-patrol.yml': 'on: schedule\njobs:\n  p:\n    steps:\n      - run: node kaizen.mjs monitor patrol --env production\n',
     '.github/CODEOWNERS': '* @acme/web\n',
     '.github/pull_request_template.md': '## Pourquoi\n',
     '.github/dependabot.yml': 'version: 2\n',
@@ -128,5 +129,30 @@ test('gabarits : modèle de PR, dependabot par écosystème, CODEOWNERS (propri�
   assert.match(readFileSync(join(dir, '.gitignore'), 'utf8'), /^node_modules\n# Secrets locaux.*\n\.env\n\.env\.\*\n!\.env\.example\n$/);
   assert.notEqual(cli(dir, ['audit', 'fix', 'gitignore_env']).code, 0, 'déjà ignoré');
   assert.notEqual(cli(dir, ['audit', 'fix', 'inconnu']).code, 0);
+  cleanup(dir);
+});
+
+test('détection continue : contrôle et gabarits de workflow patrol / alert', () => {
+  const dir = tempRepo({
+    '.kaizen/config.json': { deploy: { environments: { staging: { command: 'x' }, production: { command: 'y' } } }, monitor: { signals: { health: { type: 'http', url: 'https://x/health' } } } },
+  });
+  const check = () => cli(dir, ['audit', '--json', '--no-github']).json.checks.find((c) => c.id === 'continuous_monitoring');
+  assert.equal(check().status, 'warn');
+  assert.equal(check().fix.scaffold, 'monitor_patrol');
+  assert.equal(cli(dir, ['audit', 'fix', 'monitor_patrol', '--ref', '0123abc']).code, 0);
+  const patrol = readFileSync(join(dir, '.github/workflows/kaizen-patrol.yml'), 'utf8');
+  assert.match(patrol, /monitor patrol --env production/);
+  assert.match(patrol, /ref: 0123abc/);
+  assert.match(patrol, /contents: write/);
+  assert.match(patrol, /fetch-depth: 0/);
+  assert.equal(check().status, 'ok');
+  cli(dir, ['audit', 'fix', 'monitor_alert', '--env', 'staging']);
+  const alert = readFileSync(join(dir, '.github/workflows/kaizen-alert.yml'), 'utf8');
+  assert.match(alert, /repository_dispatch/);
+  assert.match(alert, /PAYLOAD: \$\{\{ toJson\(github\.event\.client_payload\) \}\}/);
+  assert.match(alert, /monitor alert --env staging --file -/);
+  assert.doesNotMatch(alert, /echo .*\$\{\{/, 'charge utile jamais interpolée dans le script');
+  assert.notEqual(cli(dir, ['audit', 'fix', 'monitor_alert']).code, 0, 'rien n’est écrasé');
+  assert.notEqual(cli(dir, ['audit', 'fix', 'monitor_patrol', '--env', 'prod; rm -rf /']).code, 0);
   cleanup(dir);
 });

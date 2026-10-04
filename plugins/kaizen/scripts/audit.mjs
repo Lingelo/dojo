@@ -148,6 +148,13 @@ export function audit(root, { github = true } = {}) {
   const ROUTE = /(\.(get|route|all|handle|HandleFunc|Get|GET)\s*\(|@(app|router|bp|api)\.(get|route)\s*\(|@(Get|Request)Mapping\s*\(\s*(value\s*=\s*)?|\bpath\s*\(|^\s*get\s+)\s*['"`]\/(health|healthz|healthcheck|up|ready|readyz|livez)['"`]/m;
   const healthRoute = files.filter((f) => !TEST_FILE.test(f)).slice(0, 1500).find((f) => ROUTE.test(read(root, f) || ''));
   add('monitoring', 'Exploitation', 'Signaux de production surveillés', names.length ? 'ok' : 'missing', names.length ? `signaux : ${names.join(', ')}` : 'aucun signal (monitor.signals)', { how: 'déclarer au moins un health-check HTTP, puis taux d’erreur et latence (commande qui affiche un nombre)' }, envNames.length ? 1 : 2);
+  if (envNames.length && names.length) {
+    const wf = ls(root, '.github/workflows').map((f) => read(root, `.github/workflows/${f}`) || '').join('\n');
+    const continuous = /monitor\s+(patrol|alert)\b/.test(wf);
+    add('continuous_monitoring', 'Exploitation', 'Détection continue des incidents', continuous ? 'ok' : 'warn',
+      continuous ? 'workflow monitor patrol/alert présent' : 'signaux surveillés seulement pendant la fenêtre après déploiement (ou par une routine hors du dépôt)',
+      { how: 'contrôle planifié (patrol) comme filet, alertes de l’équipe (alert) comme voie principale', scaffold: 'monitor_patrol' }, 3);
+  }
   add('health', 'Exploitation', 'Endpoint de santé', httpSignals.length ? 'ok' : healthRoute ? 'warn' : 'missing', httpSignals.length ? `health-check : ${httpSignals.join(', ')}` : healthRoute ? `route de santé trouvée dans ${healthRoute}, non surveillée` : 'aucune route de santé trouvée', { how: 'exposer /health (dépendances critiques comprises) et le déclarer dans monitor.signals' }, 2);
 
   // --- Boucle Kaizen ----------------------------------------------------------------------------------
@@ -254,7 +261,67 @@ ${eco.map((e) => `  - package-ecosystem: ${e}\n    directory: /\n    schedule:\n
 `;
 }
 
-export function scaffold(root, id, { owner } = {}) {
+// Workflows de détection continue (docs/guides/monitor.md, « Surveillance continue »). Le CLI Kaizen,
+// sans dépendance, vient du dépôt de la marketplace : épinglez `ref` sur un commit (sha) plutôt qu'une
+// branche. Les tags d'incident sont poussés par le CLI : il faut l'écriture et une identité git.
+const KAIZEN_SOURCE = 'Lingelo/marketplace-claude-code';
+
+function monitorWorkflow(kind, { env, ref }) {
+  const header =
+    kind === 'patrol'
+      ? `# Contrôle planifié des signaux de ${env} (généré par Kaizen, audit fix monitor_patrol) : à relire.
+# Une violation confirmée ouvre un incident (tag incident/${env}/…) et fait échouer le job.
+name: kaizen-patrol
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+`
+      : `# Alertes de l'équipe → incidents Kaizen (généré par Kaizen, audit fix monitor_alert) : à relire.
+# L'outil d'alerte (ou un relais) appelle POST /repos/<owner>/<repo>/dispatches
+#   {"event_type": "alert", "client_payload": <charge utile Alertmanager, PagerDuty, Datadog ou JSON simple>}
+name: kaizen-alert
+
+on:
+  repository_dispatch:
+    types: [alert]
+`;
+  const run =
+    kind === 'patrol'
+      ? `      - run: node .kaizen-cli/plugins/kaizen/scripts/kaizen.mjs monitor patrol --env ${env}`
+      : `      # Charge utile passée par l'environnement, jamais interpolée dans le script : pas d'injection.
+      - env:
+          PAYLOAD: \${{ toJson(github.event.client_payload) }}
+        run: printf '%s' "$PAYLOAD" | node .kaizen-cli/plugins/kaizen/scripts/kaizen.mjs monitor alert --env ${env} --file -`;
+  return `${header}
+permissions:
+  contents: write   # pousser les tags incident/… et resolve/…
+
+concurrency:
+  group: kaizen-incidents-${env}
+  cancel-in-progress: false
+
+jobs:
+  ${kind}:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tags deploy/… et incident/… compris
+      - uses: actions/checkout@v4
+        with:
+          repository: ${KAIZEN_SOURCE}
+          ref: ${ref}   # épinglez un sha
+          path: .kaizen-cli
+      - run: |
+          git config user.name "kaizen[bot]"
+          git config user.email "kaizen[bot]@users.noreply.github.com"
+${run}
+`;
+}
+
+export function scaffold(root, id, { owner, env, ref } = {}) {
   const write = (path, content) => {
     if (has(root, path)) throw new Error(`${path} existe déjà : rien n'est écrasé`);
     mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -274,6 +341,16 @@ export function scaffold(root, id, { owner } = {}) {
       const rules = ['/CONSTITUTION.md', '/kaizen-packs/', '/.kaizen/config.json'].map((p) => `${p} ${owner}`).join('\n');
       return write('.github/CODEOWNERS', `# Propriétaires par défaut (généré par Kaizen, audit fix codeowners) : affinez par dossier.\n* ${owner}\n\n# Règles d'ingénierie : leur changement est relu par les approbateurs.\n${rules}\n`);
     }
+    case 'monitor_patrol':
+    case 'monitor_alert': {
+      const envs = Object.keys(loadConfig(root).deploy.environments || {});
+      const target = env || (envs.includes('production') ? 'production' : envs[0]);
+      if (!target) throw new Error('aucun environnement dans deploy.environments : configurez le déploiement d’abord (deploy detect)');
+      if (!/^[\w.-]+$/.test(target)) throw new Error(`environnement invalide : ${target}`);
+      if (ref !== undefined && !/^[\w./-]+$/.test(ref)) throw new Error(`--ref invalide : ${ref}`);
+      const kind = id === 'monitor_patrol' ? 'patrol' : 'alert';
+      return write(`.github/workflows/kaizen-${kind}.yml`, monitorWorkflow(kind, { env: target, ref: ref || 'main' }));
+    }
     case 'gitignore_env': {
       const gi = read(root, '.gitignore') || '';
       if (/(^|\n)\s*\/?\.env(\*|\b)/.test(gi)) throw new Error('.env est déjà ignoré');
@@ -281,6 +358,6 @@ export function scaffold(root, id, { owner } = {}) {
       return { written: '.gitignore' };
     }
     default:
-      throw new Error(`pas de gabarit pour "${id}" (gabarits : ci, pr_template, dependabot, codeowners, gitignore_env)`);
+      throw new Error(`pas de gabarit pour "${id}" (gabarits : ci, pr_template, dependabot, codeowners, gitignore_env, monitor_patrol, monitor_alert)`);
   }
 }

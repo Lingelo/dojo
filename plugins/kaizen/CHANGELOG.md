@@ -23,6 +23,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
 
 - `status` (et donc `/kaizen:help`) place en tête un incident ouvert (`/kaizen:monitor <env>`), puis
   un incident résolu depuis moins de 14 jours sans post-mortem (`/kaizen:postmortem`).
+- `audit` contrôle la détection continue des incidents ; `audit fix monitor_patrol` et
+  `audit fix monitor_alert` génèrent les workflows GitHub Actions correspondants (`--env`, `--ref`).
 
 ### Corrigé
 - `deploy run`, `deploy rollback` et `deploy flag` ont un délai (`deploy.timeout_seconds`, 30 min, ou

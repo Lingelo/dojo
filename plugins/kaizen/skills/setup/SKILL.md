@@ -29,7 +29,9 @@ Pour un projet qui démarre avec Kaizen, ou qui veut savoir ce qui lui manque.
 2. Propose de traiter les points **un par un**, du plus prioritaire, une question à la fois
    (**corriger** (Recommandé) · **plus tard** · **jamais pour ce repo**) :
    - **gabarit** (`scaffold` non nul) → `node "$K" audit fix <id>` (CODEOWNERS : demande d'abord
-     `--owner @…`, ne l'invente pas). Montre le fichier écrit ; il reste non commité, à relire ;
+     `--owner @…`, ne l'invente pas ; `monitor_patrol` : propose aussi `monitor_alert` si l'équipe a
+     des alertes, et un `--ref <sha>` épinglé du dépôt Kaizen). Montre le fichier écrit ; il reste non
+     commité, à relire ;
    - **déploiement** → `node "$K" deploy detect`, montre les candidats (commandes, retour arrière,
      confiance, notes), fais choisir, puis `node "$K" deploy configure <id>` ; rien de reconnu →
      étape 9 de l'installation ;

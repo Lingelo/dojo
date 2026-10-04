@@ -75,6 +75,9 @@ La surveillance de [deploy](deploy.md) dure `deploy.watch_minutes`. Pour qu'un i
 jours plus tard soit détecté sans action manuelle, branchez l'une des deux voies, ou les deux : les
 alertes comme voie principale, le contrôle périodique comme filet.
 
+Les deux workflows ci-dessous se génèrent avec `node "$K" audit fix monitor_patrol` et
+`audit fix monitor_alert` (`--env production`, `--ref <sha du dépôt Kaizen>` pour l'épingler).
+
 ### Contrôle périodique : `monitor patrol`
 
 `patrol` mesure les signaux ; un signal rouge est re-mesuré jusqu'à `monitor.consecutive` échantillons

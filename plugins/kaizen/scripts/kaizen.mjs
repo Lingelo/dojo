@@ -4,7 +4,7 @@
 //   node kaizen.mjs status [--json]              où en est le repo dans la boucle, et la commande suivante
 //   node kaizen.mjs root                         chemins des livrables (JSON)
 //   node kaizen.mjs models [--json] [--agent a]  modèle de chaque agent selon le profil et la config
-//   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x]   maturité SDLC du projet
+//   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   maturité SDLC du projet
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
 //                                                 déploiement par les commandes de l'équipe, tag deploy/<env>/…
 //   node kaizen.mjs deploy flag on|off <nom> [--env e]     feature flag (deploy.flags)
@@ -676,8 +676,9 @@ try {
       const root = requireRepo();
       if (sub === 'fix') {
         const id = positional[2];
-        if (!id) die('usage : audit fix <ci|pr_template|dependabot|codeowners|gitignore_env> [--owner @x]');
-        out(scaffold(root, id, { owner: typeof flags.owner === 'string' ? flags.owner : undefined }));
+        if (!id) die('usage : audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]');
+        const str = (v) => (typeof v === 'string' ? v : undefined);
+        out(scaffold(root, id, { owner: str(flags.owner), env: str(flags.env), ref: str(flags.ref) }));
         break;
       }
       const r = audit(root, { github: !flags['no-github'] });
