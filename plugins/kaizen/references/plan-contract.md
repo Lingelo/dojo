@@ -116,7 +116,11 @@ la porte) ou risque accepté (et par qui). Pas de menace théorique sans chemin 
 - **Retour arrière** — comment on revient (désactiver le flag, revert, migration inverse) et ce qui
   n'est pas réversible (données écrites, e-mails envoyés) — à dire explicitement.
 - **Signal** — ce qu'on surveille après déploiement pour savoir que ça marche (log, métrique, erreur)
-  et le seuil qui déclenche le retour arrière.
+  et le **seuil** qui déclenche le retour arrière (`> 1 %`, `p95 > 10 s`). Écrit
+  `` `error_rate` > 1 % `` (nom déclaré dans `monitor.signals`, entre backticks), le seuil est appliqué
+  tel quel par `monitor watch` après `/kaizen:deploy`. `plan check` signale un
+  retour arrière ou un signal manquant, et un signal sans seuil ; `release notes` reprend ces champs
+  dans la checklist de mise en production.
 
 ### Unités d'implémentation (`kaizen:units`)
 

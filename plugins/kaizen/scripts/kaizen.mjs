@@ -1,9 +1,18 @@
 #!/usr/bin/env node
 // Kaizen — CLI déterministe utilisé par les skills et le hook.
 //
+//   node kaizen.mjs status [--json]              où en est le repo dans la boucle, et la commande suivante
 //   node kaizen.mjs root                         chemins des livrables (JSON)
+//   node kaizen.mjs models [--json] [--agent a]  modèle de chaque agent selon le profil et la config
+//   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x]   maturité SDLC du projet
+//   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
+//                                                 déploiement par les commandes de l'équipe, tag deploy/<env>/…
+//   node kaizen.mjs deploy flag on|off <nom> [--env e]     feature flag (deploy.flags)
+//   node kaizen.mjs deploy detect [--json] | configure <id> [--force]   plateforme reconnue → config
+//   node kaizen.mjs monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]
+//                                                 signaux de production (exit 1 si seuil franchi)
 //   node kaizen.mjs config                       configuration effective (JSON)
-//   node kaizen.mjs init [--docs-root d] [--language fr]   initialise .kaizen/ et les dossiers
+//   node kaizen.mjs init [--docs-root d] [--language fr] [--profile lean|standard|full]   initialise .kaizen/ et les dossiers
 //   node kaizen.mjs detect                       stack et commandes de vérification (JSON)
 //   node kaizen.mjs verify [--only test,lint] [--json]     lance les vérifications (exit 1 si rouge)
 //   node kaizen.mjs plan new --type feat --topic export-csv   réserve le chemin d'un plan
@@ -14,6 +23,10 @@
 //   node kaizen.mjs packs [--json] [--refresh]   règles des Kaizen Packs déclarés
 //   node kaizen.mjs pack new <nom>               crée et déclare un pack local
 //   node kaizen.mjs gate on [--plan p] | off | status      garde-fou qualité du hook Stop
+//   node kaizen.mjs review record --verdict ready|reserves|blocked [--run d] | waive --reason "…" | status | check
+//                                                 état relu par branche, exigé par le hook avant git push ;
+//                                                 record exige des relecteurs réellement lancés (sauf revue
+//                                                 légère), waive attend la confirmation tapée par l'utilisateur
 //   node kaizen.mjs run-dir <type>                dossier de run local (ex. reviews), ignoré par git
 //   node kaizen.mjs constitution [check] [--json] articles de CONSTITUTION.md / validation
 //   node kaizen.mjs plan check <chemin> [--json]  contrôle structurel d'un plan (traçabilité R/AE → U)
@@ -27,7 +40,7 @@
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { loadConstitution, validateConstitution } from './constitution.mjs';
@@ -36,12 +49,22 @@ import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
 import { computeMetrics } from './metrics.mjs';
 import { releaseNotes } from './release.mjs';
+import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs';
+import { configureDeploy, detectDeploy } from './deploydetect.mjs';
+import { ROLE_LABELS, resolveModels } from './models.mjs';
+import { audit, scaffold } from './audit.mjs';
+import { check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
+import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
 import {
   DEFAULT_CONFIG,
+  PROFILES,
+  defaultBranch,
+  diffBase,
   diffSize,
   detectStack,
   docsRoot,
   expandHome,
+  git,
   loadConfig,
   parseFrontmatter,
   repoRoot,
@@ -107,13 +130,16 @@ function cmdInit(root) {
   mkdirSync(dir, { recursive: true });
   const file = join(dir, 'config.json');
   const created = [];
+  if (flags.profile && !PROFILES.includes(flags.profile)) die(`--profile attendu : ${PROFILES.join(' | ')}`);
   if (!existsSync(file)) {
     const config = {
       docs_root: flags['docs-root'] || DEFAULT_CONFIG.docs_root,
       language: flags.language || DEFAULT_CONFIG.language,
       tracker: flags.tracker || DEFAULT_CONFIG.tracker,
+      profile: flags.profile || DEFAULT_CONFIG.profile,
       verify: {},
       gate: DEFAULT_CONFIG.gate,
+      review: DEFAULT_CONFIG.review,
       packs: [],
     };
     writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
@@ -486,11 +512,131 @@ function cmdGate(root, sub) {
     writeFileSync(file, `${JSON.stringify(state, null, 2)}\n`);
     out(state);
   } else if (sub === 'off') {
+    // Un cycle terminé laisse une trace locale (durée, blocages, tokens) que /kaizen:metrics agrège :
+    // c'est ce qui permet de juger si la cérémonie rapporte plus qu'elle ne coûte.
+    let cycle = null;
+    if (existsSync(file)) {
+      try {
+        const st = JSON.parse(readFileSync(file, 'utf8'));
+        if (st.active && st.since) {
+          const ended = new Date();
+          cycle = {
+            plan: st.plan || null,
+            since: st.since,
+            ended: ended.toISOString(),
+            minutes: Math.round((ended - Date.parse(st.since)) / 6000) / 10,
+            gate_blocks: st.blocks_total || 0,
+            usage: st.usage || null,
+          };
+          appendFileSync(join(dirname(file), 'cycles.jsonl'), `${JSON.stringify(cycle)}\n`);
+        }
+      } catch {}
+    }
     rmSync(file, { force: true });
-    out({ active: false });
+    out({ active: false, cycle });
   } else if (sub === 'status') {
     out(existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : { active: false });
   } else die('usage : gate on [--plan <chemin>] | off | status');
+}
+
+// ---------------------------------------------------------------------------
+// status — diagnostic de l'état du repo dans la boucle (lu par /kaizen:help)
+// ---------------------------------------------------------------------------
+
+function repoStatus(root) {
+  const config = loadConfig(root);
+  const initialized = existsSync(join(root, '.kaizen', 'config.json'));
+  const branch = currentBranch(root);
+  const def = defaultBranch(root);
+  const base = diffBase(root);
+  const ahead = base ? Number(git(root, ['rev-list', '--count', `${base}..HEAD`], { allowFail: true }) || 0) : 0;
+  const dirty = (git(root, ['status', '--porcelain'], { allowFail: true }) || '').split('\n').filter(Boolean).length;
+
+  const c = loadConstitution(root);
+  const constitution = c ? { exists: true, version: c.meta.version ?? null, valid: validateConstitution(c).errors.length === 0 } : { exists: false };
+
+  let docs = null;
+  try {
+    docs = docsRoot(root, config);
+  } catch {}
+  const plansDir = docs && join(docs, 'plans');
+  const plans = plansDir && existsSync(plansDir)
+    ? readdirSync(plansDir).filter((f) => f.endsWith('.md')).map((f) => join(plansDir, f)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
+    : [];
+  let latest = null;
+  if (plans.length) {
+    const r = checkPlan(plans[0], { constitution: c });
+    latest = { path: rel(root, plans[0]), stage: r.stage, errors: r.errors.length };
+  }
+  const learnings = docs ? walkMarkdown(join(docs, 'learnings')).length : 0;
+
+  const gateFile = join(root, '.kaizen', 'state', 'gate.json');
+  let gate = { active: false };
+  try {
+    if (existsSync(gateFile)) gate = JSON.parse(readFileSync(gateFile, 'utf8'));
+  } catch {}
+  const review = initialized && branch ? reviewStatus(root) : null;
+
+  // Prochaine étape : la première situation qui s'applique, dans l'ordre de la boucle.
+  const next = [];
+  const say = (command, why) => next.push({ command, why });
+  if (!initialized) say('/kaizen:setup', 'Kaizen n’est pas initialisé dans ce repo');
+  else if (!constitution.exists) say('/kaizen:constitution', 'pas de CONSTITUTION.md : plan et revue n’ont que des règles génériques');
+  if (gate.active) say('/kaizen:work', `un travail est en cours sous garde-fou${gate.plan ? ` (${gate.plan})` : ''} : le reprendre, ou \`gate off\` s’il est abandonné`);
+  else if (branch && branch !== def && (ahead || dirty)) {
+    if (review?.pending_waiver) say('kaizen waive <code>', 'une renonciation à la revue attend votre confirmation (à taper vous-même)');
+    else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branche ${branch} relue (${review.push.reason}) : prête à livrer`);
+    else say('/kaizen:review', `branche ${branch} : ${review?.review ? review.push.reason : 'changements pas encore relus'}${dirty ? ' (non commités compris)' : ''}`);
+  } else if (branch && branch === def && undeployed(root, config)) {
+    const u = undeployed(root, config);
+    say(`/kaizen:deploy ${u.env}`, `${u.commits} commit(s) de ${def} pas encore déployé(s) sur ${u.env}${u.last ? ` (dernier : ${u.last})` : ''}`);
+  } else if (latest?.stage === 'requirements') say(`/kaizen:plan ${latest.path}`, 'des exigences attendent leur plan d’implémentation');
+  else if (latest?.stage === 'implementation-ready' && !latest.errors) say(`/kaizen:work ${latest.path}`, 'un plan prêt attend d’être exécuté (si ce n’est pas déjà fait)');
+  if (!next.length || (initialized && constitution.exists && !gate.active && !(branch && branch !== def && (ahead || dirty)))) {
+    say('/kaizen:brainstorm <idée>', 'définir la prochaine fonctionnalité (ou /kaizen:ideate pour trouver quoi faire, /kaizen:debug pour un bug)');
+  }
+  return {
+    repo: basename(root),
+    branch,
+    default_branch: def,
+    ahead_of_base: ahead,
+    uncommitted_files: dirty,
+    initialized,
+    profile: config.profile,
+    constitution,
+    plans: plans.length,
+    latest_plan: latest,
+    learnings,
+    gate: { active: Boolean(gate.active), plan: gate.plan || null, since: gate.since || null },
+    deploy: Object.keys(config.deploy.environments || {}).length ? { environments: Object.keys(config.deploy.environments), undeployed: undeployed(root, config) } : null,
+    review: review ? { verdict: review.review?.verdict || null, depth: review.review?.depth || null, push_allowed: review.push.allowed, reason: review.push.reason, pending_waiver: Boolean(review.pending_waiver) } : null,
+    next,
+  };
+}
+
+// Commits de la branche courante pas encore déployés sur le premier environnement déclaré (staging
+// avant production) : null si rien n'est configuré ou si tout est déployé.
+function undeployed(root, config) {
+  const envs = Object.keys(config.deploy.environments || {});
+  if (!envs.length) return null;
+  const env = envs.includes('production') ? 'production' : envs[0];
+  const last = deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1);
+  const commits = Number(git(root, ['rev-list', '--count', last ? `${last.sha}..HEAD` : 'HEAD'], { allowFail: true }) || 0);
+  return commits ? { env, commits, last: last?.tag || null } : null;
+}
+
+function cmdStatus(root) {
+  const st = repoStatus(root);
+  if (flags.json) return out(st);
+  const yes = (b) => (b ? '✔' : '✘');
+  out(`Kaizen — ${st.branch || 'HEAD détachée'}${st.ahead_of_base ? ` (+${st.ahead_of_base} commit(s))` : ''}${st.uncommitted_files ? `, ${st.uncommitted_files} fichier(s) modifié(s)` : ''}`);
+  out(`  ${yes(st.initialized)} initialisé${st.initialized ? ` · profil ${st.profile}` : ''}`);
+  out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.valid ? '' : ' (invalide)'}` : ''}`);
+  out(`  · ${st.plans} plan(s)${st.latest_plan ? ` — dernier : ${st.latest_plan.path} (${st.latest_plan.stage})` : ''} · ${st.learnings} leçon(s)`);
+  if (st.gate.active) out(`  ⚠ garde-fou actif depuis ${st.gate.since}`);
+  if (st.review) out(`  ${yes(st.review.push_allowed)} push : ${st.review.reason}`);
+  out('\nEnsuite :');
+  for (const n of st.next) out(`  → ${n.command} — ${n.why}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -498,9 +644,122 @@ function cmdGate(root, sub) {
 const [cmd, sub] = positional;
 try {
   switch (cmd) {
+    case 'status':
+      cmdStatus(requireRepo());
+      break;
     case 'root':
       out(paths(requireRepo()));
       break;
+    case 'audit': {
+      const root = requireRepo();
+      if (sub === 'fix') {
+        const id = positional[2];
+        if (!id) die('usage : audit fix <ci|pr_template|dependabot|codeowners|gitignore_env> [--owner @x]');
+        out(scaffold(root, id, { owner: typeof flags.owner === 'string' ? flags.owner : undefined }));
+        break;
+      }
+      const r = audit(root, { github: !flags['no-github'] });
+      if (flags.json) {
+        out(r);
+        break;
+      }
+      const icon = { ok: '✔', warn: '⚠', missing: '✘', unknown: '?' };
+      out(`Maturité SDLC — ${r.stacks.join(', ') || 'stack non reconnue'}`);
+      for (const [area, a] of Object.entries(r.areas)) {
+        out(`\n${area}${a.score === null ? '' : ` — ${a.score} %`}`);
+        for (const ch of r.checks.filter((x) => x.area === area)) out(`  ${icon[ch.status]} ${ch.title} — ${ch.evidence}`);
+      }
+      if (r.next.length) {
+        out('\nPar priorité :');
+        for (const n of r.next) out(`  P${n.priority} ${n.title} → ${n.how}${n.scaffold ? ` (gabarit : audit fix ${n.scaffold})` : ''}`);
+      }
+      break;
+    }
+    case 'models': {
+      const m = resolveModels(loadConfig(requireRepo()));
+      if (typeof flags.agent === 'string') {
+        const a = m.agents[flags.agent.replace(/^kaizen:/, '')];
+        if (!a) die(`agent inconnu : ${flags.agent}`);
+        out(a.model);
+      } else if (flags.json) out(m);
+      else {
+        out(`Modèles — profil ${m.profile}`);
+        for (const [r, v] of Object.entries(m.roles)) out(`  ${ROLE_LABELS[r].padEnd(52)} ${v.model.padEnd(8)} (${v.source})`);
+        const own = Object.entries(m.agents).filter(([, v]) => v.source === 'config' && m.roles[v.role].source !== 'config');
+        for (const [a, v] of own) out(`  ↳ ${a.padEnd(50)} ${v.model.padEnd(8)} (config)`);
+        for (const w of m.warnings) out(`  ⚠ ${w}`);
+      }
+      break;
+    }
+    case 'deploy': {
+      const root = requireRepo();
+      const env = positional[2];
+      const ref = typeof flags.ref === 'string' ? flags.ref : undefined;
+      if (sub === 'detect') {
+        const found = detectDeploy(root);
+        if (flags.json) out(found);
+        else if (!found.length) out('Aucun mécanisme de déploiement reconnu : déclarez vos commandes dans .kaizen/config.json → deploy.environments.');
+        else {
+          for (const c of found) {
+            out(`● ${c.id} — ${c.platform} (confiance ${c.confidence}, ${c.source})`);
+            for (const [e, d] of Object.entries(c.environments)) out(`    ${e.padEnd(10)} déployer : ${d.command}\n               revenir  : ${d.rollback || '— (à prévoir)'}`);
+            for (const [n, s] of Object.entries(c.signals)) out(`    signal ${n} : ${s.url}`);
+            for (const n of c.notes) out(`    · ${n}`);
+          }
+          out('\nÉcrire un candidat dans la config : node kaizen.mjs deploy configure <id>');
+        }
+      } else if (sub === 'configure') {
+        if (!env) die('usage : deploy configure <id> [--force]   (id : voir deploy detect)');
+        out(configureDeploy(root, env, { force: Boolean(flags.force) }));
+      } else if (sub === 'request') out(requestDeploy(root, env, { ref }));
+      else if (sub === 'run') {
+        // Plans livrés depuis le dernier déploiement de cet environnement : leurs signaux et seuils
+        // serviront à la surveillance qui suit.
+        const last = deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1);
+        const plans = releaseNotes(root, { from: last?.tag, to: ref || 'HEAD' }).rollout.map((r) => r.plan);
+        const r = deploy(root, env, { ref, plans });
+        out(r);
+        process.exit(r.ok ? 0 : 1);
+      } else if (sub === 'rollback') {
+        const r = rollback(root, env, { reason: typeof flags.reason === 'string' ? flags.reason : null, to: typeof flags.to === 'string' ? flags.to : undefined });
+        out(r);
+        process.exit(r.ok ? 0 : 1);
+      } else if (sub === 'list') out(deployments(root, { env: typeof flags.env === 'string' ? flags.env : null }));
+      else if (sub === 'flag') {
+        const state = positional[2];
+        if (!['on', 'off'].includes(state) || !positional[3]) die('usage : deploy flag on|off <nom> [--env e]');
+        const r = flag(root, state, positional[3], { env: typeof flags.env === 'string' ? flags.env : null });
+        out(r);
+        process.exit(r.ok ? 0 : 1);
+      } else die('usage : deploy request|run <env> [--ref r] | deploy rollback <env> [--reason …] [--to r] | deploy list [--env e] | deploy flag on|off <nom>');
+      break;
+    }
+    case 'monitor': {
+      const root = requireRepo();
+      const env = typeof flags.env === 'string' ? flags.env : null;
+      // Sans --plan : les plans du dernier déploiement de l'environnement (seuils de leur rollout).
+      const plan = typeof flags.plan === 'string' ? flags.plan : (env ? deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1)?.note?.plans || null : null);
+      if (sub === 'check') {
+        const r = await monitorCheck(root, { env, plan });
+        out(r);
+        process.exit(r.ok ? 0 : 1);
+      } else if (sub === 'watch') {
+        const r = await monitorWatch(root, {
+          env,
+          plan,
+          minutes: flags.minutes,
+          intervalSeconds: flags.interval,
+          onSample: (c) => process.stderr.write(`[kaizen] ${c.at} ${c.ok ? '✔' : '✘'} ${Object.entries(c.signals).map(([n, s]) => `${n}=${s.value ?? '—'}${s.ok ? '' : '!'}`).join(' ')}\n`),
+        });
+        const config = loadConfig(root);
+        if (r.status === 'breach' && env && config.deploy.auto_rollback && config.deploy.environments?.[env]?.rollback) {
+          r.rollback = rollback(root, env, { reason: `monitor : ${r.breached.join(', ')} hors seuil` });
+        }
+        out(r);
+        process.exit(r.status === 'breach' ? 1 : 0);
+      } else die('usage : monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]');
+      break;
+    }
     case 'config':
       out(loadConfig(requireRepo()));
       break;
@@ -531,6 +790,18 @@ try {
     case 'gate':
       cmdGate(requireRepo(), sub);
       break;
+    case 'review': {
+      const root = requireRepo();
+      if (sub === 'record') out(recordReview(root, { verdict: flags.verdict, run: typeof flags.run === 'string' ? flags.run : null }));
+      else if (sub === 'waive') out(requestWaiver(root, { reason: typeof flags.reason === 'string' ? flags.reason : null }));
+      else if (sub === 'status') out(reviewStatus(root));
+      else if (sub === 'check') {
+        const res = checkPush(root);
+        out(res);
+        process.exit(res.allowed ? 0 : 1);
+      } else die('usage : review record --verdict ready|reserves|blocked [--run <dossier>] | review waive --reason "…" | review status | review check');
+      break;
+    }
     case 'constitution': {
       const root = requireRepo();
       const c = loadConstitution(root);

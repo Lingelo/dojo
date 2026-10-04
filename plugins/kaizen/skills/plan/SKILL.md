@@ -38,7 +38,7 @@ invalide une décision prise en session arrête l'écriture : rends `status: blo
 ## Phase 1 — Recherche (parallèle, un seul message)
 
 Prépare un **contexte de travail** autonome (objectif, exigences R/AE, modules supposés, décisions
-envisagées) et lance selon le besoin :
+envisagées) et lance selon le besoin, chaque agent avec son `model` (`node "$K" models --json`) :
 
 | Agent | Quand |
 |---|---|
@@ -65,9 +65,13 @@ d'architecture lourde ou irréversible (format de données, fournisseur, interfa
 - **Constitution** : évalue chaque article (section `kaizen:constitution`). Un article NON NÉGOCIABLE
   impossible à respecter bloque le plan (capsule : bloquant ouvert) — ne le contourne pas.
 - **Menaces** : surface à risque (auth, données sensibles, paiement, entrée externe, intégration) →
-  section `kaizen:threats` (STRIDE léger), chaque parade portée par une unité.
+  section `kaizen:threats` (STRIDE léger), chaque parade portée par une unité. Profil `full` : toujours.
 - **Déploiement** : section `kaizen:rollout` — exposition (flag ?), ordre, retour arrière, ce qui est
-  irréversible, signal à surveiller.
+  irréversible, signal à surveiller. Cite le signal par son nom déclaré dans `monitor.signals`
+  (`node "$K" config`) avec son seuil, `` `error_rate` > 1 % → retour arrière `` : c'est ce que
+  `/kaizen:deploy` surveillera après la mise en production. Signal nécessaire mais non déclaré → dis-le
+  dans le plan (à ajouter à la config). Profil `lean` : seulement si le changement atteint la production
+  d'une façon qui se défait mal (migration, API publique, donnée) ; sinon une ligne suffit.
 
 ## Phase 3 — Structurer
 

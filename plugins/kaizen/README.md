@@ -25,8 +25,10 @@ Kaizen outille ces trois disciplines.
                         ▲                                                         │
                         └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
  debug → correctif → review → learn        polish : retouches UI guidées par l'utilisateur
- decide → ADR      postmortem → leçons · packs · amendements      metrics (DORA)      release
+ release → deploy → monitor ─(seuil franchi)→ rollback → postmortem → leçons · packs · amendements
+ decide → ADR      metrics (DORA réel depuis les déploiements, coût des cycles)
  autopilot : de la demande à la PR prête, en autonomie      prune-learnings : entretien des leçons
+ help : quelle commande lancer maintenant, d'après l'état du repo
 ```
 
 > Inspiré très fortement du plugin [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)
@@ -44,6 +46,7 @@ Kaizen outille ces trois disciplines.
 
 - **[Démarrage](docs/demarrage.md)** — un premier cycle complet, pas à pas
 - **[Guides par skill](docs/README.md)** — quand utiliser chaque commande, ce qu'elle produit, ses options
+- [Bilan et positionnement](docs/positionnement.md) — ce que Kaizen couvre, ses limites, face aux SDLC classiques, à Spec Kit, Kiro, BMAD et Compound Engineering
 - [Configuration](docs/configuration.md) · [Kaizen Packs](docs/packs.md) · [Dépannage](docs/depannage.md) · [Changelog](CHANGELOG.md)
 
 ## Installation
@@ -59,7 +62,10 @@ Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans
 /kaizen:constitution
 ```
 
-## Les commandes (20 skills)
+## Les commandes (23 skills)
+
+Perdu ? **`/kaizen:help`** explique Kaizen, regarde où en est votre repo et vous dit quelle commande
+lancer ensuite.
 
 ### Cadrer
 
@@ -90,6 +96,13 @@ Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans
 | `/kaizen:watch-pr` | Mène une PR jusqu'à « semble prête » : retours **avant** la CI, réparation de la CI (jamais de test désactivé). Mise à jour depuis la base seulement sur signal de GitHub, contrôle qu'aucune revue n'est encore en route, budget de 8 h. **Ne merge jamais.** |
 | `/kaizen:release` | Notes de version depuis les commits conventionnels, version SemVer vérifiée, CHANGELOG, checklist de mise en production. Ne tague jamais sans accord. |
 
+### Mettre en production et surveiller
+
+| Commande | Rôle |
+|---|---|
+| `/kaizen:deploy` | Déploie par **vos** commandes (`deploy.environments`) : préconditions, approbation que vous tapez pour la production, tag `deploy/<env>/…`, surveillance des signaux du plan, **retour arrière** si un seuil est franchi. |
+| `/kaizen:monitor` | Signaux de production (health-check HTTP natif ou toute commande qui affiche un nombre) contre les seuils de la config et des plans livrés. Seuil franchi → retour arrière, puis post-mortem. |
+
 ### Apprendre et mesurer
 
 | Commande | Rôle |
@@ -105,6 +118,7 @@ Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans
 |---|---|
 | `/kaizen:autopilot` | Autonome : plan ou debug → work → simplification → revue avec correctifs → learn → ship → watch-pr. S'arrête à « semble prête ». |
 | `/kaizen:setup` | Configuration, détection de la stack, trouvabilité depuis `CLAUDE.md`, création de packs (`pack:<nom>`), bilan de santé (`check`). |
+| `/kaizen:help` | Explique Kaizen et recommande la commande à lancer selon votre situation et l'état du repo (`node $K status`). Lecture seule. |
 
 ## Ce qui garantit la qualité
 
@@ -132,12 +146,43 @@ vérifie la conformité du code au plan, et la PR reprend les exigences couverte
 
 **Garde-fou par hook `Stop`.** Pendant `work` et `autopilot`, Claude ne peut pas terminer tant que test,
 lint ou typage sont rouges. Le hook bloque 3 fois au maximum puis laisse passer en exigeant que
-l'échec soit signalé, et s'éteint seul après 24 h.
+l'échec soit signalé, et s'éteint seul après 24 h. Il appartient à la session qui l'a posé et tient
+dans un budget de temps sous le délai du hook.
+
+**Revue imposée par hook, pas par consigne.** Un hook `PreToolUse` refuse `git push` d'une branche tant
+que `/kaizen:review` n'a pas enregistré l'état poussé (au-delà de 80 lignes modifiées depuis, nouvelle
+revue). L'enregistrement exige une preuve : un hook consigne les relecteurs réellement lancés, l'agent
+ne peut pas déclarer une revue qui n'a pas eu lieu. Seul l'utilisateur peut y renoncer, en tapant
+lui-même le code de confirmation, et la renonciation figure dans la PR.
+
+**Adoption par paliers.** `profile` : `lean` (cérémonie minimale, pour commencer), `standard`, `full`.
+Le profil règle la cérémonie (taille du plan, nombre de relecteurs), jamais les garde-fous
+déterministes. De petits pas, dans l'esprit kaizen.
+
+**De la production au cycle suivant.** Chaque plan dit comment revenir en arrière et quel signal
+surveiller, avec son seuil (`plan check` le signale sinon). `release` en tire la checklist de mise en
+production ; un seuil franchi mène au post-mortem, dont les leçons et amendements nourrissent le
+cycle suivant.
+
+**Gouvernance d'équipe.** Avec `approvers` déclarés, chaque amendement de la constitution doit être
+approuvé par l'un d'eux, jamais par un agent (`constitution check`).
 
 **L'effet cumulatif, mesuré.** Les leçons (`docs/learnings/`), les ADR et les post-mortems sont
-relus par `learnings-researcher` à chaque plan, revue et debug. `/kaizen:metrics` compte combien de
-leçons sont **réellement citées** par les plans récents. Une leçon jamais réutilisée signale une
-boucle qui ne se referme pas.
+relus par `learnings-researcher` à chaque plan, revue et debug. `/kaizen:metrics` distingue les leçons
+**lues** (citées par un plan récent) des leçons **appliquées** (citées par un commit arrivé sur la
+branche par défaut), et liste celles que personne n'a jamais citées. Une leçon jamais réutilisée
+signale une boucle qui ne se referme pas. `metrics` mesure aussi le **coût** de chaque cycle (durée,
+tokens, blocages du garde-fou) pour juger si la cérémonie rapporte plus qu'elle ne coûte.
+
+**Le bon modèle pour chaque tâche.** Chaque agent a un rôle, chaque rôle un modèle selon le profil :
+recherche économe, relecteurs critiques (sécurité, migrations, adversarial) au modèle le plus fort.
+Ajustable par rôle ou par agent (`models`), vérifiable (`node $K models`, modèle enregistré par
+relecteur).
+
+**Mettre le SDLC en place.** `/kaizen:setup audit` note le projet sur cinq domaines (fondations,
+flux, livraison, exploitation, boucle Kaizen) et corrige dans l'ordre de priorité : CI, modèle de
+PR, Dependabot, CODEOWNERS générés depuis votre stack ; plateforme de déploiement reconnue par
+`deploy detect` (Vercel, Fly.io, Heroku, Kamal, Helm, Kustomize, GitHub Actions…).
 
 ## Agents (21)
 

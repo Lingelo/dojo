@@ -52,8 +52,8 @@
    - `node $K size` : au-delà du plafond, Claude propose des PR empilées ;
    - couverture de chaque R et AE ;
    - simplification ;
-   - **`/kaizen:review` obligatoire** ;
-   - correctifs P0/P1.
+   - **`/kaizen:review` obligatoire**, et exigée par un hook avant tout `git push` ;
+   - correctifs P0/P1, puis la revue est ré-enregistrée avec son verdict après correctifs.
 5. **Fin** : `gate off` et résumé, puis la proposition de livrer.
 
 ## Le garde-fou
@@ -82,6 +82,11 @@ il la corrige et le dit. Sinon, il vous rapporte un bloquant.
 - Unités indépendantes et nombreuses : Claude peut les confier à des sous-agents en parallèle, mais
   il reste l'intégrateur (diff inspecté, vérification relancée, commits faits par lui).
 - Interface touchée : vérification dans un navigateur si le plugin `playwright` est installé.
+- Une unité qui applique une leçon la cite dans son commit (`Applique docs/learnings/…`) : c'est ce
+  que `/kaizen:metrics` compte comme leçon **appliquée**.
+- Le garde-fou relance les vérifications à chaque fin de tour. Suite lente : configurez des
+  vérifications ciblées (`gate.targeted`, [Configuration](../configuration.md#gate--le-garde-fou-du-hook-stop)).
+- `gate off` consigne le cycle (durée, tokens, blocages) pour `/kaizen:metrics`.
 
 ## Voir aussi
 

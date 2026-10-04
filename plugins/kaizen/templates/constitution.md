@@ -52,6 +52,10 @@ l'accord explicite d'un humain dans la session.}}
 
 - **Amendement** — par `/kaizen:constitution amend` : proposition, impact (plans en cours, packs et
   leçons en conflit), accord explicite, puis mise à jour de la version et de `last_amended`.
+- **Approbation** — {{optionnel, pour une équipe : déclarer `approvers: [@alice, @bob]` et
+  `ratified_by: alice` dans le frontmatter. Chaque amendement du journal se termine alors par
+  « Approuvé par : @… » (contrôlé par `constitution check`), et `CODEOWNERS` assigne
+  `CONSTITUTION.md` et `kaizen-packs/` à ces approbateurs.}}
 - **Versionnage** — MAJEUR : article retiré ou redéfini de façon incompatible ; MINEUR : article
   ajouté ou élargi ; CORRECTIF : clarification sans changement de sens.
 - **Application** — `/kaizen:plan` évalue chaque article (section « Contrôle constitutionnel »),

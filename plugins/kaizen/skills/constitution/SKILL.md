@@ -108,7 +108,14 @@ discutent). Ensuite :
    élargi, CORRECTIF si clarification. Mets à jour `last_amended`. Ajoute en bas un journal
    `## Amendements` : `- v1.2.0 (2026-11-03) — Article IV élargi aux webhooks. Raison : post-mortem
    docs/postmortems/…`.
-6. Accord explicite, écriture, `constitution check`.
+6. **Approbation.** Si le frontmatter déclare `approvers` (gouvernance d'équipe), l'amendement n'est
+   valide qu'avec `Approuvé par : @<approbateur>` en fin de ligne du journal, et `constitution check`
+   le refuse sinon. Demande qui l'a approuvé ; n'écris jamais un nom que l'utilisateur n'a pas donné,
+   et jamais un agent (`@claude`…) : un agent ne s'approuve pas un changement des règles qu'il doit
+   respecter. Sans approbation, laisse l'amendement en proposition (PR touchant `CONSTITUTION.md`,
+   relue par les approbateurs, idéalement via `CODEOWNERS`). En mode non interactif : jamais
+   d'amendement, seulement une proposition.
+7. Accord explicite, écriture, `constitution check`.
 
 ## Phase 3 — Audit (`audit`)
 

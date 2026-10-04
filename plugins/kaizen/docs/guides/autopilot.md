@@ -34,6 +34,9 @@
 
 Pas de raccourci pour un « petit » changement : plan, garde-fou, `verify` et revue tournent toujours.
 Seules la simplification (petit diff) et la livraison (pas de remote) peuvent être sautées.
+**Exception, profil `lean`** : un changement de 30 lignes environ, sans surface à risque (auth,
+données sensibles, migration, API publique, dépendance), part directement dans `work` sans plan écrit.
+Garde-fou, `verify`, revue et livraison restent identiques. Voir [Configuration](../configuration.md#profile).
 
 ## La course
 
@@ -61,6 +64,8 @@ Plan : docs/plans/…-plan.md · Unités : 3/3 · Revue : 1 P1 corrigé, 2 P3 co
 
 - **Questions** : seulement à travers le brainstorm, et seulement si vous êtes présent. Le reste
   avance : ce qui est réversible est fait puis montré.
+- **Pas de renonciation à la revue** : autopilot ne peut pas pousser sans revue enregistrée, et la
+  renonciation exige que vous tapiez vous-même un code. Sans vous, la course s'arrête et dit pourquoi.
 - **Ce qui arrête la course** :
   - une action irréversible hors de ce qui a été accordé (merge, push forcé, suppression de données,
     déploiement) ;

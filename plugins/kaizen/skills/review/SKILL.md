@@ -55,13 +55,16 @@ Selon `persona-catalog.md` : `correctness` toujours (hors profondeur légère), 
 relecteurs dont le domaine est **présent dans le diff** — par jugement sur le diff, pas par mots-clés.
 Pour `standards` : rassemble `CONSTITUTION.md` (`node "$K" constitution --json`), les fichiers de standards, `node "$K" packs --json` (règles dont
 `applies_when` correspond) et `node "$K" learnings search <termes du diff>` (leçons pertinentes).
-Annonce en une ligne par relecteur pourquoi il est retenu.
+Le **profil** (`node "$K" config` → `profile`, voir `conventions.md`) ajuste la sélection : `lean` =
+socle (`correctness`, `standards`) + `security` si surface à risque ; `full` = `adversarial` dès la
+profondeur ciblée. Annonce en une ligne par relecteur pourquoi il est retenu.
 
 ## Étape 4 — Lancer en parallèle
 
 Lis `${CLAUDE_PLUGIN_ROOT}/references/review-contract.md`. Crée le dossier de run avec
 `node "$K" run-dir reviews` (il affiche le chemin ; ignoré par git). Lance **tous** les relecteurs retenus
-**dans un seul message** (outil `Agent`, `subagent_type: "kaizen:<nom>"`), chacun avec ce prompt :
+**dans un seul message** (outil `Agent`, `subagent_type: "kaizen:<nom>"`, `model` lu dans
+`node "$K" models --json` → `agents.<nom>.model`, omis si `inherit`), chacun avec ce prompt :
 
 ```
 <contrat>
@@ -116,16 +119,26 @@ constat P0/P1 par relecture des lignes citées, classement, et compte rendu des 
 Verdict : ⛔ s'il reste un P0, ou un P1 confirmé ; ⚠️ s'il reste des P1/P2 non bloquants ou une
 couverture incomplète ; ✅ sinon.
 
+**Enregistre la revue** (périmètre = branche courante, dans tous les modes) :
+`node "$K" review record --verdict <ready|reserves|blocked> --run <dossier de run>` (✅ → `ready`,
+⚠️ → `reserves`, ⛔ → `blocked`). C'est ce que le hook de push exige ; une revue d'une autre PR ou
+d'une autre branche ne s'enregistre pas. L'enregistrement est refusé si aucun relecteur n'a
+réellement tourné (un hook consigne chaque appel `Agent` à un relecteur de code) — sauf profondeur
+légère (≤ 20 lignes) : ne le contourne pas, lance les relecteurs.
+
 ## Étape 7 — Appliquer (seulement avec `apply`)
 
 Applique les constats `gated_auto` retenus, du plus sévère au moins sévère, un par un ; relance la
 vérification ciblée après chacun (`node "$K" verify`) ; annule un correctif qui casse quelque chose.
 Les `manual` restent listés avec leur proposition. Commit des correctifs au format conventionnel
-(`fix(<JIRA>): corrections de revue …`), fichiers concernés seulement. Résume appliqué / non appliqué.
+(`fix(<JIRA>): corrections de revue …`, corps citant la leçon appliquée le cas échéant), fichiers
+concernés seulement. Ré-enregistre ensuite la revue avec le verdict **après** correctifs
+(`node "$K" review record --verdict …`). Résume appliqué / non appliqué.
 
 ## `mode:agent` (pour /kaizen:work et /kaizen:autopilot)
 
 Aucune prose : rends le JSON fusionné
 `{ verdict, coverage: {ran, failed, skipped}, findings: [...], plan_conformance: [...],
-testing_gaps, residual_risks, pre_existing_count }`. Ne modifie jamais l'arbre dans ce mode, même si
-l'appelant appliquera ensuite.
+testing_gaps, residual_risks, pre_existing_count, recorded: bool }`. Ne modifie jamais l'arbre dans ce
+mode, même si l'appelant appliquera ensuite (l'enregistrement de la revue sous `.kaizen/state/` n'est
+pas une modification de l'arbre).

@@ -29,7 +29,10 @@ réel, avec un **guide du relecteur**.
 ## Barrières
 
 1. `node $K verify` est vert. Sinon `ship` s'arrête.
-2. Une revue `/kaizen:review` a été faite sur ce diff. Sinon `ship` la lance.
+2. Une revue `/kaizen:review` a été enregistrée pour ce diff (`node $K review check`). Sinon `ship` la
+   lance. Ce n'est pas qu'une consigne : un hook refuse le `git push` d'une branche sans revue
+   enregistrée, avec la preuve que des relecteurs ont réellement tourné. Voir
+   [Configuration de `review`](../configuration.md#review--la-revue-exigée-avant-git-push).
 3. `node $K size` est sous `pr.max_lines`. Au-delà :
    - en interactif, Claude propose des **PR empilées**, une par tranche du plan, chacune basée sur la
      précédente ;
@@ -63,6 +66,9 @@ pour un retour à traiter. Le titre est un commit conventionnel de 72 caractère
 ## Bon à savoir
 
 - Jamais de push sur la branche par défaut, jamais de `--force`.
+- Pousser sans revue n'est possible que si **vous** le confirmez : Claude lance
+  `review waive --reason "…"` et vous tapez le code affiché (`kaizen waive <code>`). La PR porte
+  alors une section **« Revue écartée »** avec votre raison.
 - Une PR existante pour la branche est **mise à jour**, jamais dupliquée.
 - Sans remote, tout reste en commits locaux. Sans `gh`, `ship` passe par les outils GitHub MCP s'ils
   sont disponibles, sinon il donne l'URL et le corps à coller.

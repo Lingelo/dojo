@@ -87,6 +87,8 @@ Un commit par unité, après vérification verte de l'unité :
 git add <fichiers de l'unité>          # jamais -A, jamais commit -a
 git commit -m "<type>(<JIRA>): <description à l'impératif>" -m "Unité U3 du plan <chemin>. Couvre R2, AE1."
 ```
+Une unité qui applique une leçon citée par le plan ajoute au corps du commit
+`-m "Applique docs/learnings/<…>.md"` : c'est le signal « leçon appliquée » de `/kaizen:metrics`.
 Clé Jira extraite de la branche (`[A-Z][A-Z0-9]+-\d+`), sinon `<type>: …`. Aucun fichier du
 travail en cours de l'utilisateur dans un commit sans son accord.
 

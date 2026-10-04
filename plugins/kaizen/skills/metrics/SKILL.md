@@ -36,11 +36,18 @@ fenêtre trop courte (moins de 10 changements → tendances non significatives).
 | Taux d'échec des changements | changements suivis d'un correctif sous 7 jours sur les mêmes fichiers |
 | Temps de rétablissement | depuis les post-mortems (`detected` → `resolved`) |
 | Taille des lots | médiane et part au-dessus de `pr.max_lines` — le premier levier selon DORA |
-| Boucle Kaizen | leçons nouvelles, leçons **citées** par les plans récents (réutilisation), exceptions à la constitution |
+| Boucle Kaizen | leçons nouvelles, **lues** (citées par un plan récent), **appliquées** (citées par un commit), jamais citées, exceptions à la constitution |
+| Coût des cycles | `cycle_cost` : cycles work/autopilot clos, durée et tokens médians, part des cycles où le garde-fou a bloqué — local à la machine |
 
 **Réutilisation des leçons** : c'est l'indicateur propre à Kaizen. Des leçons écrites mais jamais
 citées par un plan = la boucle ne se referme pas (leçons introuvables, mal étiquetées, ou
-`learnings-researcher` non lancé) → `/kaizen:prune-learnings` et vérifier la trouvabilité depuis `CLAUDE.md`.
+`learnings-researcher` non lancé) → `/kaizen:prune-learnings` (en commençant par
+`learnings_never_cited_sample`) et vérifier la trouvabilité depuis `CLAUDE.md`.
+
+**Coût** : mets-le en regard du gain. Des cycles longs ou chers avec un taux d'échec qui ne baisse pas
+→ la cérémonie ne rapporte pas : propose le profil `lean`. Un garde-fou qui bloque dans la plupart des
+cycles → vérifications trop lentes ou instables (`gate.targeted`), ou unités trop grosses. Dis que les
+tokens ne comptent que la session principale (pas les sous-agents) et que la mesure est locale.
 
 ## 3. Conclure
 

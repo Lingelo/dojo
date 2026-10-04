@@ -13,6 +13,9 @@ export const CONSTITUTION_FILE = 'CONSTITUTION.md';
 
 const ARTICLE_RE = /^###\s+([IVXLC]+)\.\s+(.+?)\s*$/;
 const NON_NEGOTIABLE_RE = /\s*[—–-]+\s*(NON[ -]N[ÉE]GOCIABLE|NON[ -]NEGOTIABLE)\s*$/i;
+// Journal : « - v1.2.0 (2026-11-03) — Article IV élargi. Raison : … Approuvé par : @alice, @bob »
+const AMENDMENT_RE = /^\s*[-*]\s+v?(\d+\.\d+\.\d+)\s*\((\d{4}-\d{2}-\d{2})\)\s*[—–-]+\s*(.+)$/;
+const handles = (v) => [].concat(v || []).flatMap((x) => String(x).split(/[,\s]+/)).map((x) => x.trim().replace(/^@/, '').toLowerCase()).filter(Boolean);
 const FIELD_RE = /^\*\*(Contrôle|Control|Exceptions?)\s*:\*\*\s*(.*)$/i;
 
 export function constitutionPath(root) {
@@ -22,6 +25,7 @@ export function constitutionPath(root) {
 export function parseConstitution(text) {
   const { data, body } = parseFrontmatter(text);
   const articles = [];
+  const amendments = [];
   let current = null;
   let section = null;
   for (const line of body.split(/\r?\n/)) {
@@ -29,6 +33,14 @@ export function parseConstitution(text) {
     if (h2) {
       section = h2[1];
       current = null;
+      continue;
+    }
+    if (/^amend/i.test(section || '')) {
+      const am = AMENDMENT_RE.exec(line);
+      if (am) {
+        const by = /approuv[ée]+\s+par\s*:\s*([^.]+)/i.exec(am[3]) || /approved\s+by\s*:\s*([^.]+)/i.exec(am[3]);
+        amendments.push({ version: am[1], date: am[2], text: am[3].trim(), approved_by: by ? handles(by[1]) : [] });
+      }
       continue;
     }
     const m = ARTICLE_RE.exec(line);
@@ -58,7 +70,7 @@ export function parseConstitution(text) {
     }
   }
   for (const a of articles) delete a._last;
-  return { meta: data || {}, articles };
+  return { meta: data || {}, articles, amendments };
 }
 
 export function loadConstitution(root) {
@@ -90,6 +102,24 @@ export function validateConstitution(c) {
   titles.forEach((t, i) => {
     if (titles.indexOf(t) !== i) errors.push(`titre d'article en double : "${c.articles[i].title}"`);
   });
+  // Gouvernance d'équipe (optionnelle) : dès que `approvers` est déclaré, chaque version au-delà de la
+  // ratification doit porter dans le journal un amendement approuvé par l'un d'eux — un agent ne
+  // s'approuve pas lui-même un changement des règles qu'il doit respecter.
+  const approvers = handles(m.approvers);
+  if (approvers.length) {
+    if (!handles(m.ratified_by).length) warnings.push('ratified_by absent : qui a ratifié la constitution ?');
+    const amendments = c.amendments || [];
+    const current = amendments.filter((a) => a.version === String(m.version));
+    if (String(m.version) !== '1.0.0' || amendments.length) {
+      if (!current.length) errors.push(`gouvernance : aucun amendement v${m.version} dans « ## Amendements »`);
+      else if (!current.some((a) => a.approved_by.some((h) => approvers.includes(h)))) {
+        errors.push(`gouvernance : l'amendement v${m.version} n'est approuvé par aucun approbateur déclaré (${approvers.map((h) => `@${h}`).join(', ')})`);
+      }
+    }
+    for (const a of amendments) {
+      if (a.approved_by.some((h) => /^(claude|agent|bot|ai|ia)$/.test(h))) errors.push(`gouvernance : amendement v${a.version} approuvé par un agent`);
+    }
+  }
   if (!c.articles.some((a) => /\bia\b|\bai\b|agent/i.test(`${a.title} ${a.section}`))) {
     warnings.push("aucun article sur la politique IA (ce que l'agent peut faire seul) — recommandé par DORA 2025");
   }

@@ -6,6 +6,9 @@ application. Comptez une heure la première fois, dont l'essentiel en discussion
 Pour une vue d'ensemble avant de commencer : [la vidéo de présentation](media/kaizen-presentation.mp4)
 (une minute, voix off et [sous-titres](media/kaizen-presentation.srt)).
 
+À tout moment, **`/kaizen:help`** vous dit où en est le repo et quelle commande lancer ensuite
+(`/kaizen:help je veux livrer ma branche`, `/kaizen:help j'ai un bug`…).
+
 ## 0. Prérequis
 
 - Claude Code, Node ≥ 18, git.
@@ -36,10 +39,14 @@ commandes.
 /kaizen:setup
 ```
 
+Projet existant ? Commencez par `/kaizen:setup audit` : il note ce qui est en place (CI, tests,
+secrets, revue, déploiement, monitoring) et corrige le plus important d'abord.
+
 Claude crée `.kaizen/config.json` et les dossiers `docs/plans`, `docs/learnings` et `docs/ideation`.
 Il détecte la stack et vous montre les commandes de vérification qu'il a trouvées (`npm test`,
 `npm run -s lint`…). **Vérifiez-les** : ce sont elles que le garde-fou lancera. Il vous propose
-enfin une petite section dans `CLAUDE.md`, pour que tout agent sache où trouver les leçons.
+ensuite une petite section dans `CLAUDE.md`, pour que tout agent sache où trouver les leçons, puis un
+**profil** : `lean` est recommandé pour un premier cycle (moins de cérémonie, mêmes garde-fous).
 
 Ce qui change dans le repo : `.kaizen/config.json`, `docs/…/.gitkeep`, une ligne dans `.gitignore`.
 Commitez-les.
@@ -125,6 +132,10 @@ Il corrige les P0/P1 et vous propose de livrer.
 `ship` pousse la branche et ouvre la PR. La description est tirée du plan : pourquoi, ce qui change,
 **guide du relecteur**, preuves, retour arrière.
 
+Le push n'est accepté qu'avec une revue enregistrée : un hook le refuse sinon. Pour pousser sans revue
+(hotfix, branche jetable), dites-le à Claude ; il vous donne un code que **vous** tapez
+(`kaizen waive <code>`), et la PR le signale dans une section « Revue écartée ».
+
 `watch-pr` suit ensuite la PR jusqu'à ce qu'elle semble prête à merger :
 - il traite les commentaires de revue avant la CI ;
 - il répare la CI ;
@@ -150,6 +161,11 @@ retrouvera, la citera, et en fera un test.
 
 ## Et ensuite
 
+- Mettre en production : déclarez vos commandes et vos signaux (`/kaizen:setup`), puis
+  `/kaizen:deploy staging` et `/kaizen:deploy production`. Les signaux cités par le plan sont
+  surveillés après le déploiement, avec retour arrière si un seuil est franchi.
+- Ne plus savoir quoi lancer : `/kaizen:help` regarde l'état du repo (`node $K status`) et recommande
+  la commande suivante.
 - Tout enchaîner : après un brainstorm, `/kaizen:autopilot` exécute le plan, la revue, la livraison et le
   suivi de PR sans vous interrompre.
 - Mesurer après quelques semaines : `/kaizen:metrics` (taille des PR, délai, taux de reprise,

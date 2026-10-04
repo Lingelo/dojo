@@ -62,6 +62,10 @@ Après une détection réussie, Claude propose d'enregistrer la configuration du
 ## Bon à savoir
 
 - **Jamais de push ni de PR** : c'est le rôle de `/kaizen:ship`.
+- Le serveur de dev est **toujours** lancé, même si vous prévenez que vous ne regarderez pas : la page
+  servie est la preuve de la retouche. Le rapport donne son URL et `kill <pid>` pour l'arrêter.
+- Pour un serveur Node maison (`node server.js`), le port est lu dans le fichier
+  (`process.env.PORT || 5173`, `.listen(8080)`).
 - Les retours récurrents (états vide, chargement et erreur, focus clavier, contrastes, textes
   tronqués) vous sont proposés **une fois**, sans être imposés.
 

@@ -6,7 +6,8 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
+import { deployments } from './deploy.mjs';
 import { defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
@@ -71,7 +72,9 @@ function prsFromGitHub(from) {
   }
 }
 
-function loopHealth(root, from) {
+const LEARNING_REF = /learnings\/[\w./-]+\.md/g;
+
+function loopHealth(root, from, branch) {
   const config = loadConfig(root);
   let docs;
   try {
@@ -79,7 +82,8 @@ function loopHealth(root, from) {
   } catch {
     return null;
   }
-  const learnings = walkMarkdown(join(docs, 'learnings')).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
+  const learningsDir = join(docs, 'learnings');
+  const learnings = walkMarkdown(learningsDir).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
   const plans = walkMarkdown(join(docs, 'plans'));
   const recentPlans = plans.filter((f) => {
     const d = parseFrontmatter(readFileSync(f, 'utf8')).data?.date;
@@ -89,26 +93,117 @@ function loopHealth(root, from) {
   let exceptions = 0;
   for (const p of recentPlans) {
     const text = readFileSync(p, 'utf8');
-    for (const m of text.matchAll(/learnings\/[\w./-]+\.md/g)) cited.add(m[0]);
+    for (const m of text.matchAll(LEARNING_REF)) cited.add(m[0]);
     const cc = text.split('<!-- kaizen:constitution -->')[1]?.split(/<!-- kaizen:[a-z-]+ -->/)[0] || '';
     exceptions += (cc.match(/⚠️/g) || []).length;
   }
+  // Une citation dans un plan dit qu'une leçon a été lue ; une citation dans un message de commit arrivé
+  // sur la branche par défaut dit qu'elle a changé du code (unité ou correctif de revue qui l'applique).
+  const appliedIn = new Set();
+  const ref = git(root, ['rev-parse', '--verify', '--quiet', `origin/${branch}`], { allowFail: true }) ? `origin/${branch}` : branch;
+  const bodies = git(root, ['log', ref, `--since=${from.toISOString()}`, '--format=%B'], { allowFail: true }) || '';
+  for (const m of bodies.matchAll(LEARNING_REF)) appliedIn.add(m[0]);
+
+  // Jamais citée nulle part (plans, ADR, post-mortems, commits) et plus ancienne que la fenêtre :
+  // candidate à /kaizen:prune-learnings — une leçon que personne ne relit ne referme aucune boucle.
+  const everCited = new Set(appliedIn);
+  for (const f of [...plans, ...walkMarkdown(join(docs, 'adr')), ...walkMarkdown(join(docs, 'postmortems'))]) {
+    for (const m of readFileSync(f, 'utf8').matchAll(LEARNING_REF)) everCited.add(m[0]);
+  }
+  const allBodies = git(root, ['log', ref, '--format=%B', '-n', '5000'], { allowFail: true }) || '';
+  for (const m of allBodies.matchAll(LEARNING_REF)) everCited.add(m[0]);
+  const key = (f) => `learnings/${relative(learningsDir, f).split(sep).join('/')}`;
+  const neverCited = learnings
+    .filter((l) => !(l.data.date && Date.parse(l.data.date) >= from.getTime()))
+    .map((l) => key(l.f))
+    .filter((k) => ![...everCited].some((c) => c.endsWith(k)));
+
   const postmortems = walkMarkdown(join(docs, 'postmortems')).map((f) => parseFrontmatter(readFileSync(f, 'utf8')).data || {});
   const recovery = postmortems
     .filter((p) => p.detected && p.resolved && Date.parse(p.detected) >= from.getTime())
     .map((p) => (Date.parse(p.resolved) - Date.parse(p.detected)) / 3600000)
     .filter((h) => h >= 0);
   const adrs = existsSync(join(docs, 'adr')) ? walkMarkdown(join(docs, 'adr')).length : 0;
+  const used = new Set([...cited, ...appliedIn]);
   return {
     learnings_total: learnings.length,
     learnings_new: learnings.filter((l) => l.data.date && Date.parse(l.data.date) >= from.getTime()).length,
     plans_new: recentPlans.length,
     learnings_cited_by_new_plans: cited.size,
-    learning_reuse_rate: recentPlans.length ? round(cited.size / Math.max(1, learnings.length), 2) : null,
+    learnings_applied_in_commits: appliedIn.size,
+    learning_reuse_rate: learnings.length && (recentPlans.length || appliedIn.size) ? round(used.size / learnings.length, 2) : null,
+    learning_reuse_method: 'leçons distinctes citées par un plan récent ou un message de commit de la fenêtre / leçons existantes — une citation de plan dit « lue », une citation de commit dit « appliquée »',
+    learnings_never_cited: neverCited.length,
+    learnings_never_cited_sample: neverCited.slice(0, 10),
     constitution_exceptions: exceptions,
     postmortems: postmortems.length,
     recovery_hours_median: round(median(recovery)),
     adrs,
+  };
+}
+
+// DORA mesuré sur les vrais déploiements (tags deploy/<env>/… et rollback/<env>/… posés par
+// `kaizen.mjs deploy`), quand il y en a dans la fenêtre : fréquence, délai commit → production, taux
+// d'échec (déploiement suivi d'un retour arrière avant le suivant), temps de rétablissement.
+function doraFromDeployments(root, from, env) {
+  const all = deployments(root, { env });
+  const deploys = all.filter((d) => d.kind === 'deploy');
+  const inWindow = deploys.filter((d) => Date.parse(d.at) >= from.getTime());
+  if (!inWindow.length) return null;
+  const lead = [];
+  let failed = 0;
+  const restore = [];
+  for (const d of inWindow) {
+    const prev = deploys[deploys.indexOf(d) - 1];
+    const range = prev ? `${prev.sha}..${d.sha}` : d.sha;
+    const times = (git(root, ['log', '--format=%aI', range, '-n', '500'], { allowFail: true }) || '').split('\n').filter(Boolean).map(Date.parse);
+    for (const t of times) lead.push((Date.parse(d.at) - t) / 3600000);
+    const next = deploys[deploys.indexOf(d) + 1];
+    const rb = all.find((x) => x.kind === 'rollback' && x.at >= d.at && (!next || x.at < next.at));
+    if (rb) {
+      failed++;
+      restore.push((Date.parse(rb.at) - Date.parse(d.at)) / 3600000);
+    }
+  }
+  return {
+    env,
+    deployments: inWindow.length,
+    rollbacks: all.filter((x) => x.kind === 'rollback' && Date.parse(x.at) >= from.getTime()).length,
+    lead_time_hours_median: round(median(lead.filter((h) => h >= 0))),
+    change_failure_rate: round(failed / inWindow.length, 2),
+    time_to_restore_hours_median: round(median(restore)),
+    method: `tags deploy/${env}/… et rollback/${env}/… (kaizen.mjs deploy) : délai = premier commit → déploiement, échec = retour arrière avant le déploiement suivant, rétablissement = déploiement → retour arrière`,
+  };
+}
+
+// Coût des cycles work/autopilot terminés (`gate off`), relevé localement : durée, blocages du
+// garde-fou, tokens de la session principale. Local à la machine, comme .kaizen/state/.
+function cycleCost(root, from) {
+  let lines = [];
+  try {
+    lines = readFileSync(join(root, '.kaizen', 'state', 'cycles.jsonl'), 'utf8').split('\n').filter(Boolean);
+  } catch {
+    return null;
+  }
+  const cycles = lines
+    .map((l) => {
+      try {
+        return JSON.parse(l);
+      } catch {
+        return null;
+      }
+    })
+    .filter((c) => c && Date.parse(c.ended) >= from.getTime());
+  if (!cycles.length) return null;
+  const tokens = cycles.filter((c) => c.usage).map((c) => c.usage.input_tokens + c.usage.output_tokens + c.usage.cache_creation_input_tokens + c.usage.cache_read_input_tokens);
+  return {
+    cycles: cycles.length,
+    minutes_median: round(median(cycles.map((c) => c.minutes))),
+    tokens_median: round(median(tokens), 0),
+    output_tokens_median: round(median(cycles.filter((c) => c.usage).map((c) => c.usage.output_tokens)), 0),
+    gate_blocks_total: cycles.reduce((n, c) => n + (c.gate_blocks || 0), 0),
+    cycles_with_gate_block_share: round(cycles.filter((c) => c.gate_blocks > 0).length / cycles.length, 2),
+    method: 'cycles /kaizen:work et /kaizen:autopilot clos par gate off sur cette machine ; tokens de la session principale (sous-agents non comptés)',
   };
 }
 
@@ -137,20 +232,25 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
   const sizes = prs?.length ? prs.map((p) => p.additions + p.deletions) : changes.map((c) => c.lines);
   const config = loadConfig(root);
 
+  const real = doraFromDeployments(root, from, config.deploy.metrics_env || 'production');
+  const weeksReal = real ? round(real.deployments / weeks) : null;
+
   return {
     window: { since, days, from: from.toISOString().slice(0, 10), default_branch: branch },
+    deployments: real,
     changes: changes.length,
     throughput: {
-      deployment_frequency_per_week: round(changes.length / weeks),
-      deployment_frequency_method: 'changements arrivés sur la branche par défaut (proxy du déploiement)',
-      lead_time_hours_median: round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
-      lead_time_method: leadFromPrs.length ? 'ouverture → merge des PR (GitHub)' : leadFromMerges.length ? 'premier commit → merge (git)' : 'indisponible (merges squash sans accès GitHub)',
+      deployment_frequency_per_week: real ? weeksReal : round(changes.length / weeks),
+      deployment_frequency_method: real ? `déploiements réels sur ${real.env} (tags deploy/)` : 'changements arrivés sur la branche par défaut (proxy du déploiement)',
+      lead_time_hours_median: real?.lead_time_hours_median ?? round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
+      lead_time_method: real?.lead_time_hours_median != null ? `premier commit → déploiement sur ${real.env}` : leadFromPrs.length ? 'ouverture → merge des PR (GitHub)' : leadFromMerges.length ? 'premier commit → merge (git)' : 'indisponible (merges squash sans accès GitHub)',
       rework_rate: changes.length ? round(changes.filter((c) => c.fix).length / changes.length, 2) : null,
       rework_method: 'part des changements de type fix / hotfix / revert',
     },
     instability: {
-      change_failure_rate: nonFix ? round(failed / nonFix, 2) : null,
-      change_failure_method: 'changements suivis sous 7 jours d’un fix ou revert touchant les mêmes fichiers',
+      change_failure_rate: real ? real.change_failure_rate : nonFix ? round(failed / nonFix, 2) : null,
+      change_failure_method: real ? `déploiements sur ${real.env} suivis d’un retour arrière` : 'changements suivis sous 7 jours d’un fix ou revert touchant les mêmes fichiers',
+      time_to_restore_hours_median: real?.time_to_restore_hours_median ?? null,
     },
     batch_size: {
       lines_median: round(median(sizes), 0),
@@ -159,6 +259,7 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
       max_lines: config.pr.max_lines,
       source: prs?.length ? 'PR GitHub' : 'diffstat git',
     },
-    kaizen_loop: loopHealth(root, from),
+    kaizen_loop: loopHealth(root, from, branch),
+    cycle_cost: cycleCost(root, from),
   };
 }

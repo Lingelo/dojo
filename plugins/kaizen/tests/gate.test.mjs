@@ -3,10 +3,17 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { GATE, cleanup, cli, tempRepo } from './helpers.mjs';
+import { GATE, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
 
-function stop(dir) {
-  return spawnSync(process.execPath, [GATE], { input: JSON.stringify({ cwd: dir }), encoding: 'utf8' });
+function stop(dir, extra = {}) {
+  return spawnSync(process.execPath, [GATE], { input: JSON.stringify({ cwd: dir, ...extra }), encoding: 'utf8' });
+}
+
+function claim(dir, session, command = 'node "/p/scripts/kaizen.mjs" gate on --plan docs/plans/x.md') {
+  return spawnSync(process.execPath, [GATE, '--claim'], {
+    input: JSON.stringify({ cwd: dir, session_id: session, tool_name: 'Bash', tool_input: { command } }),
+    encoding: 'utf8',
+  });
 }
 
 function repoWithTest(exitCode) {
@@ -67,5 +74,69 @@ test("l'état du garde-fou est ignoré par git", () => {
   cli(dir, ['gate', 'on']);
   const st = spawnSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: dir, encoding: 'utf8' }).stdout;
   assert.doesNotMatch(st, /state/);
+  cleanup(dir);
+});
+
+test('le garde-fou appartient à la session qui l’a posé', () => {
+  const dir = repoWithTest(1);
+  cli(dir, ['gate', 'on']);
+  assert.equal(claim(dir, 'autre', 'git status').status, 0);
+  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/state/gate.json'), 'utf8')).session, undefined, 'seul « gate on » revendique');
+  claim(dir, 'S1', 'K="/p/scripts/kaizen.mjs"; node "$K" gate on --plan docs/plans/x.md');
+  claim(dir, 'S2');
+  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/state/gate.json'), 'utf8')).session, 'S1', 'la première revendication gagne');
+  assert.equal(stop(dir, { session_id: 'S2' }).status, 0, 'une autre session n’est pas bloquée');
+  assert.equal(stop(dir, { session_id: 'S1' }).status, 2);
+  cleanup(dir);
+});
+
+test('budget épuisé : les commandes restantes ne sont pas lancées et ne bloquent pas', () => {
+  const dir = tempRepo({
+    '.kaizen/config.json': {
+      // La commande lente quitte le dossier du dépôt : sous Windows, coupée par le délai, elle survit
+      // quelques secondes au shell et verrouillerait sinon le dossier temporaire au nettoyage (EBUSY).
+      verify: { test: 'node -e "process.chdir(require(\'os\').tmpdir()); setTimeout(() => {}, 3000)"', lint: 'node -e "process.exit(1)"' },
+      gate: { budget_seconds: 1.5 },
+    },
+  });
+  cli(dir, ['gate', 'on']);
+  const r = stop(dir);
+  assert.equal(r.status, 2, 'test coupé au budget = rouge');
+  assert.match(r.stderr, /timeout/);
+  assert.doesNotMatch(r.stderr, /lint/, 'lint jamais lancé');
+  cleanup(dir);
+});
+
+test('vérifications ciblées : {files} = fichiers touchés par la branche, rien à vérifier = sauté', () => {
+  const dir = tempRepo({
+    '.kaizen/config.json': { verify: { test: 'node -e "process.exit(0)"' }, gate: { targeted: { lint: 'node -e "process.exit(process.argv.slice(1).includes(\'b.js\') ? 1 : 0)" {files}' } } },
+    'a.js': 'a\n',
+  });
+  gitc(dir, ['checkout', '-qb', 'feat/x']);
+  cli(dir, ['gate', 'on']);
+  assert.equal(stop(dir).status, 0, 'aucun fichier touché : lint ciblé sauté');
+  writeFiles(dir, { 'b.js': 'b\n' });
+  const r = stop(dir);
+  assert.equal(r.status, 2, 'nouveau fichier non suivi passé au linter');
+  assert.match(r.stderr, /lint/);
+  assert.match(r.stderr, /'b\.js'|"b\.js"/);
+  cleanup(dir);
+});
+
+test('coût du cycle : tokens relevés depuis le transcript, consignés par gate off', () => {
+  const dir = repoWithTest(0);
+  cli(dir, ['gate', 'on']);
+  const since = JSON.parse(readFileSync(join(dir, '.kaizen/state/gate.json'), 'utf8')).since;
+  const later = new Date(Date.parse(since) + 1000).toISOString();
+  const usage = (id, ts, out) => JSON.stringify({ timestamp: ts, message: { id, usage: { input_tokens: 10, output_tokens: out, cache_read_input_tokens: 100, cache_creation_input_tokens: 0 } } });
+  const transcript = join(dir, '.kaizen/state/t.jsonl');
+  writeFileSync(transcript, [usage('old', '2020-01-01T00:00:00Z', 999), usage('m1', later, 5), usage('m1', later, 5), usage('m2', later, 7), 'pas du json'].join('\n'));
+  assert.equal(stop(dir, { transcript_path: transcript }).status, 0);
+  const off = cli(dir, ['gate', 'off']).json;
+  assert.deepEqual(off.cycle.usage, { input_tokens: 20, output_tokens: 12, cache_read_input_tokens: 200, cache_creation_input_tokens: 0, messages: 2 });
+  const cost = cli(dir, ['metrics', '--no-github']).json.cycle_cost;
+  assert.equal(cost.cycles, 1);
+  assert.equal(cost.tokens_median, 232);
+  assert.equal(cli(dir, ['gate', 'off']).json.cycle, null, 'un second gate off ne consigne rien');
   cleanup(dir);
 });

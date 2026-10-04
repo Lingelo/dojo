@@ -23,6 +23,10 @@ Toutes les opérations déterministes passent par le CLI, jamais par une réimpl
 
 ```bash
 K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"
+node "$K" status [--json]          # où en est le repo dans la boucle + prochaine commande (lu par help)
+node "$K" models [--json] [--agent a]           # modèle de chaque agent (profil + config) : à passer à l'outil Agent
+node "$K" audit [--json] | audit fix <id>       # maturité SDLC du projet, gabarits (ci, pr_template, dependabot, codeowners, gitignore_env)
+node "$K" deploy detect | deploy configure <id> # plateforme de déploiement reconnue → config
 node "$K" root                     # chemins : docs_root, plans, learnings, ideation (JSON)
 node "$K" config                   # configuration effective
 node "$K" detect                   # stack + commandes de vérification
@@ -33,6 +37,8 @@ node "$K" learnings search <mots…> [--json]     # leçons pertinentes, classé
 node "$K" learnings validate [fichiers…]
 node "$K" packs [--json]           # règles des Kaizen Packs déclarés
 node "$K" gate on --plan <p> | off | status     # garde-fou du hook Stop
+node "$K" review record --verdict ready|reserves|blocked [--run <d>]   # état relu, exigé avant git push
+node "$K" review waive --reason "…" | review status | review check   # renonciation (confirmée par l'utilisateur) / état
 node "$K" constitution [check] [--json]         # articles de CONSTITUTION.md / validation
 node "$K" plan check <chemin>      # contrôle structurel d'un plan (traçabilité R/AE → U, constitution)
 node "$K" size [--base <ref>]      # taille du diff vs pr.max_lines (exit 1 au-delà)
@@ -43,11 +49,61 @@ node "$K" metrics [--since 90d]    # DORA approché + santé de la boucle
 node "$K" adr new --title "…" | adr list        # décisions d'architecture
 node "$K" postmortem new --title "…"            # post-mortem
 node "$K" release notes [--from <tag>]          # notes de version + SemVer
+node "$K" deploy request|run <env> [--ref r] | rollback <env> | list | flag on|off <nom>   # déploiement (tag deploy/<env>/…)
+node "$K" monitor check|watch [--env e] [--plan p] [--minutes n]   # signaux de production contre leurs seuils
 node "$K" run-dir reviews         # dossier de travail local d'un run (ignoré par git)
 ```
 
 Si `${CLAUDE_PLUGIN_ROOT}` n'est pas résolu dans une commande Bash, retrouve le chemin du plugin
 depuis le chemin de ce fichier (le dossier parent de `references/`).
+
+## Profil d'adoption
+
+`node "$K" config` → `profile` règle la **cérémonie**, jamais les garde-fous déterministes : le
+garde-fou du hook Stop, `verify`, `size`, `plan check` et la revue exigée avant `git push` restent
+actifs dans tous les profils.
+
+| Point | `lean` | `standard` (défaut) | `full` |
+|---|---|---|---|
+| Plan | court : exigences, unités, vérification ; menaces et déploiement seulement si le diff atteint une surface à risque ou la production | complet | complet, menaces et déploiement toujours |
+| `doc-review` | `plan check` + cohérence seulement | cohérence, faisabilité + conditionnels | tous les relecteurs pertinents, adversarial toujours |
+| `review` | socle (`correctness`, `standards`) + `security` si surface à risque | selon le diff | selon le diff, `adversarial` dès la profondeur ciblée |
+| `autopilot` | changement ≤ ~30 lignes sans surface à risque : `work` direct sans plan écrit (verify, revue et garde-fous gardés) | toujours un plan | toujours un plan |
+| Capitalisation | proposée seulement si le test de durabilité est évident | proposée | systématiquement évaluée |
+
+Une **surface à risque** : auth, sessions, permissions, données personnelles ou de paiement,
+migrations, API publiques, dépendances. Commencer en `lean` puis monter le profil quand l'équipe a
+pris le rythme est le chemin d'adoption recommandé : c'est l'esprit kaizen, de petits pas.
+
+## Garde-fou de push
+
+Le hook `PreToolUse` refuse un `git push` d'une branche (hors branche par défaut) tant qu'aucune revue
+n'a enregistré l'état poussé. Toute skill qui pousse vérifie d'abord `node "$K" review check` :
+- refusé → `kaizen:review` (en `mode:agent` dans un flux autonome), correctifs P0/P1, puis push ;
+- `review` enregistre elle-même l'état relu (`review record`), et le ré-enregistre après avoir
+  appliqué ses propres correctifs ;
+- **`review record` exige une preuve** : un hook consigne chaque relecteur de code Kaizen réellement
+  lancé par l'outil `Agent`. Sans relecteur lancé depuis la revue précédente, l'enregistrement n'est
+  accepté que pour une revue légère (diff de la branche ≤ 20 lignes) ou une mise à jour après
+  correctifs (≤ `review.max_unreviewed_lines` lignes depuis l'arbre relu) ;
+- au-delà de `review.max_unreviewed_lines` lignes modifiées depuis la revue (80 par défaut), une
+  nouvelle revue est exigée ;
+- **seul l'utilisateur peut y renoncer** : sur sa demande, `node "$K" review waive --reason "<sa
+  demande>"` affiche un code ; demande-lui de taper lui-même `kaizen waive <code>` (valable 30 min).
+  Tu ne peux pas le confirmer à sa place, et une renonciation confirmée figure dans la PR (section
+  « Revue écartée »). En mode non interactif, pas de renonciation : arrête-toi et dis pourquoi ;
+- les fichiers d'état de revue (`.kaizen/state/reviews.json`, `review-evidence.json`,
+  `waivers.json`) ne s'écrivent que par le CLI et les hooks. Jamais de contournement ni de
+  désactivation (`review.require_before_push: false`) sans demande de l'utilisateur.
+
+## Déploiement
+
+Kaizen ne déploie que par `/kaizen:deploy`, avec les commandes déclarées par l'équipe
+(`deploy.environments`), jamais devinées. Un environnement protégé (`production` par défaut) exige un
+code que l'utilisateur tape lui-même (`kaizen deploy <code>`) ; sa commande brute est refusée par le
+hook, et les tags `deploy/…` / `rollback/…` ne se créent que par le CLI. Après chaque déploiement, les
+signaux (`monitor.signals`, seuils des plans) sont surveillés ; un seuil franchi → retour arrière
+d'abord, post-mortem ensuite. `autopilot` ne déploie jamais.
 
 ## Racine des livrables
 
@@ -93,6 +149,13 @@ frontmatter et les identifiants (R1, AE1, KTD1, U1) ne se traduisent jamais : le
 
 ## Sous-agents
 
+**Le bon modèle pour chaque agent.** Avant de lancer des agents, lis une fois
+`node "$K" models --json` et passe à chaque appel `Agent` le paramètre `model` de cet agent
+(`agents.<nom>.model` ; `inherit` → n'en passe pas). Un sous-agent `general-purpose` qui implémente une
+unité prend `roles.implement.model`. C'est la politique de l'équipe (profil, puis `models` de la
+config) : n'en change pas pour « aller plus vite » ; si un agent échoue faute de capacité, relance-le
+une fois avec le modèle supérieur et dis-le dans le rapport.
+
 Les agents du plugin s'invoquent avec l'outil `Agent`, `subagent_type: "kaizen:<nom>"`. Si ce type
 n'apparaît pas dans la liste des agents disponibles, utilise `general-purpose` et colle en tête du
 prompt le contenu de `${CLAUDE_PLUGIN_ROOT}/agents/<nom>.md` (sans le frontmatter).
@@ -110,6 +173,9 @@ Format du plugin `git` du marketplace : `<type>(<JIRA>): <description>` si une c
 - Jamais de commit sur la branche par défaut sans demande explicite : crée une branche
   (`feat/<topic>`, `fix/<topic>`, préfixée de la clé Jira si connue).
 - Jamais de `push --force`, jamais de merge sans autorisation explicite.
+- Une unité ou un correctif qui **applique une leçon** la cite dans le corps du commit
+  (`Applique docs/learnings/<…>.md`) : c'est ce que `/kaizen:metrics` compte comme leçon réellement
+  appliquée, et non seulement lue.
 
 ## Kaizen Packs
 

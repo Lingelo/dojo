@@ -33,12 +33,15 @@ Brut : `node $K metrics --since 90d` (ajoutez `--no-github` si `gh` n'est pas au
 | Taux d'échec des changements | changements suivis, sous 7 jours, d'un fix ou d'un revert sur les mêmes fichiers | instabilité |
 | Temps de rétablissement | médiane `detected` → `resolved` des post-mortems | capacité à revenir en arrière |
 | Taille des lots | médiane, 90e centile, part au-dessus de `pr.max_lines` | **le premier levier** selon DORA |
-| **Boucle Kaizen** | leçons totales et nouvelles, leçons **citées** par les plans récents, exceptions à la constitution, ADR | l'effet cumulatif |
+| **Boucle Kaizen** | leçons totales et nouvelles, **lues** (citées par un plan récent), **appliquées** (citées par un message de commit), jamais citées, exceptions à la constitution, ADR | l'effet cumulatif |
+| **Coût des cycles** | cycles `work`/`autopilot` clos par `gate off` : durée, tokens de la session principale, blocages du garde-fou (local à la machine) | la cérémonie rapporte-t-elle plus qu'elle ne coûte ? |
 
 ## Lire honnêtement
 
-- Ce sont des **approximations** depuis la branche par défaut, pas une mesure de votre système de
-  déploiement. Chaque indicateur affiche sa méthode.
+- Avec [`/kaizen:deploy`](deploy.md), les indicateurs viennent des **vrais déploiements** de
+  production (tags `deploy/…` et `rollback/…`) : fréquence, délai premier commit → production, taux
+  d'échec (déploiement suivi d'un retour arrière), temps de rétablissement. Sans déploiement tracé, ce
+  sont des **approximations** depuis la branche par défaut. Chaque indicateur affiche sa méthode.
 - Limites signalées :
   - clone superficiel (`--depth`) ;
   - merges squash sans accès GitHub (délai indisponible) ;

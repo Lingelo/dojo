@@ -43,6 +43,9 @@ Associe la demande à la skill dont c'est le métier :
 travail (un plan, court s'il le faut), `work` sous garde-fou, `node "$K" verify` et `kaizen:review`.
 Seule la simplification (étape 3) se saute pour un petit diff, et la livraison (9-10) sans remote.
 Qui veut un changement sans cérémonie utilise `/kaizen:work` directement, pas `autopilot`.
+**Seule exception : profil `lean`** (`node "$K" config` → `profile`) — un changement de ≤ ~30 lignes
+sans surface à risque (voir `conventions.md`) part en `kaizen:work mode:return` avec ses 2 à 6 unités
+annoncées, sans plan écrit ; garde-fou, `verify`, revue et livraison restent identiques.
 
 En cas de doute, la route qui exige le plus de preuves. **Jamais** de plan improvisé par-dessus un plan
 existant, ni de plan pioché au hasard dans le dossier des plans.
@@ -61,7 +64,8 @@ existant, ni de plan pioché au hasard dans le dossier des plans.
    arrête la course avant tout push.
 5. **Appliquer les correctifs** — P0/P1 confirmés et `gated_auto` P2 : applique, re-vérifie
    (`node "$K" verify`), commite (`fix(<JIRA>): corrections de revue`). Rien ne reste seulement dans
-   l'arbre de travail.
+   l'arbre de travail. Ré-enregistre la revue avec le verdict après correctifs
+   (`node "$K" review record --verdict …`) : le hook de push l'exige.
 6. **Consigner le reste** — chaque constat actionnable non appliqué, chaque décision signalée en route :
    dans la description de la PR (section « Points ouverts »), ou dans le rapport final s'il n'y a pas
    de PR.
@@ -83,6 +87,9 @@ saute push, PR et CI. Ce n'est pas une erreur.
     jour seulement si GitHub le demande. Il rend `looks-ready`, un blocage motivé ou ses résidus :
     consigne-les dans la PR (« Points ouverts ») et termine.
 11. `node "$K" gate off`, puis rapport final et `DONE`.
+
+**Pas de déploiement.** La course s'arrête à la PR prête ; mettre en production passe par
+`/kaizen:deploy`, avec l'approbation tapée par l'utilisateur pour un environnement protégé.
 
 ## Arrêts (dire pourquoi)
 

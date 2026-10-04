@@ -1,6 +1,9 @@
 // Kaizen — notes de version depuis les commits conventionnels, et proposition de version SemVer.
 
-import { git } from './lib.mjs';
+import { existsSync, readFileSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
+import { docsRoot, git, parseFrontmatter } from './lib.mjs';
+import { parseRollout, sectionText } from './plancheck.mjs';
 
 const CC_RE = /^(\w+)(?:\(([^)]*)\))?(!)?:\s+(.+)$/;
 const GROUPS = [
@@ -13,7 +16,8 @@ const GROUPS = [
 ];
 
 export function lastTag(root) {
-  return git(root, ['describe', '--tags', '--abbrev=0'], { allowFail: true });
+  // Les tags de déploiement (deploy/…, rollback/…) ne sont pas des versions.
+  return git(root, ['describe', '--tags', '--abbrev=0', '--exclude', 'deploy/*', '--exclude', 'rollback/*'], { allowFail: true });
 }
 
 export function bump(version, level) {
@@ -31,6 +35,7 @@ export function releaseNotes(root, { from, to = 'HEAD' } = {}) {
   const base = from || lastTag(root);
   const range = base ? `${base}..${to}` : to;
   const out = git(root, ['log', range, '--no-merges', '--format=%H%x1f%s%x1f%b%x1e'], { allowFail: true }) || '';
+  const rollout = rolloutOf(root, range, out);
   const entries = out
     .split('\x1e')
     .map((r) => r.trim())
@@ -59,5 +64,33 @@ export function releaseNotes(root, { from, to = 'HEAD' } = {}) {
     current: base,
     next: level ? bump(base || '0.0.0', level) : null,
     groups,
+    rollout,
   };
+}
+
+// Plans livrés dans la plage : cités par un commit (« Unité U3 du plan docs/plans/… ») ou modifiés
+// dans la plage. Leur section kaizen:rollout nourrit la checklist de mise en production ; un plan
+// sans signal ni retour arrière est signalé avant la release, pas découvert pendant l'incident.
+function rolloutOf(root, range, log) {
+  let plansDir;
+  try {
+    plansDir = join(docsRoot(root), 'plans');
+  } catch {
+    return [];
+  }
+  const rel = relative(root, plansDir).split(sep).join('/');
+  const touched = (git(root, ['log', range, '--name-only', '--format=', '--', rel], { allowFail: true }) || '').split('\n');
+  const cited = [...log.matchAll(/[\w./-]*plans\/[\w./-]+\.md/g)].map((m) => m[0]);
+  const paths = [...new Set([...touched, ...cited].filter(Boolean).map((p) => p.slice(p.indexOf(rel))).filter((p) => p.startsWith(rel)))];
+  return paths
+    .filter((p) => existsSync(join(root, p)))
+    .sort()
+    .map((p) => {
+      const text = readFileSync(join(root, p), 'utf8');
+      const { data, body } = parseFrontmatter(text);
+      const section = sectionText(body || text, 'rollout');
+      const r = section ? parseRollout(section) : null;
+      const missing = r ? ['rollback', 'signal'].filter((k) => !r[k]) : ['rollout'];
+      return { plan: p, title: data?.title || p, ...(r || {}), missing };
+    });
 }

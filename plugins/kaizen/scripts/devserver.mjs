@@ -47,6 +47,21 @@ function portFromScript(script) {
   return m ? Number(m[1]) : null;
 }
 
+// Serveur Node maison (`node server.js`) : le port par défaut se lit dans le point d'entrée
+// (`process.env.PORT || 5173`, `.listen(8080)`), sinon la détection annoncerait 3000 à tort.
+function portFromEntry(dir, script) {
+  const entry = /\bnode\s+(?:--\S+\s+)*([\w./-]+\.[cm]?js)\b/.exec(script || '')?.[1];
+  if (!entry) return null;
+  let src;
+  try {
+    src = readFileSync(join(dir, entry), 'utf8');
+  } catch {
+    return null;
+  }
+  const m = /PORT\s*(?:\|\||\?\?)\s*['"]?(\d{2,5})/.exec(src) || /\.listen\(\s*(\d{2,5})\b/.exec(src);
+  return m ? Number(m[1]) : null;
+}
+
 function nodeCandidates(dir, root) {
   const pkg = readJson(join(dir, 'package.json'));
   if (!pkg) return [];
@@ -55,7 +70,7 @@ function nodeCandidates(dir, root) {
   const scriptName = ['dev', 'start:dev', 'serve', 'start'].find((s) => scripts[s]);
   if (!scriptName) return [];
   const fw = NODE_FRAMEWORKS.find(([dep]) => deps[dep]);
-  const port = portFromScript(scripts[scriptName]) || fw?.[2] || 3000;
+  const port = portFromScript(scripts[scriptName]) || (!fw && portFromEntry(dir, scripts[scriptName])) || fw?.[2] || 3000;
   const pm = packageManager(dir, root);
   return [
     {

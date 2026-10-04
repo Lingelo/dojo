@@ -66,7 +66,8 @@ Snapshot, puis dans cet ordre :
      par commit) ;
    - vrai échec → lis les logs (`gh run view <run_id> --log-failed`, tronqués aux lignes utiles) et
      invoque `kaizen:debug mode:return` avec le check, l'extrait de log et la branche ; puis
-     `node "$K" verify`, commit, push.
+     `node "$K" verify`, commit, push (refusé par le hook faute de revue récente → `kaizen:review
+     mode:agent`, correctifs P0/P1, puis push).
    - marque chaque check traité : `node "$K" pr mark --check <nom> --disposition dispatched`.
    Un test n'est **jamais** désactivé, ignoré ni mis en quarantaine pour passer au vert ; pas de commit
    vide pour relancer la CI. « Flaky » n'est pas une cause : un deuxième échec identique est réel.

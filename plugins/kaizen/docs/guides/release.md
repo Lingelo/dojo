@@ -36,7 +36,8 @@
    - migrations et leur ordre ;
    - feature flags ;
    - retour arrière et ce qui est irréversible ;
-   - signaux à surveiller ;
+   - signaux à surveiller, avec leur seuil (un plan livré sans signal ni retour arrière est signalé
+     comme bloquant) ;
    - communication.
 5. **Publication** (avec `publish` et confirmation) :
    1. fichiers de version mis à jour ;
@@ -44,6 +45,8 @@
    3. tag annoté ;
    4. push ;
    5. `gh release create`.
+6. **Mise en production** : `release` ne déploie pas ; il propose `/kaizen:deploy <env> vX.Y.Z`
+   ([deploy](deploy.md)) quand des environnements sont configurés.
 
 ## Bon à savoir
 

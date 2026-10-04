@@ -41,12 +41,17 @@ sans commiter**, y compris sur la branche par défaut — c'est relisible et se 
 
 ## 4. Checklist de mise en production
 
-Depuis les plans livrés dans la plage (section `kaizen:rollout`) et le diff :
+Depuis `rollout` de `node "$K" release notes --json` (plans cités par les commits ou modifiés dans la
+plage, section `kaizen:rollout` déjà extraite) et le diff. Un plan avec `missing` non vide (pas de
+retour arrière, pas de signal, pas de section) est un **point bloquant de la checklist** : demande le
+retour arrière et le signal avant de publier, ne les invente pas.
 - `node "$K" verify` vert sur le commit à taguer ; CI verte (`gh run list --branch <défaut> --limit 5`) ;
 - migrations à jouer et dans quel ordre (expand → migrate → contract) ;
 - feature flags à basculer, et leur défaut ;
 - retour arrière de la version et ce qui est irréversible ;
-- signaux à surveiller après la mise en production ;
+- signaux à surveiller après la mise en production, **avec leur seuil** et l'action quand il est
+  franchi ; un seuil franchi après la mise en production → retour arrière, puis `/kaizen:postmortem`
+  (c'est ainsi que la production revient dans la boucle) ;
 - communication (utilisateurs, support) pour les changements visibles.
 
 ## 5. Publier (seulement sur accord)
@@ -54,3 +59,9 @@ Depuis les plans livrés dans la plage (section `kaizen:rollout`) et le diff :
 Avec `publish` et confirmation : mise à jour des fichiers de version, commit
 `chore(release): vX.Y.Z`, tag annoté `vX.Y.Z`, push du commit et du tag, `gh release create vX.Y.Z
 --notes-file <notes>`. Sinon, livre les notes, la version et la checklist, et indique les commandes.
+
+## 6. Mettre en production
+
+`release` ne déploie pas. Si `deploy.environments` est configuré, termine en proposant
+`/kaizen:deploy <env> vX.Y.Z` (staging d'abord s'il existe) : préconditions, approbation tapée par
+l'utilisateur pour la production, surveillance des signaux de la checklist, retour arrière prêt.

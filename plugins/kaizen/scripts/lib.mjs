@@ -2,8 +2,8 @@
 // Racine du repo, configuration, frontmatter YAML (sous-ensemble), détection de stack.
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 // ---------------------------------------------------------------------------
@@ -29,12 +29,22 @@ export function repoRoot(cwd = process.cwd()) {
   }
 }
 
+// Profils d'adoption : la cérémonie s'ajuste, les garde-fous déterministes restent.
+export const PROFILES = ['lean', 'standard', 'full'];
+
 export const DEFAULT_CONFIG = {
   docs_root: 'docs',
   language: 'auto',
   tracker: 'auto',
   verify: {},
-  gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, max_age_hours: 24 },
+  profile: 'standard',
+  gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
+  review: { require_before_push: true, max_unreviewed_lines: 80 },
+  // Déploiement et monitoring : commandes de l'équipe, Kaizen ne connaît aucune plateforme.
+  deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, flags: {} },
+  monitor: { signals: {}, interval_seconds: 60, consecutive: 2 },
+  // Modèle par rôle d'agent : défauts du profil (scripts/models.mjs), ajustables par rôle ou par agent.
+  models: { roles: {}, agents: {} },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
   packs: [],
 };
@@ -58,6 +68,18 @@ export function loadConfig(root) {
   merged.gate = { ...DEFAULT_CONFIG.gate, ...(base.gate || {}), ...(local.gate || {}) };
   merged.verify = { ...(base.verify || {}), ...(local.verify || {}) };
   merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
+  merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
+  merged.deploy = { ...DEFAULT_CONFIG.deploy, ...(base.deploy || {}), ...(local.deploy || {}) };
+  merged.monitor = { ...DEFAULT_CONFIG.monitor, ...(base.monitor || {}), ...(local.monitor || {}) };
+  merged.models = {
+    roles: { ...(base.models?.roles || {}), ...(local.models?.roles || {}) },
+    agents: { ...(base.models?.agents || {}), ...(local.models?.agents || {}) },
+  };
+  // Un profil mal saisi ne doit pas casser les hooks : repli sur « standard », signalé par `config`.
+  if (!PROFILES.includes(merged.profile)) {
+    merged.profile_warning = `profile inconnu : "${merged.profile}" (attendu : ${PROFILES.join(', ')}) — « standard » appliqué`;
+    merged.profile = 'standard';
+  }
   if (base.docs_root) merged.docs_root = base.docs_root;
   return merged;
 }
@@ -302,18 +324,33 @@ function tail(text, n = 40) {
   return lines.slice(-n).join('\n');
 }
 
-export function runVerify(root, { only, timeoutSeconds } = {}) {
+// Remplace {files} par la liste des fichiers, chacun entre guillemets pour le shell.
+export function withFiles(command, files) {
+  const quoted = files.map((f) => (process.platform === 'win32' ? `"${f.replace(/"/g, '\\"')}"` : `'${f.replace(/'/g, "'\\''")}'`)).join(' ');
+  return command.replaceAll('{files}', quoted);
+}
+
+export function runVerify(root, { only, timeoutSeconds, budgetSeconds, overrides = {} } = {}) {
   const config = loadConfig(root);
-  const { commands } = verifyCommands(root, config);
+  const { commands: detected } = verifyCommands(root, config);
+  const commands = { ...detected, ...overrides };
   // L'audit des dépendances (réseau, lent) ne tourne que sur demande explicite (--only audit).
   const wanted = only ? only.split(',').map((s) => s.trim()) : Object.keys(commands).filter((k) => k !== 'audit');
-  const timeout = (timeoutSeconds || config.gate.timeout_seconds || 600) * 1000;
+  const perCommand = (timeoutSeconds || config.gate.timeout_seconds || 600) * 1000;
+  // Budget global (hook Stop) : une commande ne démarre que s'il reste du temps, et ne dépasse jamais
+  // ce qui reste — sinon le hook serait tué par son propre délai et ne protégerait rien.
+  const deadline = budgetSeconds ? Date.now() + budgetSeconds * 1000 : Infinity;
   const results = [];
   for (const name of wanted) {
     const cmd = commands[name];
     if (!cmd) continue;
+    const remaining = deadline - Date.now();
+    if (remaining < 1000) {
+      results.push({ name, command: cmd, ok: true, skipped: true, exit: 'budget', seconds: 0, output: '' });
+      continue;
+    }
     const started = Date.now();
-    const r = spawnSync(cmd, { cwd: root, shell: true, encoding: 'utf8', timeout, maxBuffer: 64 * 1024 * 1024 });
+    const r = spawnSync(cmd, { cwd: root, shell: true, encoding: 'utf8', timeout: Math.min(perCommand, remaining), maxBuffer: 64 * 1024 * 1024 });
     const timedOut = r.error && r.error.code === 'ETIMEDOUT';
     results.push({
       name,
@@ -398,4 +435,80 @@ export function diffSize(root, { base, ignore = [] } = {}) {
     files.push({ file, added: Number(a), removed: Number(d) });
   }
   return { base: from, files: files.length, added, removed, total: added + removed, ignored, largest: files.sort((x, y) => y.added + y.removed - (x.added + x.removed)).slice(0, 5) };
+}
+
+// Arbre git de l'état courant (commité + non commité, .gitignore respecté), sans toucher à l'index de
+// l'utilisateur : c'est ce qu'une revue a réellement lu. Comparer cet arbre à HEAD au moment du push
+// dit exactement ce qui a changé depuis la revue.
+export function worktreeTree(root) {
+  const dir = mkdtempSync(join(tmpdir(), 'kaizen-index-'));
+  const env = { ...process.env, GIT_INDEX_FILE: join(dir, 'index') };
+  try {
+    const run = (args) => execFileSync('git', args, { cwd: root, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    // Partir d'une copie de l'index réel réutilise son cache de stat : seuls les fichiers modifiés
+    // sont rehachés, même sur un gros dépôt. Sans index (dépôt neuf), on repart de HEAD.
+    const real = git(root, ['rev-parse', '--path-format=absolute', '--git-path', 'index'], { allowFail: true });
+    if (real && existsSync(real)) copyFileSync(real, env.GIT_INDEX_FILE);
+    else run(['read-tree', 'HEAD']);
+    run(['add', '-A']);
+    return run(['write-tree']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+// Lignes modifiées entre deux arbres ou commits, hors fichiers ignorés par pr.ignore.
+export function changedLines(root, from, to, ignore = []) {
+  const out = git(root, ['diff', '--numstat', from, to], { allowFail: true });
+  if (out === null) return null;
+  const res = ignore.map(globToRegex);
+  let total = 0;
+  for (const line of out ? out.split('\n') : []) {
+    const [a, d, ...rest] = line.split('\t');
+    if (a === '-' || res.some((r) => r.test(rest.join('\t')))) continue;
+    total += Number(a) + Number(d);
+  }
+  return total;
+}
+
+// Fichiers touchés par la branche : diff vs la base (non commité compris) et nouveaux fichiers non
+// ignorés. Les fichiers supprimés sont exclus : un linter ou un runner de tests échouerait dessus.
+export function changedFiles(root, base = diffBase(root)) {
+  const listed = [
+    ...(base ? (git(root, ['diff', '--name-only', base], { allowFail: true }) || '').split('\n') : []),
+    ...(git(root, ['ls-files', '--others', '--exclude-standard'], { allowFail: true }) || '').split('\n'),
+  ];
+  return [...new Set(listed.filter(Boolean))].filter((f) => existsSync(join(root, f))).sort();
+}
+
+// Consommation de tokens d'une session depuis son transcript (JSONL de Claude Code), à partir d'une
+// date. Un même message peut apparaître plusieurs fois (streaming) : dédoublonné par identifiant.
+// Seule la session principale est comptée : les sous-agents ont leurs propres transcripts.
+export function transcriptUsage(file, since) {
+  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, messages: 0 };
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+  const from = since ? Date.parse(since) : 0;
+  const seen = new Set();
+  for (const line of text.split('\n')) {
+    if (!line.includes('"usage"')) continue;
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const msg = entry.message;
+    if (!msg?.usage || (entry.timestamp && Date.parse(entry.timestamp) < from)) continue;
+    const id = msg.id || entry.uuid;
+    if (id && seen.has(id)) continue;
+    if (id) seen.add(id);
+    for (const k of Object.keys(usage)) if (k !== 'messages') usage[k] += Number(msg.usage[k]) || 0;
+    usage.messages++;
+  }
+  return usage;
 }

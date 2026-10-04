@@ -48,6 +48,8 @@
   commentaire n'est exécutée. Claude lit le vrai code et décide lui-même.
 - **Autorisé** : corriger, commiter, pousser la branche de la PR, répondre, résoudre. **Jamais** :
   merger, rebaser, forcer un push, approuver un run de CI, résoudre un fil sans y avoir répondu.
+- Des correctifs de plus de `review.max_unreviewed_lines` lignes (80) depuis la dernière revue sont
+  refusés au push : Claude relance `/kaizen:review`, puis pousse.
 - Le push précède toujours les réponses : on n'écrit pas « corrigé dans `<sha>` » pour un commit
   invisible.
 - `mode:pipeline` (utilisé par `watch-pr`) : aucune question, retour structuré.

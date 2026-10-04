@@ -8,8 +8,11 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 
 | Je veux… | Lire |
 |---|---|
+| Mettre en place le SDLC sur un projet | `/kaizen:setup audit` ([guide](guides/setup.md)) |
+| Savoir quelle commande lancer, là, maintenant | `/kaizen:help` ([guide](guides/help.md)) |
 | Voir Kaizen en une minute | [La vidéo de présentation](media/kaizen-presentation.mp4) |
 | Comprendre Kaizen en 5 minutes | [Le README du plugin](../README.md) |
+| Savoir ce que vaut Kaizen face aux autres SDLC | [Bilan et positionnement](positionnement.md) |
 | Faire un premier cycle complet, pas à pas | [Démarrage](demarrage.md) |
 | Régler Kaizen pour mon projet | [Configuration](configuration.md) |
 | Partager des règles d'équipe entre repos | [Kaizen Packs](packs.md) |
@@ -58,6 +61,8 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 - [address-feedback](guides/address-feedback.md) — traiter les retours de revue
 - [watch-pr](guides/watch-pr.md) — mener une PR jusqu'à « prête »
 - [release](guides/release.md) — préparer une version
+- [deploy](guides/deploy.md) — mettre en production, surveiller, revenir en arrière
+- [monitor](guides/monitor.md) — les signaux de production contre leurs seuils
 
 **Apprendre et mesurer**
 - [learn](guides/learn.md) — capitaliser une leçon
@@ -68,6 +73,7 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 **Orchestrer**
 - [autopilot](guides/autopilot.md) — tout enchaîner en autonomie
 - [setup](guides/setup.md) — installer et vérifier Kaizen dans un repo
+- [help](guides/help.md) — savoir quelle commande lancer maintenant
 
 ## Conventions de ces pages
 
