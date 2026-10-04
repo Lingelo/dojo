@@ -1,6 +1,6 @@
 ---
 name: watch-pr
-description: Accompagne une PR GitHub ouverte jusqu'à « semble prête à merger » — à chaque cycle, traite d'abord les retours de revue (via /kaizen:address-feedback), puis la CI rouge du commit de tête (relance si infra, diagnostic et correctif sinon), met la branche à jour seulement quand GitHub le demande, rafraîchit la description, et s'arrête sur un état vrai et rapporté. Ne merge jamais. Utiliser pour « surveille ma PR », « mène la PR jusqu'au merge », « babysit », /kaizen:watch-pr. Pas pour un seul commentaire ou un seul échec de CI.
+description: Accompagne une PR GitHub ouverte jusqu'à « semble prête à merger » — à chaque cycle, traite d'abord les retours de revue (via /kaizen:address-feedback), puis la CI rouge du commit de tête (relance si infra, diagnostic et correctif sinon), met la branche à jour seulement quand GitHub le demande, rafraîchit la description, et s'arrête sur un état vrai et rapporté. Ne merge jamais. Utiliser pour « surveille ma PR », « mène la PR jusqu'au merge », « surveille la PR », /kaizen:watch-pr. Pas pour un seul commentaire ou un seul échec de CI.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, TaskCreate, TaskUpdate
 argument-hint: "[n° ou URL de PR | vide = branche courante] [durée, ex. 4h] [checkpoint] [mode:pipeline]"
 ---

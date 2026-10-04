@@ -41,7 +41,6 @@ import {
   diffSize,
   detectStack,
   docsRoot,
-  learningsDir,
   expandHome,
   loadConfig,
   parseFrontmatter,
@@ -95,7 +94,7 @@ function paths(root) {
     repo: root,
     docs_root: rel(root, docs),
     plans: rel(root, join(docs, 'plans')),
-    learnings: rel(root, learningsDir(root, config)),
+    learnings: rel(root, join(docs, 'learnings')),
     ideation: rel(root, join(docs, 'ideation')),
     debug: rel(root, join(docs, 'debug')),
     config_file: existsSync(join(root, '.kaizen', 'config.json')) ? '.kaizen/config.json' : null,
@@ -122,8 +121,8 @@ function cmdInit(root) {
   }
   ensureStateDir(root);
   const docs = docsRoot(root);
-  // un docs/solutions/ hérité reste le dossier des leçons : on ne crée pas un learnings/ vide qui le masquerait
-  for (const d of [join(docs, 'plans'), learningsDir(root), join(docs, 'ideation')]) {
+  for (const sub of ['plans', 'learnings', 'ideation']) {
+    const d = join(docs, sub);
     if (!existsSync(d)) {
       mkdirSync(d, { recursive: true });
       writeFileSync(join(d, '.gitkeep'), '');
@@ -273,7 +272,7 @@ function validateLearning(file) {
 }
 
 function loadLearnings(root) {
-  const dir = learningsDir(root);
+  const dir = join(docsRoot(root), 'learnings');
   return walkMarkdown(dir).map((file) => {
     const text = readFileSync(file, 'utf8');
     const { data, body } = parseFrontmatter(text);
@@ -292,7 +291,7 @@ function cmdLearnings(root, sub) {
   if (sub === 'validate') {
     const files = positional.slice(2).length
       ? positional.slice(2).map((f) => resolve(f))
-      : walkMarkdown(learningsDir(root));
+      : walkMarkdown(join(docsRoot(root), 'learnings'));
     let bad = 0;
     for (const f of files) {
       const errors = validateLearning(f);

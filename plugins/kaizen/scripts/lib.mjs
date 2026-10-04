@@ -73,15 +73,6 @@ export function docsRoot(root, config = loadConfig(root)) {
   return abs;
 }
 
-// Leçons : <docs>/learnings/. Un repo qui n'a encore que <docs>/solutions/ (Kaizen ≤ 1.x ou
-// format Compound Engineering) est lu tel quel, sans migration forcée.
-export function learningsDir(root, config = loadConfig(root)) {
-  const docs = docsRoot(root, config);
-  const current = join(docs, 'learnings');
-  const legacy = join(docs, 'solutions');
-  return !existsSync(current) && existsSync(legacy) ? legacy : current;
-}
-
 export function expandHome(p) {
   return p.startsWith('~/') || p === '~' ? join(homedir(), p.slice(1)) : p;
 }

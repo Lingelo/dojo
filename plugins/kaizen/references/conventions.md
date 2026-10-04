@@ -51,9 +51,7 @@ depuis le chemin de ce fichier (le dossier parent de `references/`).
 
 ## Racine des livrables
 
-Lis `node "$K" root` avant de composer un chemin. Par défaut tout vit sous `docs/`. Les leçons sont
-dans le chemin `learnings` qu'il renvoie : `<root>/learnings/`, ou `<root>/solutions/` dans un repo
-qui n'a que ce dossier hérité (Kaizen 1.x, Compound Engineering) — écris-y, ne le déplace pas.
+Lis `node "$K" root` avant de composer un chemin. Par défaut tout vit sous `docs/` :
 
 | Dossier | Contenu | Écrit par |
 |---|---|---|

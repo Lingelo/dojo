@@ -54,9 +54,6 @@ Chaque point affiche ✔ ou ⚠, avec la correction proposée.
 
 - Ce que `setup` crée est à **commiter** : la config et les dossiers sont partagés par l'équipe.
   `.kaizen/config.local.json` et `.kaizen/state/` ne sont pas versionnés.
-- Un repo qui contient déjà des documents au format Compound Engineering ou Kaizen 1.x (`docs/plans/`,
-  `docs/solutions/`) est compatible : tant que `docs/learnings/` n'existe pas, les leçons de
-  `docs/solutions/` sont lues et écrites telles quelles. Pour migrer : `git mv docs/solutions docs/learnings`.
 
 ## Voir aussi
 

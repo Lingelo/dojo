@@ -146,18 +146,6 @@ test('learnings : validation par piste et recherche classée', () => {
   cleanup(dir);
 });
 
-test('learnings : un docs/solutions/ hérité reste lu, et init ne le masque pas', () => {
-  const dir = tempRepo({
-    'docs/solutions/conventions/naming.md':
-      '---\ntitle: Nommer les jobs par verbe\ndate: 2026-09-01\nmodule: jobs\nproblem_type: convention\ncomponent: background_job\nseverity: low\n---\n# y\n',
-  });
-  assert.equal(cli(dir, ['init']).code, 0);
-  assert.ok(!existsSync(join(dir, 'docs/learnings')));
-  assert.equal(cli(dir, ['root']).json.learnings, 'docs/solutions');
-  assert.equal(cli(dir, ['learnings', 'search', 'jobs', '--json']).json[0].path, 'docs/solutions/conventions/naming.md');
-  cleanup(dir);
-});
-
 test('packs : local, git épinglé multi-packs, erreurs explicites', () => {
   const src = tempRepo({
     'rails/no-callbacks.md': '---\ntitle: Pas de callbacks\napplies_when:\n  - ajouter de la logique à la sauvegarde\n---\nx\n',
