@@ -5,17 +5,17 @@ import { join } from 'node:path';
 import { detectStack, docsRoot, loadConfig, parseFrontmatter, runBounded } from '../scripts/lib.mjs';
 import { cleanup, tempRepo } from './helpers.mjs';
 
-test('frontmatter : scalaires, guillemets, listes en ligne et en tirets, blocs, commentaires', () => {
+test('frontmatter: scalars, quotes, inline and dash lists, blocks, comments', () => {
   const { data, body, error } = parseFrontmatter(
     [
       '---',
-      'title: "Titre: avec deux-points"',
+      'title: "Title: with a colon"',
       'tags: [a, "b, c", d]',
       'symptoms:',
-      '  - "`npm ci` échoue: EINTEGRITY"',
+      '  - "`npm ci` fails: EINTEGRITY"',
       '  - simple',
       'status: proposed   # commentaire',
-      'retire_when: "quand le bug #123 est corrigé"',
+      'retire_when: "when bug #123 is fixed"',
       'flag: true',
       'notes: |',
       '  ligne 1',
@@ -26,27 +26,27 @@ test('frontmatter : scalaires, guillemets, listes en ligne et en tirets, blocs, 
     ].join('\n'),
   );
   assert.equal(error, null);
-  assert.equal(data.title, 'Titre: avec deux-points');
+  assert.equal(data.title, 'Title: with a colon');
   assert.deepEqual(data.tags, ['a', 'b, c', 'd']);
-  assert.deepEqual(data.symptoms, ['`npm ci` échoue: EINTEGRITY', 'simple']);
+  assert.deepEqual(data.symptoms, ['`npm ci` fails: EINTEGRITY', 'simple']);
   assert.equal(data.status, 'proposed');
-  assert.equal(data.retire_when, 'quand le bug #123 est corrigé');
+  assert.equal(data.retire_when, 'when bug #123 is fixed');
   assert.equal(data.flag, true);
   assert.equal(data.notes, 'ligne 1\nligne 2');
   assert.deepEqual(data.empty, []);
   assert.equal(body, 'corps');
 });
 
-test('frontmatter absent ou ligne illisible', () => {
-  assert.equal(parseFrontmatter('pas de frontmatter').data, null);
-  assert.match(parseFrontmatter('---\n???\n---\n').error, /illisible/);
+test('missing frontmatter or unreadable line', () => {
+  assert.equal(parseFrontmatter('no frontmatter').data, null);
+  assert.match(parseFrontmatter('---\n???\n---\n').error, /unreadable/);
 });
 
-test('détection de stack : node (pnpm) sans test fictif, python, go', () => {
+test('stack detection: node (pnpm) without the placeholder test, python, go', () => {
   const node = tempRepo({ 'package.json': { scripts: { test: 'echo "Error: no test specified" && exit 1', lint: 'eslint .', typecheck: 'tsc' } }, 'pnpm-lock.yaml': '' });
   const d = detectStack(node);
   assert.deepEqual(d.stacks, ['node (pnpm)']);
-  assert.equal(d.verify.test, undefined, 'le script test fictif de npm init est ignoré');
+  assert.equal(d.verify.test, undefined, 'the npm init placeholder test script is ignored');
   assert.equal(d.verify.lint, 'pnpm run lint');
   assert.equal(d.verify.typecheck, 'pnpm run typecheck');
   assert.match(d.verify.audit, /pnpm audit/);
@@ -72,13 +72,13 @@ test('configuration : config.local surcharge, sauf docs_root', () => {
   assert.equal(c.language, 'en');
   assert.deepEqual(c.verify, { test: 'a', lint: 'b' });
   assert.equal(c.gate.max_blocks, 5);
-  assert.equal(c.gate.timeout_seconds, 600, 'les défauts du garde-fou sont conservés');
+  assert.equal(c.gate.timeout_seconds, 600, 'gate defaults are kept');
   assert.equal(c.pr.max_lines, 300);
-  assert.ok(c.pr.ignore.length, 'les motifs ignorés par défaut sont conservés');
+  assert.ok(c.pr.ignore.length, 'default ignore patterns are kept');
   cleanup(dir);
 });
 
-test('docs_root doit rester dans le repo', () => {
+test('docs_root must stay inside the repo', () => {
   const dir = tempRepo({});
   for (const bad of ['../x', '.git/docs', '.', '/abs']) {
     assert.throws(() => docsRoot(dir, { docs_root: bad }), /docs_root/);
@@ -87,13 +87,13 @@ test('docs_root doit rester dans le repo', () => {
   cleanup(dir);
 });
 
-test('runBounded : code de sortie et sorties transmis', () => {
+test('runBounded: exit code and output passed through', () => {
   const r = runBounded('node -e "console.log(1); console.error(2); process.exit(3)"', { timeoutMs: 10000 });
   assert.deepEqual([r.status, r.timedOut, r.stdout.trim(), r.stderr.trim()], [3, false, '1', '2']);
 });
 
-test('runBounded : au délai, aucun processus de l’arbre ne survit (shell, enfant, petit-enfant)', () => {
-  // La commande lance un enfant qui lance un petit-enfant ; celui-ci écrirait un témoin après 1,5 s.
+test('runBounded: at the timeout, no process of the tree survives (shell, child, grandchild)', () => {
+  // The command starts a child that starts a grandchild; the latter would write a marker after 1.5 s.
   const dir = tempRepo({
     'grandchild.js': "setTimeout(() => require('fs').writeFileSync('survived', 'x'), 1500);\n",
     'child.js': "require('child_process').spawn(process.execPath, ['grandchild.js'], { stdio: 'inherit' });\nsetTimeout(() => {}, 10000);\n",
@@ -102,8 +102,8 @@ test('runBounded : au délai, aucun processus de l’arbre ne survit (shell, enf
   const r = runBounded('node child.js', { cwd: dir, timeoutMs: 500 });
   assert.equal(r.timedOut, true);
   assert.equal(r.status, null);
-  assert.ok(Date.now() - started < 8000, 'rendu la main au délai, sans attendre l’enfant (10 s)');
+  assert.ok(Date.now() - started < 8000, 'returned at the timeout, without waiting for the child (10 s)');
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2500);
-  assert.equal(existsSync(join(dir, 'survived')), false, 'le petit-enfant a été tué');
+  assert.equal(existsSync(join(dir, 'survived')), false, 'the grandchild was killed');
   cleanup(dir);
 });

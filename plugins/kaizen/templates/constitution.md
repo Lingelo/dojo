@@ -1,64 +1,63 @@
 ---
-name: {{nom du projet}}
+name: {{project name}}
 version: 1.0.0
 ratified: {{YYYY-MM-DD}}
 last_amended: {{YYYY-MM-DD}}
 artifact: kaizen-constitution/v1
 ---
 
-# Constitution d'ingénierie — {{nom du projet}}
+# Engineering constitution — {{project name}}
 
-{{1 à 2 lignes : ce que cette constitution gouverne (ce repo, ce service…) et pour qui elle est écrite
-(humains et agents).}}
+{{1 to 2 lines: what this constitution governs (this repo, this service…) and who it is written for
+(humans and agents).}}
 
-Hiérarchie : **constitution > règles des Kaizen Packs > leçons de `docs/learnings/` > préférences.**
-Un plan qui s'écarte d'un article le justifie dans son contrôle constitutionnel ; un article
-**NON NÉGOCIABLE** n'admet aucune exception sans amendement.
+Hierarchy: **constitution > Kaizen Pack rules > learnings in `docs/learnings/` > preferences.**
+A plan that departs from an article justifies it in its constitution check; a **NON-NEGOTIABLE**
+article admits no exception without an amendment.
 
 ## Articles
 
-<!-- 5 à 9 articles. Chacun : une règle de 1 à 3 phrases, un contrôle vérifiable, des exceptions
-     éventuelles. Exemples de départ ci-dessous — à garder, réécrire ou supprimer pendant l'interview. -->
+<!-- 5 to 9 articles. Each one: a 1-to-3-sentence rule, a verifiable check, optional exceptions.
+     Starting examples below — keep, rewrite or delete them during the interview. -->
 
-### I. {{Titre}} — NON NÉGOCIABLE
+### I. {{Title}} — NON-NEGOTIABLE
 
-{{Règle : ce qui est toujours vrai, formulé pour être vérifiable.}}
+{{Rule: what is always true, phrased so it can be verified.}}
 
-**Contrôle :** {{la question qu'un relecteur ou un agent pose au plan et au diff, à laquelle on répond par oui ou non avec une preuve.}}
+**Check:** {{the question a reviewer or an agent asks of the plan and the diff, answered yes or no with evidence.}}
 
-### II. {{Titre}}
+### II. {{Title}}
 
-{{Règle.}}
+{{Rule.}}
 
-**Contrôle :** {{…}}
+**Check:** {{…}}
 
-**Exceptions :** {{quand c'est permis, et comment l'exception est consignée.}}
+**Exceptions:** {{when it is allowed, and how the exception is recorded.}}
 
-## Politique IA
+## AI policy
 
-<!-- Ce que les agents peuvent faire seuls, ce qui exige un humain. C'est un article comme les autres :
-     garde la numérotation continue. -->
+<!-- What agents may do on their own, what requires a human. It is an article like the others:
+     keep the numbering continuous. -->
 
-### {{N}}. Autonomie des agents
+### {{N}}. Agent autonomy
 
-{{Ex. : Les agents peuvent créer des branches, commiter, pousser une branche de travail et ouvrir une PR.
-Ils ne mergent jamais, ne poussent jamais sur la branche par défaut, ne réécrivent jamais l'historique
-partagé. Une migration de données, l'ajout d'une dépendance ou un changement d'infrastructure exige
-l'accord explicite d'un humain dans la session.}}
+{{E.g.: Agents may create branches, commit, push a working branch and open a PR. They never merge,
+never push to the default branch, never rewrite shared history. A data migration, a new dependency or
+an infrastructure change requires a human's explicit approval in the session.}}
 
-**Contrôle :** {{Toute action de ce type dans la PR est-elle tracée à un accord humain (session, commentaire de PR) ?}}
+**Check:** {{Is every such action in the PR traced to a human approval (session, PR comment)?}}
 
-## Gouvernance
+## Governance
 
-- **Amendement** — par `/kaizen:constitution amend` : proposition, impact (plans en cours, packs et
-  leçons en conflit), accord explicite, puis mise à jour de la version et de `last_amended`.
-- **Approbation** — {{optionnel, pour une équipe : déclarer `approvers: [@alice, @bob]` et
-  `ratified_by: alice` dans le frontmatter. Chaque amendement du journal se termine alors par
-  « Approuvé par : @… » (contrôlé par `constitution check`), et `CODEOWNERS` assigne
-  `CONSTITUTION.md` et `kaizen-packs/` à ces approbateurs.}}
-- **Versionnage** — MAJEUR : article retiré ou redéfini de façon incompatible ; MINEUR : article
-  ajouté ou élargi ; CORRECTIF : clarification sans changement de sens.
-- **Application** — `/kaizen:plan` évalue chaque article (section « Contrôle constitutionnel »),
-  `/kaizen:doc-review` et `/kaizen:review` le vérifient, toute exception est justifiée dans le plan et
-  rappelée dans la PR.
-- **Revue** — relue au moins une fois par trimestre ou après un post-mortem qui la met en cause.
+- **Amendment** — through `/kaizen:constitution amend`: proposal, impact (plans in progress,
+  conflicting packs and learnings), explicit approval, then version and `last_amended` update.
+- **Approval** — {{optional, for a team: declare `approvers: [@alice, @bob]` and `ratified_by: alice`
+  in the frontmatter. Each amendment in the log then ends with "Approved by: @…" (checked by
+  `constitution check`), and `CODEOWNERS` assigns `CONSTITUTION.md` and `kaizen-packs/` to these
+  approvers.}}
+- **Versioning** — MAJOR: article removed or redefined incompatibly; MINOR: article added or widened;
+  PATCH: clarification without a change of meaning.
+- **Enforcement** — `/kaizen:plan` assesses each article ("Constitution check" section),
+  `/kaizen:doc-review` and `/kaizen:review` verify it, every exception is justified in the plan and
+  restated in the PR.
+- **Review** — reread at least once a quarter or after a postmortem that calls it into question.

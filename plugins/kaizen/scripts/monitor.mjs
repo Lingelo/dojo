@@ -1,20 +1,20 @@
-// Kaizen — signaux de production : contrôle ponctuel et surveillance après déploiement.
+// Kaizen — production signals: one-off check and post-deployment watch.
 //
-// `.kaizen/config.json → monitor.signals.<nom>` déclare chaque signal, sans dépendre d'un outil :
-//   { "type": "http", "url": "https://…/health", "expect": 200 }        disponibilité (natif)
-//   { "command": "curl -s … | jq -r .value", "max": 0.01 }               toute commande qui affiche un nombre
-//   (min / max : seuils ; `env` : limite le signal à un environnement ; `{env}` remplacé dans command/url)
+// `.kaizen/config.json → monitor.signals.<name>` declares each signal, without depending on a tool:
+//   { "type": "http", "url": "https://…/health", "expect": 200 }        availability (native)
+//   { "command": "curl -s … | jq -r .value", "max": 0.01 }               any command that prints a number
+//   (min / max: thresholds; `env`: restricts the signal to one environment; `{env}` replaced in command/url)
 //
-// Le seuil peut venir du plan : la section kaizen:rollout cite le signal par son nom et son seuil,
-// « **Signal** : `error_rate` > 0.01 → retour arrière ». Un seuil franchi sur `consecutive`
-// échantillons de suite (2 par défaut) est une **violation** : `watch` s'arrête et le dit.
+// The threshold may come from the plan: the kaizen:rollout section cites the signal by name and
+// threshold, "**Signal**: `error_rate` > 0.01 → rollback". A threshold breached on `consecutive`
+// samples in a row (2 by default) is a **breach**: `watch` stops and says so.
 //
-// Au-delà de la fenêtre après déploiement, deux voies détectent un incident sans action manuelle :
-// - `patrol` : contrôle ponctuel confirmé, à planifier (routine Claude Code, cron, workflow CI) ;
-// - `alert` : traduit l'alerte de l'outil de l'équipe (Alertmanager, PagerDuty, Datadog, JSON simple),
-//   reçue par exemple via un workflow `repository_dispatch`.
-// Un incident est un tag `incident/<env>/<détection>` (résolu par `resolve/<env>/…` ou un retour
-// arrière) : la détection datée alimente la chronologie des post-mortems et le rétablissement DORA.
+// Beyond the post-deployment window, two paths detect an incident without manual action:
+// - `patrol`: a confirmed one-off check, to schedule (Claude Code routine, cron, CI workflow);
+// - `alert`: translates an alert from the team's tool (Alertmanager, PagerDuty, Datadog, plain JSON),
+//   received for instance through a `repository_dispatch` workflow.
+// An incident is an `incident/<env>/<detection>` tag (resolved by `resolve/<env>/…` or a rollback):
+// the dated detection feeds postmortem timelines and DORA time to restore.
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -30,7 +30,7 @@ function stateDir(root) {
   return dir;
 }
 
-// Seuils cités par la section rollout d'un plan : `nom` suivi de >, >=, <, <= et d'une valeur.
+// Thresholds cited by a plan's rollout section: `name` followed by >, >=, <, <= and a value.
 export function planThresholds(root, planPaths) {
   const out = {};
   for (const p of [].concat(planPaths || [])) Object.assign(out, thresholdsOf(root, p));
@@ -74,9 +74,9 @@ async function sample(name, spec, env) {
   const r = runBounded(sub(spec.command), { timeoutMs: (spec.timeout_seconds || 30) * 1000, env: { ...process.env, KAIZEN_ENV: env || '' } });
   const raw = (r.stdout || '').trim().split(/\s+/).pop();
   const value = raw !== undefined && raw !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : null;
-  if (r.status !== 0 || value === null) return { value, ok: false, ms: Date.now() - started, detail: r.timedOut ? 'timeout' : r.status !== 0 ? `commande en échec (exit ${r.status})` : `sortie non numérique : "${(r.stdout || '').trim().slice(0, 60)}"` };
+  if (r.status !== 0 || value === null) return { value, ok: false, ms: Date.now() - started, detail: r.timedOut ? 'timeout' : r.status !== 0 ? `command failed (exit ${r.status})` : `non-numeric output: "${(r.stdout || '').trim().slice(0, 60)}"` };
   const breach = (spec.max !== undefined && value > Number(spec.max)) || (spec.min !== undefined && value < Number(spec.min));
-  return { value, ok: !breach, ms: Date.now() - started, detail: breach ? `seuil franchi (${spec.max !== undefined ? `max ${spec.max}` : `min ${spec.min}`})` : 'ok' };
+  return { value, ok: !breach, ms: Date.now() - started, detail: breach ? `threshold breached (${spec.max !== undefined ? `max ${spec.max}` : `min ${spec.min}`})` : 'ok' };
 }
 
 export function signalsFor(root, { env = null, plan = null } = {}) {
@@ -98,7 +98,7 @@ export async function check(root, opts = {}) {
   return { at: new Date().toISOString(), env: opts.env || null, ok: Object.values(results).every((r) => r.ok), signals: results, unknown_plan_signals };
 }
 
-// Surveille pendant `minutes` ; s'arrête à la première violation confirmée (consecutive échantillons).
+// Watches for `minutes`; stops at the first confirmed breach (consecutive samples).
 export async function watch(root, { env = null, plan = null, minutes, intervalSeconds, consecutive, onSample } = {}) {
   const config = loadConfig(root);
   const duration = Number(minutes ?? config.deploy.watch_minutes ?? 15) * 60000;
@@ -125,9 +125,9 @@ export async function watch(root, { env = null, plan = null, minutes, intervalSe
   }
 }
 
-// Contrôle ponctuel confirmé, pour une exécution planifiée : un signal rouge est re-mesuré jusqu'à
-// `consecutive` échantillons avant d'être retenu, et une violation ouvre un incident (sauf s'il y en a
-// déjà un ouvert sur cet environnement).
+// Confirmed one-off check, for a scheduled run: a red signal is measured again up to `consecutive`
+// samples before it counts, and a breach opens an incident (unless one is already open on this
+// environment).
 export async function patrol(root, { env = null, plan = null, intervalSeconds, consecutive } = {}) {
   const config = loadConfig(root);
   const every = Number(intervalSeconds ?? config.monitor.interval_seconds ?? 60) * 1000;
@@ -145,14 +145,14 @@ export async function patrol(root, { env = null, plan = null, intervalSeconds, c
   const breached = Object.entries(streak).filter(([, n]) => n >= needed).map(([name]) => name);
   const open = incidents(root, { env }).filter((i) => !i.resolved_at);
   if (!breached.length) return { status: 'healthy', env, open_incidents: open, last: c };
-  const incident = openIncident(root, env, { source: 'patrol', summary: `${breached.join(', ')} hors seuil`, signals: breached });
+  const incident = openIncident(root, env, { source: 'patrol', summary: `${breached.join(', ')} out of threshold`, signals: breached });
   return { status: 'breach', env, breached, detected_at: incident.incident.detected_at, ...incident, last: c };
 }
 
 // --- Incidents ----------------------------------------------------------------------------------------
 
-// Incidents d'un environnement, du plus ancien au plus récent : détection, résolution (premier
-// `resolve` ou retour arrière qui suit), durée.
+// Incidents of an environment, oldest first: detection, resolution (first `resolve` or rollback that
+// follows), duration.
 export function incidents(root, { env = null } = {}) {
   const all = deployments(root, { env });
   return all
@@ -174,24 +174,24 @@ export function incidents(root, { env = null } = {}) {
 }
 
 function requireEnv(env) {
-  if (!env) throw new Error('environnement requis (--env, ou label env/environment de l’alerte)');
+  if (!env) throw new Error('environment required (--env, or the alert\'s env/environment label)');
   return env;
 }
 
-// Ouvre un incident daté de sa détection, sur le commit déployé à ce moment-là dans l'environnement.
-// Idempotent tant que l'incident précédent n'est pas résolu : on ne compte pas deux fois une panne.
-export function openIncident(root, env, { at = new Date(), source = 'manuel', summary = null, signals = null } = {}) {
+// Opens an incident dated at its detection, on the commit deployed in the environment at that time.
+// Idempotent while the previous incident is unresolved: one outage is never counted twice.
+export function openIncident(root, env, { at = new Date(), source = 'manual', summary = null, signals = null } = {}) {
   requireEnv(env);
   const open = incidents(root, { env }).find((i) => !i.resolved_at);
   if (open) return { opened: false, incident: open };
   let when = new Date(at);
-  if (Number.isNaN(when.getTime())) throw new Error(`date de détection illisible : ${at}`);
-  // Une alerte peut dater d'avant le dernier déploiement : le commit en cause est celui qui tournait.
+  if (Number.isNaN(when.getTime())) throw new Error(`unreadable detection date: ${at}`);
+  // An alert may predate the last deployment: the culprit commit is the one that was running.
   const detectedIso = when.toISOString().replace(/\.\d+Z$/, 'Z');
   const live = deployments(root, { env }).filter((d) => d.kind === 'deploy' && d.at <= detectedIso).at(-1);
   const sha = live?.sha || git(root, ['rev-parse', 'HEAD']);
-  // Les tags sont datés à la seconde : un incident daté au plus tard de la dernière résolution passerait
-  // pour déjà résolu. Il est donc placé juste après elle.
+  // Tags are dated to the second: an incident dated no later than the last resolution would look
+  // already resolved. So it is placed right after it.
   const last = deployments(root, { env }).filter((d) => d.kind === 'resolve' || d.kind === 'rollback').at(-1);
   if (last && when.getTime() <= Date.parse(last.at)) when = new Date(Date.parse(last.at) + 1000);
   const tagged = tagDeployment(root, 'incident', env, sha, { env, source, summary, signals }, loadConfig(root), when);
@@ -201,17 +201,17 @@ export function openIncident(root, env, { at = new Date(), source = 'manuel', su
 export function resolveIncident(root, env, { at = new Date(), summary = null } = {}) {
   requireEnv(env);
   const open = incidents(root, { env }).filter((i) => !i.resolved_at);
-  if (!open.length) return { resolved: false, reason: `aucun incident ouvert sur ${env}` };
+  if (!open.length) return { resolved: false, reason: `no open incident on ${env}` };
   const when = new Date(at);
-  if (Number.isNaN(when.getTime())) throw new Error(`date de résolution illisible : ${at}`);
-  // Une résolution ne précède pas la détection (horloges de l'outil d'alerte et de la machine).
+  if (Number.isNaN(when.getTime())) throw new Error(`unreadable resolution date: ${at}`);
+  // A resolution never precedes detection (alerting tool and machine clocks may differ).
   const first = open[0].detected_at;
   const stampAt = when.toISOString() < first ? new Date(first) : when;
   const tagged = tagDeployment(root, 'resolve', env, open.at(-1).sha, { env, summary }, loadConfig(root), stampAt);
   return { resolved: true, ...tagged, incidents: incidents(root, { env }).filter((i) => open.some((o) => o.tag === i.tag)) };
 }
 
-// --- Alertes entrantes -----------------------------------------------------------------------------------
+// --- Incoming alerts -------------------------------------------------------------------------------------
 
 function isoOf(v) {
   if (v === undefined || v === null || v === '') return null;
@@ -223,12 +223,12 @@ function isoOf(v) {
   return Number.isNaN(d.getTime()) || d.getUTCFullYear() < 2000 ? null : d.toISOString();
 }
 
-// Traduit une alerte en { action: 'open'|'resolve', at, summary, env, format }. Formats reconnus :
-// Prometheus Alertmanager, PagerDuty (webhooks v3), Datadog (gabarit de webhook), JSON simple
+// Translates an alert into { action: 'open'|'resolve', at, summary, env, format }. Recognized formats:
+// Prometheus Alertmanager, PagerDuty (v3 webhooks), Datadog (webhook template), plain JSON
 // { status: firing|resolved, summary, at, env }.
 export function parseAlert(payload) {
   const p = typeof payload === 'string' ? JSON.parse(payload) : payload;
-  if (!p || typeof p !== 'object') throw new Error('alerte illisible : objet JSON attendu');
+  if (!p || typeof p !== 'object') throw new Error('unreadable alert: JSON object expected');
   const firing = (s) => /^(firing|triggered|trigger|alert|open|opened|critical|error|warn(ing)?)$/i.test(String(s));
   const resolvedWord = (s) => /^(resolved|recovered|ok|closed|close)$/i.test(String(s));
 
@@ -248,7 +248,7 @@ export function parseAlert(payload) {
   }
   if (p.event && typeof p.event === 'object' && /^incident\./.test(String(p.event.event_type || ''))) {
     const type = p.event.event_type;
-    if (!/triggered|resolved/.test(type)) return { format: 'pagerduty', action: 'ignore', reason: `événement ${type} ignoré` };
+    if (!/triggered|resolved/.test(type)) return { format: 'pagerduty', action: 'ignore', reason: `event ${type} ignored` };
     return {
       format: 'pagerduty',
       action: type === 'incident.resolved' ? 'resolve' : 'open',
@@ -283,5 +283,5 @@ export function handleAlert(root, payload, { env = null } = {}) {
   if (a.action === 'ignore') return { alert: a, action: 'ignore' };
   const at = a.at || new Date().toISOString();
   if (a.action === 'resolve') return { alert: a, ...resolveIncident(root, target, { at, summary: a.summary }) };
-  return { alert: a, ...openIncident(root, target, { at, source: `alerte ${a.format}`, summary: a.summary }) };
+  return { alert: a, ...openIncident(root, target, { at, source: `${a.format} alert`, summary: a.summary }) };
 }

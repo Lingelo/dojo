@@ -1,21 +1,20 @@
-// Kaizen — instantané déterministe d'une PR GitHub et état du suivi (watch-pr, address-feedback).
+// Kaizen — deterministic snapshot of a GitHub PR and tracking state (watch-pr, address-feedback).
 //
-// L'agent garde le jugement et les modifications ; ce module fait ce que la prose fait mal :
-// une lecture complète et paginée des fils de revue, des commentaires, des revues et des checks du
-// commit de tête, l'état de ce qui a déjà été traité, et un veilleur qui ne réveille l'agent que
-// lorsqu'il y a quelque chose à faire.
+// The agent keeps judgment and edits; this module does what prose does badly: a complete, paginated
+// read of review threads, comments, reviews and head-commit checks, the state of what was already
+// handled, and a watcher that only wakes the agent when there is something to do.
 //
-// Sous-commandes (via kaizen.mjs pr …) :
+// Subcommands (via kaizen.mjs pr …):
 //   snapshot [--pr N] [--repo o/r] [--start] [--budget-seconds S] [--settle-seconds S]
 //   watch    [--pr N] [--repo o/r] [--interval 150] [--settle-seconds 300]
 //   mark     --thread ID | --comment ID | --check NAME  --disposition dispatched|needs-human|open [--note …]
-//   threads  [--pr N] [--repo o/r] [--all]          fils de revue complets (pour address-feedback)
-//   reply    --thread ID --body-file F               répond dans un fil (marqueur kaizen ajouté)
-//   resolve  --thread ID                             marque un fil comme résolu
-//   comment  --body-file F                           commentaire de premier niveau (marqueur ajouté)
-//   update-branch                                    met à jour la branche depuis la base (si BEHIND)
+//   threads  [--pr N] [--repo o/r] [--all]          full review threads (for address-feedback)
+//   reply    --thread ID --body-file F               replies in a thread (kaizen marker added)
+//   resolve  --thread ID                             marks a thread as resolved
+//   comment  --body-file F                           top-level comment (marker added)
+//   update-branch                                    updates the branch from the base (if BEHIND)
 //
-// Variable de test : KAIZEN_GH = binaire (ou script Node .mjs/.js) à utiliser à la place de `gh`.
+// Test variable: KAIZEN_GH = binary (or Node .mjs/.js script) to use instead of `gh`.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
@@ -52,18 +51,18 @@ function graphql(query, vars) {
 }
 
 // ---------------------------------------------------------------------------
-// Résolution de la PR
+// Resolving the PR
 // ---------------------------------------------------------------------------
 
 export function resolveTarget({ pr, repo } = {}) {
   let nameWithOwner = repo;
   if (!nameWithOwner) nameWithOwner = ghJson(['repo', 'view', '--json', 'nameWithOwner'])?.nameWithOwner;
-  if (!nameWithOwner || !nameWithOwner.includes('/')) throw new Error('dépôt GitHub introuvable (passe --repo owner/name)');
+  if (!nameWithOwner || !nameWithOwner.includes('/')) throw new Error('GitHub repository not found (pass --repo owner/name)');
   const parts = nameWithOwner.replace(/^https?:\/\/[^/]+\//, '').split('/');
   const [owner, name] = parts.slice(-2);
   let number = pr ? Number(String(pr).replace(/.*\/pull\//, '').replace(/\D.*$/, '')) : null;
   if (!number) number = ghJson(['pr', 'view', '--json', 'number', '-R', `${owner}/${name}`])?.number;
-  if (!number) throw new Error('aucune PR pour la branche courante (passe --pr N)');
+  if (!number) throw new Error('no PR for the current branch (pass --pr N)');
   return { owner, name, number };
 }
 
@@ -91,7 +90,7 @@ export function fetchPr(target) {
   do {
     const data = graphql(PR_QUERY, { owner: target.owner, name: target.name, number: target.number, cursor });
     const page = data?.repository?.pullRequest;
-    if (!page) throw new Error(`PR #${target.number} introuvable`);
+    if (!page) throw new Error(`PR #${target.number} not found`);
     if (!pr) pr = page;
     threads.push(...page.reviewThreads.nodes);
     cursor = page.reviewThreads.pageInfo.hasNextPage ? page.reviewThreads.pageInfo.endCursor : null;
@@ -117,7 +116,7 @@ export function saveState(file, state) {
   mkdirSync(join(file, '..'), { recursive: true });
   const tmp = `${file}.tmp`;
   writeFileSync(tmp, `${JSON.stringify(state, null, 2)}\n`);
-  renameSync(tmp, file); // écriture atomique
+  renameSync(tmp, file); // atomic write
 }
 
 // ---------------------------------------------------------------------------
@@ -161,7 +160,7 @@ export function analyze(pr, state, { now = Date.now(), settleSeconds = 300, budg
   const head = pr.headRefOid || commit?.oid;
   const checks = normalizeChecks(commit);
 
-  // Fils non résolus : actionnables s'ils n'ont pas été traités depuis leur dernier commentaire externe.
+  // Unresolved threads: actionable if not handled since their last external comment.
   const threads = [];
   for (const t of pr.reviewThreads || []) {
     if (t.isResolved) continue;
@@ -185,7 +184,7 @@ export function analyze(pr, state, { now = Date.now(), settleSeconds = 300, budg
     });
   }
 
-  // Commentaires de premier niveau et corps de revues non vides, hors messages Kaizen.
+  // Top-level comments and non-empty review bodies, excluding Kaizen messages.
   const candidates = [];
   for (const c of pr.comments?.nodes || []) {
     if (!c.body?.trim() || isOurs(c.body)) continue;
@@ -201,7 +200,7 @@ export function analyze(pr, state, { now = Date.now(), settleSeconds = 300, budg
     return { ...c, disposition: handled ? mark.disposition : 'open' };
   });
 
-  // Checks : un échec n'est actionnable qu'une fois par commit de tête.
+  // Checks: a failure is actionable only once per head commit.
   const failing = checks
     .filter((c) => c.state === 'fail')
     .map((c) => ({ ...c, disposition: state.checks[`${head}:${c.name}`]?.disposition || 'open' }));
@@ -219,7 +218,7 @@ export function analyze(pr, state, { now = Date.now(), settleSeconds = 300, budg
     ...comments.filter((c) => c.disposition === 'needs-human').map((c) => ({ kind: 'comment', id: c.id, url: c.url })),
   ];
 
-  // Silence : depuis la dernière activité observable (commit, commentaire, revue, check).
+  // Quiet time: since the last observable activity (commit, comment, review, check).
   const activity = [
     ts(commit?.committedDate),
     ...(pr.reviewThreads || []).flatMap((t) => (t.comments?.nodes || []).map((c) => ts(c.createdAt))),
@@ -229,7 +228,7 @@ export function analyze(pr, state, { now = Date.now(), settleSeconds = 300, budg
   ];
   const quietSeconds = Math.max(0, Math.round((now - Math.max(0, ...activity)) / 1000));
 
-  // Mise à jour depuis la base : seulement sur signal explicite de GitHub.
+  // Updating from the base: only on an explicit GitHub signal.
   const ms = pr.mergeStateStatus;
   const branchCurrency = ms === 'BEHIND' ? { kind: 'behind', action: 'update-branch' } : ms === 'DIRTY' ? { kind: 'conflict', action: 'merge-base-locally-and-resolve' } : null;
 
@@ -318,13 +317,13 @@ export function mark(stateRoot, opts) {
   const now = new Date().toISOString();
   if (opts.thread) {
     const t = pr.reviewThreads.find((x) => x.id === opts.thread);
-    if (!t) throw new Error(`fil ${opts.thread} introuvable`);
+    if (!t) throw new Error(`thread ${opts.thread} not found`);
     const lastExternal = [...(t.comments?.nodes || [])].reverse().find((c) => !isOurs(c.body));
     state.threads[opts.thread] = { disposition, last_external_id: lastExternal?.id ?? null, note: opts.note || null, at: now };
   } else if (opts.comment) {
     const all = [...(pr.comments?.nodes || []), ...(pr.reviews?.nodes || [])];
     const c = all.find((x) => x.id === opts.comment);
-    if (!c) throw new Error(`commentaire ${opts.comment} introuvable`);
+    if (!c) throw new Error(`comment ${opts.comment} not found`);
     state.comments[opts.comment] = { disposition, at: c.updatedAt || c.createdAt || c.submittedAt, note: opts.note || null };
   } else if (opts.check) {
     const head = pr.headRefOid;
@@ -388,7 +387,7 @@ export function updateBranch(stateRoot, opts) {
   const target = resolveTarget(opts);
   const pr = fetchPr(target);
   if (pr.mergeStateStatus !== 'BEHIND') {
-    return { updated: false, reason: `mergeStateStatus=${pr.mergeStateStatus} : aucune mise à jour demandée par GitHub` };
+    return { updated: false, reason: `mergeStateStatus=${pr.mergeStateStatus}: no update requested by GitHub` };
   }
   gh(['api', '-X', 'PUT', `repos/${target.owner}/${target.name}/pulls/${target.number}/update-branch`, '-f', `expected_head_sha=${pr.headRefOid}`]);
   return { updated: true, from_head: pr.headRefOid };
@@ -396,7 +395,7 @@ export function updateBranch(stateRoot, opts) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Veilleur : aucun token consommé ; sort avec une ligne KAIZEN_WAKE quand il y a quelque chose à faire.
+// Watcher: consumes no tokens; exits with a KAIZEN_WAKE line when there is something to do.
 export async function watch(stateRoot, opts, log = (s) => process.stdout.write(`${s}\n`)) {
   const interval = Math.max(30, Number(opts.interval || 150)) * 1000;
   let previous = null;

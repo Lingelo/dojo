@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// Kaizen — hooks qui fournissent à la revue des preuves que l'agent ne peut pas déclarer lui-même.
+// Kaizen — hooks that give the review evidence the agent cannot declare itself.
 //
-//   --evidence  (PostToolUse, outil Agent/Task) : consigne chaque relecteur de code Kaizen réellement
-//               lancé ; `review record` l'exige. Pendant un cycle work/autopilot (garde-fou actif),
-//               consigne aussi chaque sous-agent (rôle, modèle, id) pour ventiler le coût du cycle.
-//   --confirm   (UserPromptSubmit) : un message de l'utilisateur contenant `kaizen waive <code>`
-//               confirme la renonciation à la revue demandée par `review waive` ; `kaizen deploy <code>`
-//               approuve le déploiement sur un environnement protégé demandé par `deploy request`.
-// Toujours exit 0 : ces hooks observent, ils ne bloquent rien. Inactifs hors d'un repo Kaizen.
+//   --evidence  (PostToolUse, Agent/Task tool): logs every Kaizen code reviewer actually launched;
+//               `review record` requires it. During a work/autopilot cycle (gate active), also logs
+//               every subagent (role, model, id) to break the cycle's cost down.
+//   --confirm   (UserPromptSubmit): a user message containing `kaizen waive <code>` confirms the review
+//               waiver requested by `review waive`; `kaizen deploy <code>` approves the deployment to a
+//               protected environment requested by `deploy request`.
+// Always exit 0: these hooks observe, they block nothing. Inactive outside a Kaizen repo.
 
 import { readFileSync } from 'node:fs';
 
@@ -19,7 +19,7 @@ try {
 const mode = process.argv.includes('--confirm') ? 'confirm' : 'evidence';
 const WAIVE = /\bkaizen\s+(waive|deploy)\s+([A-F0-9]{6})\b/i;
 
-// Filtres bon marché avant tout import : ces hooks voient passer chaque message et chaque sous-agent.
+// Cheap filters before any import: these hooks see every message and every subagent.
 if (mode === 'confirm' && !WAIVE.test(String(input.prompt || ''))) process.exit(0);
 if (mode === 'evidence' && !/^(Agent|Task)$/.test(String(input.tool_name || ''))) process.exit(0);
 
@@ -47,21 +47,21 @@ try {
       const a = confirmDeploy(root, code, { session: input.session_id || null });
       process.stdout.write(
         a
-          ? `[kaizen] Déploiement de ${a.sha.slice(0, 7)} sur ${a.env} approuvé par l'utilisateur (30 min) : lance \`deploy run ${a.env}\` pour ce commit, puis surveille.\n`
-          : `[kaizen] Code de déploiement ${code} inconnu ou expiré (30 min) : relance \`deploy request\` si l'utilisateur le souhaite toujours.\n`,
+          ? `[kaizen] Deployment of ${a.sha.slice(0, 7)} to ${a.env} approved by the user (30 min): run \`deploy run ${a.env}\` for this commit, then watch.\n`
+          : `[kaizen] Deployment code ${code} unknown or expired (30 min): run \`deploy request\` again if the user still wants it.\n`,
       );
       process.exit(0);
     }
     const entry = state.confirmWaiver(root, code, { session: input.session_id || null });
-    // Sur UserPromptSubmit, la sortie standard est ajoutée au contexte de Claude.
+    // On UserPromptSubmit, standard output is added to Claude's context.
     process.stdout.write(
       entry
-        ? `[kaizen] Renonciation à la revue confirmée par l'utilisateur pour ${entry.branch} (raison : ${entry.reason}). ` +
-            'Le push est autorisé ; la PR doit le dire dans une section « Revue écartée ».\n'
-        : `[kaizen] Code de renonciation ${code} inconnu ou expiré (30 min) : relance \`review waive --reason\` si l'utilisateur le souhaite toujours.\n`,
+        ? `[kaizen] Review waiver confirmed by the user for ${entry.branch} (reason: ${entry.reason}). ` +
+            'The push is allowed; the PR must say so in a "Review waived" section.\n'
+        : `[kaizen] Waiver code ${code} unknown or expired (30 min): run \`review waive --reason\` again if the user still wants it.\n`,
     );
   }
 } catch (err) {
-  process.stderr.write(`[kaizen] review-hooks : ${err.message}\n`);
+  process.stderr.write(`[kaizen] review-hooks: ${err.message}\n`);
 }
 process.exit(0);

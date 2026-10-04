@@ -1,4 +1,4 @@
-// Kaizen — notes de version depuis les commits conventionnels, et proposition de version SemVer.
+// Kaizen — release notes from conventional commits, and a proposed SemVer version.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -7,16 +7,16 @@ import { parseRollout, sectionText } from './plancheck.mjs';
 
 const CC_RE = /^(\w+)(?:\(([^)]*)\))?(!)?:\s+(.+)$/;
 const GROUPS = [
-  ['feat', 'Nouveautés'],
-  ['fix', 'Corrections'],
-  ['perf', 'Performances'],
+  ['feat', 'Features'],
+  ['fix', 'Fixes'],
+  ['perf', 'Performance'],
   ['refactor', 'Refactoring'],
   ['docs', 'Documentation'],
-  ['revert', 'Annulations'],
+  ['revert', 'Reverts'],
 ];
 
 export function lastTag(root) {
-  // Les tags de déploiement (deploy/…, rollback/…) ne sont pas des versions.
+  // Deployment tags (deploy/…, rollback/…) are not versions.
   return git(root, ['describe', '--tags', '--abbrev=0', '--exclude', 'deploy/*', '--exclude', 'rollback/*'], { allowFail: true });
 }
 
@@ -24,7 +24,7 @@ export function bump(version, level) {
   const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(version || '0.0.0');
   if (!m) return null;
   let [maj, min, pat] = m.slice(1).map(Number);
-  // En 0.x, un changement cassant monte le mineur (convention SemVer pour l'instable).
+  // In 0.x, a breaking change bumps the minor (SemVer convention for unstable versions).
   if (level === 'major' && maj === 0) level = 'minor';
   if (level === 'major') return `${maj + 1}.0.0`;
   if (level === 'minor') return `${maj}.${min + 1}.0`;
@@ -53,7 +53,7 @@ export function releaseNotes(root, { from, to = 'HEAD' } = {}) {
     if (items.length) groups[label] = items;
   }
   const others = entries.filter((e) => !GROUPS.some(([t]) => t === e.type) && !['chore', 'ci', 'build', 'test', 'style'].includes(e.type));
-  if (others.length) groups.Autres = others;
+  if (others.length) groups.Other = others;
   return {
     from: base,
     to,
@@ -68,9 +68,9 @@ export function releaseNotes(root, { from, to = 'HEAD' } = {}) {
   };
 }
 
-// Plans livrés dans la plage : cités par un commit (« Unité U3 du plan docs/plans/… ») ou modifiés
-// dans la plage. Leur section kaizen:rollout nourrit la checklist de mise en production ; un plan
-// sans signal ni retour arrière est signalé avant la release, pas découvert pendant l'incident.
+// Plans shipped in the range: cited by a commit ("Unit U3 of plan docs/plans/…") or modified in the
+// range. Their kaizen:rollout section feeds the production checklist; a plan with no signal or
+// rollback is flagged before the release, not discovered during the incident.
 function rolloutOf(root, range, log) {
   let plansDir;
   try {

@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-// Kaizen — hook Stop : refuse de terminer tant que les vérifications sont rouges
-// pendant un /kaizen:work (ou /kaizen:autopilot). Inactif en dehors : il ne coûte rien.
+// Kaizen — Stop hook: refuses to finish while checks are red during a /kaizen:work (or
+// /kaizen:autopilot). Inactive otherwise: it costs nothing.
 //
-// Activation : `kaizen.mjs gate on` (posé par /kaizen:work), retrait : `gate off`.
-// Exit 0 = laisser terminer ; exit 2 = bloquer (le message stderr est renvoyé à Claude).
-// Après `gate.max_blocks` blocages consécutifs, le hook laisse passer en le signalant,
-// pour qu'un échec hors de portée ne piège jamais la session dans une boucle.
+// Enabled by `kaizen.mjs gate on` (set by /kaizen:work), removed by `gate off`.
+// Exit 0 = let it finish; exit 2 = block (the stderr message is sent back to Claude).
+// After `gate.max_blocks` consecutive blocks, the hook lets it through while saying so, so that a
+// failure out of reach never traps the session in a loop.
 //
-// Le garde-fou appartient à la session qui l'a posé : `--claim` (hook PostToolUse sur Bash) inscrit son
-// session_id juste après `gate on`, et le hook Stop ignore les autres sessions ouvertes sur le même repo.
-// Les vérifications tiennent dans `gate.budget_seconds`, sous le délai du hook (900 s).
+// The gate belongs to the session that set it: `--claim` (PostToolUse hook on Bash) records its
+// session_id right after `gate on`, and the Stop hook ignores other sessions open on the same repo.
+// Checks fit within `gate.budget_seconds`, under the hook timeout (900 s).
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,8 +27,8 @@ function readStdin() {
 
 const input = readStdin();
 const claim = process.argv.includes('--claim');
-// --claim voit passer chaque commande Bash : filtre bon marché avant tout accès disque.
-// Les skills écrivent `node "$K" gate on` : on reconnaît la sous-commande, pas le chemin du CLI.
+// --claim sees every Bash command: cheap filter before any disk access.
+// Skills write `node "$K" gate on`: the subcommand is recognized, not the CLI path.
 if (claim && !/\bgate\s+on\b/.test(String(input.tool_input?.command || ''))) process.exit(0);
 const root = repoRoot(input.cwd || process.cwd());
 if (!root) process.exit(0);
@@ -48,23 +48,23 @@ if (claim) {
   if (input.session_id && !state.session) writeFileSync(stateFile, `${JSON.stringify({ ...state, session: input.session_id }, null, 2)}\n`);
   process.exit(0);
 }
-// Une autre session sur le même repo n'est pas concernée par ce /kaizen:work.
+// Another session on the same repo is not concerned by this /kaizen:work.
 if (state.session && input.session_id && state.session !== input.session_id) process.exit(0);
 
 const config = loadConfig(root);
 if (config.gate.enabled === false) process.exit(0);
 
-// Un /kaizen:work interrompu ne doit pas laisser le garde-fou actif indéfiniment.
+// An interrupted /kaizen:work must not leave the gate active forever.
 const maxAgeMs = Number(config.gate.max_age_hours ?? 24) * 3600 * 1000;
 if (state.since && Date.now() - Date.parse(state.since) > maxAgeMs) {
   rmSync(stateFile, { force: true });
-  process.stderr.write(`[kaizen] Garde-fou expiré (actif depuis ${state.since}) : désactivé.\n`);
+  process.stderr.write(`[kaizen] Quality gate expired (active since ${state.since}): disabled.\n`);
   process.exit(0);
 }
 
-// Coût du cycle : tokens de la session principale et de ses sous-agents (ventilés par rôle) depuis
-// `gate on`, relevés à chaque fin de tour ; `gate off` les consigne dans .kaizen/state/cycles.jsonl
-// pour /kaizen:metrics.
+// Cycle cost: tokens of the main session and its subagents (broken down by role) since `gate on`,
+// recorded at the end of every turn; `gate off` logs them in .kaizen/state/cycles.jsonl for
+// /kaizen:metrics.
 if (input.transcript_path) {
   const usage = transcriptUsage(input.transcript_path, state.since);
   if (usage) {
@@ -74,8 +74,8 @@ if (input.transcript_path) {
   }
 }
 
-// Vérifications ciblées (gate.targeted, avec {files}) : à chaque fin de tour, seulement ce que la
-// branche touche. La vérification complète reste celle de /kaizen:work (phase 3) et de /kaizen:ship.
+// Targeted checks (gate.targeted, with {files}): at the end of every turn, only what the branch
+// touches. The full verification remains the one of /kaizen:work (phase 3) and /kaizen:ship.
 const overrides = {};
 const targeted = Object.entries(config.gate.targeted || {}).filter(([, cmd]) => cmd);
 if (targeted.length) {
@@ -88,7 +88,7 @@ if (!results.length) process.exit(0);
 const failed = results.filter((r) => !r.ok);
 const skipped = results.filter((r) => r.skipped).map((r) => r.name);
 if (!failed.length) {
-  if (skipped.length) process.stderr.write(`[kaizen] Budget du garde-fou épuisé : ${skipped.join(', ')} non lancé(s) — lance \`verify\` avant de livrer.\n`);
+  if (skipped.length) process.stderr.write(`[kaizen] Quality gate budget exhausted: ${skipped.join(', ')} not run — run \`verify\` before shipping.\n`);
   if (state.blocks) writeFileSync(stateFile, `${JSON.stringify({ ...state, blocks: 0 }, null, 2)}\n`);
   process.exit(0);
 }
@@ -103,15 +103,15 @@ const report = failed
 
 if (blocks > max) {
   process.stderr.write(
-    `[kaizen] Garde-fou : ${failed.length} vérification(s) toujours rouge(s) après ${max} tentatives — je laisse terminer.\n` +
-      `Signale explicitement à l'utilisateur ce qui reste rouge et pourquoi, sans prétendre que le travail est vérifié.\n`,
+    `[kaizen] Quality gate: ${failed.length} check(s) still red after ${max} attempts — letting you finish.\n` +
+      `Tell the user explicitly what is still red and why, without claiming the work is verified.\n`,
   );
   process.exit(0);
 }
 
 process.stderr.write(
-  `[kaizen] Garde-fou qualité (${blocks}/${max}) : le travail en cours n'est pas vert.\n\n${report}\n\n` +
-    `Corrige la cause racine (pas le test) puis termine. Si l'échec est hors du périmètre du plan, ` +
-    `lance \`node "${fileURLToPath(new URL('./kaizen.mjs', import.meta.url))}" gate off\` et explique pourquoi à l'utilisateur.\n`,
+  `[kaizen] Quality gate (${blocks}/${max}): the work in progress is not green.\n\n${report}\n\n` +
+    `Fix the root cause (not the test), then finish. If the failure is outside the plan's scope, ` +
+    `run \`node "${fileURLToPath(new URL('./kaizen.mjs', import.meta.url))}" gate off\` and explain why to the user.\n`,
 );
 process.exit(2);

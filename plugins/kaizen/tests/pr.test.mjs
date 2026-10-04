@@ -15,16 +15,16 @@ function prFrom(fx) {
   return pr;
 }
 
-test('analyze : fils, commentaires et checks actionnables ; messages Kaizen et corps vides exclus', () => {
+test('analyze: actionable threads, comments and checks; Kaizen messages and empty bodies excluded', () => {
   const s = analyze(prFrom(fixture()), emptyState(), { now: NOW });
   assert.equal(s.verdict, 'actionable');
   assert.deepEqual(s.counts, { threads: 1, comments: 1, ci: 1 });
-  assert.deepEqual(s.attention.threads.map((t) => t.id), ['T1'], 'le fil résolu T2 est exclu');
-  assert.deepEqual(s.attention.comments.map((c) => c.id), ['IC1'], 'IC2 (marqueur kaizen) et la revue vide sont exclus');
+  assert.deepEqual(s.attention.threads.map((t) => t.id), ['T1'], 'resolved thread T2 is excluded');
+  assert.deepEqual(s.attention.comments.map((c) => c.id), ['IC1'], 'IC2 (kaizen marker) and the empty review are excluded');
   assert.equal(s.attention.checks[0].name, 'test');
 });
 
-test('analyze : un fil traité reste traité jusqu’à une nouvelle réponse externe', () => {
+test('analyze: a handled thread stays handled until a new external reply', () => {
   const fx = fixture();
   const state = emptyState();
   state.threads.T1 = { disposition: 'dispatched', last_external_id: 'C1' };
@@ -33,16 +33,16 @@ test('analyze : un fil traité reste traité jusqu’à une nouvelle réponse ex
   let s = analyze(prFrom(fx), state, { now: NOW });
   assert.equal(s.verdict, 'blocked-failing');
 
-  fx.pr.reviewThreadPages[0][0].comments.nodes.push({ id: 'C9', author: { login: 'kaizen' }, body: `Corrigé\n\n${MARKER}`, createdAt: '2026-10-02T09:00:00Z' });
+  fx.pr.reviewThreadPages[0][0].comments.nodes.push({ id: 'C9', author: { login: 'kaizen' }, body: `Fixed\n\n${MARKER}`, createdAt: '2026-10-02T09:00:00Z' });
   s = analyze(prFrom(fx), state, { now: NOW });
-  assert.equal(s.counts.threads, 0, 'notre propre réponse ne rouvre pas le fil');
+  assert.equal(s.counts.threads, 0, 'our own reply does not reopen the thread');
 
-  fx.pr.reviewThreadPages[0][0].comments.nodes.push({ id: 'C10', author: { login: 'bob' }, body: 'Toujours pas', createdAt: '2026-10-02T09:05:00Z' });
+  fx.pr.reviewThreadPages[0][0].comments.nodes.push({ id: 'C10', author: { login: 'bob' }, body: 'Still not', createdAt: '2026-10-02T09:05:00Z' });
   s = analyze(prFrom(fx), state, { now: NOW });
-  assert.equal(s.counts.threads, 1, 'une réponse du relecteur rouvre le fil');
+  assert.equal(s.counts.threads, 1, 'a reviewer reply reopens the thread');
 });
 
-test('analyze : un commentaire modifié après traitement redevient actionnable', () => {
+test('analyze: a comment edited after handling becomes actionable again', () => {
   const fx = fixture();
   const state = emptyState();
   state.comments.IC1 = { disposition: 'dispatched', at: '2026-10-02T08:12:00Z' };
@@ -60,7 +60,7 @@ function greenPr() {
   return pr;
 }
 
-test('analyze : semble prête seulement après la fenêtre de silence', () => {
+test('analyze: looks ready only after the quiet window', () => {
   const pr = greenPr();
   assert.equal(analyze(pr, emptyState(), { now: Date.parse('2026-10-02T08:12:00Z') }).verdict, 'waiting');
   const ready = analyze(pr, emptyState(), { now: NOW });
@@ -80,7 +80,7 @@ test('analyze : brouillon, BEHIND, DIRTY, approbation externe, terminal, budget'
   assert.equal(analyze(greenPr(), st, { now: NOW, budgetSeconds: 3600 }).verdict, 'budget');
 });
 
-test('CLI pr : snapshot paginé, mark, réponse marquée, update-branch seulement si BEHIND', () => {
+test('CLI pr: paginated snapshot, mark, marked reply, update-branch only if BEHIND', () => {
   const dir = tempRepo({});
   const stateFile = join(dir, 'fake-gh.json');
   writeFileSync(stateFile, readFileSync(join(PLUGIN, 'tests/fixtures/pr-state.json'), 'utf8'));
@@ -88,13 +88,13 @@ test('CLI pr : snapshot paginé, mark, réponse marquée, update-branch seulemen
 
   const snap = cli(dir, ['pr', 'snapshot', '--start'], { env });
   assert.equal(snap.code, 0, snap.stderr);
-  assert.equal(snap.json.counts.threads, 1, 'la 2e page de fils (résolue) est bien lue');
+  assert.equal(snap.json.counts.threads, 1, 'the 2nd page of threads (resolved) is read');
 
   assert.equal(cli(dir, ['pr', 'mark', '--thread', 'T1', '--disposition', 'dispatched'], { env }).code, 0);
   assert.equal(cli(dir, ['pr', 'snapshot'], { env }).json.counts.threads, 0);
   assert.notEqual(cli(dir, ['pr', 'mark', '--thread', 'T1', '--disposition', 'bof'], { env }).code, 0);
 
-  writeFileSync(join(dir, 'body.md'), 'Corrigé dans abc124.');
+  writeFileSync(join(dir, 'body.md'), 'Fixed in abc124.');
   assert.equal(cli(dir, ['pr', 'reply', '--thread', 'T1', '--body-file', 'body.md'], { env }).code, 0);
   assert.equal(cli(dir, ['pr', 'update-branch'], { env }).json.updated, false);
 
@@ -104,12 +104,12 @@ test('CLI pr : snapshot paginé, mark, réponse marquée, update-branch seulemen
   assert.equal(cli(dir, ['pr', 'update-branch'], { env }).json.updated, true);
 
   const log = JSON.parse(readFileSync(stateFile, 'utf8')).log;
-  assert.ok(log.find((l) => l.op === 'reply').body.includes(MARKER), 'le marqueur kaizen est ajouté aux réponses');
-  assert.equal(log.find((l) => l.op === 'update-branch').sha, 'abc123', 'le SHA de tête attendu est transmis');
+  assert.ok(log.find((l) => l.op === 'reply').body.includes(MARKER), 'the kaizen marker is added to replies');
+  assert.equal(log.find((l) => l.op === 'update-branch').sha, 'abc123', 'the expected head SHA is passed');
   cleanup(dir);
 });
 
-test('CLI pr watch : sort immédiatement avec KAIZEN_WAKE quand il y a du travail', () => {
+test('CLI pr watch: exits immediately with KAIZEN_WAKE when there is work', () => {
   const dir = tempRepo({});
   const stateFile = join(dir, 'fake-gh.json');
   writeFileSync(stateFile, readFileSync(join(PLUGIN, 'tests/fixtures/pr-state.json'), 'utf8'));

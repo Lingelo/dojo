@@ -1,45 +1,45 @@
 #!/usr/bin/env node
-// Kaizen — CLI déterministe utilisé par les skills et le hook.
+// Kaizen — deterministic CLI used by the skills and the hooks.
 //
-//   node kaizen.mjs status [--json]              où en est le repo dans la boucle, et la commande suivante
-//   node kaizen.mjs root                         chemins des livrables (JSON)
-//   node kaizen.mjs models [--json] [--agent a]  modèle de chaque agent selon le profil et la config
-//   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   maturité SDLC du projet
+//   node kaizen.mjs status [--json]              where the repo stands in the loop, and the next command
+//   node kaizen.mjs root                         deliverable paths (JSON)
+//   node kaizen.mjs models [--json] [--agent a]  model of each agent per profile and config
+//   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   project SDLC maturity
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
-//                                                 déploiement par les commandes de l'équipe, tag deploy/<env>/…
-//   node kaizen.mjs deploy flag on|off <nom> [--env e]     feature flag (deploy.flags)
-//   node kaizen.mjs deploy detect [--json] | configure <id> [--force]   plateforme reconnue → config
+//                                                 deployment through the team's commands, deploy/<env>/… tag
+//   node kaizen.mjs deploy flag on|off <name> [--env e]    feature flag (deploy.flags)
+//   node kaizen.mjs deploy detect [--json] | configure <id> [--force]   recognized platform → config
 //   node kaizen.mjs monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]
-//                                                 signaux de production (exit 1 si seuil franchi)
-//   node kaizen.mjs monitor patrol --env e        contrôle planifiable : violation confirmée → incident (exit 1)
-//   node kaizen.mjs monitor alert [--env e] [--file f|-]   alerte Alertmanager/PagerDuty/Datadog/JSON → incident
+//                                                 production signals (exit 1 if a threshold is breached)
+//   node kaizen.mjs monitor patrol --env e        schedulable check: confirmed breach → incident (exit 1)
+//   node kaizen.mjs monitor alert [--env e] [--file f|-]   Alertmanager/PagerDuty/Datadog/JSON alert → incident
 //   node kaizen.mjs monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]
-//   node kaizen.mjs config                       configuration effective (JSON)
-//   node kaizen.mjs init [--docs-root d] [--language fr] [--profile lean|standard|full]   initialise .kaizen/ et les dossiers
-//   node kaizen.mjs detect                       stack et commandes de vérification (JSON)
-//   node kaizen.mjs verify [--only test,lint] [--json]     lance les vérifications (exit 1 si rouge)
-//   node kaizen.mjs plan new --type feat --topic export-csv   réserve le chemin d'un plan
-//   node kaizen.mjs plan latest | list           plans existants
-//   node kaizen.mjs learnings search <mots…> [--limit 8] [--json]
-//   node kaizen.mjs learnings validate [fichiers…]
-//   node kaizen.mjs learnings stats
-//   node kaizen.mjs packs [--json] [--refresh]   règles des Kaizen Packs déclarés
-//   node kaizen.mjs pack new <nom>               crée et déclare un pack local
-//   node kaizen.mjs gate on [--plan p] | off | status      garde-fou qualité du hook Stop
-//   node kaizen.mjs review record --verdict ready|reserves|blocked [--run d] | waive --reason "…" | status | check
-//                                                 état relu par branche, exigé par le hook avant git push ;
-//                                                 record exige des relecteurs réellement lancés (sauf revue
-//                                                 légère), waive attend la confirmation tapée par l'utilisateur
-//   node kaizen.mjs run-dir <type>                dossier de run local (ex. reviews), ignoré par git
-//   node kaizen.mjs constitution [check] [--json] articles de CONSTITUTION.md / validation
-//   node kaizen.mjs plan check <chemin> [--json]  contrôle structurel d'un plan (traçabilité R/AE → U)
-//   node kaizen.mjs size [--base <ref>] [--json]  taille du diff vs pr.max_lines (exit 1 si au-delà)
-//   node kaizen.mjs dev detect | probe --url U    serveur de dev (polish)
-//   node kaizen.mjs metrics [--since 90d] [--no-github]   indicateurs DORA approchés + santé de la boucle
-//   node kaizen.mjs adr new --title "…" | adr list        décisions d'architecture (docs/adr)
-//   node kaizen.mjs postmortem new --title "…"            réserve un post-mortem (docs/postmortems)
-//   node kaizen.mjs release notes [--from <tag>]          notes de version + version SemVer proposée
-//   node kaizen.mjs pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch …   suivi de PR (voir pr.mjs)
+//   node kaizen.mjs config                       effective configuration (JSON)
+//   node kaizen.mjs init [--docs-root d] [--language en] [--profile lean|standard|full]   initializes .kaizen/ and the folders
+//   node kaizen.mjs detect                       stack and verification commands (JSON)
+//   node kaizen.mjs verify [--only test,lint] [--json]     runs the checks (exit 1 if red)
+//   node kaizen.mjs plan new --type feat --topic export-csv   reserves a plan path
+//   node kaizen.mjs plan latest | list           existing plans
+//   node kaizen.mjs learnings search <words…> [--limit 8] [--json]
+//   node kaizen.mjs learnings validate [files…]
+//   node kaizen.mjs learnings list | stats
+//   node kaizen.mjs packs [--json] [--refresh]   rules of the declared Kaizen Packs
+//   node kaizen.mjs pack new <name>              creates and declares a local pack
+//   node kaizen.mjs gate on [--plan p] | off | status      Stop-hook quality gate
+//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] | waive --reason "…" | status | check
+//                                                 reviewed state per branch, required by the hook before git push;
+//                                                 record requires reviewers that actually ran (except a light
+//                                                 review), waive waits for the confirmation typed by the user
+//   node kaizen.mjs run-dir <type>                local run folder (e.g. reviews), ignored by git
+//   node kaizen.mjs constitution [check] [--json] CONSTITUTION.md articles / validation
+//   node kaizen.mjs plan check <path> [--json]    structural check of a plan (R/AE → U traceability)
+//   node kaizen.mjs size [--base <ref>] [--json]  diff size vs pr.max_lines (exit 1 if above)
+//   node kaizen.mjs dev detect | probe --url U    dev server (polish)
+//   node kaizen.mjs metrics [--since 90d] [--no-github]   approximated DORA metrics + loop health
+//   node kaizen.mjs adr new --title "…" | adr list        architecture decisions (docs/adr)
+//   node kaizen.mjs postmortem new --title "…"            reserves a postmortem (docs/postmortems)
+//   node kaizen.mjs release notes [--from <tag>]          release notes + proposed SemVer version
+//   node kaizen.mjs pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch …   PR tracking (see pr.mjs)
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -102,11 +102,11 @@ function out(value) {
 
 function requireRepo() {
   const root = repoRoot();
-  if (!root) die('pas de dépôt git ici — Kaizen range ses livrables dans le repo.');
+  if (!root) die('no git repository here — Kaizen stores its deliverables in the repo.');
   return root;
 }
 
-// Chemins affichés en style POSIX, y compris sous Windows : git, Node et les skills les acceptent tels quels.
+// Paths shown POSIX-style, including on Windows: git, Node and the skills accept them as is.
 const rel = (root, p) => relative(root, p).split(sep).join('/') || '.';
 
 // ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ function cmdInit(root) {
   mkdirSync(dir, { recursive: true });
   const file = join(dir, 'config.json');
   const created = [];
-  if (flags.profile && !PROFILES.includes(flags.profile)) die(`--profile attendu : ${PROFILES.join(' | ')}`);
+  if (flags.profile && !PROFILES.includes(flags.profile)) die(`--profile expected: ${PROFILES.join(' | ')}`);
   if (!existsSync(file)) {
     const config = {
       docs_root: flags['docs-root'] || DEFAULT_CONFIG.docs_root,
@@ -158,7 +158,7 @@ function cmdInit(root) {
       created.push(rel(root, d));
     }
   }
-  // config.local.json reste personnel.
+  // config.local.json stays personal.
   const gi = join(root, '.gitignore');
   const line = '.kaizen/config.local.json';
   const current = existsSync(gi) ? readFileSync(gi, 'utf8') : '';
@@ -176,7 +176,7 @@ function cmdInit(root) {
 function cmdVerify(root) {
   const results = runVerify(root, { only: flags.only });
   if (flags.json) out(results);
-  else if (!results.length) out('Aucune commande de vérification détectée ni configurée (.kaizen/config.json → verify).');
+  else if (!results.length) out('No verification command detected or configured (.kaizen/config.json → verify).');
   else {
     for (const r of results) {
       out(`${r.ok ? '✔' : '✘'} ${r.name.padEnd(10)} ${r.command}  (${r.seconds}s)`);
@@ -205,7 +205,7 @@ function cmdPlan(root, sub) {
   if (sub === 'new') {
     const type = slugify(flags.type || 'feat');
     const topic = slugify(flags.topic || positional[2] || '');
-    if (!topic) die('--topic requis (ex. --topic export-csv-commandes)');
+    if (!topic) die('--topic required (e.g. --topic export-orders-csv)');
     mkdirSync(dir, { recursive: true });
     const d = new Date();
     const pad = (n) => String(n).padStart(2, '0');
@@ -215,7 +215,7 @@ function cmdPlan(root, sub) {
       const name = `${stamp}-${type}-${topic}-plan${n > 1 ? `-${n}` : ''}.${ext}`;
       const file = join(dir, name);
       try {
-        // Réservation atomique : 'wx' échoue si le fichier existe déjà.
+        // Atomic reservation: 'wx' fails if the file already exists.
         const fd = openSync(file, 'wx');
         closeSync(fd);
         out(rel(root, file));
@@ -224,7 +224,7 @@ function cmdPlan(root, sub) {
         if (err.code !== 'EEXIST') throw err;
       }
     }
-    die('impossible de réserver un nom de plan');
+    die('cannot reserve a plan name');
   }
   const plans = existsSync(dir)
     ? readdirSync(dir)
@@ -233,7 +233,7 @@ function cmdPlan(root, sub) {
         .sort((a, b) => b.mtime - a.mtime)
     : [];
   if (sub === 'latest') {
-    if (!plans.length) die('aucun plan', 1);
+    if (!plans.length) die('no plan', 1);
     out(rel(root, plans[0].file));
     return;
   }
@@ -253,17 +253,17 @@ function cmdPlan(root, sub) {
   }
   if (sub === 'check') {
     const target = positional[2];
-    if (!target) die('usage : plan check <chemin>');
+    if (!target) die('usage: plan check <path>');
     const report = checkPlan(resolve(target), { constitution: loadConstitution(root) });
     if (flags.json) out(report);
     else {
-      out(`${report.errors.length ? '✘' : '✔'} ${target} — ${report.stage} · ${report.requirements} R · ${report.acceptance_examples} AE · ${report.units} U${report.slices ? ` · ${report.slices} tranche(s)` : ''}`);
+      out(`${report.errors.length ? '✘' : '✔'} ${target} — ${report.stage} · ${report.requirements} R · ${report.acceptance_examples} AE · ${report.units} U${report.slices ? ` · ${report.slices} slice(s)` : ''}`);
       for (const e of report.errors) out(`    ✘ ${e}`);
       for (const w of report.warnings) out(`    ⚠ ${w}`);
     }
     process.exit(report.errors.length ? 1 : 0);
   }
-  die('usage : plan new --type <type> --topic <slug> | plan latest | plan list | plan check <chemin>');
+  die('usage: plan new --type <type> --topic <slug> | plan latest | plan list | plan check <path>');
 }
 
 // ---------------------------------------------------------------------------
@@ -284,19 +284,19 @@ function validateLearning(file) {
   const { data, error } = parseFrontmatter(readFileSync(file, 'utf8'));
   if (!data) return [error];
   if (error) errors.push(error);
-  for (const k of ['title', 'date', 'module', 'problem_type', 'component', 'severity']) if (isEmpty(data[k])) errors.push(`champ requis manquant : ${k}`);
-  if (data.date && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.date))) errors.push(`date au format YYYY-MM-DD attendu : "${data.date}"`);
+  for (const k of ['title', 'date', 'module', 'problem_type', 'component', 'severity']) if (isEmpty(data[k])) errors.push(`required field missing: ${k}`);
+  if (data.date && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.date))) errors.push(`date in YYYY-MM-DD format expected: "${data.date}"`);
   const track = SCHEMA.bug.includes(data.problem_type) ? 'bug' : SCHEMA.knowledge.includes(data.problem_type) ? 'knowledge' : null;
-  if (data.problem_type && !track) errors.push(`problem_type inconnu : "${data.problem_type}"`);
-  if (data.severity && !SCHEMA.severity.includes(data.severity)) errors.push(`severity inconnue : "${data.severity}" (${SCHEMA.severity.join('|')})`);
-  if (!isEmpty(data.resolution_type) && !SCHEMA.resolution_type.includes(data.resolution_type)) errors.push(`resolution_type inconnu : "${data.resolution_type}"`);
+  if (data.problem_type && !track) errors.push(`unknown problem_type: "${data.problem_type}"`);
+  if (data.severity && !SCHEMA.severity.includes(data.severity)) errors.push(`unknown severity: "${data.severity}" (${SCHEMA.severity.join('|')})`);
+  if (!isEmpty(data.resolution_type) && !SCHEMA.resolution_type.includes(data.resolution_type)) errors.push(`unknown resolution_type: "${data.resolution_type}"`);
   if (track === 'bug') {
-    for (const k of ['symptoms', 'root_cause', 'resolution_type']) if (isEmpty(data[k])) errors.push(`piste bug : champ requis manquant : ${k}`);
-    if (data.symptoms && (!Array.isArray(data.symptoms) || data.symptoms.length > 5)) errors.push('symptoms : liste de 1 à 5 éléments');
+    for (const k of ['symptoms', 'root_cause', 'resolution_type']) if (isEmpty(data[k])) errors.push(`bug track: required field missing: ${k}`);
+    if (data.symptoms && (!Array.isArray(data.symptoms) || data.symptoms.length > 5)) errors.push('symptoms: list of 1 to 5 items');
   }
-  if (track === 'knowledge' && data.applies_when && (!Array.isArray(data.applies_when) || data.applies_when.length > 5)) errors.push('applies_when : liste de 5 éléments maximum');
-  if (data.tags && (!Array.isArray(data.tags) || data.tags.length > 8)) errors.push('tags : liste de 8 éléments maximum');
-  if (track !== 'bug' && !isEmpty(data.framework_version)) errors.push('framework_version : réservé à la piste bug');
+  if (track === 'knowledge' && data.applies_when && (!Array.isArray(data.applies_when) || data.applies_when.length > 5)) errors.push('applies_when: list of 5 items at most');
+  if (data.tags && (!Array.isArray(data.tags) || data.tags.length > 8)) errors.push('tags: list of 8 items at most');
+  if (track !== 'bug' && !isEmpty(data.framework_version)) errors.push('framework_version: reserved for the bug track');
   return errors;
 }
 
@@ -329,7 +329,7 @@ function cmdLearnings(root, sub) {
         out(`✘ ${rel(root, f)}\n${errors.map((e) => `    - ${e}`).join('\n')}`);
       } else out(`✔ ${rel(root, f)}`);
     }
-    if (!files.length) out('Aucune leçon à valider.');
+    if (!files.length) out('No learning to validate.');
     process.exit(bad ? 1 : 0);
   }
   const all = loadLearnings(root);
@@ -340,7 +340,7 @@ function cmdLearnings(root, sub) {
   }
   if (sub === 'search') {
     const terms = positional.slice(2).flatMap((t) => norm(t).split(/[^a-z0-9_]+/)).filter((t) => t.length > 2);
-    if (!terms.length) die('usage : learnings search <mots-clés…>');
+    if (!terms.length) die('usage: learnings search <keywords…>');
     const limit = Number(flags.limit || 8);
     const scored = all
       .map((l) => {
@@ -368,7 +368,7 @@ function cmdLearnings(root, sub) {
       .sort((a, b) => b.score - a.score || String(b.date).localeCompare(String(a.date)))
       .slice(0, limit);
     if (flags.json) out(scored);
-    else if (!scored.length) out(`Aucune leçon ne correspond (${all.length} au total).`);
+    else if (!scored.length) out(`No learning matches (${all.length} in total).`);
     else for (const r of scored) out(`${String(r.score).padStart(5)}  ${r.path}  — ${r.title} [${r.problem_type}, ${r.module}]`);
     return;
   }
@@ -376,11 +376,11 @@ function cmdLearnings(root, sub) {
     out(all.map((l) => ({ path: l.rel, title: l.data.title, problem_type: l.data.problem_type, module: l.data.module, date: l.data.date })));
     return;
   }
-  die('usage : learnings search <mots…> | validate [fichiers…] | list | stats');
+  die('usage: learnings search <words…> | validate [files…] | list | stats');
 }
 
 // ---------------------------------------------------------------------------
-// Kaizen Packs — règles prescriptives déclarées dans .kaizen/config.json
+// Kaizen Packs — prescriptive rules declared in .kaizen/config.json
 // ---------------------------------------------------------------------------
 
 function packCacheDir() {
@@ -400,7 +400,7 @@ function fetchGitSource(source, ref, refresh) {
     execFileSync('git', [...args, source, dir], { stdio: ['ignore', 'ignore', 'pipe'] });
     return { dir, warning: null };
   } catch (err) {
-    return { dir: null, warning: `pack ${source}${ref ? `@${ref}` : ''} : clonage impossible (${String(err.stderr || err.message).trim().split('\n')[0]})` };
+    return { dir: null, warning: `pack ${source}${ref ? `@${ref}` : ''}: cannot clone (${String(err.stderr || err.message).trim().split('\n')[0]})` };
   }
 }
 
@@ -427,7 +427,7 @@ function resolvePacks(root, refresh) {
   for (const decl of config.packs || []) {
     const entry = typeof decl === 'string' ? { source: decl } : decl;
     if (!entry?.source) {
-      warnings.push(`déclaration de pack sans "source" : ${JSON.stringify(decl)}`);
+      warnings.push(`pack declaration without "source": ${JSON.stringify(decl)}`);
       continue;
     }
     let base;
@@ -444,10 +444,10 @@ function resolvePacks(root, refresh) {
       base = isAbsolute(p) ? p : join(root, p);
     }
     if (!existsSync(base)) {
-      warnings.push(`pack introuvable : ${entry.source}${entry.path ? `/${entry.path}` : ''}`);
+      warnings.push(`pack not found: ${entry.source}${entry.path ? `/${entry.path}` : ''}`);
       continue;
     }
-    // Un dossier avec des règles au premier niveau = un pack ; sinon chaque sous-dossier en est un.
+    // A folder with top-level rules = one pack; otherwise each subfolder is one.
     const wanted = entry.pack ? [].concat(entry.pack) : null;
     const candidates = hasRules(base)
       ? [{ id: entry.id || basename(base), dir: base }]
@@ -457,9 +457,9 @@ function resolvePacks(root, refresh) {
     for (const c of candidates) {
       if (wanted && !wanted.includes(c.id)) continue;
       const { rules, skipped } = readRules(c.dir);
-      for (const s of skipped) warnings.push(`pack ${c.id} : ${s} ignoré (title et applies_when requis)`);
+      for (const s of skipped) warnings.push(`pack ${c.id}: ${s} ignored (title and applies_when required)`);
       if (!rules.length) {
-        warnings.push(`pack ${c.id} : aucune règle au premier niveau`);
+        warnings.push(`pack ${c.id}: no top-level rule`);
         continue;
       }
       packs.push({ id: c.id, source: entry.source, ref: entry.ref || null, dir: remote ? c.dir : rel(root, c.dir), rules });
@@ -471,21 +471,21 @@ function resolvePacks(root, refresh) {
 function cmdPacks(root) {
   const res = resolvePacks(root, Boolean(flags.refresh));
   if (flags.json) return out(res);
-  if (!res.packs.length && !res.warnings.length) return out('Aucun pack déclaré (.kaizen/config.json → packs).');
+  if (!res.packs.length && !res.warnings.length) return out('No pack declared (.kaizen/config.json → packs).');
   for (const p of res.packs) {
     out(`📦 ${p.id}  (${p.source}${p.ref ? `@${p.ref}` : ''}) → ${p.dir}`);
-    for (const r of p.rules) out(`   • ${r.file} — ${r.title}\n       quand : ${r.applies_when.join(' | ')}`);
+    for (const r of p.rules) out(`   • ${r.file} — ${r.title}\n       when: ${r.applies_when.join(' | ')}`);
   }
   for (const w of res.warnings) out(`⚠ ${w}`);
 }
 
 function cmdPackNew(root) {
   const name = slugify(positional[2] || '');
-  if (!name) die('usage : pack new <nom>');
+  if (!name) die('usage: pack new <name>');
   const dir = join(root, 'kaizen-packs', name);
-  if (existsSync(dir) && readdirSync(dir).length) die(`${rel(root, dir)} existe déjà et n'est pas vide`);
+  if (existsSync(dir) && readdirSync(dir).length) die(`${rel(root, dir)} already exists and is not empty`);
   mkdirSync(join(dir, 'research'), { recursive: true });
-  writeFileSync(join(dir, 'README.md'), `# Pack ${name}\n\nRègles que le plan doit respecter et que la revue fait appliquer.\nUne règle = un fichier .md au premier niveau avec \`title\` et \`applies_when\`.\nLes sous-dossiers (ex. research/) servent de stockage et ne sont jamais lus comme des règles.\n`);
+  writeFileSync(join(dir, 'README.md'), `# Pack ${name}\n\nRules the plan must follow and the review enforces.\nOne rule = one top-level .md file with \`title\` and \`applies_when\`.\nSubfolders (e.g. research/) are storage and are never read as rules.\n`);
   const cfgFile = join(root, '.kaizen', 'config.json');
   mkdirSync(dirname(cfgFile), { recursive: true });
   const cfg = existsSync(cfgFile) ? JSON.parse(readFileSync(cfgFile, 'utf8')) : { ...DEFAULT_CONFIG };
@@ -497,7 +497,7 @@ function cmdPackNew(root) {
 }
 
 // ---------------------------------------------------------------------------
-// gate — état du garde-fou lu par le hook Stop
+// gate — quality gate state read by the Stop hook
 // ---------------------------------------------------------------------------
 
 function ensureStateDir(root) {
@@ -515,8 +515,8 @@ function cmdGate(root, sub) {
     writeFileSync(file, `${JSON.stringify(state, null, 2)}\n`);
     out(state);
   } else if (sub === 'off') {
-    // Un cycle terminé laisse une trace locale (durée, blocages, tokens) que /kaizen:metrics agrège :
-    // c'est ce qui permet de juger si la cérémonie rapporte plus qu'elle ne coûte.
+    // A finished cycle leaves a local trace (duration, blocks, tokens) that /kaizen:metrics aggregates:
+    // that is how one judges whether the ceremony pays off more than it costs.
     let cycle = null;
     if (existsSync(file)) {
       try {
@@ -541,11 +541,11 @@ function cmdGate(root, sub) {
     out({ active: false, cycle });
   } else if (sub === 'status') {
     out(existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : { active: false });
-  } else die('usage : gate on [--plan <chemin>] | off | status');
+  } else die('usage: gate on [--plan <path>] | off | status');
 }
 
 // ---------------------------------------------------------------------------
-// status — diagnostic de l'état du repo dans la boucle (lu par /kaizen:help)
+// status — diagnosis of the repo's state in the loop (read by /kaizen:help)
 // ---------------------------------------------------------------------------
 
 function repoStatus(root) {
@@ -583,26 +583,26 @@ function repoStatus(root) {
   const review = initialized && branch ? reviewStatus(root) : null;
   const incidentsState = Object.keys(config.deploy.environments || {}).length ? incidentStatus(root, docs) : null;
 
-  // Prochaine étape : la première situation qui s'applique, dans l'ordre de la boucle.
+  // Next step: the first situation that applies, in loop order.
   const next = [];
   const say = (command, why) => next.push({ command, why });
-  // Rétablir passe avant tout le reste ; un incident résolu sans post-mortem vient juste après.
-  for (const i of incidentsState?.open || []) say(`/kaizen:monitor ${i.env}`, `incident ouvert sur ${i.env} depuis ${i.detected_at}${i.summary ? ` (${i.summary})` : ''} : rétablir (retour arrière), puis /kaizen:postmortem`);
-  for (const i of incidentsState?.without_postmortem || []) say('/kaizen:postmortem', `incident ${i.env} du ${i.detected_at} résolu (${i.resolved_by}) sans post-mortem`);
-  if (!initialized) say('/kaizen:setup', 'Kaizen n’est pas initialisé dans ce repo');
-  else if (!constitution.exists) say('/kaizen:constitution', 'pas de CONSTITUTION.md : plan et revue n’ont que des règles génériques');
-  if (gate.active) say('/kaizen:work', `un travail est en cours sous garde-fou${gate.plan ? ` (${gate.plan})` : ''} : le reprendre, ou \`gate off\` s’il est abandonné`);
+  // Restoring comes before everything else; a resolved incident without a postmortem comes right after.
+  for (const i of incidentsState?.open || []) say(`/kaizen:monitor ${i.env}`, `open incident on ${i.env} since ${i.detected_at}${i.summary ? ` (${i.summary})` : ''}: restore (rollback), then /kaizen:postmortem`);
+  for (const i of incidentsState?.without_postmortem || []) say('/kaizen:postmortem', `${i.env} incident of ${i.detected_at} resolved (${i.resolved_by}) without a postmortem`);
+  if (!initialized) say('/kaizen:setup', 'Kaizen is not initialized in this repo');
+  else if (!constitution.exists) say('/kaizen:constitution', 'no CONSTITUTION.md: plan and review only have generic rules');
+  if (gate.active) say('/kaizen:work', `work in progress under the quality gate${gate.plan ? ` (${gate.plan})` : ''}: resume it, or \`gate off\` if it was abandoned`);
   else if (branch && branch !== def && (ahead || dirty)) {
-    if (review?.pending_waiver) say('kaizen waive <code>', 'une renonciation à la revue attend votre confirmation (à taper vous-même)');
-    else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branche ${branch} relue (${review.push.reason}) : prête à livrer`);
-    else say('/kaizen:review', `branche ${branch} : ${review?.review ? review.push.reason : 'changements pas encore relus'}${dirty ? ' (non commités compris)' : ''}`);
+    if (review?.pending_waiver) say('kaizen waive <code>', 'a review waiver awaits your confirmation (to type yourself)');
+    else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): ready to ship`);
+    else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   } else if (branch && branch === def && undeployed(root, config)) {
     const u = undeployed(root, config);
-    say(`/kaizen:deploy ${u.env}`, `${u.commits} commit(s) de ${def} pas encore déployé(s) sur ${u.env}${u.last ? ` (dernier : ${u.last})` : ''}`);
-  } else if (latest?.stage === 'requirements') say(`/kaizen:plan ${latest.path}`, 'des exigences attendent leur plan d’implémentation');
-  else if (latest?.stage === 'implementation-ready' && !latest.errors) say(`/kaizen:work ${latest.path}`, 'un plan prêt attend d’être exécuté (si ce n’est pas déjà fait)');
+    say(`/kaizen:deploy ${u.env}`, `${u.commits} commit(s) of ${def} not yet deployed to ${u.env}${u.last ? ` (last: ${u.last})` : ''}`);
+  } else if (latest?.stage === 'requirements') say(`/kaizen:plan ${latest.path}`, 'requirements are waiting for their implementation plan');
+  else if (latest?.stage === 'implementation-ready' && !latest.errors) say(`/kaizen:work ${latest.path}`, 'a ready plan is waiting to be executed (if not done already)');
   if (!next.length || (initialized && constitution.exists && !gate.active && !(branch && branch !== def && (ahead || dirty)))) {
-    say('/kaizen:brainstorm <idée>', 'définir la prochaine fonctionnalité (ou /kaizen:ideate pour trouver quoi faire, /kaizen:debug pour un bug)');
+    say('/kaizen:brainstorm <idea>', 'define the next feature (or /kaizen:ideate to find what to do, /kaizen:debug for a bug)');
   }
   return {
     repo: basename(root),
@@ -624,8 +624,8 @@ function repoStatus(root) {
   };
 }
 
-// Incidents ouverts, et incidents résolus depuis moins de 14 jours sans post-mortem dont la détection
-// (`detected`) tombe à moins de 24 h de la leur.
+// Open incidents, and incidents resolved less than 14 days ago without a postmortem whose detection
+// (`detected`) falls within 24 h of theirs.
 function incidentStatus(root, docs) {
   const all = incidents(root);
   const open = all.filter((i) => !i.resolved_at);
@@ -635,8 +635,8 @@ function incidentStatus(root, docs) {
   return { open, without_postmortem };
 }
 
-// Commits de la branche courante pas encore déployés sur le premier environnement déclaré (staging
-// avant production) : null si rien n'est configuré ou si tout est déployé.
+// Commits of the current branch not yet deployed to the production environment (or the first declared
+// one): null if nothing is configured or everything is deployed.
 function undeployed(root, config) {
   const envs = Object.keys(config.deploy.environments || {});
   if (!envs.length) return null;
@@ -650,14 +650,14 @@ function cmdStatus(root) {
   const st = repoStatus(root);
   if (flags.json) return out(st);
   const yes = (b) => (b ? '✔' : '✘');
-  out(`Kaizen — ${st.branch || 'HEAD détachée'}${st.ahead_of_base ? ` (+${st.ahead_of_base} commit(s))` : ''}${st.uncommitted_files ? `, ${st.uncommitted_files} fichier(s) modifié(s)` : ''}`);
-  out(`  ${yes(st.initialized)} initialisé${st.initialized ? ` · profil ${st.profile}` : ''}`);
-  out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.valid ? '' : ' (invalide)'}` : ''}`);
-  out(`  · ${st.plans} plan(s)${st.latest_plan ? ` — dernier : ${st.latest_plan.path} (${st.latest_plan.stage})` : ''} · ${st.learnings} leçon(s)`);
-  if (st.gate.active) out(`  ⚠ garde-fou actif depuis ${st.gate.since}`);
-  if (st.incidents?.open) out(`  ⛔ ${st.incidents.open} incident(s) ouvert(s)`);
-  if (st.review) out(`  ${yes(st.review.push_allowed)} push : ${st.review.reason}`);
-  out('\nEnsuite :');
+  out(`Kaizen — ${st.branch || 'detached HEAD'}${st.ahead_of_base ? ` (+${st.ahead_of_base} commit(s))` : ''}${st.uncommitted_files ? `, ${st.uncommitted_files} modified file(s)` : ''}`);
+  out(`  ${yes(st.initialized)} initialized${st.initialized ? ` · profile ${st.profile}` : ''}`);
+  out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.valid ? '' : ' (invalid)'}` : ''}`);
+  out(`  · ${st.plans} plan(s)${st.latest_plan ? ` — latest: ${st.latest_plan.path} (${st.latest_plan.stage})` : ''} · ${st.learnings} learning(s)`);
+  if (st.gate.active) out(`  ⚠ quality gate active since ${st.gate.since}`);
+  if (st.incidents?.open) out(`  ⛔ ${st.incidents.open} open incident(s)`);
+  if (st.review) out(`  ${yes(st.review.push_allowed)} push: ${st.review.reason}`);
+  out('\nNext:');
   for (const n of st.next) out(`  → ${n.command} — ${n.why}`);
 }
 
@@ -676,7 +676,7 @@ try {
       const root = requireRepo();
       if (sub === 'fix') {
         const id = positional[2];
-        if (!id) die('usage : audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]');
+        if (!id) die('usage: audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]');
         const str = (v) => (typeof v === 'string' ? v : undefined);
         out(scaffold(root, id, { owner: str(flags.owner), env: str(flags.env), ref: str(flags.ref) }));
         break;
@@ -687,14 +687,14 @@ try {
         break;
       }
       const icon = { ok: '✔', warn: '⚠', missing: '✘', unknown: '?' };
-      out(`Maturité SDLC — ${r.stacks.join(', ') || 'stack non reconnue'}`);
+      out(`SDLC maturity — ${r.stacks.join(', ') || 'unrecognized stack'}`);
       for (const [area, a] of Object.entries(r.areas)) {
         out(`\n${area}${a.score === null ? '' : ` — ${a.score} %`}`);
         for (const ch of r.checks.filter((x) => x.area === area)) out(`  ${icon[ch.status]} ${ch.title} — ${ch.evidence}`);
       }
       if (r.next.length) {
-        out('\nPar priorité :');
-        for (const n of r.next) out(`  P${n.priority} ${n.title} → ${n.how}${n.scaffold ? ` (gabarit : audit fix ${n.scaffold})` : ''}`);
+        out('\nBy priority:');
+        for (const n of r.next) out(`  P${n.priority} ${n.title} → ${n.how}${n.scaffold ? ` (scaffold: audit fix ${n.scaffold})` : ''}`);
       }
       break;
     }
@@ -702,11 +702,11 @@ try {
       const m = resolveModels(loadConfig(requireRepo()));
       if (typeof flags.agent === 'string') {
         const a = m.agents[flags.agent.replace(/^kaizen:/, '')];
-        if (!a) die(`agent inconnu : ${flags.agent}`);
+        if (!a) die(`unknown agent: ${flags.agent}`);
         out(a.model);
       } else if (flags.json) out(m);
       else {
-        out(`Modèles — profil ${m.profile}`);
+        out(`Models — profile ${m.profile}`);
         for (const [r, v] of Object.entries(m.roles)) out(`  ${ROLE_LABELS[r].padEnd(52)} ${v.model.padEnd(8)} (${v.source})`);
         const own = Object.entries(m.agents).filter(([, v]) => v.source === 'config' && m.roles[v.role].source !== 'config');
         for (const [a, v] of own) out(`  ↳ ${a.padEnd(50)} ${v.model.padEnd(8)} (config)`);
@@ -721,23 +721,23 @@ try {
       if (sub === 'detect') {
         const found = detectDeploy(root);
         if (flags.json) out(found);
-        else if (!found.length) out('Aucun mécanisme de déploiement reconnu : déclarez vos commandes dans .kaizen/config.json → deploy.environments.');
+        else if (!found.length) out('No recognized deployment mechanism: declare your commands in .kaizen/config.json → deploy.environments.');
         else {
           for (const c of found) {
-            out(`● ${c.id} — ${c.platform} (confiance ${c.confidence}, ${c.source})`);
-            for (const [e, d] of Object.entries(c.environments)) out(`    ${e.padEnd(10)} déployer : ${d.command}\n               revenir  : ${d.rollback || '— (à prévoir)'}`);
-            for (const [n, s] of Object.entries(c.signals)) out(`    signal ${n} : ${s.url}`);
+            out(`● ${c.id} — ${c.platform} (confidence ${c.confidence}, ${c.source})`);
+            for (const [e, d] of Object.entries(c.environments)) out(`    ${e.padEnd(10)} deploy:   ${d.command}\n               rollback: ${d.rollback || '— (to plan)'}`);
+            for (const [n, s] of Object.entries(c.signals)) out(`    signal ${n}: ${s.url}`);
             for (const n of c.notes) out(`    · ${n}`);
           }
-          out('\nÉcrire un candidat dans la config : node kaizen.mjs deploy configure <id>');
+          out('\nWrite a candidate to the config: node kaizen.mjs deploy configure <id>');
         }
       } else if (sub === 'configure') {
-        if (!env) die('usage : deploy configure <id> [--force]   (id : voir deploy detect)');
+        if (!env) die('usage: deploy configure <id> [--force]   (id: see deploy detect)');
         out(configureDeploy(root, env, { force: Boolean(flags.force) }));
       } else if (sub === 'request') out(requestDeploy(root, env, { ref }));
       else if (sub === 'run') {
-        // Plans livrés depuis le dernier déploiement de cet environnement : leurs signaux et seuils
-        // serviront à la surveillance qui suit.
+        // Plans shipped since this environment's last deployment: their signals and thresholds
+        // drive the watch that follows.
         const last = deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1);
         const plans = releaseNotes(root, { from: last?.tag, to: ref || 'HEAD' }).rollout.map((r) => r.plan);
         const r = deploy(root, env, { ref, plans });
@@ -750,17 +750,17 @@ try {
       } else if (sub === 'list') out(deployments(root, { env: typeof flags.env === 'string' ? flags.env : null }));
       else if (sub === 'flag') {
         const state = positional[2];
-        if (!['on', 'off'].includes(state) || !positional[3]) die('usage : deploy flag on|off <nom> [--env e]');
+        if (!['on', 'off'].includes(state) || !positional[3]) die('usage: deploy flag on|off <name> [--env e]');
         const r = flag(root, state, positional[3], { env: typeof flags.env === 'string' ? flags.env : null });
         out(r);
         process.exit(r.ok ? 0 : 1);
-      } else die('usage : deploy request|run <env> [--ref r] | deploy rollback <env> [--reason …] [--to r] | deploy list [--env e] | deploy flag on|off <nom>');
+      } else die('usage: deploy request|run <env> [--ref r] | deploy rollback <env> [--reason …] [--to r] | deploy list [--env e] | deploy flag on|off <name> | deploy detect | deploy configure <id>');
       break;
     }
     case 'monitor': {
       const root = requireRepo();
       const env = typeof flags.env === 'string' ? flags.env : null;
-      // Sans --plan : les plans du dernier déploiement de l'environnement (seuils de leur rollout).
+      // Without --plan: the plans of the environment's last deployment (thresholds from their rollout).
       const plan = typeof flags.plan === 'string' ? flags.plan : (env ? deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-1)?.note?.plans || null : null);
       if (sub === 'check') {
         const r = await monitorCheck(root, { env, plan });
@@ -775,15 +775,15 @@ try {
           onSample: (c) => process.stderr.write(`[kaizen] ${c.at} ${c.ok ? '✔' : '✘'} ${Object.entries(c.signals).map(([n, s]) => `${n}=${s.value ?? '—'}${s.ok ? '' : '!'}`).join(' ')}\n`),
         });
         const config = loadConfig(root);
-        // La violation est un incident daté de sa détection, que le retour arrière éventuel résout.
-        if (r.status === 'breach' && env) r.incident = openIncident(root, env, { at: r.detected_at, source: 'watch', summary: `${r.breached.join(', ')} hors seuil`, signals: r.breached });
+        // The breach is an incident dated at its detection, which a possible rollback resolves.
+        if (r.status === 'breach' && env) r.incident = openIncident(root, env, { at: r.detected_at, source: 'watch', summary: `${r.breached.join(', ')} out of threshold`, signals: r.breached });
         if (r.status === 'breach' && env && config.deploy.auto_rollback && config.deploy.environments?.[env]?.rollback) {
-          r.rollback = rollback(root, env, { reason: `monitor : ${r.breached.join(', ')} hors seuil` });
+          r.rollback = rollback(root, env, { reason: `monitor: ${r.breached.join(', ')} out of threshold` });
         }
         out(r);
         process.exit(r.status === 'breach' ? 1 : 0);
       } else if (sub === 'patrol') {
-        if (!env) die('usage : monitor patrol --env <env> [--plan p] [--interval 60]');
+        if (!env) die('usage: monitor patrol --env <env> [--plan p] [--interval 60]');
         const r = await patrol(root, { env, plan, intervalSeconds: flags.interval });
         out(r);
         process.exit(r.status === 'breach' ? 1 : 0);
@@ -799,14 +799,14 @@ try {
         const action = positional[2];
         const opts = { ...(typeof flags.at === 'string' ? { at: flags.at } : {}), ...(typeof flags.summary === 'string' ? { summary: flags.summary } : {}) };
         try {
-          if (action === 'open') out(openIncident(root, env, { ...opts, source: typeof flags.source === 'string' ? flags.source : 'manuel' }));
+          if (action === 'open') out(openIncident(root, env, { ...opts, source: typeof flags.source === 'string' ? flags.source : 'manual' }));
           else if (action === 'resolve') out(resolveIncident(root, env, opts));
           else if (action === 'list') out(incidents(root, { env }));
-          else die('usage : monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]');
+          else die('usage: monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]');
         } catch (err) {
           die(err.message);
         }
-      } else die('usage : monitor check|watch|patrol [--env e] [--plan p] [--minutes 15] [--interval 60] | alert [--env e] [--file f] | incident open|resolve|list');
+      } else die('usage: monitor check|watch|patrol [--env e] [--plan p] [--minutes 15] [--interval 60] | alert [--env e] [--file f] | incident open|resolve|list');
       break;
     }
     case 'config':
@@ -833,7 +833,7 @@ try {
       cmdPacks(requireRepo());
       break;
     case 'pack':
-      if (sub !== 'new') die('usage : pack new <nom>');
+      if (sub !== 'new') die('usage: pack new <name>');
       cmdPackNew(requireRepo());
       break;
     case 'gate':
@@ -848,7 +848,7 @@ try {
         const res = checkPush(root);
         out(res);
         process.exit(res.allowed ? 0 : 1);
-      } else die('usage : review record --verdict ready|reserves|blocked [--run <dossier>] | review waive --reason "…" | review status | review check');
+      } else die('usage: review record --verdict ready|concerns|blocked [--run <folder>] | review waive --reason "…" | review status | review check');
       break;
     }
     case 'constitution': {
@@ -856,7 +856,7 @@ try {
       const c = loadConstitution(root);
       if (!c) {
         if (flags.json) out({ exists: false });
-        else out('Aucune CONSTITUTION.md à la racine du repo (/kaizen:constitution pour la créer).');
+        else out('No CONSTITUTION.md at the repo root (/kaizen:constitution to create it).');
         process.exit(sub === 'check' ? 1 : 0);
       }
       if (sub === 'check') {
@@ -871,8 +871,8 @@ try {
       }
       if (flags.json) out({ exists: true, ...c });
       else {
-        out(`CONSTITUTION.md v${c.meta.version ?? '?'} (ratifiée ${c.meta.ratified ?? '?'}, amendée ${c.meta.last_amended ?? '?'})`);
-        for (const a of c.articles) out(`  ${a.id}. ${a.title}${a.non_negotiable ? ' — NON NÉGOCIABLE' : ''}\n      contrôle : ${a.control || '—'}`);
+        out(`CONSTITUTION.md v${c.meta.version ?? '?'} (ratified ${c.meta.ratified ?? '?'}, amended ${c.meta.last_amended ?? '?'})`);
+        for (const a of c.articles) out(`  ${a.id}. ${a.title}${a.non_negotiable ? ' — NON-NEGOTIABLE' : ''}\n      check: ${a.control || '—'}`);
       }
       break;
     }
@@ -884,7 +884,7 @@ try {
       const over = s.total > max;
       if (flags.json) out({ ...s, max_lines: max, over });
       else {
-        out(`${over ? '✘' : '✔'} ${s.total} lignes modifiées (+${s.added} −${s.removed}) sur ${s.files} fichier(s) — plafond ${max}${s.ignored ? ` · ${s.ignored} fichier(s) ignoré(s)` : ''}`);
+        out(`${over ? '✘' : '✔'} ${s.total} lines changed (+${s.added} −${s.removed}) in ${s.files} file(s) — limit ${max}${s.ignored ? ` · ${s.ignored} file(s) ignored` : ''}`);
         if (over) for (const f of s.largest) out(`    ${String(f.added + f.removed).padStart(6)}  ${f.file}`);
       }
       process.exit(over ? 1 : 0);
@@ -905,7 +905,7 @@ try {
         }));
       } else if (sub === 'new') {
         const title = flags.title || positional.slice(2).join(' ');
-        if (!title) die('usage : adr new --title "Choix de la file de messages"');
+        if (!title) die('usage: adr new --title "Choice of message queue"');
         mkdirSync(dir, { recursive: true });
         const n = existing.length ? Number(existing.at(-1).slice(0, 4)) + 1 : 1;
         for (let k = n; k < n + 50; k++) {
@@ -918,14 +918,14 @@ try {
             if (err.code !== 'EEXIST') throw err;
           }
         }
-      } else die('usage : adr new --title "…" | adr list');
+      } else die('usage: adr new --title "…" | adr list');
       break;
     }
     case 'postmortem': {
       const root = requireRepo();
-      if (sub !== 'new') die('usage : postmortem new --title "…"');
+      if (sub !== 'new') die('usage: postmortem new --title "…"');
       const title = flags.title || positional.slice(2).join(' ');
-      if (!title) die('usage : postmortem new --title "Panne des exports du 3 novembre"');
+      if (!title) die('usage: postmortem new --title "Export outage of November 3"');
       const dir = join(docsRoot(root), 'postmortems');
       mkdirSync(dir, { recursive: true });
       const day = new Date().toISOString().slice(0, 10);
@@ -943,7 +943,7 @@ try {
     }
     case 'release': {
       const root = requireRepo();
-      if (sub !== 'notes') die('usage : release notes [--from <tag>] [--to <ref>]');
+      if (sub !== 'notes') die('usage: release notes [--from <tag>] [--to <ref>]');
       out(releaseNotes(root, { from: flags.from, to: flags.to || 'HEAD' }));
       break;
     }
@@ -951,11 +951,11 @@ try {
       const root = requireRepo();
       if (sub === 'detect') out(detectDevServers(root));
       else if (sub === 'probe') {
-        if (!flags.url) die('usage : dev probe --url http://localhost:3000 [--timeout-seconds 30]');
+        if (!flags.url) die('usage: dev probe --url http://localhost:3000 [--timeout-seconds 30]');
         const r = await probe(flags.url, Number(flags['timeout-seconds'] || 30));
         out(r);
         process.exit(r.reachable ? 0 : 1);
-      } else die('usage : dev detect | dev probe --url <url>');
+      } else die('usage: dev detect | dev probe --url <url>');
       break;
     }
     case 'pr': {
@@ -986,7 +986,7 @@ try {
         comment: () => prmod.comment(opts),
         'update-branch': () => prmod.updateBranch(stateRoot, opts),
       };
-      if (!handlers[sub]) die('usage : pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch');
+      if (!handlers[sub]) die('usage: pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch');
       out(handlers[sub]());
       break;
     }

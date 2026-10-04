@@ -1,153 +1,151 @@
 ---
-title: Export CSV des commandes - Plan
+title: Orders CSV export - Plan
 type: feat
 date: 2026-10-02
-topic: export-csv-commandes
+topic: orders-csv-export
 artifact: kaizen-plan/v1
 source: brainstorm
 jira: SHOP-412
 ---
 
-# Export CSV des commandes - Plan
+# Orders CSV export - Plan
 
 <!-- kaizen:goal -->
-## Capsule d'objectif
+## Goal capsule
 
-**Objectif :** un responsable boutique récupère en un clic, depuis la liste des commandes, un fichier
-qu'il ouvre directement dans Excel avec les commandes qu'il voit à l'écran.
-**Autorité produit :** périmètre tranché par l'utilisateur en session (2026-10-02).
-**Bloquants ouverts :** aucun.
+**Goal:** from the orders list, a store manager gets in one click a file that opens directly in Excel
+with the orders they see on screen.
+**Product authority:** scope decided by the user during the session (2026-10-02).
+**Open blockers:** none.
 
 <!-- kaizen:product -->
-## Contrat produit
+## Product contract
 
-### Résumé
-Un bouton « Exporter » sur la liste des commandes télécharge un CSV des commandes correspondant aux
-filtres actifs, lisible tel quel dans Excel.
+### Summary
+An "Export" button on the orders list downloads a CSV of the orders matching the active filters,
+readable as is in Excel.
 
-### Exigences
+### Requirements
 
-**Contenu**
-- R1. L'export contient exactement les commandes correspondant aux filtres actifs de la liste.
-- R2. Une ligne par commande : numéro, date, client, statut, total TTC, nombre d'articles.
-- R3. Les accents et caractères spéciaux s'affichent correctement à l'ouverture dans Excel.
+**Content**
+- R1. The export contains exactly the orders matching the list's active filters.
+- R2. One row per order: number, date, customer, status, total incl. tax, item count.
+- R3. Accents and special characters display correctly when opened in Excel.
 
-**Accès et volume**
-- R4. Seuls les utilisateurs ayant le droit de voir les commandes peuvent exporter.
-- R5. Au-delà de 10 000 commandes, l'export est refusé avec un message invitant à affiner les filtres.
+**Access and volume**
+- R4. Only users allowed to see orders can export.
+- R5. Beyond 10,000 orders, the export is refused with a message asking to narrow the filters.
 
-### Décisions clés
-- **Synchrone, plafonné à 10 000 lignes** — couvre le besoin observé sans file de jobs. Régit R5.
-  (décidé en session : choisi plutôt qu'un export asynchrone par e-mail — trop lourd pour le volume actuel)
+### Key decisions
+- **Synchronous, capped at 10,000 rows** — covers the observed need without a job queue. Governs R5.
+  (decided in session: chosen over an asynchronous export by email — too heavy for current volume)
 
-### Exemples d'acceptation
-- AE1. (couvre R1) Étant donné un filtre « statut = expédiée », quand j'exporte, alors le fichier ne
-  contient que des commandes expédiées.
-- AE2. (couvre R3) Étant donné un client « Hélène Müller », quand j'ouvre le fichier dans Excel, alors
-  le nom s'affiche « Hélène Müller ».
-- AE3. (couvre R5) Étant donné 10 001 commandes filtrées, quand j'exporte, alors je vois « Trop de
-  commandes (10 001) : affinez les filtres (max 10 000) » et aucun fichier n'est produit.
+### Acceptance examples
+- AE1. (covers R1) Given a "status = shipped" filter, when I export, then the file only contains
+  shipped orders.
+- AE2. (covers R3) Given a customer "Hélène Müller", when I open the file in Excel, then the name
+  displays as "Hélène Müller".
+- AE3. (covers R5) Given 10,001 filtered orders, when I export, then I see "Too many orders (10,001):
+  narrow the filters (max 10,000)" and no file is produced.
 
-### Hors périmètre
-- Plus tard : export planifié, choix des colonnes, format XLSX.
+### Out of scope
+- Later: scheduled export, column selection, XLSX format.
 
 <!-- kaizen:planning -->
-## Contrat de planification
+## Planning contract
 
-### Décisions techniques clés
-- KTD1. Générer le CSV en flux (`send_stream`) plutôt qu'en mémoire — les exports de 10 000 lignes
-  restent sous 5 Mo de RAM. Alternative écartée : chaîne complète en mémoire. Couvre R5.
-- KTD2. Réutiliser la requête filtrée de `OrdersQuery` utilisée par la liste — garantit R1 par
-  construction. Couvre R1.
+### Key technical decisions
+- KTD1. Stream the CSV (`send_stream`) rather than building it in memory — 10,000-row exports stay
+  under 5 MB of RAM. Rejected alternative: whole string in memory. Covers R5.
+- KTD2. Reuse the filtered `OrdersQuery` used by the list — guarantees R1 by construction. Covers R1.
 
-### Contexte et motifs à suivre
-- `app/exports/customers_csv.rb` — export existant à imiter (en-têtes, formatage des montants).
-- `app/queries/orders_query.rb` — filtres de la liste, à réutiliser tels quels.
+### Context and patterns to follow
+- `app/exports/customers_csv.rb` — existing export to imitate (headers, amount formatting).
+- `app/queries/orders_query.rb` — list filters, to reuse as is.
 
-### Leçons et règles appliquées
-- `docs/learnings/runtime-errors/export-csv-accents-excel.md` — Excel exige un BOM UTF-8 : sans lui,
-  R3 échoue. → BOM en tête de flux, testé par AE2.
-- (pack: house-rules, csv-exports.md) — séparateur `;` pour les locales FR. → appliqué.
+### Learnings and rules applied
+- `docs/learnings/runtime-errors/csv-export-excel-accents.md` — Excel needs a UTF-8 BOM: without it,
+  R3 fails. → BOM at the start of the stream, tested by AE2.
+- (pack: house-rules, csv-exports.md) — `;` separator for European locales. → applied.
 
-### Risques
-- Requête lente sur 10 000 commandes avec jointures client → `includes(:customer)` (évite un N+1).
+### Risks
+- Slow query on 10,000 orders with customer joins → `includes(:customer)` (avoids an N+1).
 
 <!-- kaizen:constitution -->
-## Contrôle constitutionnel
+## Constitution check
 
-| Article | Verdict | Justification / preuve |
+| Article | Verdict | Justification / evidence |
 |---|---|---|
-| I. Preuve d'abord | ✅ | U1–U3 en test d'abord |
-| II. Simplicité | ✅ | export synchrone plafonné, pas de file de jobs (KTD1) |
-| III. Petits lots | ✅ | une tranche, ~250 lignes estimées |
-| IV. Sécurité par défaut | ✅ | même garde d'autorisation que la liste (U2), voir Menaces |
-| V. Autonomie des agents | ✅ | aucune migration ni dépendance ajoutée |
+| I. Evidence first | ✅ | U1–U3 test first |
+| II. Simplicity | ✅ | capped synchronous export, no job queue (KTD1) |
+| III. Small batches | ✅ | one slice, ~250 lines estimated |
+| IV. Secure by default | ✅ | same authorization guard as the list (U2), see Threats |
+| V. Agent autonomy | ✅ | no migration or dependency added |
 
 <!-- kaizen:threats -->
-## Menaces
+## Threats
 
-- **Divulgation** · données clients exportées · un utilisateur sans droit appelle l'URL d'export
-  directement → `authorize_orders!` sur l'endpoint, test 403 (U2).
-- **Déni de service** · base de données · exports répétés de gros volumes → plafond 10 000 (R5) et
-  génération en flux (KTD1).
+- **Information disclosure** · exported customer data · a user without the right calls the export URL
+  directly → `authorize_orders!` on the endpoint, 403 test (U2).
+- **Denial of service** · database · repeated large exports → 10,000 cap (R5) and streamed generation
+  (KTD1).
 
 <!-- kaizen:rollout -->
-## Déploiement et retour arrière
+## Rollout and rollback
 
-- **Exposition** : directe (bouton visible des seuls rôles autorisés), pas de flag — fonctionnalité
-  en lecture seule.
-- **Ordre** : aucune migration.
-- **Retour arrière** : revert de la PR ; rien d'irréversible (aucune écriture).
-- **Signal** : taux d'erreur 5xx de `Orders::ExportsController` et durée p95 ; > 1 % d'erreurs ou
+- **Exposure**: direct (button visible to authorized roles only), no flag — read-only feature.
+- **Order**: no migration.
+- **Rollback**: revert the PR; nothing irreversible (no writes).
+- **Signal**: 5xx error rate of `Orders::ExportsController` and p95 duration; > 1 % errors or
   p95 > 10 s → revert.
 
 <!-- kaizen:units -->
-## Unités d'implémentation
+## Implementation units
 
-### U1. Sérialiseur CSV des commandes
-- **Objectif :** transformer une relation de commandes en lignes CSV (R2, R3).
-- **Couvre :** R2, R3, AE2
-- **Dépend de :** —
-- **Fichiers :** `app/exports/orders_csv.rb` (nouveau), `spec/exports/orders_csv_spec.rb` (nouveau)
-- **Approche :** suit `app/exports/customers_csv.rb` ; BOM `﻿` en premier ; séparateur `;`.
-- **Preuve :** test d'abord.
-- **Scénarios de test :** colonnes et ordre ; total formaté ; nom accentué (AE2, octets du BOM) ;
-  commande sans articles.
-- **Vérification :** `bundle exec rspec spec/exports/orders_csv_spec.rb`
-- **Tranche :** T1
+### U1. Orders CSV serializer
+- **Goal:** turn an orders relation into CSV rows (R2, R3).
+- **Covers:** R2, R3, AE2
+- **Depends on:** —
+- **Files:** `app/exports/orders_csv.rb` (new), `spec/exports/orders_csv_spec.rb` (new)
+- **Approach:** follows `app/exports/customers_csv.rb`; `﻿` BOM first; `;` separator.
+- **Evidence:** test first.
+- **Test scenarios:** columns and order; formatted total; accented name (AE2, BOM bytes); order
+  without items.
+- **Verification:** `bundle exec rspec spec/exports/orders_csv_spec.rb`
+- **Slice:** S1
 
-### U2. Endpoint d'export avec filtres, droits et plafond
-- **Objectif :** exposer l'export filtré, autorisé et plafonné (R1, R4, R5).
-- **Couvre :** R1, R4, R5, AE1, AE3
-- **Dépend de :** U1
-- **Fichiers :** `app/controllers/orders/exports_controller.rb` (nouveau), `config/routes.rb`,
-  `spec/requests/orders/exports_spec.rb` (nouveau)
-- **Approche :** même `before_action :authorize_orders!` que `OrdersController` ; `OrdersQuery` ;
-  comptage avant génération ; flux via KTD1.
-- **Preuve :** test d'abord (spec de requête).
-- **Scénarios de test :** filtre statut (AE1) ; utilisateur sans droit → 403 ; 10 001 commandes → 422
-  avec message (AE3) ; en-têtes `Content-Type` et `Content-Disposition`.
-- **Vérification :** `bundle exec rspec spec/requests/orders/exports_spec.rb`
-- **Tranche :** T1
+### U2. Export endpoint with filters, permissions and cap
+- **Goal:** expose the filtered, authorized and capped export (R1, R4, R5).
+- **Covers:** R1, R4, R5, AE1, AE3
+- **Depends on:** U1
+- **Files:** `app/controllers/orders/exports_controller.rb` (new), `config/routes.rb`,
+  `spec/requests/orders/exports_spec.rb` (new)
+- **Approach:** same `before_action :authorize_orders!` as `OrdersController`; `OrdersQuery`; count
+  before generating; streaming per KTD1.
+- **Evidence:** test first (request spec).
+- **Test scenarios:** status filter (AE1); user without permission → 403; 10,001 orders → 422 with a
+  message (AE3); `Content-Type` and `Content-Disposition` headers.
+- **Verification:** `bundle exec rspec spec/requests/orders/exports_spec.rb`
+- **Slice:** S1
 
-### U3. Bouton « Exporter » sur la liste
-- **Objectif :** déclencher l'export avec les filtres courants.
-- **Couvre :** R1
-- **Dépend de :** U2
-- **Fichiers :** `app/views/orders/index.html.erb`, `spec/system/orders_export_spec.rb` (nouveau)
-- **Approche :** lien qui reprend `request.query_parameters`.
-- **Preuve :** test système.
-- **Vérification :** `bundle exec rspec spec/system/orders_export_spec.rb`
-- **Tranche :** T1
+### U3. "Export" button on the list
+- **Goal:** trigger the export with the current filters.
+- **Covers:** R1
+- **Depends on:** U2
+- **Files:** `app/views/orders/index.html.erb`, `spec/system/orders_export_spec.rb` (new)
+- **Approach:** link that carries over `request.query_parameters`.
+- **Evidence:** system test.
+- **Verification:** `bundle exec rspec spec/system/orders_export_spec.rb`
+- **Slice:** S1
 
 <!-- kaizen:verification -->
-## Contrat de vérification
+## Verification contract
 - `bundle exec rspec` · `bundle exec rubocop`
-- AE2 vérifié aussi à la main une fois : ouverture du fichier dans Excel.
+- AE2 also checked by hand once: opening the file in Excel.
 
 <!-- kaizen:done -->
-## Définition de terminé
-- U1–U3 livrées, chacune avec sa preuve.
-- R1–R5 et AE1–AE3 couverts par des tests verts.
-- `/kaizen:review` sans P0/P1 ouvert ; diff sous `pr.max_lines` (`node "$K" size`).
-- Leçon capitalisée si l'implémentation a révélé un piège non documenté.
+## Definition of done
+- U1–U3 shipped, each with its evidence.
+- R1–R5 and AE1–AE3 covered by green tests.
+- `/kaizen:review` with no open P0/P1; diff under `pr.max_lines` (`node "$K" size`).
+- Learning captured if the implementation revealed an undocumented trap.

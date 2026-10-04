@@ -1,8 +1,8 @@
-// Kaizen — indicateurs de livraison (DORA, approchés depuis git et GitHub) et santé de la boucle.
+// Kaizen — delivery metrics (DORA, approximated from git and GitHub) and loop health.
 //
-// DORA 2025 : débit (fréquence de déploiement, délai de changement, taux de reprise) et instabilité
-// (taux d'échec des changements, temps de rétablissement). Sans accès au système de déploiement, ces
-// valeurs sont des **approximations** depuis la branche par défaut ; chaque indicateur dit sa méthode.
+// DORA 2025: throughput (deployment frequency, change lead time, rework rate) and instability
+// (change failure rate, time to restore). Without access to the deployment system, these values are
+// **approximations** from the default branch; each metric states its method.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -24,7 +24,7 @@ const round = (x, d = 1) => (x === null || x === undefined ? null : Math.round(x
 
 function parseSince(since) {
   const m = /^(\d+)([dwm])$/.exec(since || '90d');
-  if (!m) throw new Error(`--since attendu sous la forme 30d, 12w ou 6m : "${since}"`);
+  if (!m) throw new Error(`--since expected as 30d, 12w or 6m: "${since}"`);
   const n = Number(m[1]) * (m[2] === 'd' ? 1 : m[2] === 'w' ? 7 : 30);
   return { days: n, from: new Date(Date.now() - n * DAY) };
 }
@@ -47,7 +47,7 @@ function changesOnDefault(root, branch, from) {
         if (a !== '-') lines += Number(a) + Number(d);
       }
     }
-    // Délai : du plus ancien commit de la branche fusionnée jusqu'au merge (merges uniquement).
+    // Lead time: from the oldest commit of the merged branch to the merge (merges only).
     let leadHours = null;
     if (ps.length > 1) {
       const first = git(root, ['log', '--format=%aI', `${ps[0]}..${ps[1]}`], { allowFail: true });
@@ -97,15 +97,15 @@ function loopHealth(root, from, branch) {
     const cc = text.split('<!-- kaizen:constitution -->')[1]?.split(/<!-- kaizen:[a-z-]+ -->/)[0] || '';
     exceptions += (cc.match(/⚠️/g) || []).length;
   }
-  // Une citation dans un plan dit qu'une leçon a été lue ; une citation dans un message de commit arrivé
-  // sur la branche par défaut dit qu'elle a changé du code (unité ou correctif de revue qui l'applique).
+  // A citation in a plan says a learning was read; a citation in a commit message that reached the
+  // default branch says it changed code (a unit or a review fix applying it).
   const appliedIn = new Set();
   const ref = git(root, ['rev-parse', '--verify', '--quiet', `origin/${branch}`], { allowFail: true }) ? `origin/${branch}` : branch;
   const bodies = git(root, ['log', ref, `--since=${from.toISOString()}`, '--format=%B'], { allowFail: true }) || '';
   for (const m of bodies.matchAll(LEARNING_REF)) appliedIn.add(m[0]);
 
-  // Jamais citée nulle part (plans, ADR, post-mortems, commits) et plus ancienne que la fenêtre :
-  // candidate à /kaizen:prune-learnings — une leçon que personne ne relit ne referme aucune boucle.
+  // Never cited anywhere (plans, ADRs, postmortems, commits) and older than the window: a candidate
+  // for /kaizen:prune-learnings — a learning nobody reads back closes no loop.
   const everCited = new Set(appliedIn);
   for (const f of [...plans, ...walkMarkdown(join(docs, 'adr')), ...walkMarkdown(join(docs, 'postmortems'))]) {
     for (const m of readFileSync(f, 'utf8').matchAll(LEARNING_REF)) everCited.add(m[0]);
@@ -132,7 +132,7 @@ function loopHealth(root, from, branch) {
     learnings_cited_by_new_plans: cited.size,
     learnings_applied_in_commits: appliedIn.size,
     learning_reuse_rate: learnings.length && (recentPlans.length || appliedIn.size) ? round(used.size / learnings.length, 2) : null,
-    learning_reuse_method: 'leçons distinctes citées par un plan récent ou un message de commit de la fenêtre / leçons existantes — une citation de plan dit « lue », une citation de commit dit « appliquée »',
+    learning_reuse_method: 'distinct learnings cited by a recent plan or a commit message in the window / existing learnings — a plan citation means "read", a commit citation means "applied"',
     learnings_never_cited: neverCited.length,
     learnings_never_cited_sample: neverCited.slice(0, 10),
     constitution_exceptions: exceptions,
@@ -142,11 +142,11 @@ function loopHealth(root, from, branch) {
   };
 }
 
-// DORA mesuré sur les vrais déploiements (tags deploy/<env>/… et rollback/<env>/… posés par
-// `kaizen.mjs deploy`), quand il y en a dans la fenêtre : fréquence, délai commit → production, taux
-// d'échec (déploiement suivi d'un retour arrière ou d'un incident avant le suivant), temps de
-// rétablissement (détection de l'incident — ou déploiement, sans incident tracé — → retour arrière ou
-// résolution). Les incidents (`incident/<env>/…`) viennent de monitor watch, patrol ou d'une alerte.
+// DORA measured on real deployments (deploy/<env>/… and rollback/<env>/… tags created by
+// `kaizen.mjs deploy`), when there are any in the window: frequency, commit → production lead time,
+// failure rate (deployment followed by a rollback or an incident before the next one), time to
+// restore (incident detection — or the deployment, with no recorded incident — → rollback or
+// resolution). Incidents (`incident/<env>/…`) come from monitor watch, patrol or an alert.
 function doraFromDeployments(root, from, env) {
   const all = deployments(root, { env });
   const deploys = all.filter((d) => d.kind === 'deploy');
@@ -180,13 +180,13 @@ function doraFromDeployments(root, from, env) {
     lead_time_hours_median: round(median(lead.filter((h) => h >= 0))),
     change_failure_rate: round(failed / inWindow.length, 2),
     time_to_restore_hours_median: round(median(restore)),
-    method: `tags deploy/${env}/…, rollback/${env}/…, incident/${env}/… et resolve/${env}/… (kaizen.mjs deploy, monitor) : délai = premier commit → déploiement, échec = retour arrière ou incident avant le déploiement suivant, rétablissement = détection de l'incident (à défaut, déploiement) → retour arrière ou résolution`,
+    method: `tags deploy/${env}/…, rollback/${env}/…, incident/${env}/… and resolve/${env}/… (kaizen.mjs deploy, monitor): lead time = first commit → deployment, failure = rollback or incident before the next deployment, restore = incident detection (otherwise, deployment) → rollback or resolution`,
   };
 }
 
-// Coût des cycles work/autopilot terminés (`gate off`), relevé localement : durée, blocages du
-// garde-fou, tokens de la session principale et de ses sous-agents, ventilés par rôle (politique de
-// modèles). Local à la machine, comme .kaizen/state/.
+// Cost of finished work/autopilot cycles (`gate off`), recorded locally: duration, quality gate
+// blocks, tokens of the main session and its subagents, broken down by role (model policy). Local to
+// the machine, like .kaizen/state/.
 function cycleCost(root, from) {
   let lines = [];
   try {
@@ -205,7 +205,7 @@ function cycleCost(root, from) {
     .filter((c) => c && Date.parse(c.ended) >= from.getTime());
   if (!cycles.length) return null;
   const withUsage = cycles.filter((c) => c.usage);
-  // Les cycles antérieurs au relevé des sous-agents n'ont que la session principale.
+  // Cycles recorded before subagent tracking only have the main session.
   const withSub = withUsage.filter((c) => c.subagents);
   const subTotal = (c) => usageTotal(c.subagents?.usage);
   const mainSum = withSub.reduce((n, c) => n + usageTotal(c.usage), 0);
@@ -231,21 +231,21 @@ function cycleCost(root, from) {
     gate_blocks_total: cycles.reduce((n, c) => n + (c.gate_blocks || 0), 0),
     cycles_with_gate_block_share: round(cycles.filter((c) => c.gate_blocks > 0).length / cycles.length, 2),
     method:
-      'cycles /kaizen:work et /kaizen:autopilot clos par gate off sur cette machine ; tokens = session principale + sous-agents ' +
-      '(transcripts <session>/subagents/ de Claude Code, dédoublonnés par message) ; rôle d\'un sous-agent d\'après son lancement ' +
-      'consigné par le hook Agent (id d\'agent, sinon début du prompt), `inconnu` sans correspondance ; part et ventilation ' +
-      `calculées sur ${withSub.length}/${withUsage.length} cycle(s) relevés avec sous-agents`,
+      '/kaizen:work and /kaizen:autopilot cycles closed by gate off on this machine; tokens = main session + subagents ' +
+      '(Claude Code <session>/subagents/ transcripts, deduplicated per message); a subagent\'s role comes from its launch ' +
+      'logged by the Agent hook (agent id, otherwise start of the prompt), `unknown` without a match; share and breakdown ' +
+      `computed over ${withSub.length}/${withUsage.length} recorded cycle(s) with subagents`,
   };
 }
 
 export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
   const { days, from } = parseSince(since);
   const branch = defaultBranch(root);
-  if (!branch) throw new Error('branche par défaut introuvable');
+  if (!branch) throw new Error('default branch not found');
   const changes = changesOnDefault(root, branch, from);
   const weeks = Math.max(1, days / 7);
 
-  // Échec de changement (approché) : un changement suivi sous 7 jours d'un fix/revert qui touche ses fichiers.
+  // Change failure (approximated): a change followed within 7 days by a fix/revert touching its files.
   const chrono = [...changes].reverse();
   let failed = 0;
   chrono.forEach((c, i) => {
@@ -272,15 +272,15 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
     changes: changes.length,
     throughput: {
       deployment_frequency_per_week: real ? weeksReal : round(changes.length / weeks),
-      deployment_frequency_method: real ? `déploiements réels sur ${real.env} (tags deploy/)` : 'changements arrivés sur la branche par défaut (proxy du déploiement)',
+      deployment_frequency_method: real ? `real deployments to ${real.env} (deploy/ tags)` : 'changes that reached the default branch (deployment proxy)',
       lead_time_hours_median: real?.lead_time_hours_median ?? round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
-      lead_time_method: real?.lead_time_hours_median != null ? `premier commit → déploiement sur ${real.env}` : leadFromPrs.length ? 'ouverture → merge des PR (GitHub)' : leadFromMerges.length ? 'premier commit → merge (git)' : 'indisponible (merges squash sans accès GitHub)',
+      lead_time_method: real?.lead_time_hours_median != null ? `first commit → deployment to ${real.env}` : leadFromPrs.length ? 'PR opened → merged (GitHub)' : leadFromMerges.length ? 'first commit → merge (git)' : 'unavailable (squash merges without GitHub access)',
       rework_rate: changes.length ? round(changes.filter((c) => c.fix).length / changes.length, 2) : null,
-      rework_method: 'part des changements de type fix / hotfix / revert',
+      rework_method: 'share of fix / hotfix / revert changes',
     },
     instability: {
       change_failure_rate: real ? real.change_failure_rate : nonFix ? round(failed / nonFix, 2) : null,
-      change_failure_method: real ? `déploiements sur ${real.env} suivis d’un retour arrière` : 'changements suivis sous 7 jours d’un fix ou revert touchant les mêmes fichiers',
+      change_failure_method: real ? `deployments to ${real.env} followed by a rollback` : 'changes followed within 7 days by a fix or revert touching the same files',
       time_to_restore_hours_median: real?.time_to_restore_hours_median ?? null,
     },
     batch_size: {
@@ -288,7 +288,7 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
       lines_p90: sizes.length ? [...sizes].sort((a, b) => a - b)[Math.floor(sizes.length * 0.9)] ?? null : null,
       over_limit_share: sizes.length ? round(sizes.filter((s) => s > config.pr.max_lines).length / sizes.length, 2) : null,
       max_lines: config.pr.max_lines,
-      source: prs?.length ? 'PR GitHub' : 'diffstat git',
+      source: prs?.length ? 'GitHub PRs' : 'diffstat git',
     },
     kaizen_loop: loopHealth(root, from, branch),
     cycle_cost: cycleCost(root, from),

@@ -1,20 +1,20 @@
-// Kaizen — déploiement, retour arrière et feature flags, par les commandes de l'équipe.
+// Kaizen — deployment, rollback and feature flags, through the team's own commands.
 //
-// Kaizen ne connaît aucune plateforme : `.kaizen/config.json → deploy.environments.<env>` déclare
-// `command` (déployer), `rollback` (revenir), `url`, `protected`. Ce module les exécute avec
-// KAIZEN_ENV, KAIZEN_REF, KAIZEN_SHA dans l'environnement, et laisse une trace partagée :
+// Kaizen knows no platform: `.kaizen/config.json → deploy.environments.<env>` declares `command`
+// (deploy), `rollback` (revert), `url`, `protected`. This module runs them with KAIZEN_ENV,
+// KAIZEN_REF, KAIZEN_SHA in the environment, and leaves a shared trail:
 //
-// - un **tag git annoté** `deploy/<env>/<horodatage>` sur le commit déployé (`rollback/<env>/…` pour un
-//   retour arrière ; `incident/<env>/…` et `resolve/<env>/…` pour la détection et la résolution d'un
-//   incident, posés par monitor.mjs), poussé si un remote existe (`deploy.push_tags`). C'est la source
-//   des vraies métriques DORA (`metrics`) et de la chronologie des post-mortems ;
-// - une ligne dans `.kaizen/state/deployments.jsonl` (local) pour le suivi immédiat.
+// - an **annotated git tag** `deploy/<env>/<timestamp>` on the deployed commit (`rollback/<env>/…` for
+//   a rollback; `incident/<env>/…` and `resolve/<env>/…` for detecting and resolving an incident,
+//   created by monitor.mjs), pushed if a remote exists (`deploy.push_tags`). It is the source of the
+//   real DORA metrics (`metrics`) and of postmortem timelines;
+// - a line in `.kaizen/state/deployments.jsonl` (local) for immediate tracking.
 //
-// Un environnement **protégé** (`protected: true`, défaut pour `production`) ne se déploie qu'avec une
-// approbation confirmée par l'utilisateur : `deploy request` émet un code, l'utilisateur tape lui-même
-// `kaizen deploy <code>` (hook UserPromptSubmit), et `deploy run` consomme cette approbation, valable
-// 30 minutes pour cet environnement et ce commit. Le retour arrière n'exige pas d'approbation : il
-// rétablit, et il est urgent.
+// A **protected** environment (`protected: true`, the default for `production`) is only deployed with
+// an approval confirmed by the user: `deploy request` issues a code, the user types
+// `kaizen deploy <code>` themselves (UserPromptSubmit hook), and `deploy run` consumes that approval,
+// valid for 30 minutes for this environment and this commit. A rollback needs no approval: it
+// restores service, and it is urgent.
 
 import { randomBytes } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -48,14 +48,14 @@ export function environment(root, env, config = loadConfig(root)) {
   const e = config.deploy.environments?.[env];
   if (!e) {
     const known = Object.keys(config.deploy.environments || {});
-    throw new Error(`environnement inconnu : "${env}" (${known.length ? `déclarés : ${known.join(', ')}` : 'aucun dans .kaizen/config.json → deploy.environments'})`);
+    throw new Error(`unknown environment: "${env}" (${known.length ? `declared: ${known.join(', ')}` : 'none in .kaizen/config.json → deploy.environments'})`);
   }
   return { name: env, ...e, protected: e.protected ?? env === 'production' };
 }
 
 function resolveSha(root, ref) {
   const sha = git(root, ['rev-parse', '--verify', '--quiet', `${ref || 'HEAD'}^{commit}`], { allowFail: true });
-  if (!sha) throw new Error(`référence introuvable : ${ref}`);
+  if (!sha) throw new Error(`ref not found: ${ref}`);
   return sha;
 }
 
@@ -73,9 +73,9 @@ export function tagDeployment(root, kind, env, sha, note, config = loadConfig(ro
   return { tag, pushed };
 }
 
-// Délai : `deploy.environments.<env>.timeout_seconds`, sinon `deploy.timeout_seconds` (30 min). Au-delà,
-// tout l'arbre de processus est tué : une commande bloquée ne bloque plus la session, mais l'état de
-// l'environnement est alors incertain — le rapport le dit.
+// Timeout: `deploy.environments.<env>.timeout_seconds`, otherwise `deploy.timeout_seconds` (30 min).
+// Beyond it, the whole process tree is killed: a stuck command no longer blocks the session, but the
+// environment's state is then uncertain — the report says so.
 function run(root, command, env, sha, ref, timeoutSeconds) {
   const started = Date.now();
   const r = runBounded(command, {
@@ -84,7 +84,7 @@ function run(root, command, env, sha, ref, timeoutSeconds) {
     timeoutMs: Number(timeoutSeconds || 1800) * 1000,
   });
   let output = `${r.stdout}${r.stderr}`.replace(/\s+$/, '').split(/\r?\n/).slice(-40).join('\n');
-  if (r.timedOut) output += `\n[kaizen] Commande coupée après ${timeoutSeconds || 1800} s : état de ${env || 'l’environnement'} incertain, vérifiez-le (monitor check) avant de relancer.`;
+  if (r.timedOut) output += `\n[kaizen] Command killed after ${timeoutSeconds || 1800} s: state of ${env || 'the environment'} is uncertain, check it (monitor check) before retrying.`;
   return { ok: r.status === 0 && !r.timedOut, exit: r.timedOut ? 'timeout' : r.status, seconds: Math.round((Date.now() - started) / 100) / 10, output };
 }
 
@@ -94,7 +94,7 @@ function log(root, entry) {
   appendFileSync(join(stateDir(root), 'deployments.jsonl'), `${JSON.stringify(entry)}\n`);
 }
 
-// --- Approbation des environnements protégés ---------------------------------------------------------
+// --- Approval for protected environments ------------------------------------------------------------
 
 export function requestDeploy(root, env, { ref } = {}) {
   const e = environment(root, env);
@@ -112,11 +112,11 @@ export function requestDeploy(root, env, { ref } = {}) {
     approval_needed: true,
     code,
     expires_in_minutes: APPROVAL_MAX_AGE_MS / 60000,
-    instruction: `Demande à l’utilisateur de taper lui-même : kaizen deploy ${code}`,
+    instruction: `Ask the user to type it themselves: kaizen deploy ${code}`,
   };
 }
 
-// Appelée par le hook UserPromptSubmit : seul un message de l'utilisateur atteint ce chemin.
+// Called by the UserPromptSubmit hook: only a user message reaches this path.
 export function confirmDeploy(root, code, { session = null } = {}) {
   const now = Date.now();
   const list = readJson(root, 'deploy-approvals.json', []);
@@ -138,20 +138,20 @@ function consumeApproval(root, env, sha) {
   return a;
 }
 
-// --- Déployer, revenir, basculer un flag ---------------------------------------------------------------
+// --- Deploy, roll back, toggle a flag --------------------------------------------------------------------
 
 export function deploy(root, env, { ref, plans = [] } = {}) {
   const config = loadConfig(root);
   const e = environment(root, env, config);
-  if (!e.command) throw new Error(`deploy.environments.${env}.command manquant`);
+  if (!e.command) throw new Error(`deploy.environments.${env}.command missing`);
   const sha = resolveSha(root, ref);
   let approval = null;
   if (e.protected) {
     approval = consumeApproval(root, env, sha);
     if (!approval) {
       throw new Error(
-        `${env} est protégé : approbation requise pour ${sha.slice(0, 7)}. ` +
-          `Lance \`deploy request ${env}${ref ? ` --ref ${ref}` : ''}\`, puis l’utilisateur tape lui-même « kaizen deploy <code> »`,
+        `${env} is protected: approval required for ${sha.slice(0, 7)}. ` +
+          `Run \`deploy request ${env}${ref ? ` --ref ${ref}` : ''}\`, then the user types "kaizen deploy <code>" themselves`,
       );
     }
   }
@@ -165,8 +165,8 @@ export function deploy(root, env, { ref, plans = [] } = {}) {
 export function rollback(root, env, { reason = null, to } = {}) {
   const config = loadConfig(root);
   const e = environment(root, env, config);
-  if (!e.rollback) throw new Error(`deploy.environments.${env}.rollback manquant : déclarez comment revenir en arrière`);
-  // Cible par défaut : le déploiement réussi précédent de cet environnement.
+  if (!e.rollback) throw new Error(`deploy.environments.${env}.rollback missing: declare how to roll back`);
+  // Default target: the previous successful deployment of this environment.
   const target = to ? resolveSha(root, to) : (deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-2)?.sha || null);
   const result = run(root, e.rollback, env, target || '', target || '', timeoutOf(config, e));
   const entry = { kind: 'rollback', env, sha: target, at: new Date().toISOString(), ok: result.ok, exit: result.exit, seconds: result.seconds, reason };
@@ -178,7 +178,7 @@ export function rollback(root, env, { reason = null, to } = {}) {
 export function flag(root, state, name, { env = null } = {}) {
   const config = loadConfig(root);
   const cmd = config.deploy.flags?.[state];
-  if (!cmd) throw new Error(`deploy.flags.${state} manquant (ex. "unleash-cli toggle {flag} --${state}")`);
+  if (!cmd) throw new Error(`deploy.flags.${state} missing (e.g. "unleash-cli toggle {flag} --${state}")`);
   const command = cmd.replaceAll('{flag}', name).replaceAll('{env}', env || '');
   const result = run(root, command, env || '', resolveSha(root), null, timeoutOf(config, env ? config.deploy.environments?.[env] : null));
   const entry = { kind: `flag-${state}`, flag: name, env, at: new Date().toISOString(), ok: result.ok };
@@ -186,9 +186,9 @@ export function flag(root, state, name, { env = null } = {}) {
   return { ...entry, output: result.output };
 }
 
-// --- Historique ----------------------------------------------------------------------------------------
+// --- History -------------------------------------------------------------------------------------------
 
-// Depuis les tags (partagés) : { kind, env, at, sha, tag, note }. Trié chronologiquement.
+// From the (shared) tags: { kind, env, at, sha, tag, note }. Sorted chronologically.
 export function deployments(root, { env = null } = {}) {
   const out = git(root, ['for-each-ref', '--format=%(refname:short)%09%(*objectname)%09%(objectname)%09%(contents:subject)', 'refs/tags/deploy', 'refs/tags/rollback', 'refs/tags/incident', 'refs/tags/resolve'], { allowFail: true }) || '';
   return out

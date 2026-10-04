@@ -1,9 +1,9 @@
-// Kaizen — sous-agents d'un cycle work/autopilot, pour en ventiler le coût par rôle.
+// Kaizen — subagents of a work/autopilot cycle, to break its cost down by role.
 //
-// Le hook PostToolUse sur Agent (review-hooks.mjs --evidence) consigne chaque lancement pendant que le
-// garde-fou est actif : type, rôle (politique de modèles), modèle demandé, identifiant d'agent quand la
-// réponse de l'outil le donne, et début du prompt. Le hook Stop rapproche ces lancements des
-// transcripts des sous-agents (lib.mjs → subagentUsage) ; `gate off` efface le journal.
+// The PostToolUse hook on Agent (review-hooks.mjs --evidence) logs each launch while the quality gate
+// is active: type, role (model policy), requested model, agent id when the tool response provides it,
+// and the start of the prompt. The Stop hook matches these launches with the subagent transcripts
+// (lib.mjs → subagentUsage); `gate off` clears the log.
 
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -12,14 +12,14 @@ import { roleOf } from './models.mjs';
 
 export const LAUNCHES = join('.kaizen', 'state', 'agent-runs.jsonl');
 
-// Rôle d'un lancement : relecteur reconnu, agent Kaizen, sinon sous-agent général (implémentation
-// déléguée par /kaizen:work), sinon `autre`.
+// Role of a launch: known reviewer, Kaizen agent, otherwise general subagent (implementation delegated
+// by /kaizen:work), otherwise `other`.
 export function launchRole(toolInput = {}, reviewer = null) {
   const type = String(toolInput.subagent_type || '');
-  return roleOf(reviewer || type) || (!type || type === 'general-purpose' ? 'implement' : 'autre');
+  return roleOf(reviewer || type) || (!type || type === 'general-purpose' ? 'implement' : 'other');
 }
 
-// Identifiant d'agent dans la réponse de l'outil : champ `agentId`, sinon mention « agentId: … ».
+// Agent id in the tool response: `agentId` field, otherwise an "agentId: …" mention.
 export function agentIdOf(response) {
   if (!response) return null;
   if (typeof response === 'object' && typeof response.agentId === 'string') return response.agentId;
