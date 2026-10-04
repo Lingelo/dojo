@@ -1,19 +1,19 @@
 # Configuration
 
-Kaizen se configure par repo, dans deux fichiers JSON :
+Kaizen is configured per repo, in two JSON files:
 
-| Fichier | Versionné ? | Rôle |
+| File | Versioned? | Role |
 |---|---|---|
-| `.kaizen/config.json` | oui | réglages d'équipe |
-| `.kaizen/config.local.json` | non (ajouté à `.gitignore` par `setup`) | surcharges personnelles, clé par clé |
+| `.kaizen/config.json` | yes | team settings |
+| `.kaizen/config.local.json` | no (added to `.gitignore` by `setup`) | personal overrides, key by key |
 
-`config.local.json` l'emporte sur `config.json`, **sauf pour `docs_root`**. L'emplacement des
-documents est une décision d'équipe : il n'est lu que dans `config.json`.
+`config.local.json` wins over `config.json`, **except for `docs_root`**. Where documents live is a team
+decision: it is only read from `config.json`.
 
-Voir la configuration effective : `node $K config`. Créer le fichier : `/kaizen:setup` ou
-`node $K init`.
+See the effective configuration: `node $K config`. Create the file: `/kaizen:setup` or `node $K init`
+(`--profile lean|standard|full`, `--language en`, `--docs-root <dir>`).
 
-## Exemple complet
+## Full example
 
 ```json
 {
@@ -33,6 +33,20 @@ Voir la configuration effective : `node $K config`. Créer le fichier : `/kaizen
   },
   "review": { "require_before_push": true, "max_unreviewed_lines": 80 },
   "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] },
+  "deploy": {
+    "environments": {
+      "staging":    { "command": "make deploy ENV=staging", "rollback": "make rollback ENV=staging" },
+      "production": { "command": "make deploy ENV=production", "rollback": "make rollback ENV=production", "url": "https://shop.example" }
+    },
+    "watch_minutes": 15
+  },
+  "monitor": {
+    "signals": {
+      "health":     { "type": "http", "url": "https://shop.example/health", "expect": 200 },
+      "error_rate": { "command": "curl -s https://prom.example/api/v1/query?query=… | jq -r '.data.result[0].value[1]'", "max": 0.01 }
+    }
+  },
+  "models": { "roles": { "research": "haiku" } },
   "packs": [
     { "source": "kaizen-packs/house-rules" },
     { "source": "https://github.com/acme/kaizen-packs", "ref": "v1.2.0", "pack": ["rails"] }
@@ -40,138 +54,147 @@ Voir la configuration effective : `node $K config`. Créer le fichier : `/kaizen
 }
 ```
 
-## Les clés
+## The keys
 
 ### `docs_root`
 
-Défaut : `"docs"`. Dossier racine des documents : `plans/`, `learnings/`, `ideation/`, `adr/`,
-`postmortems/` et `metrics/` vivent dessous. Le chemin doit être relatif, rester dans le repo, et ne
-pas être `.git`. Une valeur invalide est **refusée**, jamais remplacée en silence par `docs`.
-Changez-la si `docs/` est déjà un site de documentation publié, par exemple `"engineering"`.
+Default: `"docs"`. Root folder of the documents: `plans/`, `learnings/`, `ideation/`, `adr/`,
+`postmortems/` and `metrics/` live under it. The path must be relative, stay inside the repo, and not
+be `.git`. An invalid value is **refused**, never silently replaced by `docs`. Change it if `docs/` is
+already a published documentation site, for example `"engineering"`.
 
 ### `language`
 
-Défaut : `"auto"`, c'est-à-dire la langue de la conversation. Mettez `"fr"` ou `"en"` pour imposer
-la langue des **titres de sections** des documents. Les marqueurs `<!-- kaizen:… -->`, les clés de
-frontmatter et les identifiants (R1, AE1, KTD1, U1) ne sont jamais traduits.
+Default: `"auto"`, i.e. the language of the conversation. Kaizen's skills are written in English but
+always talk to you in your language. `language` decides the language of the **deliverables** (plans,
+learnings, ADRs, postmortems, constitution, PR descriptions and replies): set `"en"`, `"fr"` or any
+other language to impose it for the whole team. `<!-- kaizen:… -->` markers, frontmatter keys, ids
+(R1, AE1, KTD1, U1, S1) and the field names the tools read (`**Covers:**`, `**Check:**`…) are never
+translated. Plans and constitutions written in French before Kaizen 3.0 (`**Couvre :**`,
+`**Contrôle :**`, `NON NÉGOCIABLE`…) are still read.
+
+The CLI and the hooks print their messages in English.
 
 ### `tracker`
 
-Défaut : `"auto"`. Kaizen lit la clé Jira dans le nom de branche (`feat/SHOP-412-…` donne
-`SHOP-412`), comme le plugin `git`, et lit les issues GitHub via `gh`. La clé sert dans les messages
-de commit (`feat(SHOP-412): …`) et dans le frontmatter des plans.
+Default: `"auto"`. Kaizen reads the Jira key from the branch name (`feat/SHOP-412-…` gives
+`SHOP-412`), like the `git` plugin, and reads GitHub issues through `gh`. The key is used in commit
+messages (`feat(SHOP-412): …`) and in the plans' frontmatter.
 
 ### `profile`
 
-Défaut : `"standard"`. Règle la **cérémonie** du cycle, jamais les garde-fous déterministes
-(garde-fou du hook `Stop`, `verify`, `size`, `plan check`, revue exigée avant `git push`).
+Default: `"standard"`. Scales the cycle's **ceremony**, never the deterministic gates (`Stop`-hook
+quality gate, `verify`, `size`, `plan check`, review required before `git push`).
 
-| Profil | Pour qui | Ce qui change |
+| Profile | For whom | What changes |
 |---|---|---|
-| `lean` | première adoption, petite équipe, prototype | plan court (menaces et déploiement seulement sur surface à risque), `doc-review` réduit à `plan check` + cohérence, revue au socle + sécurité si besoin, `autopilot` sans plan écrit pour un changement ≤ ~30 lignes sans risque |
-| `standard` | la plupart des équipes | le cycle tel que décrit dans les guides |
-| `full` | domaines régulés, équipe rodée | menaces et déploiement toujours, relecteur adversarial systématique sur le plan et dès la revue ciblée |
+| `lean` | first adoption, small team, prototype | short plan (threats and rollout only on a risk surface), `doc-review` reduced to `plan check` + coherence, review at the core + security if needed, `autopilot` without a written plan for a change ≤ ~30 lines with no risk |
+| `standard` | most teams | the cycle as described in the guides |
+| `full` | regulated domains, seasoned team | threats and rollout always, adversarial reviewer always on the plan and from the targeted review |
 
-Le chemin recommandé : commencer en `lean`, puis monter quand l'équipe a pris le rythme. Une valeur
-inconnue retombe sur `standard` et est signalée par `node $K config` (`profile_warning`).
+The recommended path: start in `lean`, then go up once the team has found its rhythm. An unknown value
+falls back to `standard` and is reported by `node $K config` (`profile_warning`). The profile also sets
+each agent's model (see [`models`](#models--the-right-model-for-each-task)).
 
 ### `verify`
 
-Défaut : `{}`, c'est-à-dire **détection automatique**. Ce sont les commandes que lancent
-`node $K verify`, `/kaizen:work` et le garde-fou. Vos valeurs s'ajoutent à la détection et la
-remplacent clé par clé.
+Default: `{}`, i.e. **automatic detection**. These are the commands run by `node $K verify`,
+`/kaizen:work` and the quality gate. Your values add to the detection and replace it key by key.
 
-| Clé | Rôle | Lancée par défaut ? |
+| Key | Role | Run by default? |
 |---|---|---|
-| `test` | tests | oui |
-| `lint` | lint | oui |
-| `typecheck` | typage | oui |
-| `audit` | audit des dépendances (réseau, lent) | **non** : seulement `verify --only audit` (fait par `work` quand des dépendances changent) |
-| autre nom | toute vérification à vous | oui |
+| `test` | tests | yes |
+| `lint` | lint | yes |
+| `typecheck` | type checking | yes |
+| `audit` | dependency audit (network, slow) | **no**: only `verify --only audit` (done by `work` when dependencies change) |
+| other name | any check of yours | yes |
 
-Stacks détectées :
-- Node (npm, pnpm, yarn, bun ; le script de test bidon de `npm init` est ignoré) ;
-- Python (pytest, ruff, mypy, via uv ou poetry) ;
-- Go, Rust ;
-- Maven, Gradle ;
-- Ruby (rspec, rubocop) ;
-- PHP (phpunit) ;
+Detected stacks:
+- Node (npm, pnpm, yarn, bun; the dummy test script of `npm init` is ignored), TypeScript typecheck;
+- Python (pytest, ruff, mypy, through uv or poetry; `pip-audit`);
+- Go (`go test`, `go vet`, `govulncheck`), Rust (`cargo test`, `clippy`, `cargo audit`);
+- Maven, Gradle;
+- Ruby (rspec or rake, rubocop, `bundle-audit`);
+- PHP (phpunit);
 - `make test`.
 
-Voir ce qui est détecté : `node $K detect`.
+See what is detected: `node $K detect`.
 
-> Une commande qui échoue **déjà** sur la branche par défaut fera bloquer le garde-fou à tort.
-> `/kaizen:setup` la lance une fois pour le vérifier.
+> A command that **already** fails on the default branch will make the gate block wrongly.
+> `/kaizen:setup` runs it once to check.
 
-### `gate` — le garde-fou du hook `Stop`
+### `gate` — the `Stop`-hook quality gate
 
-| Clé | Défaut | Rôle |
+| Key | Default | Role |
 |---|---|---|
-| `enabled` | `true` | `false` désactive le garde-fou pour ce repo |
-| `max_blocks` | `3` | après N blocages consécutifs, laisse terminer en exigeant que l'échec soit signalé |
-| `timeout_seconds` | `600` | délai maximum par commande de vérification |
-| `targeted` | `{}` | commandes **ciblées** pour le garde-fou, avec `{files}` remplacé par les fichiers touchés par la branche (non commité et nouveaux fichiers compris) ; elles remplacent les commandes de même nom à chaque fin de tour. Aucun fichier touché → sautées. La vérification complète reste celle de `work` et `ship` |
-| `budget_seconds` | `840` | temps total des vérifications à chaque fin de tour, sous le délai du hook (900 s) ; les commandes qui n'ont pas pu démarrer sont signalées, pas comptées rouges |
-| `max_age_hours` | `24` | un garde-fou actif depuis plus longtemps (session interrompue) se désactive tout seul |
+| `enabled` | `true` | `false` disables the gate for this repo |
+| `max_blocks` | `3` | after N consecutive blocks, lets it finish while requiring the failure to be reported |
+| `timeout_seconds` | `600` | maximum time per verification command |
+| `targeted` | `{}` | **targeted** commands for the gate, with `{files}` replaced by the files touched by the branch (uncommitted and new files included); they replace the commands with the same name at the end of every turn. No file touched → skipped. The full verification remains the one of `work` and `ship` |
+| `budget_seconds` | `840` | total time of the checks at the end of each turn, under the hook timeout (900 s); commands that could not start are reported, not counted as red |
+| `max_age_hours` | `24` | a gate active for longer (interrupted session) disables itself |
 
-Le garde-fou n'agit que s'il a été activé par `/kaizen:work` ou `/kaizen:autopilot` (fichier
-`.kaizen/state/gate.json`). Le reste du temps, il ne coûte rien. Il appartient à la **session** qui
-l'a posé (un hook `PostToolUse` inscrit son identifiant juste après `gate on`) : une autre session
-Claude Code ouverte sur le même repo n'est pas bloquée.
+The gate only acts if it was turned on by `/kaizen:work` or `/kaizen:autopilot` (file
+`.kaizen/state/gate.json`). The rest of the time, it costs nothing. It belongs to the **session** that
+set it (a `PostToolUse` hook records its id right after `gate on`): another Claude Code session open on
+the same repo is not blocked. While it is active, the same hook records the cycle's token usage (main
+session and subagents, per role), logged by `gate off` for [`metrics`](guides/metrics.md).
 
-### `review` — la revue exigée avant `git push`
+### `review` — the review required before `git push`
 
-| Clé | Défaut | Rôle |
+| Key | Default | Role |
 |---|---|---|
-| `require_before_push` | `true` | un hook `PreToolUse` refuse `git push` d'une branche tant qu'aucune revue n'a enregistré l'état poussé |
-| `max_unreviewed_lines` | `80` | lignes modifiées tolérées depuis la dernière revue (petits correctifs de CI ou de retours) ; au-delà, nouvelle revue |
+| `require_before_push` | `true` | a `PreToolUse` hook refuses `git push` of a branch until a review has recorded the pushed state |
+| `max_unreviewed_lines` | `80` | lines changed since the last review that are tolerated (small CI or feedback fixes); beyond, a new review |
 
-Actif seulement dans un repo initialisé (`.kaizen/config.json`), jamais sur la branche par défaut
-(gardée par le plugin `git`), ni pour une suppression de branche ou un push de tags.
-`/kaizen:review` enregistre l'arbre qu'elle a lu (`node $K review record`), y compris le non commité.
+Only active in an initialized repo (`.kaizen/config.json`), never on the default branch (guarded by the
+`git` plugin), nor for a branch deletion or a tags-only push. `/kaizen:review` records the tree it read
+(`node $K review record`), uncommitted changes included.
 
-**Preuve de revue.** Un hook `PostToolUse` sur l'outil `Agent` consigne chaque relecteur de code
-Kaizen réellement lancé. `review record` exige au moins un relecteur lancé depuis la revue précédente
-de la branche. Deux exceptions : la revue légère (diff de la branche ≤ 20 lignes, relue sans
-sous-agents) et la mise à jour après correctifs (≤ `max_unreviewed_lines` depuis l'arbre relu).
+**Review evidence.** A `PostToolUse` hook on the `Agent` tool logs every Kaizen code reviewer actually
+launched. `review record` requires at least one reviewer launched since the branch's previous review.
+Two exceptions: the light review (branch diff ≤ 20 lines, reviewed without subagents) and the update
+after fixes (≤ `max_unreviewed_lines` since the reviewed tree).
 
-**Renonciation confirmée par l'utilisateur.** `node $K review waive --reason "hotfix validé par X"`
-ne fait qu'afficher un code. La renonciation ne prend effet que lorsque **vous** tapez
-`kaizen waive <code>` dans la conversation (hook `UserPromptSubmit`, 30 minutes, usage unique) ;
-Claude ne peut pas la confirmer à votre place. `ship` la rappelle dans une section « Revue écartée »
-de la PR. État : `node $K review status`.
+**Waiver confirmed by the user.** `node $K review waive --reason "hotfix approved by X"` only prints a
+code. The waiver only takes effect when **you** type `kaizen waive <code>` in the conversation
+(`UserPromptSubmit` hook, 30 minutes, single use); Claude cannot confirm it for you. `ship` restates it
+in a "Review waived" section of the PR. State: `node $K review status`; check without pushing:
+`node $K review check`.
 
-Ces fichiers d'état ne s'écrivent que par le CLI et les hooks : un hook `PreToolUse` refuse leur
-écriture directe et l'appel manuel des hooks de preuve. C'est une protection contre l'oubli et la
-dérive, pas contre un agent décidé à contourner le dispositif.
+These state files are only written by the CLI and the hooks: a `PreToolUse` hook refuses direct writes
+to them and manual calls to the evidence hooks. It is a protection against forgetfulness and drift, not
+against an agent set on bypassing the mechanism.
 
 ### `pr`
 
-| Clé | Défaut | Rôle |
+| Key | Default | Role |
 |---|---|---|
-| `max_lines` | `400` | plafond de lignes modifiées (ajouts + suppressions) pour une PR relisible : `node $K size`, tranches du plan, `ship` |
-| `ignore` | lockfiles, `*.min.*`, `*.snap`, `*.generated.*`, `dist/**`, `vendor/**` | fichiers non comptés |
+| `max_lines` | `400` | limit of changed lines (additions + deletions) for a reviewable PR: `node $K size`, plan slices, `ship` |
+| `ignore` | lockfiles, `*.min.*`, `*.snap`, `*.generated.*`, `dist/**`, `vendor/**` | files not counted |
 
-La valeur de 400 lignes suit les pratiques de Google (une PR courte se relit vite et cache moins de
-bugs) et le constat de DORA 2025 : l'IA grossit les PR, et la revue devient le goulot.
+The 400-line value follows Google's practices (a short PR is reviewed fast and hides fewer bugs) and
+DORA 2025's finding: AI makes PRs bigger, and review becomes the bottleneck.
 
-### `deploy` — déploiement et retour arrière
+### `deploy` — deployment and rollback
 
-Facultatif. Les commandes avec lesquelles `/kaizen:deploy` met en production : Kaizen ne connaît
-aucune plateforme et ne devine jamais une commande.
+Optional. The commands `/kaizen:deploy` releases with: Kaizen knows no platform and never guesses a
+command. `node $K deploy detect` recognizes the common platforms and `node $K deploy configure <id>`
+writes the proposed commands here (see [deploy](guides/deploy.md)).
 
-| Clé | Défaut | Rôle |
+| Key | Default | Role |
 |---|---|---|
-| `environments.<env>.command` | — | déploie ; reçoit `KAIZEN_ENV`, `KAIZEN_REF`, `KAIZEN_SHA` |
-| `environments.<env>.rollback` | — | revient en arrière (vers le déploiement précédent par défaut) |
-| `environments.<env>.url` | — | adresse de l'environnement, montrée pendant la surveillance |
-| `environments.<env>.protected` | `true` pour `production` | exige un code que **vous** tapez (`kaizen deploy <code>`) ; la commande brute est refusée par un hook |
-| `watch_minutes` | `15` | durée de la surveillance des signaux après un déploiement |
-| `auto_rollback` | `false` | retour arrière automatique dès qu'un seuil est franchi |
-| `timeout_seconds` | `1800` | délai maximum d'une commande de déploiement, de retour arrière ou de flag (surcharge possible par environnement : `environments.<env>.timeout_seconds`) ; au-delà, tout son arbre de processus est tué et le déploiement est en échec, sans tag |
-| `push_tags` | `true` | pousse les tags `deploy/<env>/…` et `rollback/<env>/…` (source des métriques DORA réelles) |
-| `flags.on` / `flags.off` | — | commandes de feature flag, avec `{flag}` et `{env}` (`kaizen.mjs deploy flag on|off <nom>`) |
-| `metrics_env` | `production` | environnement dont les déploiements alimentent `/kaizen:metrics` |
+| `environments.<env>.command` | — | deploys; receives `KAIZEN_ENV`, `KAIZEN_REF`, `KAIZEN_SHA` |
+| `environments.<env>.rollback` | — | rolls back (to the previous deployment by default) |
+| `environments.<env>.url` | — | the environment's address, shown during the watch |
+| `environments.<env>.protected` | `true` for `production` | requires a code **you** type (`kaizen deploy <code>`); the raw command is refused by a hook |
+| `environments.<env>.timeout_seconds` | `deploy.timeout_seconds` | timeout for this environment's commands |
+| `watch_minutes` | `15` | duration of the signal watch after a deployment |
+| `auto_rollback` | `false` | automatic rollback as soon as a threshold is breached |
+| `timeout_seconds` | `1800` | maximum time of a deploy, rollback or flag command; beyond it, its whole process tree is killed and the deployment fails, without a tag |
+| `push_tags` | `true` | pushes the `deploy/<env>/…`, `rollback/<env>/…`, `incident/<env>/…` and `resolve/<env>/…` tags (source of the real DORA metrics) |
+| `flags.on` / `flags.off` | — | feature flag commands, with `{flag}` and `{env}` (`kaizen.mjs deploy flag on|off <name>`) |
+| `metrics_env` | `production` | environment whose deployments feed `/kaizen:metrics` |
 
 ```json
 "deploy": {
@@ -183,37 +206,41 @@ aucune plateforme et ne devine jamais une commande.
 }
 ```
 
-### `monitor` — signaux de production
+### `monitor` — production signals
 
-Facultatif. Les signaux que `/kaizen:monitor` et `/kaizen:deploy` comparent à leurs seuils.
+Optional. The signals `/kaizen:monitor` and `/kaizen:deploy` compare to their thresholds.
 
-| Clé | Défaut | Rôle |
+| Key | Default | Role |
 |---|---|---|
-| `signals.<nom>.type: "http"` + `url`, `expect` | `expect: 200` | health-check natif, sans outil |
-| `signals.<nom>.command` | — | toute commande dont le dernier mot affiché est un nombre (Prometheus, Datadog, CloudWatch, SQL, logs) ; `{env}` remplacé |
-| `signals.<nom>.max` / `min` | — | seuils ; remplacés par ceux du plan livré (`` `nom` > seuil `` dans sa section « Déploiement et retour arrière ») |
-| `signals.<nom>.env` | tous | limite le signal à un ou plusieurs environnements |
-| `interval_seconds` | `60` | intervalle entre deux échantillons |
-| `consecutive` | `2` | échantillons hors seuil de suite pour retenir une violation |
+| `signals.<name>.type: "http"` + `url`, `expect` | `expect: 200` | native health-check, no tool needed |
+| `signals.<name>.command` | — | any command whose last printed word is a number (Prometheus, Datadog, CloudWatch, SQL, logs); `{env}` replaced |
+| `signals.<name>.max` / `min` | — | thresholds; replaced by those of the shipped plan (`` `name` > threshold `` in its "Rollout and rollback" section) |
+| `signals.<name>.env` | all | restricts the signal to one or more environments |
+| `interval_seconds` | `60` | interval between two samples |
+| `consecutive` | `2` | samples out of threshold in a row to count a breach |
 
-### `models` — le bon modèle pour chaque tâche
+Incidents (detected by `monitor watch`, `monitor patrol` or an alert received by `monitor alert`) are
+recorded as `incident/<env>/…` tags, resolved by a rollback or a `resolve/<env>/…` tag. See
+[monitor](guides/monitor.md#continuous-monitoring).
 
-Chaque agent a un **rôle**, chaque rôle un modèle (`haiku`, `sonnet`, `opus`, ou `inherit` = celui de
-la session). Les défauts dépendent du profil :
+### `models` — the right model for each task
 
-| Rôle | Agents | `lean` | `standard` | `full` |
+Each agent has a **role**, each role a model (`haiku`, `sonnet`, `opus`, or `inherit` = the session's
+one). The defaults depend on the profile:
+
+| Role | Agents | `lean` | `standard` | `full` |
 |---|---|---|---|---|
 | `research` | repo, learnings, git-historian, docs, flow-analyst | haiku | sonnet | sonnet |
 | `review` | correctness, testing, performance, reliability, api-contract, maintainability, standards | sonnet | sonnet | opus |
 | `review_critical` | security, data-migration, adversarial | sonnet | opus | opus |
 | `plan_review` | plan-coherence, plan-feasibility, plan-scope, plan-design | haiku | sonnet | opus |
 | `plan_review_critical` | plan-security, plan-adversarial | sonnet | opus | opus |
-| `implement` | sous-agents de `work` (unités indépendantes) | sonnet | sonnet | inherit |
+| `implement` | `work` subagents (independent units) | sonnet | sonnet | inherit |
 
-Principe : la lecture en volume coûte peu d'erreurs ; les jugements dont l'erreur coûte cher
-(sécurité, migrations, décisions de plan) ont le modèle le plus fort.
+Principle: bulk reading rarely costs much when wrong; judgments whose errors are expensive (security,
+migrations, plan decisions) get the strongest model.
 
-Ajustez par rôle ou par agent :
+Adjust per role or per agent:
 
 ```json
 "models": {
@@ -222,37 +249,40 @@ Ajustez par rôle ou par agent :
 }
 ```
 
-`node $K models` affiche la politique effective et signale les valeurs invalides. La revue enregistre
-le modèle réellement demandé pour chaque relecteur (`review status`), et `/kaizen:metrics` mesure le
-coût des cycles : de quoi vérifier qu'un modèle plus économe ne dégrade pas la qualité.
+`node $K models` shows the effective policy and reports invalid values (`--agent <name>` prints one
+agent's model, `--json` the whole policy). The review records the model actually requested for each
+reviewer (`review status`), and `/kaizen:metrics` measures the cycle cost: enough to check that a
+cheaper model does not degrade quality.
 
 ### `packs`
 
-Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
+List of declared Kaizen Packs. See [Kaizen Packs](packs.md).
 
-## Fichiers d'état (non versionnés)
+## State files (not versioned)
 
-`.kaizen/state/` contient un `.gitignore` qui l'ignore entièrement :
+`.kaizen/state/` contains a `.gitignore` that ignores it entirely:
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| `gate.json` | état du garde-fou (actif, plan, session, nombre de blocages) |
-| `cycles.jsonl` | un cycle `work`/`autopilot` par ligne, écrit par `gate off` : plan, durée, blocages, tokens de la session principale et des sous-agents par rôle (lu par `metrics` → `cycle_cost`) |
-| `deployments.jsonl` | déploiements, retours arrière et flags lancés depuis cette machine (les tags git font foi) |
-| `deploy-approvals.json` | approbations de déploiement protégé en attente ou confirmées, 30 min |
-| `monitor.jsonl` | échantillons des signaux (`monitor check` / `watch`), pour la chronologie des post-mortems |
-| `reviews.json` | dernière revue enregistrée par branche (arbre relu, verdict, relecteurs, renonciation) |
-| `agent-runs.jsonl` | sous-agents lancés pendant le cycle en cours (hook sur l'outil `Agent`) : rôle, modèle, id — pour ventiler `cycle_cost` ; effacé par `gate off` |
-| `review-evidence.json` | relecteurs de code réellement lancés (hook sur l'outil `Agent`), 12 h |
-| `waivers.json` | renonciations en attente de confirmation par l'utilisateur, 30 min |
-| `pr/<owner>-<repo>-<n>.json` | ce que `watch-pr` a déjà traité (fils, commentaires, checks) |
-| `reviews/<horodatage>/` | retours bruts des relecteurs d'une revue |
+| `gate.json` | gate state (active, plan, session, number of blocks, current cycle usage) |
+| `cycles.jsonl` | one `work`/`autopilot` cycle per line, written by `gate off`: plan, duration, blocks, tokens of the main session and of subagents per role (read by `metrics` → `cycle_cost`) |
+| `deployments.jsonl` | deployments, rollbacks and flags run from this machine (git tags are authoritative) |
+| `deploy-approvals.json` | protected deployment approvals pending or confirmed, 30 min |
+| `monitor.jsonl` | signal samples (`monitor check` / `watch` / `patrol`), for postmortem timelines |
+| `reviews.json` | last recorded review per branch (reviewed tree, verdict, reviewers, models, waiver) |
+| `agent-runs.jsonl` | subagents launched during the current cycle (hook on the `Agent` tool): role, model, id — to break `cycle_cost` down; cleared by `gate off` |
+| `review-evidence.json` | code reviewers actually launched (hook on the `Agent` tool), 12 h |
+| `waivers.json` | waivers waiting for the user's confirmation, 30 min |
+| `pr/<owner>-<repo>-<n>.json` | what `watch-pr` already handled (threads, comments, checks) |
+| `reviews/<timestamp>/` | raw reviewer returns of a review (`node $K run-dir reviews`) |
+| `rollback-worktree/` | throwaway worktree of a generic rollback, removed afterwards |
 
-Supprimer `.kaizen/state/` est sans danger : le seul effet est d'oublier le travail en cours.
+Deleting `.kaizen/state/` is harmless: the only effect is forgetting the work in progress.
 
-## Variables d'environnement
+## Environment variables
 
-| Variable | Rôle |
+| Variable | Role |
 |---|---|
-| `CLAUDE_PLUGIN_DATA` | dossier de cache du plugin (clones des packs git). Fourni par Claude Code. |
-| `KAIZEN_GH` | binaire à utiliser à la place de `gh` (tests) |
+| `CLAUDE_PLUGIN_DATA` | the plugin's cache folder (clones of git packs). Provided by Claude Code. |
+| `KAIZEN_ENV`, `KAIZEN_REF`, `KAIZEN_SHA` | passed to deploy, rollback and flag commands |
+| `KAIZEN_GH` | binary to use instead of `gh` (tests) |

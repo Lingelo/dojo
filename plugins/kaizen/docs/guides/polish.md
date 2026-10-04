@@ -1,55 +1,54 @@
 # `/kaizen:polish`
 
-> Vous regardez la fonctionnalité qui tourne, vous dites ce qui ne va pas, Claude ajuste à chaud.
+> You look at the running feature, you say what is wrong, Claude adjusts it live.
 
-`polish` sert à **peaufiner** une fonctionnalité qui marche déjà. C'est vous qui dirigez : pas de
-checklist autonome, pas de QA générale. Claude démarre le serveur de dev, ouvre la page, attend vos
-retours et applique chaque retouche sur la surface concernée.
+`polish` is for **polishing** a feature that already works. You direct: no autonomous checklist, no
+general QA. Claude starts the dev server, opens the page, waits for your feedback and applies each
+touch-up to the surface concerned.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Détecte et démarre le serveur de dev, ouvre la page (Playwright), applique vos retouches une à une, vérifie par capture, commite en local |
-| **Quand l'utiliser** | Avant de livrer une fonctionnalité visible : espacements, textes, états, responsive, accessibilité |
-| **Quand ne pas l'utiliser** | La fonctionnalité ne marche pas encore (→ [work](work.md) ou [debug](debug.md)) ; vous voulez une QA autonome |
-| **Ce qu'elle produit** | Des commits locaux (`style(…)` ou `fix(…)`), et le serveur laissé en marche |
-| **Et ensuite** | `/kaizen:ship` pour livrer ; `/kaizen:learn` si une retouche révèle une règle d'interface à retenir |
+| **What it does** | Detects and starts the dev server, opens the page (Playwright), applies your touch-ups one by one, checks by screenshot, commits locally |
+| **When to use it** | Before shipping a visible feature: spacing, copy, states, responsiveness, accessibility |
+| **When not to use it** | The feature does not work yet (→ [work](work.md) or [debug](debug.md)); you want autonomous QA |
+| **What it produces** | Local commits (`style(…)` or `fix(…)`), and the server left running |
+| **What next** | `/kaizen:ship` to ship; `/kaizen:learn` if a touch-up reveals a UI rule worth keeping |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:polish                         # branche courante
-/kaizen:polish 42                      # la PR #42
-/kaizen:polish feat/export /orders     # une branche, en ouvrant la route /orders
+/kaizen:polish                         # current branch
+/kaizen:polish 42                      # PR #42
+/kaizen:polish feat/export /orders     # a branch, opening the /orders route
 ```
 
-## Comment ça se passe
+## How it goes
 
-1. **Espace de travail** : jamais la branche par défaut. Sur elle, avec un arbre propre, Claude crée
-   une branche locale `polish/<sujet>` et vous le dit. Une PR ou une branche déjà extraite dans un
-   autre worktree est travaillée là-bas.
-2. **Serveur de dev** : `node $K dev detect` trouve la commande, le dossier et le port. Sont
-   reconnus :
-   - Next.js, Nuxt, SvelteKit, Remix, Astro, Angular, Vite, Gatsby, CRA, Storybook ;
-   - Rails, Django, Phoenix, Laravel, Procfile ;
-   - les monorepos (`apps/*`, `packages/*`).
+1. **Workspace**: never the default branch. On it, with a clean tree, Claude creates a local
+   `polish/<topic>` branch and tells you. A PR or branch already checked out in another worktree is
+   worked on there.
+2. **Dev server**: `node $K dev detect` finds the command, folder and port. Recognized:
+   - Next.js, Nuxt, SvelteKit, Remix, Astro, Angular, Vite, Gatsby, CRA, Storybook;
+   - Rails, Django, Phoenix, Laravel, Procfile;
+   - monorepos (`apps/*`, `packages/*`).
 
-   `.claude/launch.json` fait foi s'il existe. Ensuite :
-   - un port déjà occupé n'est réutilisé que si c'est bien ce projet. Sinon Claude vous demande, il
-     ne tue jamais un processus d'office ;
-   - le serveur est démarré en arrière-plan, puis `node $K dev probe` vérifie qu'il répond. En cas
-     d'échec, vous voyez les 20 dernières lignes de son log.
-3. **Ouverture** : la page touchée par la branche, via le MCP Playwright du plugin `playwright` s'il
-   est installé. Sinon, l'URL vous est donnée.
-4. **Boucle** : pour chaque retour, retouche de la surface concernée en respectant le design system,
-   puis capture si c'est visuel (à 375 px pour le mobile).
-5. **Clôture**, quand vous dites que c'est fini : `verify` doit rester vert, puis commit local des
-   seuls fichiers retouchés. Le rapport donne l'URL du serveur, toujours en marche.
+   `.claude/launch.json` wins if it exists. Then:
+   - a port already in use is only reused if it really is this project. Otherwise Claude asks you, it
+     never kills a process on its own;
+   - the server is started in the background, then `node $K dev probe` checks that it answers. On
+     failure, you see the last 20 lines of its log.
+3. **Opening**: the page touched by the branch, through the `playwright` plugin's Playwright MCP if it
+   is installed. Otherwise, the URL is given to you.
+4. **Loop**: for each piece of feedback, touch-up of the surface concerned following the design system,
+   then a screenshot if it is visual (at 375 px for mobile).
+5. **Closing**, when you say it is done: `verify` must stay green, then a local commit of only the
+   touched files. The report gives the server's URL, still running.
 
 ## `.claude/launch.json`
 
-Après une détection réussie, Claude propose d'enregistrer la configuration du serveur :
+After a successful detection, Claude offers to save the server configuration:
 
 ```json
 {
@@ -59,16 +58,16 @@ Après une détection réussie, Claude propose d'enregistrer la configuration du
 }
 ```
 
-## Bon à savoir
+## Good to know
 
-- **Jamais de push ni de PR** : c'est le rôle de `/kaizen:ship`.
-- Le serveur de dev est **toujours** lancé, même si vous prévenez que vous ne regarderez pas : la page
-  servie est la preuve de la retouche. Le rapport donne son URL et `kill <pid>` pour l'arrêter.
-- Pour un serveur Node maison (`node server.js`), le port est lu dans le fichier
+- **Never a push or a PR**: that is `/kaizen:ship`'s job.
+- The dev server is **always** started, even if you say you will not look: the served page is the
+  evidence of the touch-up. The report gives its URL and `kill <pid>` to stop it.
+- For a hand-written Node server (`node server.js`), the port is read from the file
   (`process.env.PORT || 5173`, `.listen(8080)`).
-- Les retours récurrents (états vide, chargement et erreur, focus clavier, contrastes, textes
-  tronqués) vous sont proposés **une fois**, sans être imposés.
+- Recurring feedback (empty, loading and error states, keyboard focus, contrast, truncated text) is
+  suggested to you **once**, without being imposed.
 
-## Voir aussi
+## See also
 
 [ship](ship.md) · [work](work.md)

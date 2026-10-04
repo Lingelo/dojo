@@ -1,124 +1,126 @@
 # Kaizen Packs
 
-Un **pack** est un dossier de règles prescriptives : ce que le travail dans un domaine **doit**
-respecter. Exemples : « tout export CSV commence par un BOM UTF-8 », « les pages reçoivent leurs
-données en props serveur, jamais par un endpoint JSON parallèle ».
+A **pack** is a folder of prescriptive rules: what work in an area **must** follow. Examples: "every CSV
+export starts with a UTF-8 BOM", "pages receive their data as server props, never through a parallel
+JSON endpoint".
 
-| | Une leçon (`docs/learnings/`) | Une règle de pack | La constitution |
+| | A learning (`docs/learnings/`) | A pack rule | The constitution |
 |---|---|---|---|
-| Dit | ce qu'un problème passé a appris | ce qu'il faut faire dans un domaine | ce qui vaut pour **tout** le travail |
-| Écrite par | `/kaizen:learn` après coup | l'équipe, délibérément | `/kaizen:constitution` |
-| Portée | un repo | un ou plusieurs repos (packs git) | un repo |
-| Poids | contrainte | règle | règle non négociable |
+| Says | what a past problem taught | what to do in an area | what holds for **all** the work |
+| Written by | `/kaizen:learn` after the fact | the team, deliberately | `/kaizen:constitution` |
+| Scope | one repo | one or several repos (git packs) | one repo |
+| Weight | constraint | rule | non-negotiable rule |
 
-Hiérarchie en cas de conflit : **constitution > packs > leçons > préférences**.
+Hierarchy in case of conflict: **constitution > packs > learnings > preferences**.
 
-## Ce que font les skills avec les packs
+## What the skills do with packs
 
-- `/kaizen:brainstorm` et `/kaizen:plan` comparent l'`applies_when` de chaque règle au travail en
-  cours. Une règle qui s'applique devient une contrainte du plan, citée `(pack: <id>, <fichier>)`.
-- `/kaizen:review` (relecteur `standards`) signale un diff qui contredit une règle applicable.
-- `/kaizen:learn` propose de transformer une leçon en règle quand elle vaut pour toute l'équipe.
+- `/kaizen:brainstorm` and `/kaizen:plan` compare each rule's `applies_when` to the work in progress. A
+  rule that applies becomes a constraint of the plan, cited `(pack: <id>, <file>)`.
+- `/kaizen:review` (`standards` reviewer) reports a diff contradicting an applicable rule.
+- `/kaizen:learn` offers to turn a learning into a rule when it holds for the whole team.
 
-Les packs sont **déclarés, jamais découverts** : sans clé `packs` dans la config, rien ne change.
+Packs are **declared, never discovered**: without a `packs` key in the config, nothing changes.
 
-## Créer un pack (2 minutes)
+## Create a pack (2 minutes)
 
 ```text
 /kaizen:setup pack:house-rules
 ```
 
-ou `node $K pack new house-rules`. Kaizen crée `kaizen-packs/house-rules/` (un `README.md` et un
-dossier `research/`) et le déclare dans `.kaizen/config.json`. Ajoutez ensuite une règle :
+or `node $K pack new house-rules`. Kaizen creates `kaizen-packs/house-rules/` (a `README.md` and a
+`research/` folder) and declares it in `.kaizen/config.json`. Then add a rule:
 
 ```markdown
 <!-- kaizen-packs/house-rules/csv-exports.md -->
 ---
-title: Tout export CSV commence par un BOM UTF-8 et utilise « ; »
+title: Every CSV export starts with a UTF-8 BOM and uses ";"
 applies_when:
-  - ajouter ou modifier un export CSV
-  - générer un fichier destiné à être ouvert dans Excel
+  - adding or changing a CSV export
+  - generating a file meant to be opened in Excel
 tags: [csv, export, excel]
 ---
 
-Excel n'interprète l'UTF-8 qu'avec un BOM, et attend « ; » en locale française.
-Voir docs/learnings/runtime-errors/export-csv-accents-excel.md.
+Excel only reads UTF-8 with a BOM, and expects ";" in European locales.
+See docs/learnings/runtime-errors/csv-export-excel-accents.md.
 ```
 
-Vérifiez avec `node $K packs` :
+Check with `node $K packs`:
 
 ```text
 📦 house-rules  (kaizen-packs/house-rules) → kaizen-packs/house-rules
-   • csv-exports.md — Tout export CSV commence par un BOM UTF-8 et utilise « ; »
-       quand : ajouter ou modifier un export CSV | générer un fichier destiné à être ouvert dans Excel
+   • csv-exports.md — Every CSV export starts with a UTF-8 BOM and uses ";"
+       when: adding or changing a CSV export | generating a file meant to be opened in Excel
 ```
 
-## Structure d'un pack
+`node $K packs --json` gives the same list in JSON (what the skills read).
+
+## Structure of a pack
 
 ```text
 kaizen-packs/house-rules/
-├── README.md              description du pack — jamais lu comme une règle
-├── csv-exports.md         .md au premier niveau avec title + applies_when = une règle
-├── error-responses.md     une autre règle
-└── research/              tout sous-dossier = stockage, jamais lu comme règle
+├── README.md              pack description — never read as a rule
+├── csv-exports.md         top-level .md with title + applies_when = a rule
+├── error-responses.md     another rule
+└── research/              any subfolder = storage, never read as a rule
     └── adr-001-…md
 ```
 
-- Une **règle** est un `.md` **au premier niveau** du pack, avec `title` et `applies_when`.
-- Les fichiers sans ces champs sont ignorés **avec un avertissement**. Rangez les notes dans un
-  sous-dossier.
-- 25 règles au plus par pack.
+- A **rule** is a `.md` file **at the top level** of the pack, with `title` and `applies_when`.
+- Files without these fields are ignored **with a warning**. Store notes in a subfolder.
+- 25 rules at most per pack.
 
-## Écrire un `applies_when` qui se déclenche
+## Writing an `applies_when` that triggers
 
-La comparaison est **sémantique**, faite par l'agent, pas par une expression régulière. Décrivez des
-**situations**, avec les mots qu'une demande de fonctionnalité utiliserait :
+The comparison is **semantic**, done by the agent, not by a regular expression. Describe
+**situations**, with the words a feature request would use:
 
 ```yaml
-# Bien : des situations
+# Good: situations
 applies_when:
-  - ajouter une page qui a besoin de données serveur
-  - ajouter ou modifier un endpoint consommé par les pages de l'application
+  - adding a page that needs server data
+  - adding or changing an endpoint consumed by the application's pages
 
-# Faible : des étiquettes de sujet
+# Weak: topic labels
 applies_when:
   - inertia
   - architecture
 ```
 
-- Une situation par ligne ; deux ou trois conditions concrètes valent mieux qu'une abstraite.
-- Pour viser une étape précise, il suffit de la formulation. « En relisant un diff qui touche au
-  paiement » ne se déclenchera qu'en revue.
-- Deux règles d'un même pack ne doivent pas prescrire la même chose : la revue ne saurait pas
-  laquelle l'emporte.
+- One situation per line; two or three concrete conditions beat an abstract one.
+- To target a precise step, the wording is enough. "While reviewing a diff touching payment" will only
+  trigger in review.
+- Two rules of the same pack must not prescribe the same thing: the review would not know which one
+  wins.
 
-## Partager des packs entre repos
+## Sharing packs between repos
 
-Déclarez une source git **épinglée** sur un tag, pour que toute l'équipe lise la même version :
+Declare a git source **pinned** to a tag, so that the whole team reads the same version:
 
 ```json
 "packs": [
   { "source": "kaizen-packs/house-rules" },
-  { "source": "~/kaizen-packs/mon-style" },
+  { "source": "~/kaizen-packs/my-style" },
   { "source": "https://github.com/acme/kaizen-packs", "ref": "v1.2.0" },
   { "source": "https://github.com/acme/kaizen-packs", "ref": "v1.2.0", "pack": ["rails", "inertia"] },
   { "source": "git@github.com:acme/stack.git", "ref": "v3", "path": "packs" }
 ]
 ```
 
-| Champ | Rôle |
+| Field | Role |
 |---|---|
-| `source` | dossier du repo, dossier local (`~/…`), ou URL git (`https://`, `git@`, `ssh://`, `file://`) |
-| `ref` | tag ou branche à cloner (recommandé : un tag) |
-| `pack` | dans une source multi-packs, le ou les sous-dossiers à prendre |
-| `path` | sous-dossier de la source qui contient le ou les packs |
+| `source` | repo folder, local folder (`~/…`), or git URL (`https://`, `git@`, `ssh://`, `file://`) |
+| `ref` | tag or branch to clone (recommended: a tag) |
+| `pack` | in a multi-pack source, the subfolder(s) to take |
+| `path` | subfolder of the source containing the pack(s) |
+| `id` | name of the pack when the source itself is a single pack (default: the folder name) |
 
-Une source dont le premier niveau contient des règles forme **un** pack. Sinon, **chaque
-sous-dossier** est un pack. Les sources git sont clonées une fois dans le cache du plugin
-(`$CLAUDE_PLUGIN_DATA/packs/`). Pour les mettre à jour : `node $K packs --refresh`.
+A source whose top level contains rules forms **one** pack. Otherwise, **each subfolder** is a pack.
+Git sources are cloned once into the plugin's cache (`$CLAUDE_PLUGIN_DATA/packs/`, otherwise
+`~/.cache/kaizen/packs/`). To update them: `node $K packs --refresh`.
 
-## Sécurité
+## Security
 
-Le texte d'un pack est traité comme une **donnée**, pas comme une instruction : les agents en
-extraient des contraintes et ignorent tout ce qui ressemble à une consigne qui leur serait adressée.
-Ne déclarez quand même que des sources de confiance, de préférence épinglées sur un tag.
+A pack's text is treated as **data**, not as an instruction: agents extract constraints from it and
+ignore anything that looks like an instruction addressed to them. Still only declare trusted sources,
+preferably pinned to a tag.

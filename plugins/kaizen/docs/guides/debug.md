@@ -1,68 +1,68 @@
 # `/kaizen:debug`
 
-> Trouver la cause, **puis** corriger : chaîne causale complète avec preuves avant tout correctif,
-> une hypothèse à la fois.
+> Find the cause, **then** fix: full causal chain with evidence before any fix, one hypothesis at a
+> time.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Triage → enquête (reproduction, environnement, traçage à rebours, historique, leçons) → cause racine → correctif test d'abord → passation |
-| **Quand l'utiliser** | « Ça plante », « ce test échoue », « c'est lent », « pourquoi X ? », un ticket de bug, une CI rouge |
-| **Quand ne pas l'utiliser** | Une fonctionnalité à construire (→ [plan](plan.md)) ; un incident de production à analyser après coup (→ [postmortem](postmortem.md)) |
-| **Ce qu'elle produit** | Un résumé de debug (problème, cause racine avec `fichier:ligne`, tests, correctif, prévention, confiance) ; si vous le choisissez, un correctif commité sur `fix/…` |
-| **Et ensuite** | Revue du correctif, commit, PR si possible, et `/kaizen:learn` si la cause était surprenante |
+| **What it does** | Triage → investigation (reproduction, environment, backward tracing, history, learnings) → root cause → test-first fix → handover |
+| **When to use it** | "It crashes", "this test fails", "it is slow", "why does X…?", a bug ticket, a red CI |
+| **When not to use it** | A feature to build (→ [plan](plan.md)); a production incident to analyze after the fact (→ [postmortem](postmortem.md)) |
+| **What it produces** | A debug summary (problem, root cause with `file:line`, tests, fix, prevention, confidence); if you choose it, a fix committed on `fix/…` |
+| **What next** | Review of the fix, commit, PR if possible, and `/kaizen:learn` if the cause was surprising |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:debug TypeError: Cannot read properties of undefined (reading 'total') dans /orders/export
-/kaizen:debug spec/exports/orders_csv_spec.rb échoue depuis ce matin
+/kaizen:debug TypeError: Cannot read properties of undefined (reading 'total') in /orders/export
+/kaizen:debug spec/exports/orders_csv_spec.rb fails since this morning
 /kaizen:debug #482
-/kaizen:debug l'export prend 40 s au lieu de 2
+/kaizen:debug the export takes 40 s instead of 2
 ```
 
-## Comment ça se passe
+## How it goes
 
-1. **Triage** : l'issue est lue si une référence est donnée. Claude reformule :
-   « quand <déclencheur>, on observe <symptôme> au lieu de <attendu> », et cherche dans les
-   **leçons** : un bug déjà vu raccourcit tout.
-2. **Enquête** :
-   - la plus petite reproduction possible, idéalement un test rouge ;
-   - santé de l'environnement : dépendances, cache, variables d'environnement. Le `git stash` sert à
-     tester si le bug vient du travail en cours ;
-   - traçage à rebours depuis le symptôme ;
-   - `git log -S` et `git bisect run` si « ça marchait avant ».
-3. **Cause racine** : chaque hypothèse est écrite avec une prédiction vérifiable, et chaque
-   expérience ne change qu'une variable. Après 2 ou 3 hypothèses réfutées, Claude se demande
-   **pourquoi son modèle mental est faux** au lieu de deviner encore.
-4. **La porte** : Claude écrit d'abord tout le diagnostic (chaîne causale, correctif proposé, tests).
-   **Ensuite** il vous demande :
-   - corriger maintenant ;
-   - diagnostic seulement ;
-   - repenser la conception, si aucun correctif propre n'existe dans le design actuel.
-5. **Correctif** :
-   1. test de régression là où la couverture existante possède ce comportement ;
-   2. on le voit rouge pour la bonne raison ;
-   3. correctif minimal à la cause ;
-   4. vert ;
-   5. recherche du même motif fautif ailleurs dans le repo.
-6. **Passation** : résumé, revue du correctif, commit des **seuls** fichiers du correctif, PR si
-   l'arbre était propre et qu'un remote le permet.
+1. **Triage**: the issue is read if a reference is given. Claude restates: "when <trigger>, we observe
+   <symptom> instead of <expected>", and searches the **learnings**: a bug already seen shortens
+   everything.
+2. **Investigation**:
+   - the smallest possible reproduction, ideally a red test;
+   - environment health: dependencies, cache, environment variables. `git stash` tests whether the bug
+     comes from the work in progress;
+   - backward tracing from the symptom;
+   - `git log -S` and `git bisect run` if "it worked before".
+3. **Root cause**: each hypothesis is written with a verifiable prediction, and each experiment changes
+   only one variable. After 2 or 3 refuted hypotheses, Claude asks itself **why its mental model is
+   wrong** instead of guessing again.
+4. **The gate**: Claude first writes the whole diagnosis (causal chain, proposed fix, tests). **Then**
+   it asks you:
+   - fix now;
+   - diagnosis only;
+   - rethink the design, if no clean fix exists in the current design.
+5. **Fix**:
+   1. regression test where existing coverage owns this behavior;
+   2. watched red for the right reason;
+   3. minimal fix at the cause;
+   4. green;
+   5. search for the same faulty pattern elsewhere in the repo.
+6. **Handover**: summary, review of the fix, commit of **only** the fix files, PR if the tree was clean
+   and a remote allows it.
 
 ## Options
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `mode:return` | sans question ; applique seulement un correctif **convergent** (qui rétablit le comportement voulu). Un correctif qui renverserait une décision délibérée est différé. Utilisé par `autopilot` et `watch-pr`. |
+| `mode:return` | without questions; only applies a **convergent** fix (restoring the intended behavior). A fix that would reverse a deliberate decision is deferred. Used by `autopilot` and `watch-pr`. |
 
-## Bon à savoir
+## Good to know
 
-- Trois correctifs ratés → arrêt. La cause racine énoncée est probablement fausse.
-- Les secrets dans les logs sont remplacés par `<REDACTED>` avant d'être montrés ou écrits.
-- Sans ticket fourni, aucun ticket n'est créé « pour faire propre ».
-- « Flaky » n'est pas une cause : un deuxième échec identique est réel.
+- Three failed fixes → stop. The stated root cause is probably wrong.
+- Secrets in logs are replaced by `<REDACTED>` before being shown or written.
+- Without a provided ticket, no ticket is created "to be tidy".
+- "Flaky" is not a cause: a second identical failure is real.
 
-## Voir aussi
+## See also
 
 [postmortem](postmortem.md) · [learn](learn.md) · [watch-pr](watch-pr.md)

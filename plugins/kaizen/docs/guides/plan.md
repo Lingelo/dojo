@@ -1,98 +1,98 @@
 # `/kaizen:plan`
 
-> Décider **comment** construire : recherche en parallèle, décisions justifiées, unités de travail
-> testables, déploiement et retour arrière. Sans jamais écrire de code de production.
+> Decide **how** to build: parallel research, justified decisions, testable work units, rollout and
+> rollback. Without ever writing production code.
 
-Le plan Kaizen est un document de **décisions**, pas un script d'implémentation. Il dit ce qui a été
-décidé et pourquoi, ce qui est dans ou hors du périmètre, quelles unités de travail existent, quels
-fichiers elles touchent, quels tests doivent passer, et comment revenir en arrière. L'implémenteur
-(`/kaizen:work` ou un humain) garde le jugement sur le code.
+The Kaizen plan is a document of **decisions**, not an implementation script. It says what was decided
+and why, what is in or out of scope, which work units exist, which files they touch, which tests must
+pass, and how to roll back. The implementer (`/kaizen:work` or a human) keeps judgment over the code.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Recherche (motifs du repo, leçons, historique, doc externe) → décisions (KTD) → contrôle constitutionnel, menaces, déploiement → unités groupées en tranches de PR → `plan check` → `/kaizen:doc-review` |
-| **Quand l'utiliser** | Après un brainstorm ; une demande claire mais non triviale ; un ticket ou une spec à transformer en travail exécutable ; approfondir un plan existant |
-| **Quand ne pas l'utiliser** | Idée encore floue (→ [brainstorm](brainstorm.md)) ; bug sans cause connue (→ [debug](debug.md)) ; changement d'une ligne : demandez-le directement |
-| **Ce qu'elle produit** | Le plan unifié enrichi **sur place** (ou un nouveau fichier `docs/plans/…-plan.md`) ; pour un petit travail, un énoncé direct ou un brief dans le chat |
-| **Et ensuite** | « Plan prêt : `<chemin>`. Que veux-tu faire ? » → `work` (recommandé), `autopilot`, approfondir, relire soi-même |
+| **What it does** | Research (repo patterns, learnings, history, external docs) → decisions (KTD) → constitution check, threats, rollout → units grouped into PR slices → `plan check` → `/kaizen:doc-review` |
+| **When to use it** | After a brainstorm; a clear but non-trivial request; a ticket or a spec to turn into executable work; deepening an existing plan |
+| **When not to use it** | Idea still fuzzy (→ [brainstorm](brainstorm.md)); bug without a known cause (→ [debug](debug.md)); a one-line change: just ask for it |
+| **What it produces** | The unified plan enriched **in place** (or a new `docs/plans/…-plan.md` file); for small work, a direct statement or a brief in the chat |
+| **What next** | "Plan ready: `<path>`. What do you want to do?" → `work` (recommended), `autopilot`, deepen, review it yourself |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:plan                                              # le plan écrit par le brainstorm de cette session
-/kaizen:plan docs/plans/2026-10-02-1430-feat-export-csv-commandes-plan.md
-/kaizen:plan ajouter un digest e-mail quotidien à 8 h UTC
+/kaizen:plan                                              # the plan written by this session's brainstorm
+/kaizen:plan docs/plans/2026-10-02-1430-feat-orders-csv-export-plan.md
+/kaizen:plan add a daily email digest at 8 am UTC
 /kaizen:plan deepen docs/plans/2026-09-12-0900-refactor-auth-plan.md
 ```
 
-## Comment ça se passe
+## How it goes
 
-1. **Source et forme** :
-   - **Direct** : le changement est énoncé en quelques phrases ;
-   - **Brief** : le plan tient dans le chat ;
-   - **Durable** : un fichier. C'est toujours le cas pour l'auth, le paiement, une migration ou un
-     contrat externe.
-2. **Recherche en parallèle** :
+1. **Source and shape**:
+   - **Direct**: the change is stated in a few sentences;
+   - **Brief**: the plan fits in the chat;
+   - **Durable**: a file. Always the case for auth, payment, a migration or an external contract.
+2. **Parallel research** (each agent with the model of its role, see
+   [`models`](../configuration.md#models--the-right-model-for-each-task)):
 
-   | Agent | Rôle |
+   | Agent | Role |
    |---|---|
-   | `repo-researcher` | motifs à imiter, points d'intégration, tests voisins, avec chemins exacts |
-   | `learnings-researcher` | leçons, ADR, post-mortems et règles de packs qui s'appliquent |
-   | `git-historian` | pourquoi le code est ainsi (zone ancienne ou fragile) |
-   | `docs-researcher` | comportement d'une dépendance **dans la version de votre lockfile** |
-   | `flow-analyst` | parcours et cas d'erreur manquants (si pas de brainstorm) |
+   | `repo-researcher` | patterns to imitate, integration points, neighboring tests, with exact paths |
+   | `learnings-researcher` | learnings, ADRs, postmortems and pack rules that apply |
+   | `git-historian` | why the code is the way it is (old or fragile area) |
+   | `docs-researcher` | a dependency's behavior **in your lockfile's version** |
+   | `flow-analyst` | missing journeys and error cases (if no brainstorm) |
 
-3. **Décisions** : chaque KTD a une raison, une alternative écartée et les exigences qu'elle couvre.
-   Une leçon qui s'applique **change** le plan et y est citée.
-4. **Sections propres à Kaizen** :
-   - **Contrôle constitutionnel** : un verdict par article. Un article NON NÉGOCIABLE impossible à
-     respecter bloque le plan.
-   - **Menaces** (STRIDE léger) si la zone est sensible, chaque parade portée par une unité.
-   - **Déploiement et retour arrière** : exposition (flag ?), ordre, retour arrière, ce qui est
-     irréversible, signal à surveiller **avec son seuil** (`> 1 % d'erreurs → revert`). `plan check`
-     signale un retour arrière ou un signal manquant, et un signal sans seuil ; `/kaizen:release` en
-     tire la checklist de mise en production.
-   - Le **profil** ajuste la cérémonie : en `lean`, menaces et déploiement seulement si le changement
-     touche une surface à risque ou la production ; en `full`, toujours.
-5. **Unités** U1… : objectif, `Couvre`, fichiers, approche (motif cité), **preuve** (test d'abord par
-   défaut), scénarios de test, vérification exécutable, **tranche**. Une tranche, c'est une PR sous
-   `pr.max_lines`, qui laisse la branche par défaut saine.
-6. **Contrôles** :
-   - `node $K plan check` doit passer ;
-   - contrôle de confiance ;
-   - `/kaizen:doc-review mode:auto` **obligatoire**, qui corrige le mécanique et vous pose les
-     décisions restantes.
+3. **Decisions**: each KTD has a reason, a rejected alternative and the requirements it covers. An
+   applicable learning **changes** the plan and is cited in it.
+4. **Kaizen-specific sections**:
+   - **Constitution check**: one verdict per article. A NON-NEGOTIABLE article that cannot be respected
+     blocks the plan.
+   - **Threats** (lightweight STRIDE) if the area is sensitive, each countermeasure carried by a unit.
+   - **Rollout and rollback**: exposure (flag?), order, rollback, what is irreversible, signal to watch
+     **with its threshold** (`` `error_rate` > 1 % → revert ``). `plan check` reports a missing
+     rollback or signal, and a signal without a threshold; `/kaizen:release` turns it into the
+     production checklist and `/kaizen:deploy` watches it.
+   - The **profile** adjusts the ceremony: in `lean`, threats and rollout only if the change touches a
+     risk surface or production; in `full`, always.
+5. **Units** U1…: goal, `Covers`, files, approach (cited pattern), **evidence** (test first by
+   default), test scenarios, executable verification, **slice**. A slice is a PR under
+   `pr.max_lines`, which leaves the default branch healthy.
+6. **Checks**:
+   - `node $K plan check` must pass;
+   - confidence check;
+   - **mandatory** `/kaizen:doc-review mode:auto`, which fixes what is mechanical and asks you the
+     remaining decisions.
 
-## Ce que vérifie `plan check`
+## What `plan check` verifies
 
-- frontmatter (`artifact: kaizen-plan/v1`, pas de `status`) et sections présentes ;
-- R, U numérotés sans trou ;
-- **chaque R et chaque AE couvert par une unité** ;
-- chaque unité avec **Couvre**, **Fichiers**, **Preuve** et **Vérification** ;
-- aucun `[À CLARIFIER : …]` restant dans un plan prêt ;
-- chaque article de `CONSTITUTION.md` évalué.
+- frontmatter (`artifact: kaizen-plan/v1`, no `status`) and sections present;
+- R, U numbered without gaps;
+- **each R and each AE covered by a unit**;
+- each unit with **Covers**, **Files**, **Evidence** and **Verification**;
+- no `[NEEDS CLARIFICATION: …]` left in a ready plan;
+- each `CONSTITUTION.md` article assessed;
+- the rollout's rollback and signal (with a threshold) — warnings.
 
-Exemple complet : [`templates/plan-example.md`](../../templates/plan-example.md). Contrat :
+Full example: [`templates/plan-example.md`](../../templates/plan-example.md). Contract:
 [`references/plan-contract.md`](../../references/plan-contract.md).
 
 ## Options
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `deepen <chemin>` | approfondit les sections faibles par une recherche ciblée, intégrée sur place ; ajoute `deepened:` au frontmatter |
-| `mode:return` | aucune question : hypothèses consignées, résultat structuré (utilisé par `autopilot`) |
+| `deepen <path>` | deepens the weak sections through targeted research, integrated in place; adds `deepened:` to the frontmatter |
+| `mode:return` | no questions: assumptions recorded, structured result (used by `autopilot`) |
 
-## Bon à savoir
+## Good to know
 
-- **Construis ce qui est demandé** : un mécanisme non demandé (retry, option, abstraction) n'entre
-  dans le plan que si son absence laisse un dommage passer inaperçu, ou s'il serait coûteux
-  d'ajouter plus tard. Et alors dans sa plus petite forme.
-- Pour une décision lourde ou irréversible, le plan propose `/kaizen:decide` plutôt que de la
-  trancher en une ligne.
-- Pas de trace du processus dans le fichier (« en phase 2, j'ai… »).
+- **Build what is asked**: an unrequested mechanism (retry, option, abstraction) only enters the plan
+  if its absence lets harm go unnoticed, or if it would be expensive to add later. And then in its
+  smallest form.
+- For a heavy or irreversible decision, the plan proposes `/kaizen:decide` rather than settling it in
+  one line.
+- No trace of the process in the file ("in phase 2, I…").
 
-## Voir aussi
+## See also
 
 [brainstorm](brainstorm.md) · [doc-review](doc-review.md) · [work](work.md) · [decide](decide.md)

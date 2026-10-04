@@ -1,81 +1,80 @@
 # `/kaizen:decide`
 
-> Un verdict fondé sur des preuves pour une décision difficile ou irréversible, puis un ADR pour que
-> la raison survive à la conversation.
+> An evidence-based verdict for a hard or irreversible decision, then an ADR so that the reason
+> outlives the conversation.
 
-Adopter une technologie, choisir entre deux architectures, migrer, accepter une dette : `decide`
-compare de vraies options sur des preuves du projet (code, leçons, constitution, ADR passés) et des
-sources externes datées. Il donne une recommandation avec son **niveau de confiance** et le **signal
-qui ferait changer d'avis**.
+Adopting a technology, choosing between two architectures, migrating, accepting debt: `decide`
+compares real options on evidence from the project (code, learnings, constitution, past ADRs) and dated
+external sources. It gives a recommendation with its **confidence level** and the **signal that would
+change its mind**.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Cadre la question, ancre (décisions passées, code, doc externe), compare 2 à 4 options dont « ne rien faire », attaque sa propre recommandation, écrit l'ADR si la décision est coûteuse à défaire (sinon répond simplement) |
-| **Quand l'utiliser** | « Faut-il adopter X ? », « A ou B ? », « on migre vers… ? », une KTD du plan trop lourde pour une ligne, « documente cette décision » |
-| **Quand ne pas l'utiliser** | Une décision facile à défaire (un revert suffit) : demandez simplement ; chercher des idées (→ [ideate](ideate.md)) |
-| **Ce qu'elle produit** | Un verdict dans le chat, puis `docs/adr/NNNN-<titre>.md` (statut `proposed` ou `accepted`) |
-| **Et ensuite** | L'ADR est cité par le plan concerné ; Claude propose une règle de pack ou un amendement si la décision crée une règle durable |
+| **What it does** | Frames the question, anchors (past decisions, code, external docs), compares 2 to 4 options including "do nothing", attacks its own recommendation, writes the ADR if the decision is costly to undo (otherwise answers simply) |
+| **When to use it** | "Should we adopt X?", "A or B?", "do we migrate to…?", a plan KTD too heavy for one line, "document this decision" |
+| **When not to use it** | A decision easy to undo (a revert is enough): just ask; looking for ideas (→ [ideate](ideate.md)) |
+| **What it produces** | A verdict in the chat, then `docs/adr/NNNN-<title>.md` (status `proposed` or `accepted`) |
+| **What next** | The ADR is cited by the plan concerned; Claude proposes a pack rule or an amendment if the decision creates a durable rule |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:decide Temporal ou garder Sidekiq pour les workflows de facturation ?
-/kaizen:decide passer de REST à GraphQL pour l'API mobile ?
-/kaizen:decide adr-only on a choisi Postgres LISTEN/NOTIFY plutôt que Redis pour les notifications
+/kaizen:decide Temporal or keep Sidekiq for the billing workflows?
+/kaizen:decide move from REST to GraphQL for the mobile API?
+/kaizen:decide adr-only we chose Postgres LISTEN/NOTIFY over Redis for notifications
 ```
 
-## Comment ça se passe
+## How it goes
 
-1. **Cadrage** : une question décidable, sa **réversibilité** (facile, coûteuse, irréversible) et les
-   critères qui comptent ici. Plus c'est irréversible, plus la barre de preuve monte.
-2. **Ancrage**, en parallèle :
-   - les ADR et leçons passés (obligatoire) ;
-   - le code, via `repo-researcher` ;
-   - l'histoire, via `git-historian` ;
-   - les sources externes, via `docs-researcher` : maturité, maintenance, licence, compatibilité
-     avec **vos** versions, sources primaires et datées.
-3. **Comparaison** : un tableau critères × options, et la prose qui explique ce que le tableau ne dit
-   pas.
-4. **Pré-mortem** : « dans un an, cette décision s'est révélée mauvaise : pourquoi ? ».
-5. **Verdict**, au format :
+1. **Framing**: a decidable question, its **reversibility** (easy, costly, irreversible) and the
+   criteria that matter here. The more irreversible, the higher the evidence bar.
+2. **Anchoring**, in parallel:
+   - past ADRs and learnings (mandatory);
+   - the code, through `repo-researcher`;
+   - the history, through `git-historian`;
+   - external sources, through `docs-researcher`: maturity, maintenance, license, compatibility with
+     **your** versions, primary and dated sources.
+3. **Comparison**: a criteria × options table, and the prose explaining what the table does not say.
+4. **Pre-mortem**: "in a year, this decision turned out wrong: why?".
+5. **Verdict**, in this format:
 
    ```markdown
-   **Recommandation : B** — confiance moyenne
-   Pourquoi : …   À quelles conditions : …   Ce qui me ferait changer d'avis : …
-   Coût / prochain pas : un pilote derrière un flag sur un seul workflow
+   **Recommendation: B** — confidence medium
+   Why: …   Under which conditions: …   What would change my mind: …
+   Cost / next step: a pilot behind a flag on a single workflow
    ```
 
-6. **Vous tranchez.** Votre décision fait foi, même si elle diffère de la recommandation. L'ADR
-   consigne les deux.
+6. **You decide.** Your decision stands, even if it differs from the recommendation. The ADR records
+   both.
 
-## L'ADR
+## The ADR
 
 ```markdown
 ---
-title: Les exports passent par une file de jobs
+title: Exports go through a job queue
 date: 2026-10-02
 status: accepted          # proposed | accepted | rejected | superseded
 deciders: [angelo]
-reversibility: coûteuse
+reversibility: costly
 review_by: 2027-04-01
 artifact: kaizen-adr/v1
 ---
-# 0003. Les exports passent par une file de jobs
-## Contexte · ## Options · ## Décision · ## Conséquences · ## Signal de révision
+# 0003. Exports go through a job queue
+## Context · ## Options · ## Decision · ## Consequences · ## Review signal
 ```
 
-Numérotation automatique : `node $K adr new --title "…"`. Liste : `node $K adr list`. Un ADR qui en
-remplace un autre met l'ancien en `superseded`. Gabarit : [`templates/adr.md`](../../templates/adr.md).
+Automatic numbering: `node $K adr new --title "…"`. List: `node $K adr list`. An ADR replacing another
+sets the old one to `superseded`. Template: [`templates/adr.md`](../../templates/adr.md).
 
-## Bon à savoir
+## Good to know
 
-- **Pas de verdict sans preuve.** Si une information décisive manque et reste introuvable, la
-  réponse est « Bloqué — contexte manquant », avec ce qu'il faut pour débloquer.
-- Les ADR sont relus par `learnings-researcher` : une décision acceptée contraint les plans suivants.
-- Pour les choix les plus lourds, l'agent `architect` du plugin `experts` reste un bon complément.
+- **No verdict without evidence.** If a decisive piece of information is missing and cannot be found,
+  the answer is "Blocked — missing context", with what it takes to unblock.
+- ADRs are read by `learnings-researcher`: an accepted decision constrains the following plans.
+- For the heaviest choices, the `architect` agent of the `experts` plugin remains a good complement.
 
-## Voir aussi
+## See also
 
 [plan](plan.md) · [constitution](constitution.md) · [learn](learn.md)

@@ -1,80 +1,81 @@
 # `/kaizen:brainstorm`
 
-> Définir **quoi** construire, par un dialogue d'une question à la fois, ancré dans le code et les
-> leçons passées.
+> Define **what** to build, through a one-question-at-a-time dialogue grounded in the code and past
+> learnings.
 
-Le brainstorm répond à « qu'est-ce que ça doit être ? » et n'écrit **aucun code**. Il produit la
-première version du **plan unifié** : un seul fichier qui commence avec les exigences, puis que
-`/kaizen:plan` enrichit sur place avec le « comment ».
+The brainstorm answers "what should it be?" and writes **no code**. It produces the first version of
+the **unified plan**: a single file that starts with the requirements, then that `/kaizen:plan`
+enriches in place with the "how".
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Lit le contexte (code, leçons, packs, constitution), pose les questions qui comptent, propose 2 ou 3 approches, écrit les exigences |
-| **Quand l'utiliser** | Une idée ou une demande encore floue ; un périmètre contesté ; plusieurs lectures possibles |
-| **Quand ne pas l'utiliser** | Bug avec symptôme (→ [debug](debug.md)) ; « donne-moi des idées » (→ [ideate](ideate.md)) ; travail déjà spécifié (→ [plan](plan.md)) |
-| **Ce qu'elle produit** | Petit travail : une conclusion dans le chat. Sinon `docs/plans/AAAA-MM-JJ-HHMM-<type>-<sujet>-plan.md` avec capsule d'objectif et contrat produit (R1…, AE1…) |
-| **Et ensuite** | Menu : planifier (recommandé), tout enchaîner (`autopilot`), affiner, s'arrêter |
+| **What it does** | Reads the context (code, learnings, packs, constitution), asks the questions that matter, proposes 2 or 3 approaches, writes the requirements |
+| **When to use it** | An idea or request still fuzzy; a contested scope; several possible readings |
+| **When not to use it** | Bug with a symptom (→ [debug](debug.md)); "give me ideas" (→ [ideate](ideate.md)); already specified work (→ [plan](plan.md)) |
+| **What it produces** | Small work: a conclusion in the chat. Otherwise `docs/plans/YYYY-MM-DD-HHMM-<type>-<topic>-plan.md` with a goal capsule and a product contract (R1…, AE1…) |
+| **What next** | Menu: plan (recommended), chain everything (`autopilot`), refine, stop |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:brainstorm export CSV des commandes pour les responsables boutique
-/kaizen:brainstorm rendre les relances de paiement plus sûres
-/kaizen:brainstorm                     # Claude demande ce que vous voulez explorer
+/kaizen:brainstorm CSV export of orders for store managers
+/kaizen:brainstorm make payment reminders safer
+/kaizen:brainstorm                     # Claude asks what you want to explore
 ```
 
-## Comment ça se passe
+## How it goes
 
-1. **Reprise** : un plan récent sur le même sujet est proposé à la reprise plutôt que dupliqué.
-2. **Taille** :
-   - **légère** : quelques questions, conclusion dans le chat ;
-   - **standard** : dialogue, approches et fichier ;
-   - **profonde** : multi-acteurs ou risque, avec en plus une analyse des parcours.
-3. **Ancrage**, sans vous déranger : code de la zone, `CONCEPTS.md`, leçons, packs, constitution, et
-   agents de recherche si besoin. Une contradiction avec l'existant vous est montrée **avant** de
-   continuer.
-4. **Dialogue** : une question par tour, avec la recommandation de Claude en premier. Une décision
-   déjà prise dans la conversation n'est pas redemandée. Il fait aussi un test de pression : est-ce
-   le bon problème ? existe-t-il une version plus simple ? un angle mort (sécurité, données
-   existantes, accessibilité) ?
-5. **Approches** : 2 ou 3 vraiment différentes, avec coûts et risques. Vous choisissez, puis Claude
-   écrit une synthèse de cadrage à valider.
-6. **Écriture** du contrat produit :
-   - exigences groupées par préoccupation ;
-   - exemples d'acceptation pour tout comportement conditionnel ;
-   - décisions annotées « décidé en session » ;
-   - points flous marqués `[À CLARIFIER : question — défaut proposé]`.
-7. **Contrôles** : `plan check` au stade exigences, puis « prêt pour la planification » : complet,
-   cohérent, focalisé, exploitable.
+1. **Resume**: a recent plan on the same topic is offered for resumption rather than duplicated.
+2. **Size**:
+   - **light**: a few questions, conclusion in the chat;
+   - **standard**: dialogue, approaches and file;
+   - **deep**: multiple actors or risk, with a journey analysis on top.
+3. **Anchoring**, without disturbing you: the area's code, `CONCEPTS.md`, learnings, packs,
+   constitution, and research agents if needed. A contradiction with what exists is shown to you
+   **before** going on.
+4. **Dialogue**: one question per turn, with Claude's recommendation first. A decision already made in
+   the conversation is not asked again. It also runs a pressure test: is it the right problem? is
+   there a simpler version? a blind spot (security, existing data, accessibility)?
+5. **Approaches**: 2 or 3 truly different ones, with costs and risks. You choose, then Claude writes a
+   framing summary to validate.
+6. **Writing** the product contract:
+   - requirements grouped by concern;
+   - acceptance examples for every conditional behavior;
+   - decisions annotated "decided in session";
+   - fuzzy points marked `[NEEDS CLARIFICATION: question — proposed default]`.
+7. **Checks**: `plan check` at the requirements stage, then "ready for planning": complete,
+   consistent, focused, actionable.
 
-## Ce que contient le fichier
+## What the file contains
 
 ```markdown
 <!-- kaizen:goal -->
-## Capsule d'objectif
-**Objectif :** un responsable boutique récupère en un clic un fichier lisible dans Excel…
+## Goal capsule
+**Goal:** a store manager gets in one click a file readable in Excel…
 
 <!-- kaizen:product -->
-## Contrat produit
-### Exigences
-- R1. L'export contient exactement les commandes correspondant aux filtres actifs.
-### Exemples d'acceptation
-- AE1. (couvre R1) Étant donné un filtre « expédiée », quand j'exporte, alors…
+## Product contract
+### Requirements
+- R1. The export contains exactly the orders matching the active filters.
+### Acceptance examples
+- AE1. (covers R1) Given a "shipped" filter, when I export, then…
 ```
 
-Le contrat complet est dans [`references/plan-contract.md`](../../references/plan-contract.md).
+The full contract is in [`references/plan-contract.md`](../../references/plan-contract.md). The plan is
+written in the language of the conversation, or the one set in
+[`language`](../configuration.md#language).
 
-## Bon à savoir
+## Good to know
 
-- Une exigence n'engage que ce que vous avez demandé ou choisi. Un garde-fou que personne n'a
-  demandé va en « Hors périmètre » ou en question ouverte.
-- Si la demande mélange plusieurs sujets, Claude propose d'en traiter un. Les autres deviennent du
-  contexte dans la section « Comment ce travail s'articule ».
-- `mode:return` (utilisé par `autopilot`) : même dialogue, mais un résultat structuré au lieu du menu
-  final.
+- A requirement only commits to what you asked for or chose. A safeguard nobody asked for goes into
+  "Out of scope" or an open question.
+- If the request mixes several topics, Claude proposes handling one. The others become context in the
+  "How this work fits together" section.
+- `mode:return` (used by `autopilot`): same dialogue, but a structured result instead of the final
+  menu.
 
-## Voir aussi
+## See also
 
 [plan](plan.md) · [ideate](ideate.md) · [autopilot](autopilot.md)

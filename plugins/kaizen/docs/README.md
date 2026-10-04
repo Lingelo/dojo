@@ -1,84 +1,92 @@
-# Documentation de Kaizen
+# Kaizen documentation
 
-Documentation pour les **utilisateurs** du plugin. Les instructions que suit Claude se trouvent dans
-`skills/<skill>/SKILL.md` ; elles font foi pour le comportement exact, mais ne sont pas écrites pour
-être lues par un humain.
+Documentation for the plugin's **users**. The instructions Claude follows live in
+`skills/<skill>/SKILL.md`; they are authoritative for the exact behavior, but they are not written to be
+read by a human.
 
-## Par où commencer
+Kaizen is written in English since 3.0. Claude still talks to you in your language, and the documents it
+writes in your repo (plans, learnings, ADRs, PR descriptions) follow `language` in
+[Configuration](configuration.md#language).
 
-| Je veux… | Lire |
+## Where to start
+
+| I want to… | Read |
 |---|---|
-| Mettre en place le SDLC sur un projet | `/kaizen:setup audit` ([guide](guides/setup.md)) |
-| Savoir quelle commande lancer, là, maintenant | `/kaizen:help` ([guide](guides/help.md)) |
-| Voir Kaizen en une minute | [La vidéo de présentation](media/kaizen-presentation.mp4) |
-| Comprendre Kaizen en 5 minutes | [Le README du plugin](../README.md) |
-| Savoir ce que vaut Kaizen face aux autres SDLC | [Bilan et positionnement](positionnement.md) |
-| Faire un premier cycle complet, pas à pas | [Démarrage](demarrage.md) |
-| Régler Kaizen pour mon projet | [Configuration](configuration.md) |
-| Partager des règles d'équipe entre repos | [Kaizen Packs](packs.md) |
-| Débloquer une situation | [Dépannage](depannage.md) |
+| Set up the SDLC on a project | `/kaizen:setup audit` ([guide](guides/setup.md)) |
+| Know which command to run, right now | `/kaizen:help` ([guide](guides/help.md)) |
+| See Kaizen in one minute | [The presentation video](media/kaizen-presentation.mp4) |
+| Understand Kaizen in 5 minutes | [The plugin README](../README.md) |
+| Know how Kaizen compares to other SDLCs | [Assessment and positioning](positioning.md) |
+| Run a first complete cycle, step by step | [Getting started](getting-started.md) |
+| Tune Kaizen for my project | [Configuration](configuration.md) |
+| Share team rules across repos | [Kaizen Packs](packs.md) |
+| Get unstuck | [Troubleshooting](troubleshooting.md) |
+| Look up a CLI command, a hook or an agent | [Plugin README — Reference](../README.md#reference) |
+| See what changed between versions | [CHANGELOG](../CHANGELOG.md) |
 
-## La boucle
+## The loop
 
 ```text
-   [/kaizen:constitution]   une fois par projet : les principes non négociables
-   [/kaizen:ideate]         facultatif : « qu'est-ce qui vaut la peine ? »
+   [/kaizen:constitution]   once per project: the non-negotiable principles
+   [/kaizen:ideate]         optional: "what is worth doing?"
         │
         ▼
-┌─→ /kaizen:brainstorm      « qu'est-ce que ça doit être ? »   (QUOI)
+┌─→ /kaizen:brainstorm      "what should it be?"            (WHAT)
 │       ▼
-│   /kaizen:plan            « comment le construire ? »        (COMMENT) + /kaizen:doc-review
+│   /kaizen:plan            "how do we build it?"           (HOW) + /kaizen:doc-review
 │       ▼
-│   /kaizen:work            « construis-le »                   (test d'abord, garde-fou)
+│   /kaizen:work            "build it"                      (test first, quality gate)
 │       ▼
-│   /kaizen:review          « est-ce correct ? »
+│   /kaizen:review          "is it correct?"
 │       ▼
-│   /kaizen:ship            « livre une PR relisible »  →  /kaizen:watch-pr
+│   /kaizen:ship            "ship a reviewable PR"  →  /kaizen:watch-pr
 │       ▼
-└── /kaizen:learn           « retiens ce qu'on a appris »  → relu par le prochain plan
+│   /kaizen:deploy          "release it, watch it"  →  /kaizen:monitor
+│       ▼
+└── /kaizen:learn           "remember what we learned"  → read by the next plan
 ```
 
-`/kaizen:autopilot` enchaîne tout ce qui suit le brainstorm, sans s'arrêter.
+`/kaizen:autopilot` chains everything after the brainstorm, without stopping (it never deploys).
 
-## Les guides, skill par skill
+## The guides, skill by skill
 
-**Cadrer**
-- [constitution](guides/constitution.md) — les principes d'ingénierie non négociables du projet
-- [ideate](guides/ideate.md) — des idées ancrées, critiquées, classées
-- [brainstorm](guides/brainstorm.md) — définir quoi construire
-- [decide](guides/decide.md) — trancher une décision difficile et l'écrire en ADR
+**Frame**
+- [constitution](guides/constitution.md) — the project's non-negotiable engineering principles
+- [ideate](guides/ideate.md) — grounded ideas, critiqued and ranked
+- [brainstorm](guides/brainstorm.md) — define what to build
+- [decide](guides/decide.md) — settle a hard decision and write it as an ADR
 
-**Construire**
-- [plan](guides/plan.md) — décider comment construire
-- [doc-review](guides/doc-review.md) — relire le plan avant de coder
-- [work](guides/work.md) — exécuter le plan
-- [debug](guides/debug.md) — trouver la cause, puis corriger
-- [polish](guides/polish.md) — peaufiner l'interface avec l'utilisateur
+**Build**
+- [plan](guides/plan.md) — decide how to build
+- [doc-review](guides/doc-review.md) — review the plan before coding
+- [work](guides/work.md) — execute the plan
+- [debug](guides/debug.md) — find the cause, then fix
+- [polish](guides/polish.md) — polish the UI with the user
 
-**Vérifier et livrer**
-- [review](guides/review.md) — revue de code multi-agents
-- [ship](guides/ship.md) — ouvrir une PR relisible
-- [address-feedback](guides/address-feedback.md) — traiter les retours de revue
-- [watch-pr](guides/watch-pr.md) — mener une PR jusqu'à « prête »
-- [release](guides/release.md) — préparer une version
-- [deploy](guides/deploy.md) — mettre en production, surveiller, revenir en arrière
-- [monitor](guides/monitor.md) — les signaux de production contre leurs seuils
+**Verify and ship**
+- [review](guides/review.md) — multi-agent code review
+- [ship](guides/ship.md) — open a reviewable PR
+- [address-feedback](guides/address-feedback.md) — handle review feedback
+- [watch-pr](guides/watch-pr.md) — drive a PR to "ready"
+- [release](guides/release.md) — prepare a version
+- [deploy](guides/deploy.md) — release to production, watch, roll back
+- [monitor](guides/monitor.md) — production signals against their thresholds, incidents
 
-**Apprendre et mesurer**
-- [learn](guides/learn.md) — capitaliser une leçon
-- [prune-learnings](guides/prune-learnings.md) — entretenir les leçons
-- [postmortem](guides/postmortem.md) — apprendre d'un incident
-- [metrics](guides/metrics.md) — mesurer la livraison et l'effet cumulatif
+**Learn and measure**
+- [learn](guides/learn.md) — capture a learning
+- [prune-learnings](guides/prune-learnings.md) — maintain the learnings
+- [postmortem](guides/postmortem.md) — learn from an incident
+- [metrics](guides/metrics.md) — measure delivery and the compounding effect
 
-**Orchestrer**
-- [autopilot](guides/autopilot.md) — tout enchaîner en autonomie
-- [setup](guides/setup.md) — installer et vérifier Kaizen dans un repo
-- [help](guides/help.md) — savoir quelle commande lancer maintenant
+**Orchestrate**
+- [autopilot](guides/autopilot.md) — chain everything autonomously
+- [setup](guides/setup.md) — install and check Kaizen in a repo
+- [help](guides/help.md) — know which command to run now
 
-## Conventions de ces pages
+## Conventions of these pages
 
-- Les chemins affichés (`docs/plans/`, `docs/learnings/`…) sont les **défauts**. Si `docs_root` est
-  réglé, lisez `<docs_root>/plans/`, etc. Voir [Configuration](configuration.md#docs_root).
-- `$K` désigne le CLI du plugin : `node <dossier du plugin>/scripts/kaizen.mjs`.
-- Les modes non interactifs (`mode:auto`, `mode:return`, `mode:pipeline`, `mode:agent`) servent quand
-  une skill est appelée par une autre ; vous pouvez aussi les utiliser pour éviter les questions.
+- The paths shown (`docs/plans/`, `docs/learnings/`…) are the **defaults**. If `docs_root` is set, read
+  `<docs_root>/plans/`, etc. See [Configuration](configuration.md#docs_root).
+- `$K` stands for the plugin's CLI: `node <plugin folder>/scripts/kaizen.mjs`.
+- The non-interactive modes (`mode:auto`, `mode:return`, `mode:pipeline`, `mode:agent`) are used when a
+  skill is called by another one; you can also use them to avoid questions.

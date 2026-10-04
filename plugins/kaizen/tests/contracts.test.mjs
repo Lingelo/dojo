@@ -29,7 +29,7 @@ test('every skill: complete frontmatter, name = folder, useful description', () 
     assert.equal(data.name, s, `${s}: name`);
     for (const k of ['description', 'allowed-tools']) assert.ok(data[k], `${s}: ${k} missing`);
     assert.ok(data.description.length >= 120 && data.description.length <= 1024, `${s}: description of ${data.description.length} characters (120 to 1024)`);
-    assert.match(data.description, /\bUse (it |only )?(when|for)\b|Called by/i, `${s}: the description must say when to use it`);
+    assert.match(data.description, /\bUse (it |only )?(when|for|after)\b|Called by/i, `${s}: the description must say when to use it`);
   }
 });
 

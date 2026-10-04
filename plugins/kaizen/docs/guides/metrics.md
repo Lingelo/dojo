@@ -1,55 +1,56 @@
 # `/kaizen:metrics`
 
-> Est-ce qu'on s'améliore vraiment ? Les indicateurs DORA, approchés depuis git et GitHub, plus
-> l'indicateur propre à Kaizen : les leçons sont-elles réutilisées ?
+> Are we really improving? The DORA metrics, approximated from git and GitHub (or measured from real
+> deployments), plus Kaizen's own indicator: are the learnings reused?
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Calcule les indicateurs sur une fenêtre, dit comment chacun est calculé et ses limites, en tire 2 ou 3 constats et 1 à 3 actions |
-| **Quand l'utiliser** | Rétrospective, point trimestriel, « est-ce que Kaizen sert à quelque chose ? », après avoir changé une pratique |
-| **Quand ne pas l'utiliser** | Pour juger des personnes : ces indicateurs mesurent un système de livraison, pas des individus |
-| **Ce qu'elle produit** | Un rapport court (30 lignes au plus), et sur demande `docs/metrics/AAAA-MM-JJ.md` pour suivre la tendance |
-| **Et ensuite** | Les actions renvoient vers une skill : `prune-learnings`, découpage en tranches, `constitution amend`… |
+| **What it does** | Computes the indicators over a window, says how each one is computed and its limits, draws 2 or 3 findings and 1 to 3 actions |
+| **When to use it** | Retrospective, quarterly review, "is Kaizen useful at all?", after changing a practice |
+| **When not to use it** | To judge people: these indicators measure a delivery system, not individuals |
+| **What it produces** | A short report (30 lines at most), and on request `docs/metrics/YYYY-MM-DD.md` to follow the trend |
+| **What next** | The actions point to a skill: `prune-learnings`, slicing, `constitution amend`… |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:metrics                # 90 derniers jours
+/kaizen:metrics                # last 90 days
 /kaizen:metrics 30d
-/kaizen:metrics 12w comparer   # avec la fenêtre précédente
+/kaizen:metrics 12w compare    # with the previous window
 ```
 
-Brut : `node $K metrics --since 90d` (ajoutez `--no-github` si `gh` n'est pas authentifié).
+Raw: `node $K metrics --since 90d` (add `--no-github` if `gh` is not authenticated, `--json` for the
+machine-readable output).
 
-## Les indicateurs
+## The indicators
 
-| Indicateur | Méthode (approximation) | Lecture |
+| Indicator | Method (approximation) | Reading |
 |---|---|---|
-| Fréquence de livraison | changements arrivés sur la branche par défaut, par semaine | plus haute et régulière = petits lots qui s'intègrent vite |
-| Délai de changement | médiane ouverture → merge des PR (GitHub), sinon premier commit → merge (git) | un délai long vient souvent de la revue |
-| Taux de reprise | part des changements de type fix, hotfix ou revert | en hausse = on livre des défauts |
-| Taux d'échec des changements | changements suivis, sous 7 jours, d'un fix ou d'un revert sur les mêmes fichiers | instabilité |
-| Temps de rétablissement | médiane détection → résolution des incidents tracés (à défaut, `detected` → `resolved` des post-mortems) | capacité à revenir en arrière |
-| Taille des lots | médiane, 90e centile, part au-dessus de `pr.max_lines` | **le premier levier** selon DORA |
-| **Boucle Kaizen** | leçons totales et nouvelles, **lues** (citées par un plan récent), **appliquées** (citées par un message de commit), jamais citées, exceptions à la constitution, ADR | l'effet cumulatif |
-| **Coût des cycles** | cycles `work`/`autopilot` clos par `gate off` : durée, tokens de la session principale et des sous-agents, ventilés par rôle, blocages du garde-fou (local à la machine) | la cérémonie rapporte-t-elle plus qu'elle ne coûte ? |
+| Deployment frequency | changes landed on the default branch, per week (real deployments when tagged) | higher and steady = small batches integrating fast |
+| Lead time for changes | median PR open → merge (GitHub), otherwise first commit → merge (git); first commit → production with real deployments | a long lead time often comes from review |
+| Rework rate | share of fix, hotfix or revert changes | rising = we ship defects |
+| Change failure rate | changes followed, within 7 days, by a fix or a revert on the same files (deployment followed by a rollback or an incident with real deployments) | instability |
+| Time to restore | median detection → resolution of tracked incidents (otherwise `detected` → `resolved` of postmortems) | ability to recover |
+| Batch size | median, 90th percentile, share above `pr.max_lines` | **the first lever** according to DORA |
+| **Kaizen loop** | total and new learnings, **read** (cited by a recent plan), **applied** (cited by a commit message), never cited, constitution exceptions, ADRs | the compounding effect |
+| **Cycle cost** | `work`/`autopilot` cycles closed by `gate off`: duration, tokens of the main session and subagents, broken down by role, gate blocks (local to the machine) | does the ceremony pay back more than it costs? |
 
-## Lire honnêtement
+## Reading honestly
 
-- Avec [`/kaizen:deploy`](deploy.md), les indicateurs viennent des **vrais déploiements** de
-  production (tags `deploy/…`, `rollback/…` et des incidents `incident/…`, `resolve/…` de
-  [monitor](monitor.md)) : fréquence, délai premier commit → production, taux d'échec (déploiement
-  suivi d'un retour arrière ou d'un incident), temps de rétablissement (détection → résolution). Sans déploiement tracé, ce
-  sont des **approximations** depuis la branche par défaut. Chaque indicateur affiche sa méthode.
-- Limites signalées :
-  - clone superficiel (`--depth`) ;
-  - merges squash sans accès GitHub (délai indisponible) ;
-  - moins de 10 changements dans la fenêtre : pas de tendance.
-- **Leçons écrites mais jamais citées** : la boucle ne se referme pas. Voir le
-  [dépannage](../depannage.md#les-leçons-ne-sont-pas-réutilisées).
+- With [`/kaizen:deploy`](deploy.md), the indicators come from **real** production deployments
+  (`deploy/…`, `rollback/…` tags and the `incident/…`, `resolve/…` incidents of [monitor](monitor.md)):
+  frequency, first commit → production lead time, failure rate (deployment followed by a rollback or an
+  incident), time to restore (detection → resolution). Without tracked deployments, they are
+  **approximations** from the default branch. Each indicator shows its method.
+- Reported limits:
+  - shallow clone (`--depth`);
+  - squash merges without GitHub access (lead time unavailable);
+  - fewer than 10 changes in the window: no trend.
+- **Learnings written but never cited**: the loop does not close. See
+  [Troubleshooting](../troubleshooting.md#the-learnings-are-not-reused).
 
-## Voir aussi
+## See also
 
-[postmortem](postmortem.md) · [prune-learnings](prune-learnings.md) · [release](release.md)
+[postmortem](postmortem.md) · [prune-learnings](prune-learnings.md) · [release](release.md) · [deploy](deploy.md)

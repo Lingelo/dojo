@@ -1,78 +1,78 @@
 # `/kaizen:ship`
 
-> Livrer en PR que les relecteurs ont envie de relire : petite, qui se raconte d'elle-même, et qui dit
-> où regarder.
+> Ship as a PR reviewers want to review: small, telling its own story, and saying where to look.
 
-DORA 2025 l'a mesuré : avec l'IA, les PR grossissent, et **la revue humaine devient le goulot**.
-`ship` vérifie, contrôle la taille, pousse, et écrit la description à partir du plan et du diff
-réel, avec un **guide du relecteur**.
+DORA 2025 measured it: with AI, PRs grow, and **human review becomes the bottleneck**. `ship` checks,
+controls the size, pushes, and writes the description from the plan and the real diff, with a
+**reviewer guide**.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Préconditions → barrières (vérifications vertes, revue faite, taille) → commits et push → description → ouverture ou mise à jour de la PR |
-| **Quand l'utiliser** | À la fin de `/kaizen:work` (proposé automatiquement) ; « ouvre la PR » ; « mets à jour la description » |
-| **Quand ne pas l'utiliser** | Travail non vérifié ou non revu : `ship` lancera la revue d'abord |
-| **Ce qu'elle produit** | Une branche poussée, une PR ouverte (ou mise à jour) et son URL |
-| **Et ensuite** | `/kaizen:watch-pr <url>` pour la mener jusqu'à « prête » |
+| **What it does** | Preconditions → barriers (green checks, review done, size) → commits and push → description → PR opened or updated |
+| **When to use it** | At the end of `/kaizen:work` (offered automatically); "open the PR"; "update the description" |
+| **When not to use it** | Unverified or unreviewed work: `ship` will run the review first |
+| **What it produces** | A pushed branch, an opened (or updated) PR and its URL |
+| **What next** | `/kaizen:watch-pr <url>` to drive it to "ready" |
 
-## Exemples
+## Examples
 
 ```text
 /kaizen:ship
 /kaizen:ship docs/plans/…-plan.md draft
-/kaizen:ship description-only          # rédige la description sans rien publier
-/kaizen:ship refresh-description       # réécrit la description si elle ne correspond plus au diff
+/kaizen:ship description-only          # drafts the description without publishing anything
+/kaizen:ship refresh-description       # rewrites the description if it no longer matches the diff
 ```
 
-## Barrières
+## Barriers
 
-1. `node $K verify` est vert. Sinon `ship` s'arrête.
-2. Une revue `/kaizen:review` a été enregistrée pour ce diff (`node $K review check`). Sinon `ship` la
-   lance. Ce n'est pas qu'une consigne : un hook refuse le `git push` d'une branche sans revue
-   enregistrée, avec la preuve que des relecteurs ont réellement tourné. Voir
-   [Configuration de `review`](../configuration.md#review--la-revue-exigée-avant-git-push).
-3. `node $K size` est sous `pr.max_lines`. Au-delà :
-   - en interactif, Claude propose des **PR empilées**, une par tranche du plan, chacune basée sur la
-     précédente ;
-   - en `mode:auto`, il livre en un bloc et justifie la taille dans la PR.
+1. `node $K verify` is green. Otherwise `ship` stops.
+2. A `/kaizen:review` review was recorded for this diff (`node $K review check`). Otherwise `ship` runs
+   it. It is not just an instruction: a hook refuses the `git push` of a branch without a recorded
+   review, with evidence that reviewers actually ran. See
+   [`review` configuration](../configuration.md#review--the-review-required-before-git-push).
+3. `node $K size` is under `pr.max_lines`. Above it:
+   - interactively, Claude proposes **stacked PRs**, one per plan slice, each based on the previous
+     one;
+   - in `mode:auto`, it ships as one block and justifies the size in the PR.
 
-## La description produite
+## The description produced
 
 ```markdown
-## Pourquoi
-## Ce qui change              (une puce par exigence couverte : R1, R2…)
-## Comment relire             (guide du relecteur : par où commencer, quoi regarder de près, quoi survoler)
-## Preuves                    (commandes vertes, AE couverts, verdict de la revue Kaizen)
-## Déploiement et retour arrière
-## Constitution               (seulement s'il y a des exceptions)
-## Points ouverts
+## Why
+## What changes              (one bullet per covered requirement: R1, R2…)
+## How to review             (reviewer guide: where to start, what to look at closely, what to skim)
+## Evidence                  (green commands, covered AEs, Kaizen review verdict)
+## Rollout and rollback
+## Constitution              (only if there are exceptions)
+## Review waived             (only if the review was waived)
+## Open points
 ```
 
-Elle se termine par le marqueur `<!-- kaizen -->`, qui empêche `watch-pr` de prendre ce texte
-pour un retour à traiter. Le titre est un commit conventionnel de 72 caractères au plus :
-`feat(SHOP-412): export CSV des commandes filtrées`.
+It is written in the configured language and ends with the `<!-- kaizen -->` marker, which keeps
+`watch-pr` from taking this text for feedback to handle. The title is a conventional commit of 72
+characters at most: `feat(SHOP-412): export filtered orders as CSV`.
 
 ## Options
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `description-only` | rédige et affiche ; ne publie que si vous le demandez |
-| `refresh-description` | met à jour la description d'une PR existante si elle a dérivé |
-| `draft` | ouvre la PR en brouillon |
-| `mode:auto` | aucune question (utilisé par `work`, `autopilot`, `watch-pr`) |
+| `description-only` | drafts and shows; only publishes if you ask |
+| `refresh-description` | updates an existing PR's description if it drifted |
+| `draft` | opens the PR as a draft |
+| `mode:auto` | no questions (used by `work`, `autopilot`, `watch-pr`) |
 
-## Bon à savoir
+## Good to know
 
-- Jamais de push sur la branche par défaut, jamais de `--force`.
-- Pousser sans revue n'est possible que si **vous** le confirmez : Claude lance
-  `review waive --reason "…"` et vous tapez le code affiché (`kaizen waive <code>`). La PR porte
-  alors une section **« Revue écartée »** avec votre raison.
-- Une PR existante pour la branche est **mise à jour**, jamais dupliquée.
-- Sans remote, tout reste en commits locaux. Sans `gh`, `ship` passe par les outils GitHub MCP s'ils
-  sont disponibles, sinon il donne l'URL et le corps à coller.
+- Never a push to the default branch, never `--force`.
+- Pushing without a review is only possible if **you** confirm it: Claude runs
+  `review waive --reason "…"` and you type the displayed code (`kaizen waive <code>`). The PR then
+  carries a **"Review waived"** section with your reason.
+- An existing PR for the branch is **updated**, never duplicated.
+- Without a remote, everything stays in local commits. Without `gh`, `ship` uses the GitHub MCP tools
+  if available, otherwise it gives the URL and the body to paste.
 
-## Voir aussi
+## See also
 
-[watch-pr](watch-pr.md) · [review](review.md) · [Configuration de `pr`](../configuration.md#pr)
+[watch-pr](watch-pr.md) · [review](review.md) · [`pr` configuration](../configuration.md#pr)
