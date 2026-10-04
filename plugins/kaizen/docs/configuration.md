@@ -168,6 +168,7 @@ aucune plateforme et ne devine jamais une commande.
 | `environments.<env>.protected` | `true` pour `production` | exige un code que **vous** tapez (`kaizen deploy <code>`) ; la commande brute est refusée par un hook |
 | `watch_minutes` | `15` | durée de la surveillance des signaux après un déploiement |
 | `auto_rollback` | `false` | retour arrière automatique dès qu'un seuil est franchi |
+| `timeout_seconds` | `1800` | délai maximum d'une commande de déploiement, de retour arrière ou de flag (surcharge possible par environnement : `environments.<env>.timeout_seconds`) ; au-delà, tout son arbre de processus est tué et le déploiement est en échec, sans tag |
 | `push_tags` | `true` | pousse les tags `deploy/<env>/…` et `rollback/<env>/…` (source des métriques DORA réelles) |
 | `flags.on` / `flags.off` | — | commandes de feature flag, avec `{flag}` et `{env}` (`kaizen.mjs deploy flag on|off <nom>`) |
 | `metrics_env` | `production` | environnement dont les déploiements alimentent `/kaizen:metrics` |

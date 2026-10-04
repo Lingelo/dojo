@@ -93,6 +93,20 @@ test('retour arrière : vers le déploiement précédent, tracé par un tag roll
   cleanup(dir);
 });
 
+test('deploy run : commande bloquée coupée au délai, en échec et sans tag', () => {
+  const dir = shopRepo({ deploy: { timeout_seconds: 600, environments: { staging: { command: 'node -e "setTimeout(() => {}, 20000)"', timeout_seconds: 1 } } } });
+  const started = Date.now();
+  const r = cli(dir, ['deploy', 'run', 'staging']);
+  assert.ok(Date.now() - started < 10000, 'le délai de l’environnement l’emporte');
+  assert.notEqual(r.code, 0);
+  assert.equal(r.json.ok, false);
+  assert.equal(r.json.exit, 'timeout');
+  assert.match(r.json.output, /incertain/);
+  assert.equal(r.json.tag, undefined);
+  assert.equal(cli(dir, ['deploy', 'list']).json.length, 0);
+  cleanup(dir);
+});
+
 test('monitor check : seuils de la config, seuils du plan, signal HTTP natif', async () => {
   const server = createServer((req, res) => {
     res.statusCode = req.url === '/health' ? 200 : 503;

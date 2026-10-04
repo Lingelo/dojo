@@ -22,6 +22,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   tracée. Le hook refuse aussi les tags `incident/…` et `resolve/…` forgés à la main.
 
 ### Corrigé
+- `deploy run`, `deploy rollback` et `deploy flag` ont un délai (`deploy.timeout_seconds`, 30 min, ou
+  `environments.<env>.timeout_seconds`) : une commande bloquée est coupée avec tout son arbre de
+  processus, le déploiement est en échec sans tag et le rapport signale un état incertain.
 - Une vérification coupée par son délai (`verify`, garde-fou Stop, signaux `monitor` par commande)
   ne survit plus en arrière-plan : `scripts/run-bounded.mjs` tue tout l'arbre de processus
   (`taskkill /T /F` sous Windows, groupe de processus sous POSIX), et plus seulement le shell (#14).

@@ -42,7 +42,7 @@ export const DEFAULT_CONFIG = {
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
   review: { require_before_push: true, max_unreviewed_lines: 80 },
   // Déploiement et monitoring : commandes de l'équipe, Kaizen ne connaît aucune plateforme.
-  deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, flags: {} },
+  deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, timeout_seconds: 1800, flags: {} },
   monitor: { signals: {}, interval_seconds: 60, consecutive: 2 },
   // Modèle par rôle d'agent : défauts du profil (scripts/models.mjs), ajustables par rôle ou par agent.
   models: { roles: {}, agents: {} },
