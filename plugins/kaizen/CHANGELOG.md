@@ -2,6 +2,45 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [SemVer](https://semver.org/lang/fr/).
 
+## [2.1.0] - 2026-10-04
+
+### Ajouté
+- **Coût des sous-agents** dans `cycle_cost` (#15) : le hook Stop additionne aussi les transcripts des
+  sous-agents de la session (`<session>/subagents/agent-*.jsonl`), dédoublonnés par message ; le hook
+  `Agent` consigne chaque lancement pendant un cycle (`.kaizen/state/agent-runs.jsonl` : rôle, modèle,
+  id) pour ventiler les tokens par rôle de la politique de modèles. `metrics` expose le total
+  (principal + sous-agents), `main_tokens_median`, `subagent_tokens_median`, `subagent_share` et
+  `tokens_by_role`.
+
+- **Surveillance continue** (#16) : `monitor patrol` (contrôle confirmé à planifier : routine, cron,
+  workflow CI) et `monitor alert` (Alertmanager, PagerDuty, Datadog ou JSON simple, par exemple via
+  `repository_dispatch`) ouvrent un **incident** daté de sa détection — tag `incident/<env>/…`, résolu
+  par un retour arrière ou `monitor incident resolve` (`resolve/<env>/…`). `monitor watch` trace aussi
+  sa violation comme incident. `monitor incident open|resolve|list`.
+- DORA : un incident avant le déploiement suivant compte comme un échec, et le temps de rétablissement
+  court de la détection à la résolution ; `deployments.incidents`. Le post-mortem reprend la détection
+  tracée. Le hook refuse aussi les tags `incident/…` et `resolve/…` forgés à la main.
+
+- `status` (et donc `/kaizen:help`) place en tête un incident ouvert (`/kaizen:monitor <env>`), puis
+  un incident résolu depuis moins de 14 jours sans post-mortem (`/kaizen:postmortem`).
+- `audit` contrôle la détection continue des incidents ; `audit fix monitor_patrol` et
+  `audit fix monitor_alert` génèrent les workflows GitHub Actions correspondants (`--env`, `--ref`).
+- Évaluations de bout en bout `monitor-alert`, `help-incident` et `cycle-cost-subagents` (29 au total).
+  La dernière confirme sur une vraie session que la réponse de l'outil `Agent` porte l'identifiant
+  d'agent : les sous-agents sont rattachés à leur rôle par id, pas seulement par prompt.
+- Consigne de `/kaizen:monitor` précisée : sans personne pour répondre, le retour arrière est le
+  défaut même si `deploy.auto_rollback` est désactivé, sauf si l'incident précède le dernier déploiement.
+
+### Corrigé
+- Un incident est rattaché au commit déployé **au moment de sa détection**, et non au dernier
+  déploiement : une alerte antérieure à un déploiement ne l'incrimine plus.
+- `deploy run`, `deploy rollback` et `deploy flag` ont un délai (`deploy.timeout_seconds`, 30 min, ou
+  `environments.<env>.timeout_seconds`) : une commande bloquée est coupée avec tout son arbre de
+  processus, le déploiement est en échec sans tag et le rapport signale un état incertain.
+- Une vérification coupée par son délai (`verify`, garde-fou Stop, signaux `monitor` par commande)
+  ne survit plus en arrière-plan : `scripts/run-bounded.mjs` tue tout l'arbre de processus
+  (`taskkill /T /F` sous Windows, groupe de processus sous POSIX), et plus seulement le shell (#14).
+
 ## [2.0.0] - 2026-10-04
 
 ### Changements cassants

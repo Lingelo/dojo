@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { GATE, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
+import { GATE, REVIEW_HOOKS, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
 
 function stop(dir, extra = {}) {
   return spawnSync(process.execPath, [GATE], { input: JSON.stringify({ cwd: dir, ...extra }), encoding: 'utf8' });
@@ -93,9 +93,8 @@ test('le garde-fou appartient à la session qui l’a posé', () => {
 test('budget épuisé : les commandes restantes ne sont pas lancées et ne bloquent pas', () => {
   const dir = tempRepo({
     '.kaizen/config.json': {
-      // La commande lente quitte le dossier du dépôt : sous Windows, coupée par le délai, elle survit
-      // quelques secondes au shell et verrouillerait sinon le dossier temporaire au nettoyage (EBUSY).
-      verify: { test: 'node -e "process.chdir(require(\'os\').tmpdir()); setTimeout(() => {}, 3000)"', lint: 'node -e "process.exit(1)"' },
+      // Coupée au délai, la commande lente meurt avec tout son arbre : rien ne verrouille le dépôt.
+      verify: { test: 'node -e "setTimeout(() => {}, 3000)"', lint: 'node -e "process.exit(1)"' },
       gate: { budget_seconds: 1.5 },
     },
   });
@@ -138,5 +137,64 @@ test('coût du cycle : tokens relevés depuis le transcript, consignés par gate
   assert.equal(cost.cycles, 1);
   assert.equal(cost.tokens_median, 232);
   assert.equal(cli(dir, ['gate', 'off']).json.cycle, null, 'un second gate off ne consigne rien');
+  cleanup(dir);
+});
+
+test('coût du cycle : sous-agents comptés et ventilés par rôle', () => {
+  const dir = repoWithTest(0);
+  cli(dir, ['gate', 'on']);
+  const since = JSON.parse(readFileSync(join(dir, '.kaizen/state/gate.json'), 'utf8')).since;
+  const later = new Date(Date.parse(since) + 1000).toISOString();
+  const usage = (id, ts, out) => JSON.stringify({ timestamp: ts, message: { id, usage: { input_tokens: 10, output_tokens: out, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } });
+  const prompt = (text) => JSON.stringify({ type: 'user', timestamp: later, message: { role: 'user', content: text } });
+  const launch = (tool_input, tool_response) =>
+    spawnSync(process.execPath, [REVIEW_HOOKS, '--evidence'], { input: JSON.stringify({ cwd: dir, session_id: 'S1', tool_name: 'Agent', tool_input, tool_response }), encoding: 'utf8' });
+
+  // Lancements vus par le hook Agent : relecteur critique (id dans la réponse), implémentation (par prompt).
+  launch({ subagent_type: 'kaizen:security-reviewer', prompt: 'Relis la sécurité', model: 'opus' }, { agentId: 'a1', content: [] });
+  launch({ subagent_type: 'general-purpose', prompt: 'Implémente  l’unité U2\n avec ses tests', model: 'sonnet' }, 'Async agent launched');
+
+  // Transcripts : <projet>/S1.jsonl et <projet>/S1/subagents/[…/]agent-<id>.jsonl
+  const proj = join(dir, '.kaizen/state/proj');
+  mkdirSync(join(proj, 'S1/subagents/wf'), { recursive: true });
+  writeFileSync(join(proj, 'S1.jsonl'), usage('m1', later, 5));
+  writeFileSync(join(proj, 'S1/subagents/agent-a1.jsonl'), [prompt('Relis la sécurité'), usage('s1', later, 20), usage('s1', later, 20), usage('old', '2020-01-01T00:00:00Z', 999)].join('\n'));
+  writeFileSync(join(proj, 'S1/subagents/wf/agent-a2.jsonl'), [prompt([{ type: 'text', text: 'Implémente l’unité U2 avec ses tests' }]), usage('s2', later, 30)].join('\n'));
+  writeFileSync(join(proj, 'S1/subagents/agent-a3.jsonl'), [prompt('autre chose'), usage('s3', later, 40)].join('\n'));
+
+  assert.equal(stop(dir, { session_id: 'S1', transcript_path: join(proj, 'S1.jsonl') }).status, 0);
+  const off = cli(dir, ['gate', 'off']).json;
+  assert.equal(off.cycle.usage.output_tokens, 5);
+  assert.equal(off.cycle.subagents.agents, 3);
+  assert.equal(off.cycle.subagents.usage.output_tokens, 90, 'doublon et message antérieur au cycle exclus');
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(off.cycle.subagents.by_role).map(([r, u]) => [r, u.output_tokens])),
+    { review_critical: 20, implement: 30, inconnu: 40 },
+  );
+  assert.equal(existsSync(join(dir, '.kaizen/state/agent-runs.jsonl')), false, 'journal des lancements effacé par gate off');
+
+  const cost = cli(dir, ['metrics', '--no-github']).json.cycle_cost;
+  assert.equal(cost.tokens_median, 15 + 120, 'total = principal + sous-agents');
+  assert.equal(cost.main_tokens_median, 15);
+  assert.equal(cost.subagent_tokens_median, 120);
+  assert.equal(cost.subagent_share, 0.89);
+  assert.deepEqual(cost.tokens_by_role.review_critical, { tokens: 30, output_tokens: 20 });
+  assert.match(cost.method, /sous-agents/);
+  cleanup(dir);
+});
+
+test('lancements de sous-agents : rien consigné hors cycle ni pour une autre session', () => {
+  const dir = repoWithTest(0);
+  const launch = (session) =>
+    spawnSync(process.execPath, [REVIEW_HOOKS, '--evidence'], { input: JSON.stringify({ cwd: dir, session_id: session, tool_name: 'Agent', tool_input: { subagent_type: 'Explore', prompt: 'x' } }), encoding: 'utf8' });
+  const runs = join(dir, '.kaizen/state/agent-runs.jsonl');
+  launch('S1');
+  assert.equal(existsSync(runs), false, 'garde-fou inactif');
+  cli(dir, ['gate', 'on']);
+  claim(dir, 'S1');
+  launch('S2');
+  assert.equal(existsSync(runs), false, 'autre session');
+  launch('S1');
+  assert.equal(JSON.parse(readFileSync(runs, 'utf8')).role, 'autre');
   cleanup(dir);
 });

@@ -5,8 +5,9 @@
 // KAIZEN_ENV, KAIZEN_REF, KAIZEN_SHA dans l'environnement, et laisse une trace partagée :
 //
 // - un **tag git annoté** `deploy/<env>/<horodatage>` sur le commit déployé (`rollback/<env>/…` pour un
-//   retour arrière), poussé si un remote existe (`deploy.push_tags`). C'est la source des vraies
-//   métriques DORA (`metrics`) et de la chronologie des post-mortems ;
+//   retour arrière ; `incident/<env>/…` et `resolve/<env>/…` pour la détection et la résolution d'un
+//   incident, posés par monitor.mjs), poussé si un remote existe (`deploy.push_tags`). C'est la source
+//   des vraies métriques DORA (`metrics`) et de la chronologie des post-mortems ;
 // - une ligne dans `.kaizen/state/deployments.jsonl` (local) pour le suivi immédiat.
 //
 // Un environnement **protégé** (`protected: true`, défaut pour `production`) ne se déploie qu'avec une
@@ -15,14 +16,13 @@
 // 30 minutes pour cet environnement et ce commit. Le retour arrière n'exige pas d'approbation : il
 // rétablit, et il est urgent.
 
-import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { git, loadConfig } from './lib.mjs';
+import { git, loadConfig, runBounded } from './lib.mjs';
 
 const APPROVAL_MAX_AGE_MS = 30 * 60 * 1000;
-export const DEPLOY_TAG = /^(deploy|rollback)\/([\w.-]+)\/(\d{8}T\d{6}Z)(?:-\d+)?$/;
+export const DEPLOY_TAG = /^(deploy|rollback|incident|resolve)\/([\w.-]+)\/(\d{8}T\d{6}Z)(?:-\d+)?$/;
 
 function stateDir(root) {
   const dir = join(root, '.kaizen', 'state');
@@ -61,8 +61,8 @@ function resolveSha(root, ref) {
 
 const stamp = (d = new Date()) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
 
-function tagDeployment(root, kind, env, sha, note, config) {
-  const base = `${kind}/${env}/${stamp()}`;
+export function tagDeployment(root, kind, env, sha, note, config = loadConfig(root), at = new Date()) {
+  const base = `${kind}/${env}/${stamp(at)}`;
   let tag = base;
   for (let i = 2; git(root, ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}`], { allowFail: true }); i++) tag = `${base}-${i}`;
   git(root, ['tag', '-a', tag, sha, '-m', JSON.stringify(note)]);
@@ -73,18 +73,22 @@ function tagDeployment(root, kind, env, sha, note, config) {
   return { tag, pushed };
 }
 
-function run(root, command, env, sha, ref) {
+// Délai : `deploy.environments.<env>.timeout_seconds`, sinon `deploy.timeout_seconds` (30 min). Au-delà,
+// tout l'arbre de processus est tué : une commande bloquée ne bloque plus la session, mais l'état de
+// l'environnement est alors incertain — le rapport le dit.
+function run(root, command, env, sha, ref, timeoutSeconds) {
   const started = Date.now();
-  const r = spawnSync(command, {
+  const r = runBounded(command, {
     cwd: root,
-    shell: true,
-    encoding: 'utf8',
     env: { ...process.env, KAIZEN_ENV: env, KAIZEN_REF: ref || sha, KAIZEN_SHA: sha },
-    maxBuffer: 64 * 1024 * 1024,
+    timeoutMs: Number(timeoutSeconds || 1800) * 1000,
   });
-  const output = `${r.stdout || ''}${r.stderr || ''}`.replace(/\s+$/, '').split(/\r?\n/).slice(-40).join('\n');
-  return { ok: r.status === 0, exit: r.status, seconds: Math.round((Date.now() - started) / 100) / 10, output };
+  let output = `${r.stdout}${r.stderr}`.replace(/\s+$/, '').split(/\r?\n/).slice(-40).join('\n');
+  if (r.timedOut) output += `\n[kaizen] Commande coupée après ${timeoutSeconds || 1800} s : état de ${env || 'l’environnement'} incertain, vérifiez-le (monitor check) avant de relancer.`;
+  return { ok: r.status === 0 && !r.timedOut, exit: r.timedOut ? 'timeout' : r.status, seconds: Math.round((Date.now() - started) / 100) / 10, output };
 }
+
+const timeoutOf = (config, e) => e?.timeout_seconds ?? config.deploy.timeout_seconds;
 
 function log(root, entry) {
   appendFileSync(join(stateDir(root), 'deployments.jsonl'), `${JSON.stringify(entry)}\n`);
@@ -151,8 +155,8 @@ export function deploy(root, env, { ref, plans = [] } = {}) {
       );
     }
   }
-  const result = run(root, e.command, env, sha, ref);
-  const entry = { kind: 'deploy', env, sha, ref: ref || null, at: new Date().toISOString(), ok: result.ok, seconds: result.seconds, approved_at: approval?.confirmed_at || null, plans };
+  const result = run(root, e.command, env, sha, ref, timeoutOf(config, e));
+  const entry = { kind: 'deploy', env, sha, ref: ref || null, at: new Date().toISOString(), ok: result.ok, exit: result.exit, seconds: result.seconds, approved_at: approval?.confirmed_at || null, plans };
   if (result.ok) Object.assign(entry, tagDeployment(root, 'deploy', env, sha, { env, sha, approved_at: entry.approved_at, plans }, config));
   log(root, entry);
   return { ...entry, url: e.url || null, output: result.output };
@@ -164,8 +168,8 @@ export function rollback(root, env, { reason = null, to } = {}) {
   if (!e.rollback) throw new Error(`deploy.environments.${env}.rollback manquant : déclarez comment revenir en arrière`);
   // Cible par défaut : le déploiement réussi précédent de cet environnement.
   const target = to ? resolveSha(root, to) : (deployments(root, { env }).filter((d) => d.kind === 'deploy').at(-2)?.sha || null);
-  const result = run(root, e.rollback, env, target || '', target || '');
-  const entry = { kind: 'rollback', env, sha: target, at: new Date().toISOString(), ok: result.ok, seconds: result.seconds, reason };
+  const result = run(root, e.rollback, env, target || '', target || '', timeoutOf(config, e));
+  const entry = { kind: 'rollback', env, sha: target, at: new Date().toISOString(), ok: result.ok, exit: result.exit, seconds: result.seconds, reason };
   if (result.ok) Object.assign(entry, tagDeployment(root, 'rollback', env, target || 'HEAD', { env, reason, to: target }, config));
   log(root, entry);
   return { ...entry, output: result.output };
@@ -176,7 +180,7 @@ export function flag(root, state, name, { env = null } = {}) {
   const cmd = config.deploy.flags?.[state];
   if (!cmd) throw new Error(`deploy.flags.${state} manquant (ex. "unleash-cli toggle {flag} --${state}")`);
   const command = cmd.replaceAll('{flag}', name).replaceAll('{env}', env || '');
-  const result = run(root, command, env || '', resolveSha(root), null);
+  const result = run(root, command, env || '', resolveSha(root), null, timeoutOf(config, env ? config.deploy.environments?.[env] : null));
   const entry = { kind: `flag-${state}`, flag: name, env, at: new Date().toISOString(), ok: result.ok };
   log(root, entry);
   return { ...entry, output: result.output };
@@ -186,7 +190,7 @@ export function flag(root, state, name, { env = null } = {}) {
 
 // Depuis les tags (partagés) : { kind, env, at, sha, tag, note }. Trié chronologiquement.
 export function deployments(root, { env = null } = {}) {
-  const out = git(root, ['for-each-ref', '--format=%(refname:short)%09%(*objectname)%09%(objectname)%09%(contents:subject)', 'refs/tags/deploy', 'refs/tags/rollback'], { allowFail: true }) || '';
+  const out = git(root, ['for-each-ref', '--format=%(refname:short)%09%(*objectname)%09%(objectname)%09%(contents:subject)', 'refs/tags/deploy', 'refs/tags/rollback', 'refs/tags/incident', 'refs/tags/resolve'], { allowFail: true }) || '';
   return out
     .split('\n')
     .filter(Boolean)

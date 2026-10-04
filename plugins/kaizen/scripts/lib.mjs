@@ -5,6 +5,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ---------------------------------------------------------------------------
 // Repo & configuration
@@ -41,7 +42,7 @@ export const DEFAULT_CONFIG = {
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
   review: { require_before_push: true, max_unreviewed_lines: 80 },
   // Déploiement et monitoring : commandes de l'équipe, Kaizen ne connaît aucune plateforme.
-  deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, flags: {} },
+  deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, timeout_seconds: 1800, flags: {} },
   monitor: { signals: {}, interval_seconds: 60, consecutive: 2 },
   // Modèle par rôle d'agent : défauts du profil (scripts/models.mjs), ajustables par rôle ou par agent.
   models: { roles: {}, agents: {} },
@@ -330,6 +331,31 @@ export function withFiles(command, files) {
   return command.replaceAll('{files}', quoted);
 }
 
+// Lance une commande shell avec un délai, de façon synchrone, et tue tout son arbre de processus s'il
+// est dépassé (run-bounded.mjs) : une vérification coupée ne survit pas en arrière-plan.
+// → { status, timedOut, stdout, stderr }
+const BOUNDED = fileURLToPath(new URL('./run-bounded.mjs', import.meta.url));
+
+export function runBounded(command, { cwd, env, timeoutMs }) {
+  const r = spawnSync(process.execPath, [BOUNDED, String(Math.max(1, Math.round(timeoutMs))), command], {
+    cwd,
+    env,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
+    maxBuffer: 64 * 1024 * 1024,
+    windowsHide: true,
+    // Filet si le lanceur lui-même ne rendait pas la main.
+    timeout: timeoutMs + 15000,
+    killSignal: 'SIGKILL',
+  });
+  let meta = {};
+  try {
+    meta = JSON.parse(r.output?.[3] || '{}');
+  } catch {}
+  const timedOut = Boolean(meta.timedOut) || r.error?.code === 'ETIMEDOUT';
+  return { status: timedOut ? null : (meta.code ?? r.status), timedOut, stdout: r.stdout || '', stderr: r.stderr || '' };
+}
+
 export function runVerify(root, { only, timeoutSeconds, budgetSeconds, overrides = {} } = {}) {
   const config = loadConfig(root);
   const { commands: detected } = verifyCommands(root, config);
@@ -350,15 +376,14 @@ export function runVerify(root, { only, timeoutSeconds, budgetSeconds, overrides
       continue;
     }
     const started = Date.now();
-    const r = spawnSync(cmd, { cwd: root, shell: true, encoding: 'utf8', timeout: Math.min(perCommand, remaining), maxBuffer: 64 * 1024 * 1024 });
-    const timedOut = r.error && r.error.code === 'ETIMEDOUT';
+    const r = runBounded(cmd, { cwd: root, timeoutMs: Math.min(perCommand, remaining) });
     results.push({
       name,
       command: cmd,
-      ok: r.status === 0 && !timedOut,
-      exit: timedOut ? 'timeout' : r.status,
+      ok: r.status === 0 && !r.timedOut,
+      exit: r.timedOut ? 'timeout' : r.status,
       seconds: Math.round((Date.now() - started) / 100) / 10,
-      output: tail(`${r.stdout || ''}${r.stderr || ''}`),
+      output: tail(`${r.stdout}${r.stderr}`),
     });
   }
   return results;
@@ -483,17 +508,25 @@ export function changedFiles(root, base = diffBase(root)) {
 
 // Consommation de tokens d'une session depuis son transcript (JSONL de Claude Code), à partir d'une
 // date. Un même message peut apparaître plusieurs fois (streaming) : dédoublonné par identifiant.
-// Seule la session principale est comptée : les sous-agents ont leurs propres transcripts.
-export function transcriptUsage(file, since) {
-  const usage = { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, messages: 0 };
-  let text;
-  try {
-    text = readFileSync(file, 'utf8');
-  } catch {
-    return null;
-  }
-  const from = since ? Date.parse(since) : 0;
-  const seen = new Set();
+// Seule la session principale est comptée ici : les sous-agents ont leurs propres transcripts
+// (voir subagentUsage).
+const USAGE_KEYS = ['input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens'];
+
+export function emptyUsage() {
+  return { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, messages: 0 };
+}
+
+export function usageTotal(usage) {
+  return usage ? USAGE_KEYS.reduce((n, k) => n + (Number(usage[k]) || 0), 0) : 0;
+}
+
+function addUsage(into, usage) {
+  for (const k of USAGE_KEYS) into[k] += Number(usage[k]) || 0;
+  into.messages += usage.messages ?? 1;
+  return into;
+}
+
+function readUsage(text, from, seen, usage = emptyUsage()) {
   for (const line of text.split('\n')) {
     if (!line.includes('"usage"')) continue;
     let entry;
@@ -507,8 +540,85 @@ export function transcriptUsage(file, since) {
     const id = msg.id || entry.uuid;
     if (id && seen.has(id)) continue;
     if (id) seen.add(id);
-    for (const k of Object.keys(usage)) if (k !== 'messages') usage[k] += Number(msg.usage[k]) || 0;
-    usage.messages++;
+    addUsage(usage, msg.usage);
   }
   return usage;
+}
+
+export function transcriptUsage(file, since) {
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    return null;
+  }
+  return readUsage(text, since ? Date.parse(since) : 0, new Set());
+}
+
+// Transcripts des sous-agents d'une session : Claude Code les range à côté du transcript principal,
+// `<projet>/<session>.jsonl` → `<projet>/<session>/subagents/[…/]agent-<id>.jsonl`.
+function subagentTranscripts(file) {
+  const dir = join(file.replace(/\.jsonl$/, ''), 'subagents');
+  const found = [];
+  const walk = (d) => {
+    let entries;
+    try {
+      entries = readdirSync(d, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (e.isDirectory()) walk(join(d, e.name));
+      else if (/^agent-.+\.jsonl$/.test(e.name)) found.push(join(d, e.name));
+    }
+  };
+  walk(dir);
+  return found.sort();
+}
+
+// Début du premier message utilisateur d'un transcript de sous-agent : le prompt qui l'a lancé.
+export function promptKey(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+}
+
+function firstPrompt(text) {
+  for (const line of text.split('\n')) {
+    if (!line.includes('"user"')) continue;
+    try {
+      const entry = JSON.parse(line);
+      if (entry.type !== 'user' && entry.message?.role !== 'user') continue;
+      const c = entry.message?.content;
+      return promptKey(typeof c === 'string' ? c : Array.isArray(c) ? c.filter((p) => p.type === 'text').map((p) => p.text).join('\n') : '');
+    } catch {}
+  }
+  return '';
+}
+
+// Tokens des sous-agents d'une session depuis une date, ventilés par rôle. Chaque transcript est
+// rattaché au lancement consigné par le hook Agent (`launches` : { agent_id, prompt, role }), par
+// identifiant d'agent, sinon par début de prompt ; sans correspondance, le rôle est `inconnu`.
+// → { agents, usage, by_role: { rôle: usage } } ; null si le transcript principal est illisible.
+export function subagentUsage(file, since, launches = []) {
+  if (!file || !existsSync(file)) return null;
+  const from = since ? Date.parse(since) : 0;
+  const seen = new Set();
+  const result = { agents: 0, usage: emptyUsage(), by_role: {} };
+  for (const path of subagentTranscripts(file)) {
+    let text;
+    try {
+      text = readFileSync(path, 'utf8');
+    } catch {
+      continue;
+    }
+    const usage = readUsage(text, from, seen);
+    if (!usage.messages) continue;
+    const id = /agent-(.+)\.jsonl$/.exec(path)[1];
+    const prompt = firstPrompt(text);
+    const launch = launches.find((l) => l.agent_id && l.agent_id === id) || launches.find((l) => prompt && l.prompt && l.prompt === prompt);
+    const role = launch?.role || 'inconnu';
+    result.agents++;
+    addUsage(result.usage, usage);
+    result.by_role[role] = addUsage(result.by_role[role] || emptyUsage(), usage);
+  }
+  return result;
 }

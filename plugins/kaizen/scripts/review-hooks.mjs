@@ -2,7 +2,8 @@
 // Kaizen — hooks qui fournissent à la revue des preuves que l'agent ne peut pas déclarer lui-même.
 //
 //   --evidence  (PostToolUse, outil Agent/Task) : consigne chaque relecteur de code Kaizen réellement
-//               lancé ; `review record` l'exige.
+//               lancé ; `review record` l'exige. Pendant un cycle work/autopilot (garde-fou actif),
+//               consigne aussi chaque sous-agent (rôle, modèle, id) pour ventiler le coût du cycle.
 //   --confirm   (UserPromptSubmit) : un message de l'utilisateur contenant `kaizen waive <code>`
 //               confirme la renonciation à la revue demandée par `review waive` ; `kaizen deploy <code>`
 //               approuve le déploiement sur un environnement protégé demandé par `deploy request`.
@@ -27,13 +28,19 @@ try {
   const { join } = await import('node:path');
   const { repoRoot } = await import('./lib.mjs');
   const root = repoRoot(input.cwd || process.cwd());
-  if (!root || !existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
+  if (!root) process.exit(0);
   const state = await import('./review-state.mjs');
 
   if (mode === 'evidence') {
     const reviewer = state.reviewerOf(input.tool_input);
+    if (existsSync(join(root, '.kaizen', 'state', 'gate.json'))) {
+      const { recordLaunch } = await import('./cycle-agents.mjs');
+      recordLaunch(root, input, reviewer);
+    }
+    if (!existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
     if (reviewer) state.addEvidence(root, { reviewer, session: input.session_id || null, model: input.tool_input?.model || null });
   } else {
+    if (!existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
     const [, kind, code] = WAIVE.exec(String(input.prompt));
     if (kind.toLowerCase() === 'deploy') {
       const { confirmDeploy } = await import('./deploy.mjs');

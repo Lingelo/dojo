@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { detectStack, docsRoot, loadConfig, parseFrontmatter } from '../scripts/lib.mjs';
+import { detectStack, docsRoot, loadConfig, parseFrontmatter, runBounded } from '../scripts/lib.mjs';
 import { cleanup, tempRepo } from './helpers.mjs';
 
 test('frontmatter : scalaires, guillemets, listes en ligne et en tirets, blocs, commentaires', () => {
@@ -83,5 +84,26 @@ test('docs_root doit rester dans le repo', () => {
     assert.throws(() => docsRoot(dir, { docs_root: bad }), /docs_root/);
   }
   assert.ok(docsRoot(dir, { docs_root: 'docs/kaizen' }).endsWith(join('docs', 'kaizen')));
+  cleanup(dir);
+});
+
+test('runBounded : code de sortie et sorties transmis', () => {
+  const r = runBounded('node -e "console.log(1); console.error(2); process.exit(3)"', { timeoutMs: 10000 });
+  assert.deepEqual([r.status, r.timedOut, r.stdout.trim(), r.stderr.trim()], [3, false, '1', '2']);
+});
+
+test('runBounded : au délai, aucun processus de l’arbre ne survit (shell, enfant, petit-enfant)', () => {
+  // La commande lance un enfant qui lance un petit-enfant ; celui-ci écrirait un témoin après 1,5 s.
+  const dir = tempRepo({
+    'grandchild.js': "setTimeout(() => require('fs').writeFileSync('survived', 'x'), 1500);\n",
+    'child.js': "require('child_process').spawn(process.execPath, ['grandchild.js'], { stdio: 'inherit' });\nsetTimeout(() => {}, 10000);\n",
+  });
+  const started = Date.now();
+  const r = runBounded('node child.js', { cwd: dir, timeoutMs: 500 });
+  assert.equal(r.timedOut, true);
+  assert.equal(r.status, null);
+  assert.ok(Date.now() - started < 8000, 'rendu la main au délai, sans attendre l’enfant (10 s)');
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2500);
+  assert.equal(existsSync(join(dir, 'survived')), false, 'le petit-enfant a été tué');
   cleanup(dir);
 });

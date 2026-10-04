@@ -4,13 +4,16 @@
 //   node kaizen.mjs status [--json]              où en est le repo dans la boucle, et la commande suivante
 //   node kaizen.mjs root                         chemins des livrables (JSON)
 //   node kaizen.mjs models [--json] [--agent a]  modèle de chaque agent selon le profil et la config
-//   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x]   maturité SDLC du projet
+//   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   maturité SDLC du projet
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
 //                                                 déploiement par les commandes de l'équipe, tag deploy/<env>/…
 //   node kaizen.mjs deploy flag on|off <nom> [--env e]     feature flag (deploy.flags)
 //   node kaizen.mjs deploy detect [--json] | configure <id> [--force]   plateforme reconnue → config
 //   node kaizen.mjs monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]
 //                                                 signaux de production (exit 1 si seuil franchi)
+//   node kaizen.mjs monitor patrol --env e        contrôle planifiable : violation confirmée → incident (exit 1)
+//   node kaizen.mjs monitor alert [--env e] [--file f|-]   alerte Alertmanager/PagerDuty/Datadog/JSON → incident
+//   node kaizen.mjs monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]
 //   node kaizen.mjs config                       configuration effective (JSON)
 //   node kaizen.mjs init [--docs-root d] [--language fr] [--profile lean|standard|full]   initialise .kaizen/ et les dossiers
 //   node kaizen.mjs detect                       stack et commandes de vérification (JSON)
@@ -53,7 +56,7 @@ import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { audit, scaffold } from './audit.mjs';
-import { check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
+import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
 import {
   DEFAULT_CONFIG,
@@ -527,12 +530,14 @@ function cmdGate(root, sub) {
             minutes: Math.round((ended - Date.parse(st.since)) / 6000) / 10,
             gate_blocks: st.blocks_total || 0,
             usage: st.usage || null,
+            subagents: st.subagents || null,
           };
           appendFileSync(join(dirname(file), 'cycles.jsonl'), `${JSON.stringify(cycle)}\n`);
         }
       } catch {}
     }
     rmSync(file, { force: true });
+    rmSync(join(dirname(file), 'agent-runs.jsonl'), { force: true });
     out({ active: false, cycle });
   } else if (sub === 'status') {
     out(existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : { active: false });
@@ -576,10 +581,14 @@ function repoStatus(root) {
     if (existsSync(gateFile)) gate = JSON.parse(readFileSync(gateFile, 'utf8'));
   } catch {}
   const review = initialized && branch ? reviewStatus(root) : null;
+  const incidentsState = Object.keys(config.deploy.environments || {}).length ? incidentStatus(root, docs) : null;
 
   // Prochaine étape : la première situation qui s'applique, dans l'ordre de la boucle.
   const next = [];
   const say = (command, why) => next.push({ command, why });
+  // Rétablir passe avant tout le reste ; un incident résolu sans post-mortem vient juste après.
+  for (const i of incidentsState?.open || []) say(`/kaizen:monitor ${i.env}`, `incident ouvert sur ${i.env} depuis ${i.detected_at}${i.summary ? ` (${i.summary})` : ''} : rétablir (retour arrière), puis /kaizen:postmortem`);
+  for (const i of incidentsState?.without_postmortem || []) say('/kaizen:postmortem', `incident ${i.env} du ${i.detected_at} résolu (${i.resolved_by}) sans post-mortem`);
   if (!initialized) say('/kaizen:setup', 'Kaizen n’est pas initialisé dans ce repo');
   else if (!constitution.exists) say('/kaizen:constitution', 'pas de CONSTITUTION.md : plan et revue n’ont que des règles génériques');
   if (gate.active) say('/kaizen:work', `un travail est en cours sous garde-fou${gate.plan ? ` (${gate.plan})` : ''} : le reprendre, ou \`gate off\` s’il est abandonné`);
@@ -609,9 +618,21 @@ function repoStatus(root) {
     learnings,
     gate: { active: Boolean(gate.active), plan: gate.plan || null, since: gate.since || null },
     deploy: Object.keys(config.deploy.environments || {}).length ? { environments: Object.keys(config.deploy.environments), undeployed: undeployed(root, config) } : null,
+    incidents: incidentsState ? { open: incidentsState.open.length, without_postmortem: incidentsState.without_postmortem.length } : null,
     review: review ? { verdict: review.review?.verdict || null, depth: review.review?.depth || null, push_allowed: review.push.allowed, reason: review.push.reason, pending_waiver: Boolean(review.pending_waiver) } : null,
     next,
   };
+}
+
+// Incidents ouverts, et incidents résolus depuis moins de 14 jours sans post-mortem dont la détection
+// (`detected`) tombe à moins de 24 h de la leur.
+function incidentStatus(root, docs) {
+  const all = incidents(root);
+  const open = all.filter((i) => !i.resolved_at);
+  const pms = docs ? walkMarkdown(join(docs, 'postmortems')).map((f) => Date.parse(parseFrontmatter(readFileSync(f, 'utf8')).data?.detected)).filter((t) => !Number.isNaN(t)) : [];
+  const recent = Date.now() - 14 * 86400000;
+  const without_postmortem = all.filter((i) => i.resolved_at && Date.parse(i.resolved_at) >= recent && !pms.some((t) => Math.abs(t - Date.parse(i.detected_at)) <= 86400000));
+  return { open, without_postmortem };
 }
 
 // Commits de la branche courante pas encore déployés sur le premier environnement déclaré (staging
@@ -634,6 +655,7 @@ function cmdStatus(root) {
   out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.valid ? '' : ' (invalide)'}` : ''}`);
   out(`  · ${st.plans} plan(s)${st.latest_plan ? ` — dernier : ${st.latest_plan.path} (${st.latest_plan.stage})` : ''} · ${st.learnings} leçon(s)`);
   if (st.gate.active) out(`  ⚠ garde-fou actif depuis ${st.gate.since}`);
+  if (st.incidents?.open) out(`  ⛔ ${st.incidents.open} incident(s) ouvert(s)`);
   if (st.review) out(`  ${yes(st.review.push_allowed)} push : ${st.review.reason}`);
   out('\nEnsuite :');
   for (const n of st.next) out(`  → ${n.command} — ${n.why}`);
@@ -654,8 +676,9 @@ try {
       const root = requireRepo();
       if (sub === 'fix') {
         const id = positional[2];
-        if (!id) die('usage : audit fix <ci|pr_template|dependabot|codeowners|gitignore_env> [--owner @x]');
-        out(scaffold(root, id, { owner: typeof flags.owner === 'string' ? flags.owner : undefined }));
+        if (!id) die('usage : audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]');
+        const str = (v) => (typeof v === 'string' ? v : undefined);
+        out(scaffold(root, id, { owner: str(flags.owner), env: str(flags.env), ref: str(flags.ref) }));
         break;
       }
       const r = audit(root, { github: !flags['no-github'] });
@@ -752,12 +775,38 @@ try {
           onSample: (c) => process.stderr.write(`[kaizen] ${c.at} ${c.ok ? '✔' : '✘'} ${Object.entries(c.signals).map(([n, s]) => `${n}=${s.value ?? '—'}${s.ok ? '' : '!'}`).join(' ')}\n`),
         });
         const config = loadConfig(root);
+        // La violation est un incident daté de sa détection, que le retour arrière éventuel résout.
+        if (r.status === 'breach' && env) r.incident = openIncident(root, env, { at: r.detected_at, source: 'watch', summary: `${r.breached.join(', ')} hors seuil`, signals: r.breached });
         if (r.status === 'breach' && env && config.deploy.auto_rollback && config.deploy.environments?.[env]?.rollback) {
           r.rollback = rollback(root, env, { reason: `monitor : ${r.breached.join(', ')} hors seuil` });
         }
         out(r);
         process.exit(r.status === 'breach' ? 1 : 0);
-      } else die('usage : monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]');
+      } else if (sub === 'patrol') {
+        if (!env) die('usage : monitor patrol --env <env> [--plan p] [--interval 60]');
+        const r = await patrol(root, { env, plan, intervalSeconds: flags.interval });
+        out(r);
+        process.exit(r.status === 'breach' ? 1 : 0);
+      } else if (sub === 'alert') {
+        const file = typeof flags.file === 'string' ? flags.file : '-';
+        const payload = readFileSync(file === '-' ? 0 : file, 'utf8');
+        try {
+          out(handleAlert(root, payload, { env }));
+        } catch (err) {
+          die(err.message);
+        }
+      } else if (sub === 'incident') {
+        const action = positional[2];
+        const opts = { ...(typeof flags.at === 'string' ? { at: flags.at } : {}), ...(typeof flags.summary === 'string' ? { summary: flags.summary } : {}) };
+        try {
+          if (action === 'open') out(openIncident(root, env, { ...opts, source: typeof flags.source === 'string' ? flags.source : 'manuel' }));
+          else if (action === 'resolve') out(resolveIncident(root, env, opts));
+          else if (action === 'list') out(incidents(root, { env }));
+          else die('usage : monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]');
+        } catch (err) {
+          die(err.message);
+        }
+      } else die('usage : monitor check|watch|patrol [--env e] [--plan p] [--minutes 15] [--interval 60] | alert [--env e] [--file f] | incident open|resolve|list');
       break;
     }
     case 'config':

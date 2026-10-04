@@ -93,6 +93,20 @@ test('retour arrière : vers le déploiement précédent, tracé par un tag roll
   cleanup(dir);
 });
 
+test('deploy run : commande bloquée coupée au délai, en échec et sans tag', () => {
+  const dir = shopRepo({ deploy: { timeout_seconds: 600, environments: { staging: { command: 'node -e "setTimeout(() => {}, 20000)"', timeout_seconds: 1 } } } });
+  const started = Date.now();
+  const r = cli(dir, ['deploy', 'run', 'staging']);
+  assert.ok(Date.now() - started < 10000, 'le délai de l’environnement l’emporte');
+  assert.notEqual(r.code, 0);
+  assert.equal(r.json.ok, false);
+  assert.equal(r.json.exit, 'timeout');
+  assert.match(r.json.output, /incertain/);
+  assert.equal(r.json.tag, undefined);
+  assert.equal(cli(dir, ['deploy', 'list']).json.length, 0);
+  cleanup(dir);
+});
+
 test('monitor check : seuils de la config, seuils du plan, signal HTTP natif', async () => {
   const server = createServer((req, res) => {
     res.statusCode = req.url === '/health' ? 200 : 503;
@@ -140,7 +154,11 @@ test('monitor watch : violation confirmée sur échantillons consécutifs, retou
   assert.deepEqual(r.json.breached, ['error_rate']);
   assert.equal(r.json.samples, 3, 'un sain, puis deux hors seuil');
   assert.equal(r.json.rollback.ok, true, 'auto_rollback');
+  assert.equal(r.json.incident.opened, true, 'violation tracée comme incident');
   assert.equal(cli(dir, ['deploy', 'list']).json.at(-1).kind, 'rollback');
+  const [inc] = cli(dir, ['monitor', 'incident', 'list', '--env', 'staging']).json;
+  assert.equal(inc.source, 'watch');
+  assert.equal(inc.resolved_by, 'rollback', 'le retour arrière résout l’incident');
   writeFileSync(join(dir, 'signal-n.txt'), '0');
   cleanup(dir);
 });
@@ -161,6 +179,103 @@ test('metrics : DORA mesuré sur les vrais déploiements de production', () => {
   cleanup(dir);
 });
 
+test('monitor patrol : hors fenêtre, violation confirmée → incident ouvert une seule fois', async () => {
+  const dir = shopRepo({
+    deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } },
+    monitor: { signals: { error_rate: { command: 'node -e "console.log(require(\'fs\').existsSync(\'signal-bad.txt\') ? 1 : 0)"', max: 0.5 } }, consecutive: 2 },
+  });
+  cli(dir, ['deploy', 'run', 'production']);
+  const healthy = await cliAsync(dir, ['monitor', 'patrol', '--env', 'production', '--interval', '0']);
+  assert.equal(healthy.code, 0);
+  assert.equal(healthy.json.status, 'healthy');
+  writeFileSync(join(dir, 'signal-bad.txt'), 'x');
+  const r = await cliAsync(dir, ['monitor', 'patrol', '--env', 'production', '--interval', '0']);
+  assert.equal(r.code, 1);
+  assert.equal(r.json.status, 'breach');
+  assert.equal(r.json.opened, true);
+  assert.match(r.json.tag, /^incident\/production\/\d{8}T\d{6}Z$/);
+  const again = await cliAsync(dir, ['monitor', 'patrol', '--env', 'production', '--interval', '0']);
+  assert.equal(again.json.opened, false, 'incident déjà ouvert : pas de doublon');
+  assert.equal(cli(dir, ['monitor', 'incident', 'list']).json.length, 1);
+  cleanup(dir);
+});
+
+test('incident rattaché au commit déployé au moment de la détection, pas au dernier déploiement', () => {
+  // Tags de déploiement à dates fixes : les tags sont datés à la seconde, un test minuté serait instable.
+  const dir = shopRepo();
+  gitc(dir, ['tag', '-a', 'deploy/production/20260101T000000Z', '-m', '{}']);
+  const v1 = head(dir);
+  writeFiles(dir, { 'app.js': '2\n' });
+  gitc(dir, ['commit', '-qam', 'feat: v2'], ['tag', '-a', 'deploy/production/20260201T000000Z', '-m', '{}']);
+  const open = (at) => cli(dir, ['monitor', 'incident', 'open', '--env', 'production', '--at', at]).json;
+  assert.equal(open('2026-01-15T08:00:00Z').incident.sha, v1, 'alerte antérieure au déploiement v2');
+  cli(dir, ['monitor', 'incident', 'resolve', '--env', 'production', '--at', '2026-01-15T09:00:00Z']);
+  assert.equal(open('2026-02-03T08:00:00Z').incident.sha, head(dir), 'alerte postérieure : v2');
+  cleanup(dir);
+});
+
+test('monitor alert : Alertmanager, PagerDuty, Datadog et JSON simple ; détection datée par l’alerte', () => {
+  const dir = shopRepo({ deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } } });
+  cli(dir, ['deploy', 'run', 'production']);
+  const alert = (payload, env = 'production') => cli(dir, ['monitor', 'alert', '--env', env], { input: JSON.stringify(payload) });
+  const start = new Date(Date.now() + 60000).toISOString().replace(/\.\d+Z$/, 'Z');
+  const end = new Date(Date.now() + 2 * 3600000 + 60000).toISOString().replace(/\.\d+Z$/, 'Z');
+
+  const am = alert({ status: 'firing', alerts: [{ status: 'firing', labels: { alertname: 'HighErrorRate' }, startsAt: start }], commonAnnotations: { summary: 'Taux d’erreur 5 %' } });
+  assert.equal(am.code, 0, am.stderr);
+  assert.equal(am.json.alert.format, 'alertmanager');
+  assert.equal(am.json.incident.detected_at, start, 'heure de détection = début de l’alerte');
+  assert.equal(am.json.incident.summary, 'Taux d’erreur 5 %');
+  assert.equal(alert({ status: 'resolved', alerts: [{ status: 'resolved', endsAt: end }] }).json.resolved, true);
+  const [inc] = cli(dir, ['monitor', 'incident', 'list', '--env', 'production']).json;
+  assert.equal(inc.resolved_by, 'resolve');
+  assert.equal(inc.hours, 2);
+
+  assert.equal(inc.sha, head(dir), 'commit déployé au moment de la détection');
+  const pd = alert({ event: { event_type: 'incident.triggered', occurred_at: end, data: { title: 'API down' } } });
+  assert.equal(pd.json.alert.format, 'pagerduty');
+  assert.equal(pd.json.opened, true);
+  assert.equal(alert({ event: { event_type: 'incident.acknowledged', occurred_at: end } }).json.action, 'ignore');
+  const dd = alert({ alert_transition: 'Recovered', title: 'API down', date: Date.parse(end) + 1800000 });
+  assert.equal(dd.json.alert.format, 'datadog');
+  assert.equal(dd.json.resolved, true);
+  assert.equal(alert({ status: 'firing', summary: 'disque plein' }).json.alert.format, 'generic');
+  assert.notEqual(alert({ status: 'firing' }, '').code, 0, 'environnement requis');
+  cleanup(dir);
+});
+
+test('metrics : incident après la fenêtre = échec ; rétablissement depuis la détection', () => {
+  const dir = shopRepo({ deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } } });
+  cli(dir, ['deploy', 'run', 'production']);
+  const detected = new Date(Date.now() + 3 * 86400000).toISOString().replace(/\.\d+Z$/, 'Z');
+  const resolved = new Date(Date.parse(detected) + 3 * 3600000).toISOString();
+  assert.equal(cli(dir, ['monitor', 'incident', 'open', '--env', 'production', '--at', detected, '--summary', 'lenteurs']).json.opened, true);
+  assert.equal(cli(dir, ['monitor', 'incident', 'resolve', '--env', 'production', '--at', resolved]).json.resolved, true);
+  const m = cli(dir, ['metrics', '--no-github']).json;
+  assert.equal(m.instability.change_failure_rate, 1, 'incident avant le déploiement suivant');
+  assert.equal(m.instability.time_to_restore_hours_median, 3, 'détection → résolution');
+  assert.equal(m.deployments.incidents, 1);
+  cleanup(dir);
+});
+
+test('status : incident ouvert d’abord, puis post-mortem manquant', () => {
+  const dir = shopRepo({ deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } } });
+  cli(dir, ['init']);
+  cli(dir, ['deploy', 'run', 'production']);
+  const detected = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  cli(dir, ['monitor', 'incident', 'open', '--env', 'production', '--at', detected, '--summary', 'lenteurs']);
+  const st = () => cli(dir, ['status', '--json']).json;
+  assert.equal(st().next[0].command, '/kaizen:monitor production');
+  assert.match(st().next[0].why, /lenteurs/);
+  assert.equal(st().incidents.open, 1);
+  cli(dir, ['monitor', 'incident', 'resolve', '--env', 'production']);
+  assert.equal(st().next[0].command, '/kaizen:postmortem');
+  const docs = cli(dir, ['root']).json.docs_root || 'docs';
+  writeFiles(dir, { [`${docs}/postmortems/2026-pm.md`]: `---\ntitle: Lenteurs\ndetected: ${detected}\nresolved: ${detected}\n---\n` });
+  assert.ok(!st().next.some((n) => n.command === '/kaizen:postmortem'), 'post-mortem écrit');
+  cleanup(dir);
+});
+
 test('garde-fous : commande de production brute refusée, tag de déploiement forgé refusé', () => {
   const dir = shopRepo();
   const direct = preTool(dir, `cd . && ${MARK} # prod`);
@@ -169,6 +284,7 @@ test('garde-fous : commande de production brute refusée, tag de déploiement fo
   assert.equal(preTool(dir, MARK).status, 0, 'staging, non protégé');
   assert.equal(preTool(dir, `node "${CLI}" deploy run production`).status, 0, 'par le CLI');
   assert.equal(preTool(dir, 'git tag -a deploy/production/20260101T000000Z -m x').status, 2);
+  assert.equal(preTool(dir, 'git tag -a incident/production/20260101T000000Z -m x').status, 2, 'incident forgé');
   assert.equal(preTool(dir, 'git tag -l "deploy/*"').status, 0, 'lister reste permis');
   assert.equal(preTool(dir, 'npm test').status, 0);
   cleanup(dir);

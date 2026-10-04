@@ -17,7 +17,7 @@ aucune commande lancée à sa place.
 
 `node "$K" status --json` (hors dépôt git : dis-le, et réponds seulement sur le fond). Il donne
 l'initialisation, le profil, la constitution, le dernier plan et son stade, le garde-fou, l'état de
-la revue de la branche, et `next` : la prochaine étape déduite de l'état. Tu t'en sers comme d'un
+la revue de la branche, les incidents ouverts ou sans post-mortem, et `next` : la prochaine étape déduite de l'état. Tu t'en sers comme d'un
 fait, pas comme d'un ordre : la situation décrite par l'utilisateur l'emporte.
 
 ## 2. Répondre selon l'invocation
@@ -81,6 +81,7 @@ autopilot : de la demande à la PR prête, en autonomie
 | Préparer une version | `/kaizen:release` | notes, SemVer, CHANGELOG, checklist de mise en production |
 | Mettre en production, ou revenir en arrière | `/kaizen:deploy <env> [ref]`, `/kaizen:deploy rollback <env>` | commandes de l'équipe, approbation tapée pour la production, tag, surveillance, retour arrière |
 | La prod va-t-elle bien ? | `/kaizen:monitor [env] [watch n]` | signaux déclarés contre les seuils de la config et des plans |
+| Détecter les incidents en continu, une alerte vient de tomber | `/kaizen:monitor production continu`, `/kaizen:monitor production incidents` | contrôle planifié (`patrol`) ou alertes de l'équipe branchées, incidents datés |
 | Savoir si ça s'améliore | `/kaizen:metrics` | DORA approché, réutilisation des leçons, coût des cycles |
 | Push refusé, garde-fou qui bloque, skill qui ne se déclenche pas | — | `docs/depannage.md`, puis `/kaizen:setup check` |
 

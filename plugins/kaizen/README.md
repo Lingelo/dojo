@@ -101,7 +101,7 @@ lancer ensuite.
 | Commande | Rôle |
 |---|---|
 | `/kaizen:deploy` | Déploie par **vos** commandes (`deploy.environments`) : préconditions, approbation que vous tapez pour la production, tag `deploy/<env>/…`, surveillance des signaux du plan, **retour arrière** si un seuil est franchi. |
-| `/kaizen:monitor` | Signaux de production (health-check HTTP natif ou toute commande qui affiche un nombre) contre les seuils de la config et des plans livrés. Seuil franchi → retour arrière, puis post-mortem. |
+| `/kaizen:monitor` | Signaux de production (health-check HTTP natif ou toute commande qui affiche un nombre) contre les seuils de la config et des plans livrés. Seuil franchi → incident daté, retour arrière, puis post-mortem. Surveillance continue au-delà du déploiement : contrôle planifié (`patrol`) ou alertes de l'équipe (`alert`). |
 
 ### Apprendre et mesurer
 

@@ -1,6 +1,6 @@
 # Kaizen — bilan SDLC et positionnement
 
-*Au 4 octobre 2026, version 2.0.0.*
+*Au 4 octobre 2026, version 2.1.0.*
 
 Kaizen est un SDLC complet outillé pour un agent IA. Il couvre l'idée, le plan, le code, la revue, la
 livraison, le déploiement surveillé et l'apprentissage, avec des garde-fous exécutés par du code. Ce
@@ -19,7 +19,7 @@ encore en partie sur la consigne donnée à l'agent.
 | Vérification | `review`, CI menée par `watch-pr` | oui : push refusé sans revue réellement faite |
 | Livraison | `ship`, `release` | oui : taille des PR mesurée, SemVer vérifié |
 | Déploiement | `deploy` (plateforme détectée, retour arrière) | oui : code tapé par l'utilisateur pour la production, tags |
-| Exploitation | `monitor` (seuils des plans), retour arrière | en partie : surveillance pendant une fenêtre après déploiement |
+| Exploitation | `monitor` (seuils des plans, contrôle planifié, alertes), incidents datés, retour arrière | en partie : détection continue si `patrol` est planifié ou les alertes branchées |
 | Amélioration | `learn`, `postmortem`, `metrics` (DORA réel, coût) | en partie : mesure locale |
 
 ## Limites
@@ -28,11 +28,13 @@ Quatre limites précises, à connaître avant de l'adopter.
 
 - **Pas une méthode d'équipe.** Pas de cérémonies, pas d'estimation, pas de planification de
   portefeuille, pas de coordination entre équipes.
-- **Pas d'exploitation continue.** La surveillance dure une fenêtre après chaque déploiement. Un
-  incident trois jours plus tard ne remonte que par `/kaizen:monitor` ou par vos propres alertes.
+- **Pas de plateforme d'observabilité.** Kaizen ne collecte ni ne stocke de métriques et ne fait pas
+  d'astreinte : il lit vos signaux et reçoit vos alertes. Au-delà de la fenêtre après déploiement, la
+  détection continue repose sur un contrôle planifié (`monitor patrol`) ou sur vos alertes branchées à
+  `monitor alert` ; sans l'un ou l'autre, un incident tardif ne remonte que par `/kaizen:monitor`.
 - **Des garde-fous contre l'oubli, pas contre un agent malveillant.** Un script intermédiaire suffit
   à les contourner.
-- **Pas encore éprouvé en conditions réelles.** Les 26 évaluations de bout en bout tournent sur des
+- **Pas encore éprouvé en conditions réelles.** Les 29 évaluations de bout en bout tournent sur des
   projets de démonstration, pas en équipe sur la durée.
 
 ## Face aux SDLC classiques

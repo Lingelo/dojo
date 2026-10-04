@@ -168,6 +168,7 @@ aucune plateforme et ne devine jamais une commande.
 | `environments.<env>.protected` | `true` pour `production` | exige un code que **vous** tapez (`kaizen deploy <code>`) ; la commande brute est refusée par un hook |
 | `watch_minutes` | `15` | durée de la surveillance des signaux après un déploiement |
 | `auto_rollback` | `false` | retour arrière automatique dès qu'un seuil est franchi |
+| `timeout_seconds` | `1800` | délai maximum d'une commande de déploiement, de retour arrière ou de flag (surcharge possible par environnement : `environments.<env>.timeout_seconds`) ; au-delà, tout son arbre de processus est tué et le déploiement est en échec, sans tag |
 | `push_tags` | `true` | pousse les tags `deploy/<env>/…` et `rollback/<env>/…` (source des métriques DORA réelles) |
 | `flags.on` / `flags.off` | — | commandes de feature flag, avec `{flag}` et `{env}` (`kaizen.mjs deploy flag on|off <nom>`) |
 | `metrics_env` | `production` | environnement dont les déploiements alimentent `/kaizen:metrics` |
@@ -236,11 +237,12 @@ Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
 | Fichier | Rôle |
 |---|---|
 | `gate.json` | état du garde-fou (actif, plan, session, nombre de blocages) |
-| `cycles.jsonl` | un cycle `work`/`autopilot` par ligne, écrit par `gate off` : plan, durée, blocages, tokens (lu par `metrics` → `cycle_cost`) |
+| `cycles.jsonl` | un cycle `work`/`autopilot` par ligne, écrit par `gate off` : plan, durée, blocages, tokens de la session principale et des sous-agents par rôle (lu par `metrics` → `cycle_cost`) |
 | `deployments.jsonl` | déploiements, retours arrière et flags lancés depuis cette machine (les tags git font foi) |
 | `deploy-approvals.json` | approbations de déploiement protégé en attente ou confirmées, 30 min |
 | `monitor.jsonl` | échantillons des signaux (`monitor check` / `watch`), pour la chronologie des post-mortems |
 | `reviews.json` | dernière revue enregistrée par branche (arbre relu, verdict, relecteurs, renonciation) |
+| `agent-runs.jsonl` | sous-agents lancés pendant le cycle en cours (hook sur l'outil `Agent`) : rôle, modèle, id — pour ventiler `cycle_cost` ; effacé par `gate off` |
 | `review-evidence.json` | relecteurs de code réellement lancés (hook sur l'outil `Agent`), 12 h |
 | `waivers.json` | renonciations en attente de confirmation par l'utilisateur, 30 min |
 | `pr/<owner>-<repo>-<n>.json` | ce que `watch-pr` a déjà traité (fils, commentaires, checks) |

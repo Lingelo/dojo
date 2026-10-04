@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { deployments } from './deploy.mjs';
-import { defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, walkMarkdown } from './lib.mjs';
+import { defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, usageTotal, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
 const FIX_RE = /^(fix|hotfix|revert)(\(|!|:)|^Revert "/i;
@@ -144,7 +144,9 @@ function loopHealth(root, from, branch) {
 
 // DORA mesuré sur les vrais déploiements (tags deploy/<env>/… et rollback/<env>/… posés par
 // `kaizen.mjs deploy`), quand il y en a dans la fenêtre : fréquence, délai commit → production, taux
-// d'échec (déploiement suivi d'un retour arrière avant le suivant), temps de rétablissement.
+// d'échec (déploiement suivi d'un retour arrière ou d'un incident avant le suivant), temps de
+// rétablissement (détection de l'incident — ou déploiement, sans incident tracé — → retour arrière ou
+// résolution). Les incidents (`incident/<env>/…`) viennent de monitor watch, patrol ou d'une alerte.
 function doraFromDeployments(root, from, env) {
   const all = deployments(root, { env });
   const deploys = all.filter((d) => d.kind === 'deploy');
@@ -159,25 +161,32 @@ function doraFromDeployments(root, from, env) {
     const times = (git(root, ['log', '--format=%aI', range, '-n', '500'], { allowFail: true }) || '').split('\n').filter(Boolean).map(Date.parse);
     for (const t of times) lead.push((Date.parse(d.at) - t) / 3600000);
     const next = deploys[deploys.indexOf(d) + 1];
-    const rb = all.find((x) => x.kind === 'rollback' && x.at >= d.at && (!next || x.at < next.at));
-    if (rb) {
+    const during = (x) => x.at >= d.at && (!next || x.at < next.at);
+    const rb = all.find((x) => x.kind === 'rollback' && during(x));
+    const inc = all.find((x) => x.kind === 'incident' && during(x));
+    if (rb || inc) {
       failed++;
-      restore.push((Date.parse(rb.at) - Date.parse(d.at)) / 3600000);
+      const start = inc && (!rb || inc.at <= rb.at) ? inc.at : d.at;
+      const end = all.find((x) => (x.kind === 'rollback' || x.kind === 'resolve') && x.at >= start);
+      if (end) restore.push((Date.parse(end.at) - Date.parse(start)) / 3600000);
     }
   }
+  const windowed = (kind) => all.filter((x) => x.kind === kind && Date.parse(x.at) >= from.getTime());
   return {
     env,
     deployments: inWindow.length,
-    rollbacks: all.filter((x) => x.kind === 'rollback' && Date.parse(x.at) >= from.getTime()).length,
+    rollbacks: windowed('rollback').length,
+    incidents: windowed('incident').length,
     lead_time_hours_median: round(median(lead.filter((h) => h >= 0))),
     change_failure_rate: round(failed / inWindow.length, 2),
     time_to_restore_hours_median: round(median(restore)),
-    method: `tags deploy/${env}/… et rollback/${env}/… (kaizen.mjs deploy) : délai = premier commit → déploiement, échec = retour arrière avant le déploiement suivant, rétablissement = déploiement → retour arrière`,
+    method: `tags deploy/${env}/…, rollback/${env}/…, incident/${env}/… et resolve/${env}/… (kaizen.mjs deploy, monitor) : délai = premier commit → déploiement, échec = retour arrière ou incident avant le déploiement suivant, rétablissement = détection de l'incident (à défaut, déploiement) → retour arrière ou résolution`,
   };
 }
 
 // Coût des cycles work/autopilot terminés (`gate off`), relevé localement : durée, blocages du
-// garde-fou, tokens de la session principale. Local à la machine, comme .kaizen/state/.
+// garde-fou, tokens de la session principale et de ses sous-agents, ventilés par rôle (politique de
+// modèles). Local à la machine, comme .kaizen/state/.
 function cycleCost(root, from) {
   let lines = [];
   try {
@@ -195,15 +204,37 @@ function cycleCost(root, from) {
     })
     .filter((c) => c && Date.parse(c.ended) >= from.getTime());
   if (!cycles.length) return null;
-  const tokens = cycles.filter((c) => c.usage).map((c) => c.usage.input_tokens + c.usage.output_tokens + c.usage.cache_creation_input_tokens + c.usage.cache_read_input_tokens);
+  const withUsage = cycles.filter((c) => c.usage);
+  // Les cycles antérieurs au relevé des sous-agents n'ont que la session principale.
+  const withSub = withUsage.filter((c) => c.subagents);
+  const subTotal = (c) => usageTotal(c.subagents?.usage);
+  const mainSum = withSub.reduce((n, c) => n + usageTotal(c.usage), 0);
+  const subSum = withSub.reduce((n, c) => n + subTotal(c), 0);
+  const byRole = {};
+  for (const c of withSub) {
+    for (const [role, u] of Object.entries(c.subagents.by_role || {})) {
+      const r = (byRole[role] ||= { tokens: 0, output_tokens: 0 });
+      r.tokens += usageTotal(u);
+      r.output_tokens += Number(u.output_tokens) || 0;
+    }
+  }
   return {
     cycles: cycles.length,
     minutes_median: round(median(cycles.map((c) => c.minutes))),
-    tokens_median: round(median(tokens), 0),
-    output_tokens_median: round(median(cycles.filter((c) => c.usage).map((c) => c.usage.output_tokens)), 0),
+    tokens_median: round(median(withUsage.map((c) => usageTotal(c.usage) + subTotal(c))), 0),
+    output_tokens_median: round(median(withUsage.map((c) => (c.usage.output_tokens || 0) + (Number(c.subagents?.usage?.output_tokens) || 0))), 0),
+    main_tokens_median: round(median(withUsage.map((c) => usageTotal(c.usage))), 0),
+    subagent_tokens_median: withSub.length ? round(median(withSub.map(subTotal)), 0) : null,
+    subagents_median: withSub.length ? round(median(withSub.map((c) => c.subagents.agents || 0)), 0) : null,
+    subagent_share: mainSum + subSum ? round(subSum / (mainSum + subSum), 2) : null,
+    tokens_by_role: withSub.length ? byRole : null,
     gate_blocks_total: cycles.reduce((n, c) => n + (c.gate_blocks || 0), 0),
     cycles_with_gate_block_share: round(cycles.filter((c) => c.gate_blocks > 0).length / cycles.length, 2),
-    method: 'cycles /kaizen:work et /kaizen:autopilot clos par gate off sur cette machine ; tokens de la session principale (sous-agents non comptés)',
+    method:
+      'cycles /kaizen:work et /kaizen:autopilot clos par gate off sur cette machine ; tokens = session principale + sous-agents ' +
+      '(transcripts <session>/subagents/ de Claude Code, dédoublonnés par message) ; rôle d\'un sous-agent d\'après son lancement ' +
+      'consigné par le hook Agent (id d\'agent, sinon début du prompt), `inconnu` sans correspondance ; part et ventilation ' +
+      `calculées sur ${withSub.length}/${withUsage.length} cycle(s) relevés avec sous-agents`,
   };
 }
 

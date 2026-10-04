@@ -39,7 +39,8 @@ Puis Claude propose de corriger chaque point, **P1 d'abord** (ce qui protège), 
 accord :
 - **gabarits** générés depuis votre stack, jamais par-dessus un fichier existant :
   `audit fix ci` (GitHub Actions : installation et commandes de vérification détectées),
-  `pr_template`, `dependabot` (écosystèmes détectés), `codeowners --owner @équipe`, `gitignore_env` ;
+  `pr_template`, `dependabot` (écosystèmes détectés), `codeowners --owner @équipe`, `gitignore_env`,
+  `monitor_patrol` et `monitor_alert` (détection continue des incidents, `--env`, `--ref <sha>`) ;
 - **déploiement** : `deploy detect`, vous choisissez, `deploy configure <id>` ;
 - **réglages d'administration** (protection de branche) : Claude donne les réglages exacts, vous les
   appliquez ;

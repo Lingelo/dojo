@@ -22,7 +22,7 @@ const filePath = String(input.tool_input?.file_path || input.tool_input?.noteboo
 const PUSH = /(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+push(\s|$)/;
 const TAMPER = /(reviews|review-evidence|waivers|deploy-approvals)\.json|deployments\.jsonl|review-hooks\.mjs/;
 // Tags de déploiement fabriqués à la main : ils fausseraient les métriques DORA et les post-mortems.
-const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback)\//;
+const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback|incident|resolve)\//;
 const tamper = input.tool_name === 'Bash'
   ? TAMPER.test(command) && /\.kaizen|review-hooks\.mjs/.test(command)
   : /\.kaizen[\\/]state[\\/]/.test(filePath) && TAMPER.test(filePath);
@@ -48,7 +48,7 @@ try {
     process.exit(2);
   }
   if (forged) {
-    process.stderr.write('[kaizen] Les tags deploy/… et rollback/… ne se créent que par `kaizen.mjs deploy run|rollback` : ils portent les métriques DORA et la chronologie des post-mortems.\n');
+    process.stderr.write('[kaizen] Les tags deploy/…, rollback/…, incident/… et resolve/… ne se créent que par `kaizen.mjs deploy` et `kaizen.mjs monitor` : ils portent les métriques DORA et la chronologie des post-mortems.\n');
     process.exit(2);
   }
   // Déploiement direct d'un environnement protégé : il passe par /kaizen:deploy (approbation tapée par
