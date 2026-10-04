@@ -303,6 +303,15 @@ test('dev detect : monorepo et .claude/launch.json prioritaire', () => {
   const site = c.find((x) => x.name === 'site');
   assert.equal(site.framework, 'Next.js');
   assert.equal(site.port, 3100);
+  writeFiles(dir, {
+    'apps/srv/package.json': { name: 'srv', scripts: { dev: 'node --watch server.js' } },
+    'apps/srv/server.js': 'const port = process.env.PORT || 5173;\ncreateServer(h).listen(port);\n',
+    'apps/api/package.json': { name: 'api', scripts: { dev: 'node api.mjs' } },
+    'apps/api/api.mjs': 'app.listen(8080, () => {});\n',
+  });
+  const ports = Object.fromEntries(cli(dir, ['dev', 'detect']).json.map((x) => [x.name, x.port]));
+  assert.equal(ports.srv, 5173, 'port lu dans le point d’entrée (process.env.PORT || 5173)');
+  assert.equal(ports.api, 8080, 'port lu dans listen(8080)');
   writeFiles(dir, { '.claude/launch.json': { configurations: [{ name: 'web', runtimeExecutable: 'pnpm', runtimeArgs: ['dev'], port: 4000 }] } });
   assert.deepEqual(cli(dir, ['dev', 'detect']).json.map((x) => x.source), ['.claude/launch.json']);
   cleanup(dir);

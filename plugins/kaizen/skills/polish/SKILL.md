@@ -32,6 +32,11 @@ on ne touche qu'à la surface concernée par les retours.
 
 ## 2. Serveur de dev
 
+**Toujours**, même si l'utilisateur annonce qu'il ne regardera pas ou que la retouche paraît triviale :
+la page servie est la seule preuve que la retouche rend ce qui était demandé, et le rapport final
+donne son URL et la commande d'arrêt par PID (`kill <pid>`, jamais `pkill`). Seul un blocage
+(aucun candidat, port pris par un autre projet, serveur injoignable) en dispense, et il est rapporté.
+
 1. `node "$K" dev detect` → candidats (commande, dossier, port, URL, source). `.claude/launch.json`
    fait foi s'il existe. Plusieurs candidats (monorepo) → demande lequel ; aucun → demande la commande
    et le port, sans deviner.

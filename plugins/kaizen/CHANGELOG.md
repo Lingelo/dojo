@@ -48,6 +48,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   `gate on`) : une autre session sur le même repo n'est plus bloquée.
 - Garde-fou tenu dans `gate.budget_seconds` (840 s) sous le délai du hook (900 s) : avant, plusieurs
   commandes de 600 s pouvaient faire tuer le hook, qui ne protégeait alors plus rien.
+- `/kaizen:polish` lance toujours le serveur de dev, même quand l'utilisateur annonce qu'il ne
+  regardera pas : la page servie est la preuve de la retouche (l'évaluation échouait par intermittence).
+- `dev detect` lit le port par défaut d'un serveur Node maison dans son point d'entrée
+  (`process.env.PORT || 5173`, `.listen(8080)`) au lieu d'annoncer 3000 à tort.
 
 ## [1.2.0] - 2026-10-04
 
