@@ -105,7 +105,7 @@ test('monitor check : seuils de la config, seuils du plan, signal HTTP natif', a
         health: { type: 'http', url: `http://127.0.0.1:${port}/health` },
         ready: { type: 'http', url: `http://127.0.0.1:${port}/ready` },
         error_rate: { command: 'node -e "console.log(0.02)"', max: 0.05 },
-        p95_ms: { command: 'echo "p95: 900"', max: 800 },
+        p95_ms: { command: 'node -e "console.log(\'p95: 900\')"', max: 800 },
         broken: { command: 'echo n/a' },
       },
     },

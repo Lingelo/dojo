@@ -24,7 +24,33 @@
 
 ## Configurer
 
-Kaizen ne connaît aucune plateforme : vous déclarez vos commandes dans `.kaizen/config.json`. Voir
+Kaizen n'impose aucune plateforme : il exécute **vos** commandes, déclarées dans `.kaizen/config.json`.
+Pour ne pas les écrire à la main, `deploy detect` reconnaît comment le projet se déploie :
+
+| Reconnu par | Plateforme | Retour arrière proposé |
+|---|---|---|
+| `vercel.json`, `.vercel/` | Vercel | `vercel rollback` |
+| `netlify.toml` | Netlify | redéploiement du commit précédent |
+| `fly.toml` (app, health-check) | Fly.io | redéploiement du commit précédent |
+| remote `heroku`, `app.json` | Heroku | `heroku rollback` |
+| `config/deploy.yml` (+ destinations) | Kamal | `kamal rollback <sha>` |
+| `config/deploy.rb` (+ étapes) | Capistrano | `cap <étape> deploy:rollback` |
+| `Chart.yaml` (+ `values-<env>.yaml`) | Kubernetes (Helm) | `helm rollback` |
+| `kustomization.yaml` (overlays) | Kubernetes (Kustomize) | `kubectl rollout undo` |
+| `serverless.yml`, `template.yaml` (SAM), `firebase.json` | Serverless, AWS SAM, Firebase | redéploiement du commit précédent |
+| workflow GitHub Actions `workflow_dispatch` | votre pipeline existant | le même workflow sur le commit cible (si un input `ref`) |
+| workflow de déploiement sur `push` | déploiement continu | Kaizen suit le run du commit ; retour arrière par revert |
+| cibles `deploy*`/`rollback*` du Makefile, scripts npm | vos scripts | `rollback*` s'il existe, sinon redéploiement |
+| `docker-compose*.yml`, `*.tf` | Compose, Terraform (confiance faible) | redéploiement / réapplication du commit précédent |
+
+```text
+node $K deploy detect              # candidats : commandes, retour arrière, confiance, notes
+node $K deploy configure fly       # écrit le candidat choisi (sans écraser un environnement existant)
+```
+
+Le **redéploiement du commit précédent** lance la même commande depuis un worktree git du commit
+cible, sans toucher à votre copie de travail (shell POSIX : Linux, macOS, Git Bash). Chaque candidat
+porte ses limites (`notes`) : jeton requis, image taguée par SHA à vérifier, Terraform à relire… Voir
 [Configuration](../configuration.md#deploy--déploiement-et-retour-arrière).
 
 ```json

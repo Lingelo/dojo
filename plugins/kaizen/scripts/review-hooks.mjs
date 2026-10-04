@@ -32,7 +32,7 @@ try {
 
   if (mode === 'evidence') {
     const reviewer = state.reviewerOf(input.tool_input);
-    if (reviewer) state.addEvidence(root, { reviewer, session: input.session_id || null });
+    if (reviewer) state.addEvidence(root, { reviewer, session: input.session_id || null, model: input.tool_input?.model || null });
   } else {
     const [, kind, code] = WAIVE.exec(String(input.prompt));
     if (kind.toLowerCase() === 'deploy') {

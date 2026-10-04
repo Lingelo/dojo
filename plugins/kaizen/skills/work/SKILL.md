@@ -56,7 +56,7 @@ du repo, vérification ciblée, preuve consignée, **commit de l'unité** (fichi
 format conventionnel avec Jira). Les lectures indépendantes d'une unité partent dans un seul message.
 
 Unités **indépendantes** (aucun fichier commun, aucune dépendance) et nombreuses : tu peux en confier à
-des sous-agents `general-purpose` en parallèle, chacun avec un paquet autonome (unité complète, fichiers,
+des sous-agents `general-purpose` en parallèle (`model` : `node "$K" models --json` → `roles.implement.model`), chacun avec un paquet autonome (unité complète, fichiers,
 motif à imiter, commande de vérification, interdiction de commiter). Tu restes l'intégrateur :
 inspecte le diff réel de chaque résultat, relance la vérification, et fais toi-même les commits. Au
 moindre conflit, repasse en série.

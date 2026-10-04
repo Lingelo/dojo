@@ -58,7 +58,9 @@ autopilot : de la demande à la PR prête, en autonomie
 
 | Situation | Commande | Pourquoi celle-là |
 |---|---|---|
-| Kaizen jamais utilisé dans ce repo | `/kaizen:setup` | config, commandes de vérification, profil (`lean` pour commencer) |
+| Kaizen jamais utilisé dans ce repo | `/kaizen:setup` | config, commandes de vérification, déploiement détecté, profil (`lean` pour commencer) |
+| Mettre en place le SDLC, savoir ce qui manque au projet | `/kaizen:setup audit` | maturité par domaine (CI, tests, secrets, revue, déploiement, monitoring) et corrections guidées par priorité |
+| Choisir ou ajuster le modèle des agents | `node $K models`, puis `models` dans `.kaizen/config.json` | un modèle par rôle selon le profil : recherche économe, jugements critiques au plus fort |
 | Poser les règles du projet | `/kaizen:constitution` | 5 à 9 principes, chacun avec un contrôle que plan et revue appliquent |
 | Ne sait pas quoi faire ensuite | `/kaizen:ideate` | idées ancrées dans le code, critiquées, classées |
 | Une idée de fonctionnalité, encore floue | `/kaizen:brainstorm <idée>` | définit **quoi** : exigences R, exemples d'acceptation AE |

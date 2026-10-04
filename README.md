@@ -147,7 +147,8 @@ Storyboard → composition HTML/CSS/SVG/Canvas → stills de contrôle → rendu
 
 ```bash
 /kaizen:help                                    # c'est quoi, où en est le repo, quelle commande lancer
-/kaizen:setup                                   # config, profil (lean pour commencer), dossiers docs/
+/kaizen:setup audit                             # ce qui manque au projet (CI, secrets, déploiement…), corrigé par priorité
+/kaizen:setup                                   # config, profil (lean pour commencer), déploiement détecté
 /kaizen:constitution                            # principes non négociables du projet
 /kaizen:brainstorm export CSV des commandes     # QUOI construire → docs/plans/…-plan.md
 /kaizen:plan                                    # COMMENT → unités, tests, retour arrière + relecture du plan

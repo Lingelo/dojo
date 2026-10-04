@@ -78,10 +78,10 @@ export function reviewerOf(toolInput = {}) {
   return null;
 }
 
-export function addEvidence(root, { reviewer, session = null }) {
+export function addEvidence(root, { reviewer, session = null, model = null }) {
   const now = Date.now();
   const list = readJson(root, 'review-evidence.json', []).filter((e) => now - Date.parse(e.at) < EVIDENCE_MAX_AGE_MS);
-  list.push({ reviewer, session, at: new Date(now).toISOString() });
+  list.push({ reviewer, model, session, at: new Date(now).toISOString() });
   writeJson(root, 'review-evidence.json', list);
 }
 
@@ -99,7 +99,11 @@ export function recordReview(root, { verdict, run = null } = {}) {
   const config = loadConfig(root);
   const state = readJson(root, 'reviews.json', {});
   const previous = state[branch];
-  const reviewers = [...new Set(evidenceSince(root, previous?.at).map((e) => e.reviewer))].sort();
+  const evidence = evidenceSince(root, previous?.at);
+  const reviewers = [...new Set(evidence.map((e) => e.reviewer))].sort();
+  // Modèle réellement demandé pour chaque relecteur (paramètre `model` de l'appel Agent, sinon celui
+  // de la définition de l'agent).
+  const models = Object.fromEntries(evidence.map((e) => [e.reviewer, e.model || 'défaut de l’agent']));
   const lines = branchLines(root, config);
   // Mise à jour après les correctifs de la revue elle-même : sans nouveau relecteur, seulement si ce qui
   // a changé depuis l'arbre relu reste sous le plafond de lignes non relues.
@@ -118,7 +122,7 @@ export function recordReview(root, { verdict, run = null } = {}) {
         `revue légère seulement jusqu’à ${LIGHT_MAX_LINES}) : lance /kaizen:review, qui exécute les relecteurs, avant d’enregistrer`,
     );
   }
-  const entry = { ...snapshot(root, branch), verdict, depth: reviewers.length ? 'agents' : 'légère', reviewers, run, at: new Date().toISOString() };
+  const entry = { ...snapshot(root, branch), verdict, depth: reviewers.length ? 'agents' : 'légère', reviewers, models, run, at: new Date().toISOString() };
   state[branch] = entry;
   writeJson(root, 'reviews.json', state);
   return entry;

@@ -39,6 +39,9 @@ commandes.
 /kaizen:setup
 ```
 
+Projet existant ? Commencez par `/kaizen:setup audit` : il note ce qui est en place (CI, tests,
+secrets, revue, déploiement, monitoring) et corrige le plus important d'abord.
+
 Claude crée `.kaizen/config.json` et les dossiers `docs/plans`, `docs/learnings` et `docs/ideation`.
 Il détecte la stack et vous montre les commandes de vérification qu'il a trouvées (`npm test`,
 `npm run -s lint`…). **Vérifiez-les** : ce sont elles que le garde-fou lancera. Il vous propose

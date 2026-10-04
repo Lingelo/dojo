@@ -63,7 +63,8 @@ profondeur ciblée. Annonce en une ligne par relecteur pourquoi il est retenu.
 
 Lis `${CLAUDE_PLUGIN_ROOT}/references/review-contract.md`. Crée le dossier de run avec
 `node "$K" run-dir reviews` (il affiche le chemin ; ignoré par git). Lance **tous** les relecteurs retenus
-**dans un seul message** (outil `Agent`, `subagent_type: "kaizen:<nom>"`), chacun avec ce prompt :
+**dans un seul message** (outil `Agent`, `subagent_type: "kaizen:<nom>"`, `model` lu dans
+`node "$K" models --json` → `agents.<nom>.model`, omis si `inherit`), chacun avec ce prompt :
 
 ```
 <contrat>

@@ -38,7 +38,7 @@ invalide une décision prise en session arrête l'écriture : rends `status: blo
 ## Phase 1 — Recherche (parallèle, un seul message)
 
 Prépare un **contexte de travail** autonome (objectif, exigences R/AE, modules supposés, décisions
-envisagées) et lance selon le besoin :
+envisagées) et lance selon le besoin, chaque agent avec son `model` (`node "$K" models --json`) :
 
 | Agent | Quand |
 |---|---|

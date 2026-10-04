@@ -25,6 +25,17 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   la saisie de `kaizen waive <code>` par l'utilisateur (hook `UserPromptSubmit`, 30 min, usage unique)
   la rend effective. `ship` ajoute une section « Revue écartée » à la PR. Le hook `PreToolUse` refuse
   l'écriture directe des fichiers d'état de revue et l'appel manuel des hooks de preuve.
+- **`deploy detect` / `deploy configure`** : reconnaît la plateforme de déploiement (Vercel, Netlify,
+  Fly.io, Heroku, Kamal, Capistrano, Helm, Kustomize, Serverless, AWS SAM, Firebase, workflows GitHub
+  Actions `workflow_dispatch` ou déploiement continu, Makefile, scripts npm, Compose, Terraform) et
+  propose commandes, retour arrière natif (ou redéploiement du commit précédent depuis un worktree)
+  et health-check, avec confiance et limites ; écrit le candidat choisi sans écraser l'existant.
+- **Politique de modèles** (`models`, `node $K models`) : un rôle par agent, un modèle par rôle selon
+  le profil (recherche économe, relecteurs critiques au plus fort), ajustable par rôle ou par agent ;
+  les skills passent le modèle à chaque sous-agent et la revue enregistre celui réellement demandé.
+- **`/kaizen:setup audit`** et `node $K audit` : maturité SDLC du projet sur cinq domaines (fondations,
+  flux, livraison, exploitation, boucle Kaizen), feuille de route priorisée, corrections guidées, et
+  gabarits générés depuis la stack sans jamais écraser (`audit fix ci|pr_template|dependabot|codeowners|gitignore_env`).
 - **Déploiement et monitoring** :
   - `/kaizen:deploy` : déploie par les commandes de l'équipe (`deploy.environments`), préconditions
     (CI verte, checklist des plans livrés, retour arrière prêt, signaux sains), approbation que

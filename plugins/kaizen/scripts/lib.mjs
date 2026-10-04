@@ -43,6 +43,8 @@ export const DEFAULT_CONFIG = {
   // Déploiement et monitoring : commandes de l'équipe, Kaizen ne connaît aucune plateforme.
   deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, flags: {} },
   monitor: { signals: {}, interval_seconds: 60, consecutive: 2 },
+  // Modèle par rôle d'agent : défauts du profil (scripts/models.mjs), ajustables par rôle ou par agent.
+  models: { roles: {}, agents: {} },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
   packs: [],
 };
@@ -69,6 +71,10 @@ export function loadConfig(root) {
   merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
   merged.deploy = { ...DEFAULT_CONFIG.deploy, ...(base.deploy || {}), ...(local.deploy || {}) };
   merged.monitor = { ...DEFAULT_CONFIG.monitor, ...(base.monitor || {}), ...(local.monitor || {}) };
+  merged.models = {
+    roles: { ...(base.models?.roles || {}), ...(local.models?.roles || {}) },
+    agents: { ...(base.models?.agents || {}), ...(local.models?.agents || {}) },
+  };
   // Un profil mal saisi ne doit pas casser les hooks : repli sur « standard », signalé par `config`.
   if (!PROFILES.includes(merged.profile)) {
     merged.profile_warning = `profile inconnu : "${merged.profile}" (attendu : ${PROFILES.join(', ')}) — « standard » appliqué`;

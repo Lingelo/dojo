@@ -195,6 +195,36 @@ Facultatif. Les signaux que `/kaizen:monitor` et `/kaizen:deploy` comparent à l
 | `interval_seconds` | `60` | intervalle entre deux échantillons |
 | `consecutive` | `2` | échantillons hors seuil de suite pour retenir une violation |
 
+### `models` — le bon modèle pour chaque tâche
+
+Chaque agent a un **rôle**, chaque rôle un modèle (`haiku`, `sonnet`, `opus`, ou `inherit` = celui de
+la session). Les défauts dépendent du profil :
+
+| Rôle | Agents | `lean` | `standard` | `full` |
+|---|---|---|---|---|
+| `research` | repo, learnings, git-historian, docs, flow-analyst | haiku | sonnet | sonnet |
+| `review` | correctness, testing, performance, reliability, api-contract, maintainability, standards | sonnet | sonnet | opus |
+| `review_critical` | security, data-migration, adversarial | sonnet | opus | opus |
+| `plan_review` | plan-coherence, plan-feasibility, plan-scope, plan-design | haiku | sonnet | opus |
+| `plan_review_critical` | plan-security, plan-adversarial | sonnet | opus | opus |
+| `implement` | sous-agents de `work` (unités indépendantes) | sonnet | sonnet | inherit |
+
+Principe : la lecture en volume coûte peu d'erreurs ; les jugements dont l'erreur coûte cher
+(sécurité, migrations, décisions de plan) ont le modèle le plus fort.
+
+Ajustez par rôle ou par agent :
+
+```json
+"models": {
+  "roles": { "review_critical": "opus", "research": "haiku" },
+  "agents": { "performance-reviewer": "opus" }
+}
+```
+
+`node $K models` affiche la politique effective et signale les valeurs invalides. La revue enregistre
+le modèle réellement demandé pour chaque relecteur (`review status`), et `/kaizen:metrics` mesure le
+coût des cycles : de quoi vérifier qu'un modèle plus économe ne dégrade pas la qualité.
+
 ### `packs`
 
 Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).

@@ -8,6 +8,7 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 
 | Je veux… | Lire |
 |---|---|
+| Mettre en place le SDLC sur un projet | `/kaizen:setup audit` ([guide](guides/setup.md)) |
 | Savoir quelle commande lancer, là, maintenant | `/kaizen:help` ([guide](guides/help.md)) |
 | Voir Kaizen en une minute | [La vidéo de présentation](media/kaizen-presentation.mp4) |
 | Comprendre Kaizen en 5 minutes | [Le README du plugin](../README.md) |

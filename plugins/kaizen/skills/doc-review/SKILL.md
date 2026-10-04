@@ -46,7 +46,7 @@ toujours `kaizen:plan-coherence-reviewer` et `kaizen:plan-feasibility-reviewer`,
 
 Annonce l'équipe (une ligne par relecteur conditionnel et sa raison). Lis
 `${CLAUDE_PLUGIN_ROOT}/references/doc-review-contract.md` et lance **tous** les relecteurs **dans un
-seul message**, chacun avec : le contrat, le chemin du plan (à lire en entier), la constitution
+seul message** (`model` de chaque relecteur lu dans `node "$K" models --json`), chacun avec : le contrat, le chemin du plan (à lire en entier), la constitution
 (`node "$K" constitution --json`) et les règles de packs applicables, les décisions acquises (Key
 Decisions annotées, KTD « décidé en session »), et sa lentille.
 

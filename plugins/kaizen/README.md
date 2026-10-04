@@ -173,6 +173,16 @@ branche par défaut), et liste celles que personne n'a jamais citées. Une leço
 signale une boucle qui ne se referme pas. `metrics` mesure aussi le **coût** de chaque cycle (durée,
 tokens, blocages du garde-fou) pour juger si la cérémonie rapporte plus qu'elle ne coûte.
 
+**Le bon modèle pour chaque tâche.** Chaque agent a un rôle, chaque rôle un modèle selon le profil :
+recherche économe, relecteurs critiques (sécurité, migrations, adversarial) au modèle le plus fort.
+Ajustable par rôle ou par agent (`models`), vérifiable (`node $K models`, modèle enregistré par
+relecteur).
+
+**Mettre le SDLC en place.** `/kaizen:setup audit` note le projet sur cinq domaines (fondations,
+flux, livraison, exploitation, boucle Kaizen) et corrige dans l'ordre de priorité : CI, modèle de
+PR, Dependabot, CODEOWNERS générés depuis votre stack ; plateforme de déploiement reconnue par
+`deploy detect` (Vercel, Fly.io, Heroku, Kamal, Helm, Kustomize, GitHub Actions…).
+
 ## Agents (21)
 
 | Rôle | Agents |

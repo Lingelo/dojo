@@ -24,6 +24,9 @@ Toutes les opérations déterministes passent par le CLI, jamais par une réimpl
 ```bash
 K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"
 node "$K" status [--json]          # où en est le repo dans la boucle + prochaine commande (lu par help)
+node "$K" models [--json] [--agent a]           # modèle de chaque agent (profil + config) : à passer à l'outil Agent
+node "$K" audit [--json] | audit fix <id>       # maturité SDLC du projet, gabarits (ci, pr_template, dependabot, codeowners, gitignore_env)
+node "$K" deploy detect | deploy configure <id> # plateforme de déploiement reconnue → config
 node "$K" root                     # chemins : docs_root, plans, learnings, ideation (JSON)
 node "$K" config                   # configuration effective
 node "$K" detect                   # stack + commandes de vérification
@@ -145,6 +148,13 @@ frontmatter et les identifiants (R1, AE1, KTD1, U1) ne se traduisent jamais : le
   le défaut conservateur et le consignent.
 
 ## Sous-agents
+
+**Le bon modèle pour chaque agent.** Avant de lancer des agents, lis une fois
+`node "$K" models --json` et passe à chaque appel `Agent` le paramètre `model` de cet agent
+(`agents.<nom>.model` ; `inherit` → n'en passe pas). Un sous-agent `general-purpose` qui implémente une
+unité prend `roles.implement.model`. C'est la politique de l'équipe (profil, puis `models` de la
+config) : n'en change pas pour « aller plus vite » ; si un agent échoue faute de capacité, relance-le
+une fois avec le modèle supérieur et dis-le dans le rapport.
 
 Les agents du plugin s'invoquent avec l'outil `Agent`, `subagent_type: "kaizen:<nom>"`. Si ce type
 n'apparaît pas dans la liste des agents disponibles, utilise `general-purpose` et colle en tête du

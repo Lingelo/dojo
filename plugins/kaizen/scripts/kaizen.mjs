@@ -3,9 +3,12 @@
 //
 //   node kaizen.mjs status [--json]              où en est le repo dans la boucle, et la commande suivante
 //   node kaizen.mjs root                         chemins des livrables (JSON)
+//   node kaizen.mjs models [--json] [--agent a]  modèle de chaque agent selon le profil et la config
+//   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x]   maturité SDLC du projet
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
 //                                                 déploiement par les commandes de l'équipe, tag deploy/<env>/…
 //   node kaizen.mjs deploy flag on|off <nom> [--env e]     feature flag (deploy.flags)
+//   node kaizen.mjs deploy detect [--json] | configure <id> [--force]   plateforme reconnue → config
 //   node kaizen.mjs monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]
 //                                                 signaux de production (exit 1 si seuil franchi)
 //   node kaizen.mjs config                       configuration effective (JSON)
@@ -47,6 +50,9 @@ import { detectDevServers, probe } from './devserver.mjs';
 import { computeMetrics } from './metrics.mjs';
 import { releaseNotes } from './release.mjs';
 import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs';
+import { configureDeploy, detectDeploy } from './deploydetect.mjs';
+import { ROLE_LABELS, resolveModels } from './models.mjs';
+import { audit, scaffold } from './audit.mjs';
 import { check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
 import {
@@ -644,11 +650,68 @@ try {
     case 'root':
       out(paths(requireRepo()));
       break;
+    case 'audit': {
+      const root = requireRepo();
+      if (sub === 'fix') {
+        const id = positional[2];
+        if (!id) die('usage : audit fix <ci|pr_template|dependabot|codeowners|gitignore_env> [--owner @x]');
+        out(scaffold(root, id, { owner: typeof flags.owner === 'string' ? flags.owner : undefined }));
+        break;
+      }
+      const r = audit(root, { github: !flags['no-github'] });
+      if (flags.json) {
+        out(r);
+        break;
+      }
+      const icon = { ok: '✔', warn: '⚠', missing: '✘', unknown: '?' };
+      out(`Maturité SDLC — ${r.stacks.join(', ') || 'stack non reconnue'}`);
+      for (const [area, a] of Object.entries(r.areas)) {
+        out(`\n${area}${a.score === null ? '' : ` — ${a.score} %`}`);
+        for (const ch of r.checks.filter((x) => x.area === area)) out(`  ${icon[ch.status]} ${ch.title} — ${ch.evidence}`);
+      }
+      if (r.next.length) {
+        out('\nPar priorité :');
+        for (const n of r.next) out(`  P${n.priority} ${n.title} → ${n.how}${n.scaffold ? ` (gabarit : audit fix ${n.scaffold})` : ''}`);
+      }
+      break;
+    }
+    case 'models': {
+      const m = resolveModels(loadConfig(requireRepo()));
+      if (typeof flags.agent === 'string') {
+        const a = m.agents[flags.agent.replace(/^kaizen:/, '')];
+        if (!a) die(`agent inconnu : ${flags.agent}`);
+        out(a.model);
+      } else if (flags.json) out(m);
+      else {
+        out(`Modèles — profil ${m.profile}`);
+        for (const [r, v] of Object.entries(m.roles)) out(`  ${ROLE_LABELS[r].padEnd(52)} ${v.model.padEnd(8)} (${v.source})`);
+        const own = Object.entries(m.agents).filter(([, v]) => v.source === 'config' && m.roles[v.role].source !== 'config');
+        for (const [a, v] of own) out(`  ↳ ${a.padEnd(50)} ${v.model.padEnd(8)} (config)`);
+        for (const w of m.warnings) out(`  ⚠ ${w}`);
+      }
+      break;
+    }
     case 'deploy': {
       const root = requireRepo();
       const env = positional[2];
       const ref = typeof flags.ref === 'string' ? flags.ref : undefined;
-      if (sub === 'request') out(requestDeploy(root, env, { ref }));
+      if (sub === 'detect') {
+        const found = detectDeploy(root);
+        if (flags.json) out(found);
+        else if (!found.length) out('Aucun mécanisme de déploiement reconnu : déclarez vos commandes dans .kaizen/config.json → deploy.environments.');
+        else {
+          for (const c of found) {
+            out(`● ${c.id} — ${c.platform} (confiance ${c.confidence}, ${c.source})`);
+            for (const [e, d] of Object.entries(c.environments)) out(`    ${e.padEnd(10)} déployer : ${d.command}\n               revenir  : ${d.rollback || '— (à prévoir)'}`);
+            for (const [n, s] of Object.entries(c.signals)) out(`    signal ${n} : ${s.url}`);
+            for (const n of c.notes) out(`    · ${n}`);
+          }
+          out('\nÉcrire un candidat dans la config : node kaizen.mjs deploy configure <id>');
+        }
+      } else if (sub === 'configure') {
+        if (!env) die('usage : deploy configure <id> [--force]   (id : voir deploy detect)');
+        out(configureDeploy(root, env, { force: Boolean(flags.force) }));
+      } else if (sub === 'request') out(requestDeploy(root, env, { ref }));
       else if (sub === 'run') {
         // Plans livrés depuis le dernier déploiement de cet environnement : leurs signaux et seuils
         // serviront à la surveillance qui suit.
