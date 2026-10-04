@@ -2,8 +2,8 @@
 // Racine du repo, configuration, frontmatter YAML (sous-ensemble), détection de stack.
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 // ---------------------------------------------------------------------------
@@ -29,12 +29,17 @@ export function repoRoot(cwd = process.cwd()) {
   }
 }
 
+// Profils d'adoption : la cérémonie s'ajuste, les garde-fous déterministes restent.
+export const PROFILES = ['lean', 'standard', 'full'];
+
 export const DEFAULT_CONFIG = {
   docs_root: 'docs',
   language: 'auto',
   tracker: 'auto',
   verify: {},
-  gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, max_age_hours: 24 },
+  profile: 'standard',
+  gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24 },
+  review: { require_before_push: true, max_unreviewed_lines: 80 },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
   packs: [],
 };
@@ -58,6 +63,12 @@ export function loadConfig(root) {
   merged.gate = { ...DEFAULT_CONFIG.gate, ...(base.gate || {}), ...(local.gate || {}) };
   merged.verify = { ...(base.verify || {}), ...(local.verify || {}) };
   merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
+  merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
+  // Un profil mal saisi ne doit pas casser les hooks : repli sur « standard », signalé par `config`.
+  if (!PROFILES.includes(merged.profile)) {
+    merged.profile_warning = `profile inconnu : "${merged.profile}" (attendu : ${PROFILES.join(', ')}) — « standard » appliqué`;
+    merged.profile = 'standard';
+  }
   if (base.docs_root) merged.docs_root = base.docs_root;
   return merged;
 }
@@ -302,18 +313,26 @@ function tail(text, n = 40) {
   return lines.slice(-n).join('\n');
 }
 
-export function runVerify(root, { only, timeoutSeconds } = {}) {
+export function runVerify(root, { only, timeoutSeconds, budgetSeconds } = {}) {
   const config = loadConfig(root);
   const { commands } = verifyCommands(root, config);
   // L'audit des dépendances (réseau, lent) ne tourne que sur demande explicite (--only audit).
   const wanted = only ? only.split(',').map((s) => s.trim()) : Object.keys(commands).filter((k) => k !== 'audit');
-  const timeout = (timeoutSeconds || config.gate.timeout_seconds || 600) * 1000;
+  const perCommand = (timeoutSeconds || config.gate.timeout_seconds || 600) * 1000;
+  // Budget global (hook Stop) : une commande ne démarre que s'il reste du temps, et ne dépasse jamais
+  // ce qui reste — sinon le hook serait tué par son propre délai et ne protégerait rien.
+  const deadline = budgetSeconds ? Date.now() + budgetSeconds * 1000 : Infinity;
   const results = [];
   for (const name of wanted) {
     const cmd = commands[name];
     if (!cmd) continue;
+    const remaining = deadline - Date.now();
+    if (remaining < 1000) {
+      results.push({ name, command: cmd, ok: true, skipped: true, exit: 'budget', seconds: 0, output: '' });
+      continue;
+    }
     const started = Date.now();
-    const r = spawnSync(cmd, { cwd: root, shell: true, encoding: 'utf8', timeout, maxBuffer: 64 * 1024 * 1024 });
+    const r = spawnSync(cmd, { cwd: root, shell: true, encoding: 'utf8', timeout: Math.min(perCommand, remaining), maxBuffer: 64 * 1024 * 1024 });
     const timedOut = r.error && r.error.code === 'ETIMEDOUT';
     results.push({
       name,
@@ -398,4 +417,38 @@ export function diffSize(root, { base, ignore = [] } = {}) {
     files.push({ file, added: Number(a), removed: Number(d) });
   }
   return { base: from, files: files.length, added, removed, total: added + removed, ignored, largest: files.sort((x, y) => y.added + y.removed - (x.added + x.removed)).slice(0, 5) };
+}
+
+// Arbre git de l'état courant (commité + non commité, .gitignore respecté), sans toucher à l'index de
+// l'utilisateur : c'est ce qu'une revue a réellement lu. Comparer cet arbre à HEAD au moment du push
+// dit exactement ce qui a changé depuis la revue.
+export function worktreeTree(root) {
+  const dir = mkdtempSync(join(tmpdir(), 'kaizen-index-'));
+  const env = { ...process.env, GIT_INDEX_FILE: join(dir, 'index') };
+  try {
+    const run = (args) => execFileSync('git', args, { cwd: root, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    // Partir d'une copie de l'index réel réutilise son cache de stat : seuls les fichiers modifiés
+    // sont rehachés, même sur un gros dépôt. Sans index (dépôt neuf), on repart de HEAD.
+    const real = git(root, ['rev-parse', '--path-format=absolute', '--git-path', 'index'], { allowFail: true });
+    if (real && existsSync(real)) copyFileSync(real, env.GIT_INDEX_FILE);
+    else run(['read-tree', 'HEAD']);
+    run(['add', '-A']);
+    return run(['write-tree']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+// Lignes modifiées entre deux arbres ou commits, hors fichiers ignorés par pr.ignore.
+export function changedLines(root, from, to, ignore = []) {
+  const out = git(root, ['diff', '--numstat', from, to], { allowFail: true });
+  if (out === null) return null;
+  const res = ignore.map(globToRegex);
+  let total = 0;
+  for (const line of out ? out.split('\n') : []) {
+    const [a, d, ...rest] = line.split('\t');
+    if (a === '-' || res.some((r) => r.test(rest.join('\t')))) continue;
+    total += Number(a) + Number(d);
+  }
+  return total;
 }

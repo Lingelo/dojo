@@ -3,7 +3,7 @@
 //
 //   node kaizen.mjs root                         chemins des livrables (JSON)
 //   node kaizen.mjs config                       configuration effective (JSON)
-//   node kaizen.mjs init [--docs-root d] [--language fr]   initialise .kaizen/ et les dossiers
+//   node kaizen.mjs init [--docs-root d] [--language fr] [--profile lean|standard|full]   initialise .kaizen/ et les dossiers
 //   node kaizen.mjs detect                       stack et commandes de vérification (JSON)
 //   node kaizen.mjs verify [--only test,lint] [--json]     lance les vérifications (exit 1 si rouge)
 //   node kaizen.mjs plan new --type feat --topic export-csv   réserve le chemin d'un plan
@@ -14,6 +14,8 @@
 //   node kaizen.mjs packs [--json] [--refresh]   règles des Kaizen Packs déclarés
 //   node kaizen.mjs pack new <nom>               crée et déclare un pack local
 //   node kaizen.mjs gate on [--plan p] | off | status      garde-fou qualité du hook Stop
+//   node kaizen.mjs review record --verdict ready|reserves|blocked [--run d] | waive --reason "…" | status
+//                                                 état relu par branche, exigé par le hook avant git push
 //   node kaizen.mjs run-dir <type>                dossier de run local (ex. reviews), ignoré par git
 //   node kaizen.mjs constitution [check] [--json] articles de CONSTITUTION.md / validation
 //   node kaizen.mjs plan check <chemin> [--json]  contrôle structurel d'un plan (traçabilité R/AE → U)
@@ -36,8 +38,10 @@ import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
 import { computeMetrics } from './metrics.mjs';
 import { releaseNotes } from './release.mjs';
+import { checkPush, recordReview, reviewStatus } from './review-state.mjs';
 import {
   DEFAULT_CONFIG,
+  PROFILES,
   diffSize,
   detectStack,
   docsRoot,
@@ -107,13 +111,16 @@ function cmdInit(root) {
   mkdirSync(dir, { recursive: true });
   const file = join(dir, 'config.json');
   const created = [];
+  if (flags.profile && !PROFILES.includes(flags.profile)) die(`--profile attendu : ${PROFILES.join(' | ')}`);
   if (!existsSync(file)) {
     const config = {
       docs_root: flags['docs-root'] || DEFAULT_CONFIG.docs_root,
       language: flags.language || DEFAULT_CONFIG.language,
       tracker: flags.tracker || DEFAULT_CONFIG.tracker,
+      profile: flags.profile || DEFAULT_CONFIG.profile,
       verify: {},
       gate: DEFAULT_CONFIG.gate,
+      review: DEFAULT_CONFIG.review,
       packs: [],
     };
     writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
@@ -531,6 +538,18 @@ try {
     case 'gate':
       cmdGate(requireRepo(), sub);
       break;
+    case 'review': {
+      const root = requireRepo();
+      if (sub === 'record') out(recordReview(root, { verdict: flags.verdict, run: typeof flags.run === 'string' ? flags.run : null }));
+      else if (sub === 'waive') out(recordReview(root, { waive: true, reason: typeof flags.reason === 'string' ? flags.reason : null }));
+      else if (sub === 'status') out(reviewStatus(root));
+      else if (sub === 'check') {
+        const res = checkPush(root);
+        out(res);
+        process.exit(res.allowed ? 0 : 1);
+      } else die('usage : review record --verdict ready|reserves|blocked [--run <dossier>] | review waive --reason "…" | review status | review check');
+      break;
+    }
     case 'constitution': {
       const root = requireRepo();
       const c = loadConstitution(root);

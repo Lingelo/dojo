@@ -21,6 +21,18 @@ travail n'est pas fini. Mais :
 Le garde-fou ne bloque jamais plus de `gate.max_blocks` fois de suite (3 par défaut). Ensuite, il
 laisse terminer en exigeant que Claude signale ce qui reste rouge.
 
+## `git push` est refusé : « Push refusé … aucune revue enregistrée »
+
+C'est le hook de revue : dans un repo Kaizen, une branche ne part pas sans revue.
+
+| Situation | Que faire |
+|---|---|
+| Pas encore de revue | `/kaizen:review` (elle enregistre l'état relu), puis pousser |
+| « N lignes modifiées depuis la revue » | les changements depuis la revue dépassent `review.max_unreviewed_lines` : nouvelle `/kaizen:review` |
+| « la dernière revue a rendu ⛔ » | corriger les constats bloquants, puis relancer la revue |
+| Vous voulez pousser sans revue (hotfix, branche jetable) | demandez-le à Claude, qui lance `node $K review waive --reason "…"` (tracé) |
+| Vous ne voulez pas de cette règle dans ce repo | `"review": { "require_before_push": false }` |
+
 ## `plan check` est rouge
 
 `node $K plan check <plan>` liste chaque problème. Les plus fréquents :
@@ -62,13 +74,15 @@ ou `dépôt GitHub introuvable`.
 
 ## Les leçons ne sont pas réutilisées
 
-`/kaizen:metrics` montre `learnings_cited_by_new_plans: 0` alors que `docs/learnings/` est rempli.
+`/kaizen:metrics` montre `learnings_cited_by_new_plans: 0` ou `learnings_applied_in_commits: 0`
+alors que `docs/learnings/` est rempli, ou une longue liste `learnings_never_cited_sample`.
 
 1. `node $K learnings validate` : un frontmatter invalide rend une leçon difficile à trouver.
 2. Les mots du titre, des `tags` et des `symptoms` correspondent-ils à ceux qu'utiliseraient vos
    demandes ? Testez avec `node $K learnings search <mots d'une demande typique>`.
 3. `CLAUDE.md` mentionne-t-il `docs/learnings/` ? `/kaizen:setup` propose la ligne.
-4. `/kaizen:prune-learnings` pour corriger les leçons périmées ou en double.
+4. `/kaizen:prune-learnings` pour corriger les leçons périmées ou en double, en commençant par
+   `learnings_never_cited_sample` : une leçon que personne ne cite ne referme aucune boucle.
 
 ## Une skill ne se déclenche pas
 

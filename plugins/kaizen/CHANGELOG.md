@@ -2,6 +2,35 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [SemVer](https://semver.org/lang/fr/).
 
+## [2.0.0] - 2026-10-04
+
+### Changements cassants
+- Skills renommées (`compound` → `learn`, `refresh` → `prune-learnings`, `lfg` → `autopilot`,
+  `babysit-pr` → `watch-pr`, `resolve-pr-feedback` → `address-feedback`) et dossier des leçons
+  `docs/solutions/` → `docs/learnings/`, sans compatibilité : un repo 1.x renomme son dossier.
+  Publiés en 1.2.0 par erreur ; un renommage sans compatibilité exige une version majeure.
+- **`git push` d'une branche exige une revue enregistrée** dans un repo initialisé par Kaizen
+  (`review.require_before_push: false` pour revenir au comportement 1.x).
+
+### Ajouté
+- Hook `PreToolUse` `review-gate.mjs` : la revue « obligatoire » de `work`, `autopilot` et `ship` est
+  imposée par un contrôle déterministe et non plus seulement par la consigne. `/kaizen:review`
+  enregistre l'arbre relu (non commité compris) avec `node $K review record` ; au-delà de
+  `review.max_unreviewed_lines` (80) lignes modifiées depuis, nouvelle revue. Renonciation sur demande
+  explicite de l'utilisateur, tracée : `review waive --reason`. `review status` et `review check`.
+- **Profils d'adoption** `profile: lean | standard | full` (`init --profile`, question dans `setup`) :
+  la cérémonie s'ajuste (plan, `doc-review`, relecteurs, raccourci `autopilot` en `lean`), jamais les
+  garde-fous déterministes.
+- `/kaizen:metrics` : `learnings_applied_in_commits` (leçon citée dans un message de commit = appliquée,
+  pas seulement lue), `learnings_never_cited` et un échantillon pour `prune-learnings`, et la méthode
+  de `learning_reuse_rate`. Les commits qui appliquent une leçon la citent dans leur corps.
+
+### Corrigé
+- Garde-fou du hook `Stop` propre à la session qui l'a posé (hook `PostToolUse` `--claim` après
+  `gate on`) : une autre session sur le même repo n'est plus bloquée.
+- Garde-fou tenu dans `gate.budget_seconds` (840 s) sous le délai du hook (900 s) : avant, plusieurs
+  commandes de 600 s pouvaient faire tuer le hook, qui ne protégeait alors plus rien.
+
 ## [1.2.0] - 2026-10-04
 
 ### Modifié

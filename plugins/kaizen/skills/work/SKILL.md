@@ -26,7 +26,7 @@ verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
 - **Vide** → `node "$K" plan latest` ; confirme le plan trouvé avant de l'exécuter (sauf `mode:return`).
 - **Demande sans plan** :
   - **Triviale** (1–2 fichiers, pas de changement de comportement) → exécute directement, sans liste
-    de tâches, en gardant la vérification.
+    de tâches, en gardant la vérification (et la revue, même légère, avant tout push).
   - **Bornée** → déduis 2 à 6 unités toi-même, annonce-les en 5 lignes, puis exécute.
   - **Floue ou risquée** → propose `/kaizen:plan` (ou `/kaizen:brainstorm`) au lieu d'improviser.
 - Ne renégocie pas un plan validé : une décision à peser devient **une** question, pas un retour au
@@ -76,7 +76,9 @@ moindre conflit, repasse en série.
 5. **Revue obligatoire** — invoque `kaizen:review plan:<chemin>`. Le travail n'est **pas** terminé et
    rien n'est poussé sans un rapport de revue réellement produit, ou une instruction explicite de
    l'utilisateur de s'en passer. Une auto-relecture mentale ne compte pas.
-6. Applique les correctifs P0/P1 retenus (ou demande pour ceux marqués `manual`), re-vérifie, commit.
+6. Applique les correctifs P0/P1 retenus (ou demande pour ceux marqués `manual`), re-vérifie, commit,
+   puis ré-enregistre la revue avec le verdict après correctifs
+   (`node "$K" review record --verdict …`) : sans cela, le hook de push refusera la livraison.
 
 ## Phase 4 — Livrer
 

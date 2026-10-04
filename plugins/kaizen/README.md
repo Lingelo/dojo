@@ -132,12 +132,22 @@ vérifie la conformité du code au plan, et la PR reprend les exigences couverte
 
 **Garde-fou par hook `Stop`.** Pendant `work` et `autopilot`, Claude ne peut pas terminer tant que test,
 lint ou typage sont rouges. Le hook bloque 3 fois au maximum puis laisse passer en exigeant que
-l'échec soit signalé, et s'éteint seul après 24 h.
+l'échec soit signalé, et s'éteint seul après 24 h. Il appartient à la session qui l'a posé et tient
+dans un budget de temps sous le délai du hook.
+
+**Revue imposée par hook, pas par consigne.** Un hook `PreToolUse` refuse `git push` d'une branche tant
+que `/kaizen:review` n'a pas enregistré l'état poussé (au-delà de 80 lignes modifiées depuis, nouvelle
+revue). Seul l'utilisateur peut y renoncer, et la renonciation est tracée (`review waive --reason`).
+
+**Adoption par paliers.** `profile` : `lean` (cérémonie minimale, pour commencer), `standard`, `full`.
+Le profil règle la cérémonie (taille du plan, nombre de relecteurs), jamais les garde-fous
+déterministes. De petits pas, dans l'esprit kaizen.
 
 **L'effet cumulatif, mesuré.** Les leçons (`docs/learnings/`), les ADR et les post-mortems sont
-relus par `learnings-researcher` à chaque plan, revue et debug. `/kaizen:metrics` compte combien de
-leçons sont **réellement citées** par les plans récents. Une leçon jamais réutilisée signale une
-boucle qui ne se referme pas.
+relus par `learnings-researcher` à chaque plan, revue et debug. `/kaizen:metrics` distingue les leçons
+**lues** (citées par un plan récent) des leçons **appliquées** (citées par un commit arrivé sur la
+branche par défaut), et liste celles que personne n'a jamais citées. Une leçon jamais réutilisée
+signale une boucle qui ne se referme pas.
 
 ## Agents (21)
 

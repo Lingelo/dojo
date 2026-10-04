@@ -227,6 +227,36 @@ test('metrics : calcule sans GitHub sur un historique de merges', () => {
   cleanup(dir);
 });
 
+test('metrics : leçons citées par un plan, appliquées dans un commit, jamais citées', () => {
+  const old = '---\ntitle: Vieux piège\ndate: 2020-01-01\n---\n';
+  const dir = tempRepo({
+    'docs/learnings/bugs/arrondi.md': old,
+    'docs/learnings/bugs/oubliee.md': old,
+    'docs/plans/2026-01-01-feat-x-plan.md': `---\ntitle: X - Plan\ndate: ${new Date().toISOString().slice(0, 10)}\n---\nVoir docs/learnings/bugs/arrondi.md\n`,
+    'app.js': '1\n',
+  });
+  writeFiles(dir, { 'app.js': '2\n' });
+  gitc(dir, ['commit', '-qam', 'fix: arrondi\n\nApplique docs/learnings/bugs/arrondi.md']);
+  const loop = cli(dir, ['metrics', '--since', '30d', '--no-github']).json.kaizen_loop;
+  assert.equal(loop.learnings_cited_by_new_plans, 1);
+  assert.equal(loop.learnings_applied_in_commits, 1);
+  assert.equal(loop.learning_reuse_rate, 0.5);
+  assert.deepEqual(loop.learnings_never_cited_sample, ['learnings/bugs/oubliee.md']);
+  cleanup(dir);
+});
+
+test('profil : défaut standard, init --profile, valeur inconnue signalée sans casser', () => {
+  const dir = tempRepo({});
+  assert.notEqual(cli(dir, ['init', '--profile', 'turbo']).code, 0);
+  cli(dir, ['init', '--profile', 'lean']);
+  assert.equal(cli(dir, ['config']).json.profile, 'lean');
+  writeFiles(dir, { '.kaizen/config.local.json': { profile: 'turbo' } });
+  const c = cli(dir, ['config']).json;
+  assert.equal(c.profile, 'standard');
+  assert.match(c.profile_warning, /turbo/);
+  cleanup(dir);
+});
+
 test('dev detect : monorepo et .claude/launch.json prioritaire', () => {
   const dir = tempRepo({
     'package.json': { scripts: { dev: 'turbo dev' } },

@@ -35,7 +35,9 @@
    aille lire `docs/learnings/` avant de planifier ou de déboguer.
 7. **Constitution** : proposée si elle est absente, vérifiée si elle existe.
 8. **Taille des PR** : `pr.max_lines` (400 par défaut).
-9. **Bilan**.
+9. **Profil** : `lean` (recommandé pour commencer), `standard` ou `full`. Voir
+   [Configuration](../configuration.md#profile).
+10. **Bilan**.
 
 ## Le bilan (`check`)
 

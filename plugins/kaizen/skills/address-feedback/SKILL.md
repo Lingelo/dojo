@@ -66,7 +66,8 @@ verdict, la vérification à lancer, interdiction de commiter) ; tu intègres, v
 2. `node "$K" verify` (et les tests ciblés). Rouge → corrige ou retire le correctif fautif ; jamais de
    push rouge.
 3. Commits conventionnels (`fix(<JIRA>): <retour traité>`), fichiers nommés explicitement.
-4. `git push` (sans force). **Le push précède les réponses** : on ne dit pas « corrigé dans `<sha>` »
+4. `git push` (sans force). Refusé par le hook (correctifs au-delà de `review.max_unreviewed_lines`
+   depuis la dernière revue) → `kaizen:review mode:agent` sur la branche, correctifs P0/P1, puis push. **Le push précède les réponses** : on ne dit pas « corrigé dans `<sha>` »
    pour un commit invisible.
 5. Vérifie la publication : `git ls-remote origin <branche>` == `HEAD`.
 

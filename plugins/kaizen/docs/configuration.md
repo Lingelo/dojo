@@ -20,13 +20,15 @@ Voir la configuration effective : `node $K config`. Créer le fichier : `/kaizen
   "docs_root": "docs",
   "language": "auto",
   "tracker": "auto",
+  "profile": "standard",
   "verify": {
     "test": "pnpm vitest run",
     "lint": "pnpm eslint .",
     "typecheck": "pnpm tsc --noEmit",
     "audit": "pnpm audit --audit-level high"
   },
-  "gate": { "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "max_age_hours": 24 },
+  "gate": { "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "budget_seconds": 840, "max_age_hours": 24 },
+  "review": { "require_before_push": true, "max_unreviewed_lines": 80 },
   "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] },
   "packs": [
     { "source": "kaizen-packs/house-rules" },
@@ -55,6 +57,20 @@ frontmatter et les identifiants (R1, AE1, KTD1, U1) ne sont jamais traduits.
 Défaut : `"auto"`. Kaizen lit la clé Jira dans le nom de branche (`feat/SHOP-412-…` donne
 `SHOP-412`), comme le plugin `git`, et lit les issues GitHub via `gh`. La clé sert dans les messages
 de commit (`feat(SHOP-412): …`) et dans le frontmatter des plans.
+
+### `profile`
+
+Défaut : `"standard"`. Règle la **cérémonie** du cycle, jamais les garde-fous déterministes
+(garde-fou du hook `Stop`, `verify`, `size`, `plan check`, revue exigée avant `git push`).
+
+| Profil | Pour qui | Ce qui change |
+|---|---|---|
+| `lean` | première adoption, petite équipe, prototype | plan court (menaces et déploiement seulement sur surface à risque), `doc-review` réduit à `plan check` + cohérence, revue au socle + sécurité si besoin, `autopilot` sans plan écrit pour un changement ≤ ~30 lignes sans risque |
+| `standard` | la plupart des équipes | le cycle tel que décrit dans les guides |
+| `full` | domaines régulés, équipe rodée | menaces et déploiement toujours, relecteur adversarial systématique sur le plan et dès la revue ciblée |
+
+Le chemin recommandé : commencer en `lean`, puis monter quand l'équipe a pris le rythme. Une valeur
+inconnue retombe sur `standard` et est signalée par `node $K config` (`profile_warning`).
 
 ### `verify`
 
@@ -91,10 +107,26 @@ Voir ce qui est détecté : `node $K detect`.
 | `enabled` | `true` | `false` désactive le garde-fou pour ce repo |
 | `max_blocks` | `3` | après N blocages consécutifs, laisse terminer en exigeant que l'échec soit signalé |
 | `timeout_seconds` | `600` | délai maximum par commande de vérification |
+| `budget_seconds` | `840` | temps total des vérifications à chaque fin de tour, sous le délai du hook (900 s) ; les commandes qui n'ont pas pu démarrer sont signalées, pas comptées rouges |
 | `max_age_hours` | `24` | un garde-fou actif depuis plus longtemps (session interrompue) se désactive tout seul |
 
 Le garde-fou n'agit que s'il a été activé par `/kaizen:work` ou `/kaizen:autopilot` (fichier
-`.kaizen/state/gate.json`). Le reste du temps, il ne coûte rien.
+`.kaizen/state/gate.json`). Le reste du temps, il ne coûte rien. Il appartient à la **session** qui
+l'a posé (un hook `PostToolUse` inscrit son identifiant juste après `gate on`) : une autre session
+Claude Code ouverte sur le même repo n'est pas bloquée.
+
+### `review` — la revue exigée avant `git push`
+
+| Clé | Défaut | Rôle |
+|---|---|---|
+| `require_before_push` | `true` | un hook `PreToolUse` refuse `git push` d'une branche tant qu'aucune revue n'a enregistré l'état poussé |
+| `max_unreviewed_lines` | `80` | lignes modifiées tolérées depuis la dernière revue (petits correctifs de CI ou de retours) ; au-delà, nouvelle revue |
+
+Actif seulement dans un repo initialisé (`.kaizen/config.json`), jamais sur la branche par défaut
+(gardée par le plugin `git`), ni pour une suppression de branche ou un push de tags.
+`/kaizen:review` enregistre l'arbre qu'elle a lu (`node $K review record`), y compris le non commité.
+Renoncer à la revue est une décision de l'utilisateur, tracée :
+`node $K review waive --reason "hotfix validé par X"`. État : `node $K review status`.
 
 ### `pr`
 
@@ -116,7 +148,8 @@ Liste des Kaizen Packs déclarés. Voir [Kaizen Packs](packs.md).
 
 | Fichier | Rôle |
 |---|---|
-| `gate.json` | état du garde-fou (actif, plan, nombre de blocages) |
+| `gate.json` | état du garde-fou (actif, plan, session, nombre de blocages) |
+| `reviews.json` | dernière revue enregistrée par branche (arbre relu, verdict, renonciation) |
 | `pr/<owner>-<repo>-<n>.json` | ce que `watch-pr` a déjà traité (fils, commentaires, checks) |
 | `reviews/<horodatage>/` | retours bruts des relecteurs d'une revue |
 

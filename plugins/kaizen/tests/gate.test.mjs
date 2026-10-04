@@ -5,8 +5,15 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { GATE, cleanup, cli, tempRepo } from './helpers.mjs';
 
-function stop(dir) {
-  return spawnSync(process.execPath, [GATE], { input: JSON.stringify({ cwd: dir }), encoding: 'utf8' });
+function stop(dir, extra = {}) {
+  return spawnSync(process.execPath, [GATE], { input: JSON.stringify({ cwd: dir, ...extra }), encoding: 'utf8' });
+}
+
+function claim(dir, session, command = 'node "/p/scripts/kaizen.mjs" gate on --plan docs/plans/x.md') {
+  return spawnSync(process.execPath, [GATE, '--claim'], {
+    input: JSON.stringify({ cwd: dir, session_id: session, tool_name: 'Bash', tool_input: { command } }),
+    encoding: 'utf8',
+  });
 }
 
 function repoWithTest(exitCode) {
@@ -67,5 +74,33 @@ test("l'état du garde-fou est ignoré par git", () => {
   cli(dir, ['gate', 'on']);
   const st = spawnSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: dir, encoding: 'utf8' }).stdout;
   assert.doesNotMatch(st, /state/);
+  cleanup(dir);
+});
+
+test('le garde-fou appartient à la session qui l’a posé', () => {
+  const dir = repoWithTest(1);
+  cli(dir, ['gate', 'on']);
+  assert.equal(claim(dir, 'autre', 'git status').status, 0);
+  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/state/gate.json'), 'utf8')).session, undefined, 'seul « gate on » revendique');
+  claim(dir, 'S1', 'K="/p/scripts/kaizen.mjs"; node "$K" gate on --plan docs/plans/x.md');
+  claim(dir, 'S2');
+  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/state/gate.json'), 'utf8')).session, 'S1', 'la première revendication gagne');
+  assert.equal(stop(dir, { session_id: 'S2' }).status, 0, 'une autre session n’est pas bloquée');
+  assert.equal(stop(dir, { session_id: 'S1' }).status, 2);
+  cleanup(dir);
+});
+
+test('budget épuisé : les commandes restantes ne sont pas lancées et ne bloquent pas', () => {
+  const dir = tempRepo({
+    '.kaizen/config.json': {
+      verify: { test: 'node -e "setTimeout(() => {}, 3000)"', lint: 'node -e "process.exit(1)"' },
+      gate: { budget_seconds: 1.5 },
+    },
+  });
+  cli(dir, ['gate', 'on']);
+  const r = stop(dir);
+  assert.equal(r.status, 2, 'test coupé au budget = rouge');
+  assert.match(r.stderr, /timeout/);
+  assert.doesNotMatch(r.stderr, /lint/, 'lint jamais lancé');
   cleanup(dir);
 });

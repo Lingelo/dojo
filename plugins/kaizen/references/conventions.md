@@ -33,6 +33,8 @@ node "$K" learnings search <mots…> [--json]     # leçons pertinentes, classé
 node "$K" learnings validate [fichiers…]
 node "$K" packs [--json]           # règles des Kaizen Packs déclarés
 node "$K" gate on --plan <p> | off | status     # garde-fou du hook Stop
+node "$K" review record --verdict ready|reserves|blocked [--run <d>]   # état relu, exigé avant git push
+node "$K" review waive --reason "…" | review status | review check   # renonciation tracée / état
 node "$K" constitution [check] [--json]         # articles de CONSTITUTION.md / validation
 node "$K" plan check <chemin>      # contrôle structurel d'un plan (traçabilité R/AE → U, constitution)
 node "$K" size [--base <ref>]      # taille du diff vs pr.max_lines (exit 1 au-delà)
@@ -48,6 +50,37 @@ node "$K" run-dir reviews         # dossier de travail local d'un run (ignoré p
 
 Si `${CLAUDE_PLUGIN_ROOT}` n'est pas résolu dans une commande Bash, retrouve le chemin du plugin
 depuis le chemin de ce fichier (le dossier parent de `references/`).
+
+## Profil d'adoption
+
+`node "$K" config` → `profile` règle la **cérémonie**, jamais les garde-fous déterministes : le
+garde-fou du hook Stop, `verify`, `size`, `plan check` et la revue exigée avant `git push` restent
+actifs dans tous les profils.
+
+| Point | `lean` | `standard` (défaut) | `full` |
+|---|---|---|---|
+| Plan | court : exigences, unités, vérification ; menaces et déploiement seulement si le diff atteint une surface à risque ou la production | complet | complet, menaces et déploiement toujours |
+| `doc-review` | `plan check` + cohérence seulement | cohérence, faisabilité + conditionnels | tous les relecteurs pertinents, adversarial toujours |
+| `review` | socle (`correctness`, `standards`) + `security` si surface à risque | selon le diff | selon le diff, `adversarial` dès la profondeur ciblée |
+| `autopilot` | changement ≤ ~30 lignes sans surface à risque : `work` direct sans plan écrit (verify, revue et garde-fous gardés) | toujours un plan | toujours un plan |
+| Capitalisation | proposée seulement si le test de durabilité est évident | proposée | systématiquement évaluée |
+
+Une **surface à risque** : auth, sessions, permissions, données personnelles ou de paiement,
+migrations, API publiques, dépendances. Commencer en `lean` puis monter le profil quand l'équipe a
+pris le rythme est le chemin d'adoption recommandé : c'est l'esprit kaizen, de petits pas.
+
+## Garde-fou de push
+
+Le hook `PreToolUse` refuse un `git push` d'une branche (hors branche par défaut) tant qu'aucune revue
+n'a enregistré l'état poussé. Toute skill qui pousse vérifie d'abord `node "$K" review check` :
+- refusé → `kaizen:review` (en `mode:agent` dans un flux autonome), correctifs P0/P1, puis push ;
+- `review` enregistre elle-même l'état relu (`review record`), et le ré-enregistre après avoir
+  appliqué ses propres correctifs ;
+- au-delà de `review.max_unreviewed_lines` lignes modifiées depuis la revue (80 par défaut), une
+  nouvelle revue est exigée ;
+- seul l'utilisateur peut y renoncer, explicitement, dans la session :
+  `node "$K" review waive --reason "<sa demande>"`. Jamais de contournement ni de désactivation
+  (`review.require_before_push: false`) sans sa demande.
 
 ## Racine des livrables
 
@@ -110,6 +143,9 @@ Format du plugin `git` du marketplace : `<type>(<JIRA>): <description>` si une c
 - Jamais de commit sur la branche par défaut sans demande explicite : crée une branche
   (`feat/<topic>`, `fix/<topic>`, préfixée de la clé Jira si connue).
 - Jamais de `push --force`, jamais de merge sans autorisation explicite.
+- Une unité ou un correctif qui **applique une leçon** la cite dans le corps du commit
+  (`Applique docs/learnings/<…>.md`) : c'est ce que `/kaizen:metrics` compte comme leçon réellement
+  appliquée, et non seulement lue.
 
 ## Kaizen Packs
 

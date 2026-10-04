@@ -70,6 +70,10 @@ relecteurs.
 
 ## Bon à savoir
 
+- La revue s'**enregistre** pour la branche courante (`node $K review record`) : c'est ce que le hook
+  de push exige avant tout `git push`. Après plus de `review.max_unreviewed_lines` lignes modifiées
+  (80 par défaut), il faut une nouvelle revue.
+- Le profil (`lean`, `standard`, `full`) ajuste le nombre de relecteurs, jamais l'obligation de revue.
 - **Rapport seul par défaut**, jamais de push. Une PR passée en argument fixe le **périmètre**, pas
   l'autorisation de changer de branche.
 - Les retours bruts des relecteurs sont gardés dans `.kaizen/state/reviews/<horodatage>/`.

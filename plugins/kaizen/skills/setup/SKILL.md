@@ -15,7 +15,7 @@ Prérequis : Node ≥ 18 et un dépôt git. Sinon, dis ce qui manque et arrête.
 ## `check` — bilan de santé seul (aucune écriture)
 
 `node "$K" root`, `node "$K" config`, `node "$K" detect`, `node "$K" learnings validate`,
-`node "$K" packs`, `node "$K" constitution check`, `node "$K" gate status` → rapport : ✔/⚠ par point, avec la correction proposée.
+`node "$K" packs`, `node "$K" constitution check`, `node "$K" gate status`, `node "$K" review status` → rapport : ✔/⚠ par point, avec la correction proposée.
 Un garde-fou resté actif sans travail en cours (`gate status` actif) → propose `gate off`.
 
 ## Installation (défaut)
@@ -47,7 +47,11 @@ Un garde-fou resté actif sans travail en cours (`gate status` actif) → propos
 7. **Constitution** — `CONSTITUTION.md` absente → propose `/kaizen:constitution` (Recommandé) : sans
    elle, plan et revue n'ont que les règles génériques. Présente → `node "$K" constitution check`.
 8. **Taille des PR** — `pr.max_lines` (400 par défaut) : demande si l'équipe a un autre plafond.
-9. **Bilan** — termine par le bilan de santé ci-dessus et la commande à lancer ensuite
+9. **Profil** — demande (une question) : **lean** (Recommandé pour une première adoption : cérémonie
+   minimale, garde-fous gardés) · **standard** · **full** (domaines régulés, équipe rodée). Écris
+   `profile` dans `.kaizen/config.json`. Rappelle que la revue est exigée avant tout `git push` d'une
+   branche (`review.require_before_push`) et que seule l'équipe peut choisir de l'assouplir.
+10. **Bilan** — termine par le bilan de santé ci-dessus et la commande à lancer ensuite
    (`/kaizen:brainstorm <idée>` ou `/kaizen:ideate`).
 
 ## `pack:<nom>` — créer un Kaizen Pack

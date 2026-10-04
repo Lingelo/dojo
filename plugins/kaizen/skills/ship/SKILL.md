@@ -47,7 +47,9 @@ rend `{ status: shipped|local-only|blocked, pr_url, branch, commits, size, notes
 ## 3. Commits et push
 
 Commits restants au format conventionnel (`<type>(<JIRA>): …`, clé lue dans la branche), fichiers
-nommés explicitement. Puis `git push -u origin <branche>` (jamais `--force` ; `--force-with-lease`
+nommés explicitement. Vérifie la revue : `node "$K" review check` — refusé → `kaizen:review`
+(`mode:agent` en `mode:auto`), correctifs P0/P1, puis reprends ; une renonciation n'est possible que sur
+demande explicite de l'utilisateur (`review waive --reason`). Puis `git push -u origin <branche>` (jamais `--force` ; `--force-with-lease`
 seulement sur une branche que cette session a créée et réécrite, avec accord).
 
 ## 4. Description

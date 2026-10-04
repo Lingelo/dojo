@@ -6,6 +6,10 @@
 // Exit 0 = laisser terminer ; exit 2 = bloquer (le message stderr est renvoyé à Claude).
 // Après `gate.max_blocks` blocages consécutifs, le hook laisse passer en le signalant,
 // pour qu'un échec hors de portée ne piège jamais la session dans une boucle.
+//
+// Le garde-fou appartient à la session qui l'a posé : `--claim` (hook PostToolUse sur Bash) inscrit son
+// session_id juste après `gate on`, et le hook Stop ignore les autres sessions ouvertes sur le même repo.
+// Les vérifications tiennent dans `gate.budget_seconds`, sous le délai du hook (900 s).
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -21,6 +25,10 @@ function readStdin() {
 }
 
 const input = readStdin();
+const claim = process.argv.includes('--claim');
+// --claim voit passer chaque commande Bash : filtre bon marché avant tout accès disque.
+// Les skills écrivent `node "$K" gate on` : on reconnaît la sous-commande, pas le chemin du CLI.
+if (claim && !/\bgate\s+on\b/.test(String(input.tool_input?.command || ''))) process.exit(0);
 const root = repoRoot(input.cwd || process.cwd());
 if (!root) process.exit(0);
 
@@ -35,6 +43,13 @@ try {
 }
 if (!state.active) process.exit(0);
 
+if (claim) {
+  if (input.session_id && !state.session) writeFileSync(stateFile, `${JSON.stringify({ ...state, session: input.session_id }, null, 2)}\n`);
+  process.exit(0);
+}
+// Une autre session sur le même repo n'est pas concernée par ce /kaizen:work.
+if (state.session && input.session_id && state.session !== input.session_id) process.exit(0);
+
 const config = loadConfig(root);
 if (config.gate.enabled === false) process.exit(0);
 
@@ -46,11 +61,13 @@ if (state.since && Date.now() - Date.parse(state.since) > maxAgeMs) {
   process.exit(0);
 }
 
-const results = runVerify(root);
+const results = runVerify(root, { budgetSeconds: Number(config.gate.budget_seconds ?? 840) });
 if (!results.length) process.exit(0);
 
 const failed = results.filter((r) => !r.ok);
+const skipped = results.filter((r) => r.skipped).map((r) => r.name);
 if (!failed.length) {
+  if (skipped.length) process.stderr.write(`[kaizen] Budget du garde-fou épuisé : ${skipped.join(', ')} non lancé(s) — lance \`verify\` avant de livrer.\n`);
   if (state.blocks) writeFileSync(stateFile, `${JSON.stringify({ ...state, blocks: 0 }, null, 2)}\n`);
   process.exit(0);
 }

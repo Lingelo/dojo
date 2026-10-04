@@ -33,7 +33,9 @@ des décisions.
 
 ## 3. Relecteurs
 
-Toujours `kaizen:plan-coherence-reviewer` et `kaizen:plan-feasibility-reviewer`, plus :
+Selon le **profil** (`node "$K" config` → `profile`) : `lean` → `plan check` + cohérence seulement ;
+`full` → ajoute toujours `kaizen:plan-adversarial-reviewer`. En `standard` (défaut) :
+toujours `kaizen:plan-coherence-reviewer` et `kaizen:plan-feasibility-reviewer`, plus :
 
 | Relecteur | Quand |
 |---|---|
