@@ -23,6 +23,7 @@ Toutes les opérations déterministes passent par le CLI, jamais par une réimpl
 
 ```bash
 K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"
+node "$K" status [--json]          # où en est le repo dans la boucle + prochaine commande (lu par help)
 node "$K" root                     # chemins : docs_root, plans, learnings, ideation (JSON)
 node "$K" config                   # configuration effective
 node "$K" detect                   # stack + commandes de vérification

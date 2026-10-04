@@ -25,6 +25,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [S
   la saisie de `kaizen waive <code>` par l'utilisateur (hook `UserPromptSubmit`, 30 min, usage unique)
   la rend effective. `ship` ajoute une section « Revue écartée » à la PR. Le hook `PreToolUse` refuse
   l'écriture directe des fichiers d'état de revue et l'appel manuel des hooks de preuve.
+- **`/kaizen:help`** : explique Kaizen et recommande la commande à lancer selon la situation décrite
+  et l'état réel du repo. S'appuie sur **`node $K status`**, un diagnostic déterministe (initialisation,
+  profil, constitution, dernier plan, garde-fou, revue de la branche) qui déduit l'étape suivante.
 - **Profils d'adoption** `profile: lean | standard | full` (`init --profile`, question dans `setup`) :
   la cérémonie s'ajuste (plan, `doc-review`, relecteurs, raccourci `autopilot` en `lean`), jamais les
   garde-fous déterministes.

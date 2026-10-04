@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Kaizen — CLI déterministe utilisé par les skills et le hook.
 //
+//   node kaizen.mjs status [--json]              où en est le repo dans la boucle, et la commande suivante
 //   node kaizen.mjs root                         chemins des livrables (JSON)
 //   node kaizen.mjs config                       configuration effective (JSON)
 //   node kaizen.mjs init [--docs-root d] [--language fr] [--profile lean|standard|full]   initialise .kaizen/ et les dossiers
@@ -40,14 +41,17 @@ import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
 import { computeMetrics } from './metrics.mjs';
 import { releaseNotes } from './release.mjs';
-import { checkPush, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
+import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
 import {
   DEFAULT_CONFIG,
   PROFILES,
+  defaultBranch,
+  diffBase,
   diffSize,
   detectStack,
   docsRoot,
   expandHome,
+  git,
   loadConfig,
   parseFrontmatter,
   repoRoot,
@@ -523,10 +527,98 @@ function cmdGate(root, sub) {
 }
 
 // ---------------------------------------------------------------------------
+// status — diagnostic de l'état du repo dans la boucle (lu par /kaizen:help)
+// ---------------------------------------------------------------------------
+
+function repoStatus(root) {
+  const config = loadConfig(root);
+  const initialized = existsSync(join(root, '.kaizen', 'config.json'));
+  const branch = currentBranch(root);
+  const def = defaultBranch(root);
+  const base = diffBase(root);
+  const ahead = base ? Number(git(root, ['rev-list', '--count', `${base}..HEAD`], { allowFail: true }) || 0) : 0;
+  const dirty = (git(root, ['status', '--porcelain'], { allowFail: true }) || '').split('\n').filter(Boolean).length;
+
+  const c = loadConstitution(root);
+  const constitution = c ? { exists: true, version: c.meta.version ?? null, valid: validateConstitution(c).errors.length === 0 } : { exists: false };
+
+  let docs = null;
+  try {
+    docs = docsRoot(root, config);
+  } catch {}
+  const plansDir = docs && join(docs, 'plans');
+  const plans = plansDir && existsSync(plansDir)
+    ? readdirSync(plansDir).filter((f) => f.endsWith('.md')).map((f) => join(plansDir, f)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
+    : [];
+  let latest = null;
+  if (plans.length) {
+    const r = checkPlan(plans[0], { constitution: c });
+    latest = { path: rel(root, plans[0]), stage: r.stage, errors: r.errors.length };
+  }
+  const learnings = docs ? walkMarkdown(join(docs, 'learnings')).length : 0;
+
+  const gateFile = join(root, '.kaizen', 'state', 'gate.json');
+  let gate = { active: false };
+  try {
+    if (existsSync(gateFile)) gate = JSON.parse(readFileSync(gateFile, 'utf8'));
+  } catch {}
+  const review = initialized && branch ? reviewStatus(root) : null;
+
+  // Prochaine étape : la première situation qui s'applique, dans l'ordre de la boucle.
+  const next = [];
+  const say = (command, why) => next.push({ command, why });
+  if (!initialized) say('/kaizen:setup', 'Kaizen n’est pas initialisé dans ce repo');
+  else if (!constitution.exists) say('/kaizen:constitution', 'pas de CONSTITUTION.md : plan et revue n’ont que des règles génériques');
+  if (gate.active) say('/kaizen:work', `un travail est en cours sous garde-fou${gate.plan ? ` (${gate.plan})` : ''} : le reprendre, ou \`gate off\` s’il est abandonné`);
+  else if (branch && branch !== def && (ahead || dirty)) {
+    if (review?.pending_waiver) say('kaizen waive <code>', 'une renonciation à la revue attend votre confirmation (à taper vous-même)');
+    else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branche ${branch} relue (${review.push.reason}) : prête à livrer`);
+    else say('/kaizen:review', `branche ${branch} : ${review?.review ? review.push.reason : 'changements pas encore relus'}${dirty ? ' (non commités compris)' : ''}`);
+  } else if (latest?.stage === 'requirements') say(`/kaizen:plan ${latest.path}`, 'des exigences attendent leur plan d’implémentation');
+  else if (latest?.stage === 'implementation-ready' && !latest.errors) say(`/kaizen:work ${latest.path}`, 'un plan prêt attend d’être exécuté (si ce n’est pas déjà fait)');
+  if (!next.length || (initialized && constitution.exists && !gate.active && !(branch && branch !== def && (ahead || dirty)))) {
+    say('/kaizen:brainstorm <idée>', 'définir la prochaine fonctionnalité (ou /kaizen:ideate pour trouver quoi faire, /kaizen:debug pour un bug)');
+  }
+  return {
+    repo: basename(root),
+    branch,
+    default_branch: def,
+    ahead_of_base: ahead,
+    uncommitted_files: dirty,
+    initialized,
+    profile: config.profile,
+    constitution,
+    plans: plans.length,
+    latest_plan: latest,
+    learnings,
+    gate: { active: Boolean(gate.active), plan: gate.plan || null, since: gate.since || null },
+    review: review ? { verdict: review.review?.verdict || null, depth: review.review?.depth || null, push_allowed: review.push.allowed, reason: review.push.reason, pending_waiver: Boolean(review.pending_waiver) } : null,
+    next,
+  };
+}
+
+function cmdStatus(root) {
+  const st = repoStatus(root);
+  if (flags.json) return out(st);
+  const yes = (b) => (b ? '✔' : '✘');
+  out(`Kaizen — ${st.branch || 'HEAD détachée'}${st.ahead_of_base ? ` (+${st.ahead_of_base} commit(s))` : ''}${st.uncommitted_files ? `, ${st.uncommitted_files} fichier(s) modifié(s)` : ''}`);
+  out(`  ${yes(st.initialized)} initialisé${st.initialized ? ` · profil ${st.profile}` : ''}`);
+  out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.valid ? '' : ' (invalide)'}` : ''}`);
+  out(`  · ${st.plans} plan(s)${st.latest_plan ? ` — dernier : ${st.latest_plan.path} (${st.latest_plan.stage})` : ''} · ${st.learnings} leçon(s)`);
+  if (st.gate.active) out(`  ⚠ garde-fou actif depuis ${st.gate.since}`);
+  if (st.review) out(`  ${yes(st.review.push_allowed)} push : ${st.review.reason}`);
+  out('\nEnsuite :');
+  for (const n of st.next) out(`  → ${n.command} — ${n.why}`);
+}
+
+// ---------------------------------------------------------------------------
 
 const [cmd, sub] = positional;
 try {
   switch (cmd) {
+    case 'status':
+      cmdStatus(requireRepo());
+      break;
     case 'root':
       out(paths(requireRepo()));
       break;

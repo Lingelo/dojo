@@ -8,6 +8,7 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 
 | Je veux… | Lire |
 |---|---|
+| Savoir quelle commande lancer, là, maintenant | `/kaizen:help` ([guide](guides/help.md)) |
 | Voir Kaizen en une minute | [La vidéo de présentation](media/kaizen-presentation.mp4) |
 | Comprendre Kaizen en 5 minutes | [Le README du plugin](../README.md) |
 | Faire un premier cycle complet, pas à pas | [Démarrage](demarrage.md) |
@@ -68,6 +69,7 @@ Documentation pour les **utilisateurs** du plugin. Les instructions que suit Cla
 **Orchestrer**
 - [autopilot](guides/autopilot.md) — tout enchaîner en autonomie
 - [setup](guides/setup.md) — installer et vérifier Kaizen dans un repo
+- [help](guides/help.md) — savoir quelle commande lancer maintenant
 
 ## Conventions de ces pages
 

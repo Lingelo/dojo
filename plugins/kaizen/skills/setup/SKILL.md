@@ -56,7 +56,8 @@ Un garde-fou resté actif sans travail en cours (`gate status` actif) → propos
    `CONSTITUTION.md` et une ligne `CODEOWNERS` pour `CONSTITUTION.md` et `kaizen-packs/`. Rappelle que la revue est exigée avant tout `git push` d'une
    branche (`review.require_before_push`) et que seule l'équipe peut choisir de l'assouplir.
 10. **Bilan** — termine par le bilan de santé ci-dessus et la commande à lancer ensuite
-   (`/kaizen:brainstorm <idée>` ou `/kaizen:ideate`).
+   (`/kaizen:brainstorm <idée>` ou `/kaizen:ideate`) ; rappelle que `/kaizen:help` dit à tout moment
+   quoi faire ensuite.
 
 ## `pack:<nom>` — créer un Kaizen Pack
 

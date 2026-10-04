@@ -317,6 +317,29 @@ test('dev detect : monorepo et .claude/launch.json prioritaire', () => {
   cleanup(dir);
 });
 
+test('status : diagnostic de la boucle et étape suivante', () => {
+  const dir = tempRepo({ 'a.js': '1\n' });
+  const next = () => cli(dir, ['status', '--json']).json.next.map((n) => n.command.split(' ')[0]);
+  assert.deepEqual(next(), ['/kaizen:setup']);
+  cli(dir, ['init']);
+  writeFiles(dir, { 'CONSTITUTION.md': CONSTITUTION });
+  gitc(dir, ['add', '-A'], ['commit', '-qm', 'chore: kaizen']);
+  assert.deepEqual(next(), ['/kaizen:brainstorm']);
+  gitc(dir, ['checkout', '-qb', 'feat/x']);
+  writeFiles(dir, { 'a.js': '2\n' });
+  assert.deepEqual(next(), ['/kaizen:review'], 'changements non commités et non relus');
+  gitc(dir, ['commit', '-qam', 'feat: x']);
+  cli(dir, ['review', 'record', '--verdict', 'ready']);
+  const st = cli(dir, ['status', '--json']).json;
+  assert.deepEqual(st.next.map((n) => n.command), ['/kaizen:ship']);
+  assert.equal(st.review.push_allowed, true);
+  assert.equal(st.constitution.valid, true);
+  cli(dir, ['gate', 'on']);
+  assert.deepEqual(next(), ['/kaizen:work'], 'travail en cours sous garde-fou');
+  assert.match(cli(dir, ['status']).stdout, /Ensuite :/);
+  cleanup(dir);
+});
+
 test('aide et commande inconnue', () => {
   const dir = tempRepo({});
   assert.match(cli(dir, ['help']).stdout, /plan check/);

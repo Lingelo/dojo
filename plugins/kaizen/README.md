@@ -59,7 +59,10 @@ Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans
 /kaizen:constitution
 ```
 
-## Les commandes (20 skills)
+## Les commandes (21 skills)
+
+Perdu ? **`/kaizen:help`** explique Kaizen, regarde où en est votre repo et vous dit quelle commande
+lancer ensuite.
 
 ### Cadrer
 
@@ -105,6 +108,7 @@ Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans
 |---|---|
 | `/kaizen:autopilot` | Autonome : plan ou debug → work → simplification → revue avec correctifs → learn → ship → watch-pr. S'arrête à « semble prête ». |
 | `/kaizen:setup` | Configuration, détection de la stack, trouvabilité depuis `CLAUDE.md`, création de packs (`pack:<nom>`), bilan de santé (`check`). |
+| `/kaizen:help` | Explique Kaizen et recommande la commande à lancer selon votre situation et l'état du repo (`node $K status`). Lecture seule. |
 
 ## Ce qui garantit la qualité
 
