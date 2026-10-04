@@ -9,10 +9,9 @@
 // « **Signal** : `error_rate` > 0.01 → retour arrière ». Un seuil franchi sur `consecutive`
 // échantillons de suite (2 par défaut) est une **violation** : `watch` s'arrête et le dit.
 
-import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { loadConfig, parseFrontmatter } from './lib.mjs';
+import { loadConfig, parseFrontmatter, runBounded } from './lib.mjs';
 import { parseRollout, sectionText } from './plancheck.mjs';
 
 function stateDir(root) {
@@ -64,10 +63,10 @@ async function sample(name, spec, env) {
       return { value: null, ok: false, ms: Date.now() - started, detail: err.name === 'AbortError' ? 'timeout' : err.message };
     }
   }
-  const r = spawnSync(sub(spec.command), { shell: true, encoding: 'utf8', timeout: (spec.timeout_seconds || 30) * 1000, env: { ...process.env, KAIZEN_ENV: env || '' } });
+  const r = runBounded(sub(spec.command), { timeoutMs: (spec.timeout_seconds || 30) * 1000, env: { ...process.env, KAIZEN_ENV: env || '' } });
   const raw = (r.stdout || '').trim().split(/\s+/).pop();
   const value = raw !== undefined && raw !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : null;
-  if (r.status !== 0 || value === null) return { value, ok: false, ms: Date.now() - started, detail: r.status !== 0 ? `commande en échec (exit ${r.status})` : `sortie non numérique : "${(r.stdout || '').trim().slice(0, 60)}"` };
+  if (r.status !== 0 || value === null) return { value, ok: false, ms: Date.now() - started, detail: r.timedOut ? 'timeout' : r.status !== 0 ? `commande en échec (exit ${r.status})` : `sortie non numérique : "${(r.stdout || '').trim().slice(0, 60)}"` };
   const breach = (spec.max !== undefined && value > Number(spec.max)) || (spec.min !== undefined && value < Number(spec.min));
   return { value, ok: !breach, ms: Date.now() - started, detail: breach ? `seuil franchi (${spec.max !== undefined ? `max ${spec.max}` : `min ${spec.min}`})` : 'ok' };
 }

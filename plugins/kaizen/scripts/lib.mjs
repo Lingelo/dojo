@@ -5,6 +5,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ---------------------------------------------------------------------------
 // Repo & configuration
@@ -330,6 +331,31 @@ export function withFiles(command, files) {
   return command.replaceAll('{files}', quoted);
 }
 
+// Lance une commande shell avec un délai, de façon synchrone, et tue tout son arbre de processus s'il
+// est dépassé (run-bounded.mjs) : une vérification coupée ne survit pas en arrière-plan.
+// → { status, timedOut, stdout, stderr }
+const BOUNDED = fileURLToPath(new URL('./run-bounded.mjs', import.meta.url));
+
+export function runBounded(command, { cwd, env, timeoutMs }) {
+  const r = spawnSync(process.execPath, [BOUNDED, String(Math.max(1, Math.round(timeoutMs))), command], {
+    cwd,
+    env,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
+    maxBuffer: 64 * 1024 * 1024,
+    windowsHide: true,
+    // Filet si le lanceur lui-même ne rendait pas la main.
+    timeout: timeoutMs + 15000,
+    killSignal: 'SIGKILL',
+  });
+  let meta = {};
+  try {
+    meta = JSON.parse(r.output?.[3] || '{}');
+  } catch {}
+  const timedOut = Boolean(meta.timedOut) || r.error?.code === 'ETIMEDOUT';
+  return { status: timedOut ? null : (meta.code ?? r.status), timedOut, stdout: r.stdout || '', stderr: r.stderr || '' };
+}
+
 export function runVerify(root, { only, timeoutSeconds, budgetSeconds, overrides = {} } = {}) {
   const config = loadConfig(root);
   const { commands: detected } = verifyCommands(root, config);
@@ -350,15 +376,14 @@ export function runVerify(root, { only, timeoutSeconds, budgetSeconds, overrides
       continue;
     }
     const started = Date.now();
-    const r = spawnSync(cmd, { cwd: root, shell: true, encoding: 'utf8', timeout: Math.min(perCommand, remaining), maxBuffer: 64 * 1024 * 1024 });
-    const timedOut = r.error && r.error.code === 'ETIMEDOUT';
+    const r = runBounded(cmd, { cwd: root, timeoutMs: Math.min(perCommand, remaining) });
     results.push({
       name,
       command: cmd,
-      ok: r.status === 0 && !timedOut,
-      exit: timedOut ? 'timeout' : r.status,
+      ok: r.status === 0 && !r.timedOut,
+      exit: r.timedOut ? 'timeout' : r.status,
       seconds: Math.round((Date.now() - started) / 100) / 10,
-      output: tail(`${r.stdout || ''}${r.stderr || ''}`),
+      output: tail(`${r.stdout}${r.stderr}`),
     });
   }
   return results;

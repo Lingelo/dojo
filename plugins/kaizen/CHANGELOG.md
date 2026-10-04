@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [SemVer](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Corrigé
+- Une vérification coupée par son délai (`verify`, garde-fou Stop, signaux `monitor` par commande)
+  ne survit plus en arrière-plan : `scripts/run-bounded.mjs` tue tout l'arbre de processus
+  (`taskkill /T /F` sous Windows, groupe de processus sous POSIX), et plus seulement le shell (#14).
+
 ## [2.0.0] - 2026-10-04
 
 ### Changements cassants
