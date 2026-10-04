@@ -6,6 +6,9 @@ application. Comptez une heure la première fois, dont l'essentiel en discussion
 Pour une vue d'ensemble avant de commencer : [la vidéo de présentation](media/kaizen-presentation.mp4)
 (une minute, voix off et [sous-titres](media/kaizen-presentation.srt)).
 
+À tout moment, **`/kaizen:help`** vous dit où en est le repo et quelle commande lancer ensuite
+(`/kaizen:help je veux livrer ma branche`, `/kaizen:help j'ai un bug`…).
+
 ## 0. Prérequis
 
 - Claude Code, Node ≥ 18, git.
@@ -155,6 +158,8 @@ retrouvera, la citera, et en fera un test.
 
 ## Et ensuite
 
+- Ne plus savoir quoi lancer : `/kaizen:help` regarde l'état du repo (`node $K status`) et recommande
+  la commande suivante.
 - Tout enchaîner : après un brainstorm, `/kaizen:autopilot` exécute le plan, la revue, la livraison et le
   suivi de PR sans vous interrompre.
 - Mesurer après quelques semaines : `/kaizen:metrics` (taille des PR, délai, taux de reprise,

@@ -27,6 +27,7 @@ Kaizen outille ces trois disciplines.
  debug → correctif → review → learn        polish : retouches UI guidées par l'utilisateur
  decide → ADR      postmortem → leçons · packs · amendements      metrics (DORA)      release
  autopilot : de la demande à la PR prête, en autonomie      prune-learnings : entretien des leçons
+ help : quelle commande lancer maintenant, d'après l'état du repo
 ```
 
 > Inspiré très fortement du plugin [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)

@@ -1,7 +1,8 @@
 # Dépannage
 
-Premier réflexe : **`/kaizen:setup check`**. C'est un bilan en lecture seule : config, commandes de
-vérification, leçons invalides, packs, constitution, garde-fou resté actif.
+Premier réflexe : **`/kaizen:help <ce qui se passe>`** pour savoir où vous en êtes et quoi lancer
+(il s'appuie sur `node $K status`). Puis **`/kaizen:setup check`**, un bilan en lecture seule : config,
+commandes de vérification, leçons invalides, packs, constitution, garde-fou resté actif.
 
 ## Le garde-fou bloque la fin de la session
 
