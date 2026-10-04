@@ -51,7 +51,11 @@ fichiers elles touchent, quels tests doivent passer, et comment revenir en arri�
      respecter bloque le plan.
    - **Menaces** (STRIDE léger) si la zone est sensible, chaque parade portée par une unité.
    - **Déploiement et retour arrière** : exposition (flag ?), ordre, retour arrière, ce qui est
-     irréversible, signal à surveiller.
+     irréversible, signal à surveiller **avec son seuil** (`> 1 % d'erreurs → revert`). `plan check`
+     signale un retour arrière ou un signal manquant, et un signal sans seuil ; `/kaizen:release` en
+     tire la checklist de mise en production.
+   - Le **profil** ajuste la cérémonie : en `lean`, menaces et déploiement seulement si le changement
+     touche une surface à risque ou la production ; en `full`, toujours.
 5. **Unités** U1… : objectif, `Couvre`, fichiers, approche (motif cité), **preuve** (test d'abord par
    défaut), scénarios de test, vérification exécutable, **tranche**. Une tranche, c'est une PR sous
    `pr.max_lines`, qui laisse la branche par défaut saine.

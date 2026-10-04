@@ -60,6 +60,8 @@ avec un nouvel exemple d'acceptation : « Cœur de ß » → `coeur-de-ss`.
 ## Bon à savoir
 
 - ⛔ si un P0 reste ou si `plan check` échoue encore.
+- Le **profil** règle l'équipe : `lean` = `plan check` + cohérence seulement ; `full` = relecteur
+  adversarial toujours. Voir [Configuration](../configuration.md#profile).
 - Les corrections sont faites **dans le format du document**, sans section « corrections » empilée.
 - Contrat des relecteurs : [`references/doc-review-contract.md`](../../references/doc-review-contract.md).
 

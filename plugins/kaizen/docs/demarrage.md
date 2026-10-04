@@ -39,7 +39,8 @@ commandes.
 Claude crée `.kaizen/config.json` et les dossiers `docs/plans`, `docs/learnings` et `docs/ideation`.
 Il détecte la stack et vous montre les commandes de vérification qu'il a trouvées (`npm test`,
 `npm run -s lint`…). **Vérifiez-les** : ce sont elles que le garde-fou lancera. Il vous propose
-enfin une petite section dans `CLAUDE.md`, pour que tout agent sache où trouver les leçons.
+ensuite une petite section dans `CLAUDE.md`, pour que tout agent sache où trouver les leçons, puis un
+**profil** : `lean` est recommandé pour un premier cycle (moins de cérémonie, mêmes garde-fous).
 
 Ce qui change dans le repo : `.kaizen/config.json`, `docs/…/.gitkeep`, une ligne dans `.gitignore`.
 Commitez-les.
@@ -124,6 +125,10 @@ Il corrige les P0/P1 et vous propose de livrer.
 
 `ship` pousse la branche et ouvre la PR. La description est tirée du plan : pourquoi, ce qui change,
 **guide du relecteur**, preuves, retour arrière.
+
+Le push n'est accepté qu'avec une revue enregistrée : un hook le refuse sinon. Pour pousser sans revue
+(hotfix, branche jetable), dites-le à Claude ; il vous donne un code que **vous** tapez
+(`kaizen waive <code>`), et la PR le signale dans une section « Revue écartée ».
 
 `watch-pr` suit ensuite la PR jusqu'à ce qu'elle semble prête à merger :
 - il traite les commentaires de revue avant la CI ;

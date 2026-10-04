@@ -77,6 +77,8 @@ Il ne dit **jamais** « sûr à merger ».
 - `blocked-external` (CI d'une PR de fork en attente d'approbation) : Kaizen n'approuve jamais.
 - Budget : 8 h de veille active par défaut, filet de sécurité de 3 jours.
 - État local : `.kaizen/state/pr/<owner>-<repo>-<n>.json`. Le supprimer fait repartir de zéro.
+- Un correctif de CI de plus de `review.max_unreviewed_lines` lignes (80) depuis la dernière revue
+  est refusé au push : `watch-pr` relance alors `/kaizen:review` avant de pousser.
 - Prérequis : `gh` authentifié. Les réponses portent le marqueur `<!-- kaizen -->`.
 
 ## Voir aussi
