@@ -1,6 +1,6 @@
 # Kaizen — bilan SDLC et positionnement
 
-*Au 4 octobre 2026, version 2.0.0.*
+*Au 4 octobre 2026, version 2.1.0.*
 
 Kaizen est un SDLC complet outillé pour un agent IA. Il couvre l'idée, le plan, le code, la revue, la
 livraison, le déploiement surveillé et l'apprentissage, avec des garde-fous exécutés par du code. Ce

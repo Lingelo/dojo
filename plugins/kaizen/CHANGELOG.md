@@ -2,7 +2,7 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [SemVer](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [2.1.0] - 2026-10-04
 
 ### Ajouté
 - **Coût des sous-agents** dans `cycle_cost` (#15) : le hook Stop additionne aussi les transcripts des
