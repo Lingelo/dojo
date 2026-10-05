@@ -7,12 +7,13 @@ legitimately.
 
 ## The hooks
 
-![Kaizen's five hook registrations along a Claude Code session: UserPromptSubmit on your messages, PreToolUse before tools, two PostToolUse after tools, Stop at the end of a turn](../media/diagrams/hooks.svg)
+![Kaizen's six hook registrations along a Claude Code session: UserPromptSubmit on your messages, two PreToolUse before tools, two PostToolUse after tools, Stop at the end of a turn](../media/diagrams/hooks.svg)
 
 Declared in [`hooks/hooks.json`](../../hooks/hooks.json):
 
 | Event | Matcher | Script | Timeout | Blocks? |
 |---|---|---|---|---|
+| `PreToolUse` | `Bash` | `secret-gate.mjs` | 30 s | yes (exit 2) |
 | `PreToolUse` | `Bash\|Write\|Edit\|MultiEdit\|NotebookEdit` | `review-gate.mjs` | 30 s | yes (exit 2) |
 | `PostToolUse` | `Bash` | `quality-gate.mjs --claim` | 10 s | no |
 | `PostToolUse` | `Agent\|Task` | `review-hooks.mjs --evidence` | 15 s | no |
@@ -21,8 +22,9 @@ Declared in [`hooks/hooks.json`](../../hooks/hooks.json):
 
 Common rules:
 
-- **Inactive outside a Kaizen repo.** The review and deployment gates require `.kaizen/config.json`;
-  the quality gate requires an active `gate.json`.
+- **Inactive outside a Kaizen repo**, except the secret scan. The review and deployment gates require
+  `.kaizen/config.json`; the quality gate requires an active `gate.json`. The secret scan runs in every
+  git repo, because a leaked key costs the same whether or not Kaizen was initialized.
 - **Cheap first.** Each script filters on the tool name or the command text before importing anything,
   because PreToolUse sees every Bash command and every write.
 - **Fail open on their own errors.** A broken hook lets the action through (and says so): a bug in
@@ -65,6 +67,32 @@ Step by step:
    clears the subagent launch log.
 
 If the failure is genuinely outside the plan’s scope, Claude may run `gate off` and must explain why.
+
+## The secret scan before `git commit` (PreToolUse)
+
+Before any `git commit` Claude runs, `secret-gate.mjs` scans what the commit is about to record, with
+the same engine as [`node $K secrets scan`](../reference/cli.md#secrets-scan---staged----base-ref---json):
+
+- the index;
+- plus, when the same Bash command stages files first (`git add -A && git commit …`), `commit -a`, or
+  commit paths, the tracked changes and untracked files those bring in — the hook runs *before* the
+  command, so it cannot wait for `git add` to happen.
+
+Only added lines count; a removed secret is fine. About thirty patterns (AWS, Google, Azure, GitHub,
+GitLab, npm, PyPI, Anthropic, OpenAI, Hugging Face, Slack, Discord, Telegram, Stripe, Shopify, Twilio,
+SendGrid, Mailgun, Sentry, Datadog, private keys, JWTs, database URLs with a password, generic
+`api_key = "…"` assignments). Placeholders (`example`, `changeme`, `<token>`, `${VAR}`…), lockfiles,
+minified and vendored files are skipped. The message lists `file:line — type` with a redacted preview
+and never prints the secret; Claude is told to move the value out of the code and to say that a key
+already pushed must be rotated.
+
+The hook also refuses `git commit --no-verify` (or `-n`): the repo's own commit hooks are not Claude's
+to skip. A real false positive (a test fixture, a public key) goes in `secrets.ignore`
+([configuration](../configuration.md#secrets--the-secret-scan-before-git-commit)) — your decision, not
+Claude's. `secrets.scan: false` turns the hook off.
+
+The hook only sees Claude's commits. For everyone's, run `node $K secrets scan --base origin/<default>`
+in CI (or gitleaks): [`/kaizen:setup audit`](../guides/setup.md) checks for one.
 
 ## The review required before `git push` (PreToolUse)
 
@@ -151,6 +179,7 @@ Not hooks, but CLI checks the skills must pass and cannot argue with:
 | verification | `node $K verify [--only test,lint\|audit]` | any configured or detected check is red (exit 1) |
 | plan structure | `node $K plan check <plan>` | see [Plans](plans.md#everything-plan-check-verifies) |
 | batch size | `node $K size [--base ref] [--max n]` | the branch diff exceeds `pr.max_lines` (exit 1) |
+| secrets | `node $K secrets scan [--staged \| --base ref]` | a key or token in added lines (exit 1) |
 | constitution | `node $K constitution check` | see [Constitution](constitution.md#validation-constitution-check) |
 | learnings | `node $K learnings validate` | invalid frontmatter (exit 1) |
 | deployment approval | `node $K deploy run <env>` | protected environment without your confirmed code |

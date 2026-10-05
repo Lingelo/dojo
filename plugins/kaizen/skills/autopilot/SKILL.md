@@ -69,7 +69,7 @@ existing plan, nor a plan picked at random from the plans folder.
    in the PR description ("Open points" section), or in the final report if there is no PR.
 7. **Capture** — `kaizen:learn mode:auto` if the run produced durable reasoning the code, tests and
    plan do not carry. "Learning not written" is a success. The learning goes into the PR.
-8. **Browser tests** — UI change and a browser tool available (Playwright MCP or another browser MCP): walk through
+8. **Browser tests** — UI change and a browser tool answering (the Playwright MCP server Kaizen ships, or another): walk through
    the acceptance examples touched; failure → fix, verify again.
 
 **Delivery precondition** (from 9 on): empty `git remote` → everything stays in local commits, push, PR

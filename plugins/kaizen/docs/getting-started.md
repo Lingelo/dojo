@@ -22,7 +22,8 @@ the plans, learnings and PR descriptions in the language of the conversation (or
 - Claude Code, Node ≥ 18, git.
 - An authenticated `gh` (`gh auth status`) to open and follow PRs. Without it, everything works except
   `ship`, `address-feedback` and `watch-pr`.
-- Optional: a Playwright MCP server, so that Claude can see the interface.
+- For UI work, a browser Playwright can drive: Kaizen ships the Playwright MCP server (`npx`, first
+  start downloads it); if no browser is found, Claude installs one with its `browser_install` tool.
 
 ## 1. Install
 

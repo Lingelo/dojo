@@ -140,7 +140,7 @@ conformance to the plan, and the PR lists the covered requirements.
 **Security built into the cycle (NIST SSDF)**:
 - STRIDE threats in the plan, security reviewer for the plan then the code;
 - dependency audit (`verify --only audit`);
-- the marketplace's `security` plugin for secrets;
+- secret scan before every commit Claude makes (hook, ~30 kinds of keys and tokens) and `secrets scan` for CI;
 - PR comment text treated as untrusted.
 
 **Quality gate through the `Stop` hook.** During `work` and `autopilot`, Claude cannot finish while tests,
@@ -249,7 +249,7 @@ node $K init [--docs-root d] [--language en] [--profile lean|standard|full]   # 
 node $K config                                 # effective configuration (JSON)
 node $K detect                                 # stack and verification commands (JSON)
 node $K audit [--json] [--no-github]           # SDLC maturity in five areas
-node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]
+node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]
 node $K models [--json] [--agent a]            # model of each agent per profile and config
 
 # Principles, plans, learnings
@@ -266,6 +266,7 @@ node $K postmortem new --title "…"             # reserves a postmortem (docs/p
 node $K verify [--only test,lint|audit] [--json]   # runs the checks (exit 1 if red)
 node $K gate on [--plan p] | off | status      # Stop-hook quality gate
 node $K size [--base ref] [--max n] [--json]   # diff size vs pr.max_lines (exit 1 if above)
+node $K secrets scan [--staged | --base ref] [--json]   # possible secrets in the changes (exit 1 if any)
 node $K dev detect | dev probe --url <u> [--timeout-seconds 30]   # dev server (polish)
 node $K run-dir <type>                         # local run folder (e.g. reviews), ignored by git
 
@@ -295,6 +296,7 @@ Declared in [`hooks/hooks.json`](hooks/hooks.json); they work without any action
 
 | Event | Script | Role |
 |---|---|---|
+| `PreToolUse` (Bash) | `scripts/secret-gate.mjs` | Refuses a `git commit` whose changes (index, plus what a `git add` in the same command or `commit -a` brings in) carry a key or token, and `--no-verify`. Active in every git repo; `secrets.scan: false` turns it off |
 | `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | Refuses `git push` of a branch without a recorded review of the pushed tree, a direct deploy command of a protected environment, hand-made `deploy/…`, `rollback/…`, `incident/…` tags, and direct writes to Kaizen's review and deployment state |
 | `PostToolUse` (Bash) | `scripts/quality-gate.mjs --claim` | Ties the gate to the session that ran `gate on` |
 | `PostToolUse` (Agent/Task) | `scripts/review-hooks.mjs --evidence` | Logs the Kaizen reviewers actually launched (evidence required by `review record`) and the agents of the cycle |
@@ -330,4 +332,5 @@ node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, co
 
 - **Commits**: conventional format (`<type>(<JIRA>): …`, Jira key read from the branch).
 - **Secrets**: never in reports (`<REDACTED>`).
-- **Browser**: `polish`, `work` and `autopilot` use a Playwright MCP server, when installed, to see and verify the UI.
+- **Browser**: Kaizen ships the Playwright MCP server (`.mcp.json`, pinned version, started with `npx`); `polish`, `work` and `autopilot` use it to see and verify the UI.
+- **Secrets**: scanned by Kaizen itself before every commit (`secret-gate.mjs`), no other plugin needed.

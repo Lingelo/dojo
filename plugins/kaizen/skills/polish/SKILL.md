@@ -53,8 +53,9 @@ project, unreachable server) exempts from it, and it is reported.
 ## 3. Open and wait
 
 Open the page (route passed as argument, otherwise the one the branch touches — `git diff --name-only`
-towards page/route files) with the available browser tool: a Playwright MCP server
-(`browser_navigate`, `browser_take_screenshot`, `browser_resize`), otherwise give the URL. Then say (in
+towards page/route files) with the Playwright MCP server Kaizen ships
+(`browser_navigate`, `browser_take_screenshot`, `browser_resize`; browser missing → `browser_install`),
+or another browser tool; if none answers, give the URL. Then say (in
 the user's language):
 
 ```text

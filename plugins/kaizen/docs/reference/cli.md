@@ -14,8 +14,8 @@ Conventions:
   `kaizen: no git repository here`.
 - Flags are `--name value` or boolean `--name`. Paths are printed POSIX-style on every OS.
 - Output: human-readable text, or JSON for commands that return data (most accept `--json`).
-- **Exit codes**: `0` success · `1` a check is red (verify, size, plan check, constitution check,
-  learnings validate, review check, deploy/rollback/flag failure, monitor breach, dev probe unreachable,
+- **Exit codes**: `0` success · `1` a check is red (verify, size, secrets scan, plan check,
+  constitution check, learnings validate, review check, deploy/rollback/flag failure, monitor breach, dev probe unreachable,
   `plan latest` without a plan) · `2` usage error or exception (message on stderr, `kaizen: …`).
 
 ## Orientation
@@ -76,6 +76,17 @@ whole process tree killed on timeout). The dependency audit only runs with `--on
 Lines changed by the branch against its merge base with the default branch (uncommitted included),
 excluding `pr.ignore` globs and binary files, compared to `pr.max_lines` (or `--max`). Over the limit,
 lists the 5 largest files. Exit 1 above the limit.
+
+### `secrets scan [--staged | --base <ref>] [--json]`
+
+Looks for ~30 kinds of keys and tokens (cloud, git platforms, registries, AI providers, payments,
+messaging, private keys, JWTs, database URLs with a password, generic `api_key = "…"` assignments) in
+**added lines only**. Default scope: everything not committed yet (index, tracked changes, untracked
+files); `--staged`: the index only; `--base <ref>`: the branch's commits since its merge base with
+`<ref>` (for CI, e.g. `--base origin/main`). Placeholders (`example`, `changeme`, `${VAR}`…), lockfiles,
+minified and vendored files and the `secrets.ignore` globs are skipped. Prints `file:line — type` with a
+redacted preview, never the value; `--json` returns `{ findings: [{ file, line, type, preview }] }`.
+Exit 1 if anything is found. The same scan runs in the [secret gate](../concepts/gates-and-hooks.md#the-secret-scan-before-git-commit-pretooluse).
 
 ### `gate on [--plan <path>]` · `gate off` · `gate status`
 
@@ -236,6 +247,7 @@ directly):
 
 | Script | Registered as |
 |---|---|
+| `secret-gate.mjs` | PreToolUse on Bash |
 | `review-gate.mjs` | PreToolUse |
 | `quality-gate.mjs` (`--claim`) | Stop (PostToolUse on Bash) |
 | `review-hooks.mjs --evidence` / `--confirm` | PostToolUse on Agent/Task / UserPromptSubmit |

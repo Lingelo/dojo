@@ -2,6 +2,29 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.1.0] - 2026-10-05
+
+Kaizen is self-sufficient: what it used to borrow from the marketplace's `security` and `playwright`
+plugins (removed from the marketplace) now ships with it.
+
+### Added
+- **Secret scan before every commit** (`scripts/secret-gate.mjs`, `PreToolUse` on Bash): a `git commit`
+  by Claude is refused when its changes — the index, plus what a `git add` in the same command,
+  `commit -a` or commit paths bring in — add one of ~30 kinds of keys and tokens. `--no-verify` is
+  refused too. Active in every git repo; `secrets.scan: false` turns it off, `secrets.ignore` (path
+  globs) skips fixtures. Findings show `file:line — type` and a redacted preview, never the value.
+- `node $K secrets scan [--staged | --base <ref>] [--json]`: the same scan from the CLI (exit 1 if
+  anything is found).
+- `audit fix secret_scanning`: `.github/workflows/kaizen-secrets.yml` scans every PR's commits, whoever
+  wrote them. The audit now recognizes `kaizen.mjs secrets scan` in CI.
+- **Playwright MCP server bundled** (`.mcp.json`, `@playwright/mcp` pinned): `polish`, `work` and
+  `autopilot` can see the UI without another plugin. Troubleshooting covers a missing browser and
+  headless machines.
+
+### Changed
+- Docs and skills no longer refer to the marketplace's `git`, `security`, `playwright` or `experts`
+  plugins. The audit still counts a legacy `security@angelo-plugins` as secret scanning.
+
 ## [3.0.0] - 2026-10-04
 
 Kaizen is now written in English (#17). Claude still talks to the user in their language, and the

@@ -45,6 +45,7 @@ improves). Then Claude offers to fix each point, **P1 first**, one by one, with 
 - **scaffolds** generated from your stack, never over an existing file:
   `audit fix ci` (GitHub Actions: install and detected verification commands),
   `pr_template`, `dependabot` (detected ecosystems), `codeowners --owner @team`, `gitignore_env`,
+  `secret_scanning` (every PR scanned for keys and tokens, `--ref <sha>`),
   `monitor_patrol` and `monitor_alert` (continuous incident detection, `--env`, `--ref <sha>`);
 - **deployment**: `deploy detect`, you choose, `deploy configure <id>`;
 - **administration settings** (branch protection): Claude gives the exact settings, you apply them;

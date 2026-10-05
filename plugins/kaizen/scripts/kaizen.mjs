@@ -34,6 +34,7 @@
 //   node kaizen.mjs constitution [check] [--json] CONSTITUTION.md articles / validation
 //   node kaizen.mjs plan check <path> [--json]    structural check of a plan (R/AE → U traceability)
 //   node kaizen.mjs size [--base <ref>] [--json]  diff size vs pr.max_lines (exit 1 if above)
+//   node kaizen.mjs secrets scan [--staged | --base <ref>] [--json]   possible secrets in the changes (exit 1 if any)
 //   node kaizen.mjs dev detect | probe --url U    dev server (polish)
 //   node kaizen.mjs metrics [--since 90d] [--no-github]   approximated DORA metrics + loop health
 //   node kaizen.mjs adr new --title "…" | adr list        architecture decisions (docs/adr)
@@ -56,6 +57,7 @@ import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { audit, scaffold } from './audit.mjs';
+import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
 import {
@@ -676,7 +678,7 @@ try {
       const root = requireRepo();
       if (sub === 'fix') {
         const id = positional[2];
-        if (!id) die('usage: audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]');
+        if (!id) die('usage: audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]');
         const str = (v) => (typeof v === 'string' ? v : undefined);
         out(scaffold(root, id, { owner: str(flags.owner), env: str(flags.env), ref: str(flags.ref) }));
         break;
@@ -888,6 +890,18 @@ try {
         if (over) for (const f of s.largest) out(`    ${String(f.added + f.removed).padStart(6)}  ${f.file}`);
       }
       process.exit(over ? 1 : 0);
+    }
+    case 'secrets': {
+      const root = requireRepo();
+      if (sub !== 'scan') die('usage: secrets scan [--staged | --base <ref>] [--json]');
+      const ignore = loadConfig(root).secrets.ignore;
+      const base = typeof flags.base === 'string' ? flags.base : null;
+      // Default: everything not yet committed (index, tracked changes, untracked files).
+      const scope = base ? { base } : flags.staged ? { staged: true } : { staged: true, worktree: true, untrackedFiles: true };
+      const findings = scanSecrets(root, { ...scope, ignore });
+      if (flags.json) out({ findings });
+      else out(findings.length ? `✘ ${findings.length} possible secret(s):\n${formatFindings(findings)}` : '✔ no secret found');
+      process.exit(findings.length ? 1 : 0);
     }
     case 'metrics': {
       const root = requireRepo();

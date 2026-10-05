@@ -20,7 +20,7 @@ protects first).
 | `lint` | lint | a lint command | 3 | — |
 | `typecheck` | type checking (typed projects) | a typecheck command | 2 | — |
 | `gitignore_env` | secret files ignored | `.env` in `.gitignore` | 1 | `gitignore_env` |
-| `secret_scanning` | secret scanning | the marketplace `security` plugin enabled, a gitleaks/detect-secrets/trufflehog config, or a scanner in pre-commit or CI | 2 | — |
+| `secret_scanning` | secret scanning for everyone's commits | a gitleaks/detect-secrets/trufflehog config, or a scanner (including `kaizen.mjs secrets scan`) in pre-commit or CI; the legacy `security@angelo-plugins` plugin also counts. Kaizen's commit hook alone does not: it only sees Claude's commits | 2 | `secret_scanning` |
 
 ### Flow
 
@@ -68,6 +68,7 @@ everything `missing` or `warn` by priority, with the fix, the scaffold id and th
 | `dependabot` | `.github/dependabot.yml` | weekly updates, 5 open PRs max, for the stack’s ecosystems (npm, pip/uv, gomod, cargo, bundler, maven, gradle, composer), plus `github-actions` and `docker` when present |
 | `codeowners` | `.github/CODEOWNERS` | requires `--owner @user` or `@org/team`; default owner, plus `/CONSTITUTION.md`, `/kaizen-packs/`, `/.kaizen/config.json` |
 | `gitignore_env` | appends to `.gitignore` | `.env`, `.env.*`, `!.env.example` |
+| `secret_scanning` | `.github/workflows/kaizen-secrets.yml` | `secrets scan --base origin/<target branch>` on every PR (`--ref <sha>` pins the Kaizen checkout) |
 | `monitor_patrol` | `.github/workflows/kaizen-patrol.yml` | scheduled `monitor patrol` (`--env`, default production or the first environment; `--ref <sha>` pins the Kaizen checkout) |
 | `monitor_alert` | `.github/workflows/kaizen-alert.yml` | `repository_dispatch` entry point passing the payload to `monitor alert` through the environment (no script injection) |
 

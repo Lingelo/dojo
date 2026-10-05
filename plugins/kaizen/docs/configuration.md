@@ -33,6 +33,7 @@ See the effective configuration: `node $K config`. Create the file: `/kaizen:set
   },
   "review": { "require_before_push": true, "max_unreviewed_lines": 80 },
   "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] },
+  "secrets": { "scan": true, "ignore": ["test/fixtures/**"] },
   "deploy": {
     "environments": {
       "staging":    { "command": "make deploy ENV=staging", "rollback": "make rollback ENV=staging" },
@@ -175,6 +176,16 @@ against an agent set on bypassing the mechanism.
 
 The 400-line value follows Google's practices (a short PR is reviewed fast and hides fewer bugs) and
 DORA 2025's finding: AI makes PRs bigger, and review becomes the bottleneck.
+
+### `secrets` — the secret scan before `git commit`
+
+| Key | Default | Role |
+|---|---|---|
+| `scan` | `true` | a `PreToolUse` hook refuses a `git commit` by Claude that adds a key or token, and `--no-verify` |
+| `ignore` | `[]` | path globs never scanned (test fixtures, public keys), on top of lockfiles, minified and vendored files |
+
+Details in [Gates and hooks](concepts/gates-and-hooks.md#the-secret-scan-before-git-commit-pretooluse). Adding
+a path to `ignore` is the user's decision: Claude proposes it, it does not do it on its own.
 
 ### `deploy` — deployment and rollback
 

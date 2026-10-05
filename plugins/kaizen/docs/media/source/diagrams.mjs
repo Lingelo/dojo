@@ -717,7 +717,7 @@ written.push(
 // 13. Hooks in a session
 // ---------------------------------------------------------------------------------------------------
 written.push(
-  diagram('hooks', 1100, 520, 'Kaizen’s hooks in a Claude Code session', 'Five hook registrations make the important rules deterministic. They are inactive outside a Kaizen repo and never block on their own errors.', (d) => {
+  diagram('hooks', 1100, 520, 'Kaizen’s hooks in a Claude Code session', 'Six hook registrations make the important rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.', (d) => {
     const lane = (y, label) => {
       d.text(36, y + 4, label, 'regionlabel');
       d.arrow([[150, y], [1064, y]], { none: true });
@@ -728,7 +728,7 @@ written.push(
     d.box('msg', 170, 86, 230, 48, 'outside', 'you send a message');
     d.box('ups', 170, 150, 230, 64, 'gate', 'UserPromptSubmit', 'review-hooks.mjs --confirm\nkaizen waive / deploy <code>');
     d.arrow(['msg.b', 'ups.t'], {});
-    d.box('pre', 440, 214, 270, 76, 'gate', 'PreToolUse', 'review-gate.mjs: git push without\nreview, raw protected deploy, forged\ntags, writes to review state → exit 2');
+    d.box('pre', 440, 212, 270, 100, 'gate', 'PreToolUse', 'secret-gate.mjs: commit carrying a\nsecret, --no-verify · review-gate.mjs:\npush without review, raw protected\ndeploy, forged tags, state writes → 2');
     d.box('post1', 740, 160, 324, 64, 'gate', 'PostToolUse (Bash)', 'quality-gate.mjs --claim: binds the\ngate to the session after gate on');
     d.box('post2', 740, 238, 324, 64, 'gate', 'PostToolUse (Agent / Task)', 'review-hooks.mjs --evidence: logs\nreviewers launched, cycle subagents');
     d.box('stop', 440, 352, 270, 76, 'gate', 'Stop', 'quality-gate.mjs: verify while the\ngate is on · blocks ≤ 3 times\nrecords tokens');

@@ -156,3 +156,21 @@ test('continuous detection: check and patrol / alert workflow scaffolds', () => 
   assert.notEqual(cli(dir, ['audit', 'fix', 'monitor_patrol', '--env', 'prod; rm -rf /']).code, 0);
   cleanup(dir);
 });
+
+test('secret scanning: Kaizen scan in CI counts, scaffolded per PR, never overwritten', () => {
+  const dir = tempRepo({ 'README.md': '# app\n' });
+  const check = () => cli(dir, ['audit', '--json', '--no-github']).json.checks.find((c) => c.id === 'secret_scanning');
+  assert.equal(check().status, 'missing');
+  assert.equal(check().fix.scaffold, 'secret_scanning');
+  assert.equal(cli(dir, ['audit', 'fix', 'secret_scanning', '--ref', '0123abc']).code, 0);
+  const wf = readFileSync(join(dir, '.github/workflows/kaizen-secrets.yml'), 'utf8');
+  assert.match(wf, /pull_request/);
+  assert.match(wf, /kaizen\.mjs secrets scan --base origin\/\$\{\{ github\.base_ref \|\| 'main' \}\}/);
+  assert.match(wf, /ref: 0123abc/);
+  assert.match(wf, /fetch-depth: 0/);
+  assert.match(wf, /contents: read/);
+  assert.equal(check().status, 'ok');
+  assert.notEqual(cli(dir, ['audit', 'fix', 'secret_scanning']).code, 0, 'nothing is overwritten');
+  assert.notEqual(cli(dir, ['audit', 'fix', 'secret_scanning', '--ref', 'x; rm -rf /']).code, 0);
+  cleanup(dir);
+});
