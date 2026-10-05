@@ -80,7 +80,7 @@
 <rect class="gate" x="36" y="292" width="262" height="50" rx="8" stroke-width="1.5"/>
 <text class="t12" x="167" y="321" text-anchor="middle">ambiguous product shape</text>
 <rect class="skill" x="318" y="292" width="196" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="416" y="321" text-anchor="middle">brainstorm (you there) or plan</text>
+<text class="t12" x="416" y="321" text-anchor="middle" style="font-size:10.6px">brainstorm (you there) or plan</text>
 <path class="line" d="M298,317 L318,317" marker-end="url(#h-default)"/>
 <rect class="gate" x="36" y="358" width="262" height="50" rx="8" stroke-width="1.5"/>
 <text class="t12" x="167" y="387" text-anchor="middle">not code (ideas, explanation)</text>
@@ -93,9 +93,9 @@
 <text class="t12" x="416" y="453" text-anchor="middle">plan mode:return</text>
 <path class="line" d="M298,449 L318,449" marker-end="url(#h-default)"/>
 <rect class="gate" x="36" y="490" width="262" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="167" y="519" text-anchor="middle">lean profile, ≤ ~30 lines, no risk surface</text>
+<text class="t12" x="167" y="519" text-anchor="middle" style="font-size:10.4px">lean profile, ≤ ~30 lines, no risk surface</text>
 <rect class="skill" x="318" y="490" width="196" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="416" y="519" text-anchor="middle">work without a written plan</text>
+<text class="t12" x="416" y="519" text-anchor="middle" style="font-size:11.8px">work without a written plan</text>
 <path class="line" d="M298,515 L318,515" marker-end="url(#h-default)"/>
 <path class="line" d="M156,136 L167,160" marker-end="url(#h-default)"/>
 <rect class="region" x="530" y="76" width="534" height="476" rx="12"/>

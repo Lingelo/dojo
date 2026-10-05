@@ -74,11 +74,11 @@
 <text class="sub" x="131" y="237" text-anchor="middle">session · usage</text>
 <rect class="gate" x="36" y="290" width="190" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="131" y="315" text-anchor="middle">PostToolUse --claim</text>
-<text class="sub" x="131" y="330" text-anchor="middle">binds the gate to this session</text>
+<text class="sub" x="131" y="330" text-anchor="middle">binds gate to session</text>
 <path class="line accent" d="M131,146 L131,186" marker-end="url(#h-accent)"/>
 <path class="line bad" d="M131,290 L131,250" marker-end="url(#h-bad)"/>
 <rect class="outside" x="290" y="90" width="170" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="375" y="115" text-anchor="middle">Claude ends a turn</text>
+<text class="label" x="375" y="115" text-anchor="middle" style="font-size:12.8px">Claude ends a turn</text>
 <text class="sub" x="375" y="130" text-anchor="middle">Stop event</text>
 <rect class="gate" x="520" y="86" width="330" height="46" rx="8" stroke-width="1.5"/>
 <text class="label" x="685" y="113" text-anchor="middle">active and same session?</text>
@@ -87,7 +87,7 @@
 <rect class="plain" x="520" y="218" width="330" height="46" rx="8" stroke-width="1.5"/>
 <text class="label" x="685" y="245" text-anchor="middle">record tokens: main + subagents</text>
 <rect class="plain" x="520" y="284" width="330" height="46" rx="8" stroke-width="1.5"/>
-<text class="label" x="685" y="311" text-anchor="middle">run verify within budget_seconds (840 s)</text>
+<text class="label" x="685" y="311" text-anchor="middle">run verify (budget 840 s)</text>
 <rect class="gate" x="520" y="350" width="330" height="46" rx="8" stroke-width="1.5"/>
 <text class="label" x="685" y="377" text-anchor="middle">all checks green?</text>
 <rect class="gate" x="520" y="416" width="330" height="46" rx="8" stroke-width="1.5"/>
@@ -105,14 +105,14 @@
 <rect class="pill" x="688" y="399" width="22.2" height="17" rx="4"/>
 <text class="edge" x="693" y="410" text-anchor="start">no</text>
 <rect class="plain" x="892" y="86" width="176" height="46" rx="8" stroke-width="1.5"/>
-<text class="label" x="980" y="113" text-anchor="middle">let it finish (exit 0)</text>
+<text class="label" x="980" y="113" text-anchor="middle">finish (exit 0)</text>
 <rect class="plain" x="892" y="152" width="176" height="46" rx="8" stroke-width="1.5"/>
-<text class="label" x="980" y="179" text-anchor="middle">gate removed, finish</text>
+<text class="label" x="980" y="179" text-anchor="middle">expired: removed</text>
 <rect class="plain" x="892" y="350" width="176" height="46" rx="8" stroke-width="1.5"/>
-<text class="label" x="980" y="377" text-anchor="middle">finish, blocks reset</text>
+<text class="label" x="980" y="377" text-anchor="middle">finish, reset</text>
 <rect class="state" x="892" y="416" width="176" height="56" rx="10" stroke-width="1.5"/>
-<text class="label" x="980" y="441" text-anchor="middle">finish, but report</text>
-<text class="sub" x="980" y="456" text-anchor="middle">what is still red, honestly</text>
+<text class="label" x="980" y="441" text-anchor="middle" style="font-size:13.3px">finish, but report</text>
+<text class="sub" x="980" y="456" text-anchor="middle" style="font-size:10.5px">what is still red, honestly</text>
 <rect class="gate" x="520" y="490" width="330" height="52" rx="8" stroke-width="1.5"/>
 <text class="label" x="685" y="513" text-anchor="middle">BLOCK (exit 2)</text>
 <text class="sub" x="685" y="528" text-anchor="middle">failure tails sent back: fix the root cause</text>
@@ -142,6 +142,6 @@
 <text class="sub" x="131" y="450" text-anchor="middle">end of the cycle</text>
 <rect class="artifact" x="36" y="486" width="400" height="50" rx="8" stroke-width="1.5"/>
 <text class="label" x="48" y="508" text-anchor="start">.kaizen/state/cycles.jsonl</text>
-<text class="sub" x="48" y="523" text-anchor="start">plan · minutes · gate blocks · tokens by role → metrics cycle_cost</text>
+<text class="sub" x="48" y="523" text-anchor="start" style="font-size:10.4px">plan · minutes · gate blocks · tokens by role → metrics cycle_cost</text>
 <path class="line blue" d="M131,466 L131,486" marker-end="url(#h-blue)"/>
 </svg>

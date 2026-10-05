@@ -67,7 +67,7 @@
 <text class="desc" x="28" y="58">One file per topic: brainstorm writes WHAT, plan adds HOW in place, plan check proves the traceability.</text>
 <rect class="plain" x="36" y="80" width="440" height="42" rx="8" stroke-width="1.5"/>
 <text class="label" x="48" y="98" text-anchor="start">frontmatter</text>
-<text class="sub" x="48" y="113" text-anchor="start">title · type · date · topic · artifact: kaizen-plan/v1 · source · jira</text>
+<text class="sub" x="48" y="113" text-anchor="start" style="font-size:10.8px">title · type · date · topic · artifact: kaizen-plan/v1 · source · jira</text>
 <rect class="artifact" x="46" y="160" width="420" height="40" rx="8" stroke-width="1.5"/>
 <text class="label mono" x="58" y="177" text-anchor="start">kaizen:goal</text>
 <text class="sub" x="58" y="192" text-anchor="start">Goal capsule — goal · means · authority · blockers</text>
@@ -155,5 +155,5 @@
 <text class="sub" x="806" y="563" text-anchor="middle">no [NEEDS CLARIFICATION], TBD or TODO in a ready plan · rollout warnings</text>
 <rect class="plain" x="540" y="606" width="532" height="50" rx="8" stroke-width="1.5"/>
 <text class="label" x="806" y="628" text-anchor="middle">Signal: `error_rate` &gt; 1 % → rollback</text>
-<text class="sub" x="806" y="643" text-anchor="middle">the threshold is read by deploy and monitor watch; release puts it in the checklist</text>
+<text class="sub" x="806" y="643" text-anchor="middle" style="font-size:11.2px">the threshold is read by deploy and monitor watch; release puts it in the checklist</text>
 </svg>

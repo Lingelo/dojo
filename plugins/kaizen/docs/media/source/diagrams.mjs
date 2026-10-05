@@ -92,12 +92,19 @@ function diagram(name, width, height, title, desc, build) {
       let ty = y + h / 2 - total / 2 + 12;
       const cx = opts.align === 'left' ? x + 12 : x + w / 2;
       const anchor = opts.align === 'left' ? 'start' : 'middle';
+      // Shrink a line that would not fit with a comfortable margin (fonts differ between viewers).
+      const room = w - (opts.tight ? 12 : opts.align === 'left' ? 22 : 20);
+      const fit = (text, size, perChar) => {
+        const est = [...text].length * size * perChar;
+        return est > room ? ` style="font-size:${Math.max(9.5, Math.floor((size * room * 10) / est) / 10)}px"` : '';
+      };
+      const labelSize = opts.cls === 't12' ? 12 : 13.5;
       for (const l of labels) {
-        parts.push(`<text class="${opts.cls || 'label'}${opts.mono ? ' mono' : ''}" x="${cx}" y="${ty}" text-anchor="${anchor}">${esc(l)}</text>`);
+        parts.push(`<text class="${opts.cls || 'label'}${opts.mono ? ' mono' : ''}" x="${cx}" y="${ty}" text-anchor="${anchor}"${fit(l, labelSize, opts.mono ? 0.68 : opts.cls === 't12' ? 0.55 : 0.65)}>${esc(l)}</text>`);
         ty += lh;
       }
       for (const s of subs) {
-        parts.push(`<text class="sub${opts.subMono ? ' mono' : ''}" x="${cx}" y="${ty - 1}" text-anchor="${anchor}">${esc(s)}</text>`);
+        parts.push(`<text class="sub${opts.subMono ? ' mono' : ''}" x="${cx}" y="${ty - 1}" text-anchor="${anchor}"${fit(s, 11.5, 0.55)}>${esc(s)}</text>`);
         ty += sh;
       }
       return boxes[id];
@@ -206,12 +213,12 @@ written.push(
       ['ideate', 'ideate', 'optional'],
       ['brainstorm', 'brainstorm', 'WHAT'],
       ['plan', 'plan', 'HOW'],
-      ['docreview', 'doc-review', 'plan reviewers'],
-      ['work', 'work', 'test first · gate'],
+      ['docreview', 'doc-review', 'plan review'],
+      ['work', 'work', 'test first'],
       ['review', 'review', 'multi-agent'],
       ['ship', 'ship', 'reviewable PR'],
       ['watch', 'watch-pr', '→ looks ready'],
-      ['learn', 'learn', 'durable lesson'],
+      ['learn', 'learn', 'one lesson'],
     ];
     row.forEach(([id, label, sub], i) => d.box(id, xs(i), Y, 100, 56, 'skill', label, sub));
     for (let i = 0; i < row.length - 1; i++) d.arrow([`${row[i][0]}.r`, `${row[i + 1][0]}.l`], { tone: 'accent', dashed: i === 0 });
@@ -224,7 +231,7 @@ written.push(
     d.box('merge', ox(0), Y2, 124, 56, 'outside', 'you merge', 'Kaizen never does');
     d.box('release', ox(1), Y2, 124, 56, 'skill', 'release', 'notes · SemVer');
     d.box('deploy', ox(2), Y2, 124, 56, 'skill', 'deploy', 'your commands');
-    d.box('monitor', ox(3), Y2, 124, 56, 'skill', 'monitor', 'signals · incidents');
+    d.box('monitor', ox(3), Y2, 124, 56, 'skill', 'monitor', 'incidents');
     d.box('postmortem', ox(4), Y2, 124, 56, 'skill', 'postmortem', 'blameless');
     d.arrow([[898, 224], [898, Y2]], { tone: 'accent' });
     d.arrow(['merge.l', 'release.r'], { tone: 'accent' });
@@ -348,7 +355,7 @@ written.push(
   diagram('quality-gate', 1100, 560, 'The quality gate (Stop hook)', 'While /kaizen:work or /kaizen:autopilot runs, Claude cannot end a turn on red checks — three times at most.', (d) => {
     d.box('on', 36, 90, 190, 56, 'skill', 'work / autopilot', 'node $K gate on --plan p');
     d.box('state', 36, 186, 190, 64, 'state', 'gate.json', 'active · since · blocks\nsession · usage', { round: 10 });
-    d.box('claim', 36, 290, 190, 56, 'gate', 'PostToolUse --claim', 'binds the gate to this session');
+    d.box('claim', 36, 290, 190, 56, 'gate', 'PostToolUse --claim', 'binds gate to session');
     d.arrow(['on.b', 'state.t'], { tone: 'accent' });
     d.arrow(['claim.t', 'state.b'], { tone: 'bad' });
     d.box('stop', 290, 90, 170, 56, 'outside', 'Claude ends a turn', 'Stop event');
@@ -356,16 +363,16 @@ written.push(
       ['c1', 'active and same session?'],
       ['c2', 'older than max_age_hours (24 h)?'],
       ['c3', 'record tokens: main + subagents'],
-      ['c4', 'run verify within budget_seconds (840 s)'],
+      ['c4', 'run verify (budget 840 s)'],
       ['c5', 'all checks green?'],
       ['c6', 'blocks > max_blocks (3)?'],
     ];
     chain.forEach(([id, l], i) => d.box(id, 520, 86 + i * 66, 330, 46, i === 2 || i === 3 ? 'plain' : 'gate', l));
     d.arrow(['stop.r', 'c1.l'], {});
     for (let i = 0; i < chain.length - 1; i++) d.arrow([`${chain[i][0]}.b`, `${chain[i + 1][0]}.t`], { label: i === 0 ? 'yes' : i === 1 ? 'no' : i === 4 ? 'no' : null, anchor: 'start', dx: 8, dy: 4 });
-    d.box('pass', 892, 86, 176, 46, 'plain', 'let it finish (exit 0)');
-    d.box('expire', 892, 152, 176, 46, 'plain', 'gate removed, finish');
-    d.box('green', 892, 350, 176, 46, 'plain', 'finish, blocks reset');
+    d.box('pass', 892, 86, 176, 46, 'plain', 'finish (exit 0)');
+    d.box('expire', 892, 152, 176, 46, 'plain', 'expired: removed');
+    d.box('green', 892, 350, 176, 46, 'plain', 'finish, reset');
     d.box('giveup', 892, 416, 176, 56, 'state', 'finish, but report', 'what is still red, honestly', { round: 10 });
     d.box('block', 520, 490, 330, 52, 'gate', 'BLOCK (exit 2)', 'failure tails sent back: fix the root cause');
     d.arrow(['c1.r', 'pass.l'], { label: 'no', dy: -6 });
@@ -401,11 +408,11 @@ written.push(
     d.box('push', 396, 96, 300, 50, 'outside', 'git push (any Bash command)');
     const checks = [
       ['k1', 'require_before_push: false?', 'allow'],
-      ['k2', 'default branch · detached · no change?', 'allow'],
-      ['k3', 'no review recorded for the branch?', 'refuse'],
+      ['k2', 'default branch or no new code?', 'allow'],
+      ['k3', 'no review recorded?', 'refuse'],
       ['k4', 'reviewed tree not found?', 'refuse'],
-      ['k5', 'verdict blocked and nothing changed?', 'refuse'],
-      ['k6', '> max_unreviewed_lines (80) since?', 'refuse'],
+      ['k5', 'blocked and unchanged since?', 'refuse'],
+      ['k6', '> 80 lines since the review?', 'refuse'],
     ];
     checks.forEach(([id, l], i) => d.box(id, 396, 176 + i * 62, 300, 44, 'gate', l));
     d.arrow(['push.b', 'k1.t'], { label: 'PreToolUse review-gate', anchor: 'start', dx: 8, dy: 4 });
@@ -448,7 +455,7 @@ written.push(
     d.region(36, 178, 1028, 156, 'Launched in parallel, one Agent call each, model from the profile');
     const rv = [
       ['correctness', 'always'],
-      ['standards', 'constitution · packs · learnings'],
+      ['standards', 'constitution, packs'],
       ['security', 'auth, input, secrets'],
       ['testing', 'behavior changed'],
       ['performance', 'queries, complexity'],
@@ -550,7 +557,7 @@ written.push(
     d.arrow(['inc.l', 'rb.r@0.3'], { tone: 'bad' });
     d.arrow(['rb.l@0.3', 'rbtag.r'], { tone: 'bad' });
     d.arrow(['rbtag.b', 'pm.t'], { tone: 'blue' });
-    d.box('flag', 848, 370, 216, 56, 'skill', 'deploy flag on|off <name>', 'deploy.flags commands');
+    d.box('flag', 848, 370, 216, 56, 'skill', 'deploy flag on|off', 'your feature flag commands');
     d.box('hook', 320, 470, 494, 56, 'gate', 'PreToolUse: the raw command of a protected env is refused', 'and so are hand-made deploy/ rollback/ incident/ resolve/ tags');
     d.text(36, 566, 'Thresholds: a shipped plan’s **Signal** (`error_rate` > 1 %) overrides monitor.signals for that deployment. Every deploy, rollback, incident and resolve tag\nfeeds real DORA metrics (frequency, lead time to production, failure rate, time to restore). Deployment state is uncertain after a timeout: check before retrying.'.replace(/\*\*/g, ''), 'small');
     d.legend(36, 606, LEGEND.filter(([k]) => k !== 'agent'));
@@ -599,25 +606,25 @@ written.push(
     d.box('no', 36, 300, 220, 44, 'plain', '“Learning not written: …”');
     d.arrow(['work.b', 'learn.t'], { tone: 'accent' });
     d.arrow(['learn.b', 'no.t'], { label: 'no', anchor: 'start', dx: 8, dy: 4 });
-    d.box('file', 330, 160, 300, 128, 'artifact', '', null, { align: 'left' });
-    d.text(346, 186, 'docs/learnings/<category>/<slug>.md', 'label mono');
-    d.text(346, 210, 'title · date · module · problem_type\ncomponent · severity · tags (≤ 8)\nbug track: symptoms · root_cause · resolution_type\nknowledge track: applies_when (≤ 5)', 'small');
+    d.box('file', 330, 160, 330, 128, 'artifact', '', null, { align: 'left' });
+    d.text(346, 186, 'docs/learnings/<category>/<slug>.md', 'small mono');
+    d.text(346, 210, 'title · date · module · problem_type\ncomponent · severity · tags (≤ 8)\nbug: symptoms · root_cause · resolution_type\nknowledge: applies_when (≤ 5)', 'small');
     d.arrow(['learn.r', [330, 224]], { tone: 'blue', label: 'yes · validated', dy: -8 });
     d.box('pm', 36, 384, 220, 56, 'skill', '/kaizen:postmortem', 'incident → learning');
     d.arrow(['pm.r', [300, 412], [300, 262], 'file.l@0.8'], { tone: 'blue' });
     d.box('pack', 330, 330, 210, 56, 'artifact', 'kaizen-packs/<pack>/', 'team-wide → pack rule (approved)');
     d.arrow([[420, 288], [420, 330]], { tone: 'blue', dashed: true });
-    d.box('lr', 700, 90, 364, 92, 'agent', 'learnings-researcher', 'learnings search, weighted match: title & tags ×4\nmodule & components ×3 · applies_when, symptoms,\nroot cause ×2 · body ×1 · bonus per term matched');
-    d.arrow(['file.r@0.2', 'lr.l@0.7'], { tone: 'ok' });
+    d.box('lr', 678, 90, 394, 92, 'agent', 'learnings-researcher', 'learnings search, weighted match: title & tags ×4\nmodule & components ×3 · applies_when, symptoms,\nroot cause ×2 · body ×1 · bonus per term matched');
+    d.arrow(['file.r@0.2', 'lr.l@0.8'], { tone: 'ok' });
     const readers = [['brainstorm'], ['plan'], ['review'], ['debug']];
-    readers.forEach(([n], i) => d.box(`rd${i}`, 700 + i * 94, 214, 82, 40, 'skill', n));
-    readers.forEach((_, i) => d.arrow([[740 + i * 94, 182], `rd${i}.t`], { tone: 'ok' }));
-    d.box('plancite', 700, 290, 170, 66, 'state', 'cited by a plan', '= read', { round: 12 });
-    d.box('commit', 894, 290, 170, 66, 'state', 'commit body: Applies', 'docs/learnings/… = applied', { round: 12 });
+    readers.forEach(([n], i) => d.box(`rd${i}`, 678 + i * 100, 214, 94, 40, 'skill', n, null, { tight: true }));
+    readers.forEach((_, i) => d.arrow([[725 + i * 100, 182], `rd${i}.t`], { tone: 'ok' }));
+    d.box('plancite', 678, 290, 186, 66, 'state', 'cited by a plan', '= read', { round: 12 });
+    d.box('commit', 886, 290, 186, 66, 'state', 'commit body: Applies', 'docs/learnings/… = applied', { round: 12 });
     d.arrow(['rd1.b', 'plancite.t@0.4'], {});
     d.arrow([[d.pt('rd1.b')[0] + 30, 254], 'commit.t@0.3'], {});
-    d.box('metrics', 700, 400, 364, 76, 'skill', '/kaizen:metrics → kaizen_loop', 'total · new · cited by plans · applied in commits\nreuse rate · never cited · constitution exceptions');
-    d.arrow(['plancite.b', [785, 400]], { tone: 'blue' });
+    d.box('metrics', 678, 400, 394, 76, 'skill', '/kaizen:metrics → kaizen_loop', 'total · new · cited by plans · applied in commits\nreuse rate · never cited · constitution exceptions');
+    d.arrow(['plancite.b', [771, 400]], { tone: 'blue' });
     d.arrow(['commit.b', [979, 400]], { tone: 'blue' });
     d.box('prune', 330, 430, 300, 76, 'skill', '/kaizen:prune-learnings', 'Keep · Update · Merge · Replace · Delete\nwith evidence; never touches product code');
     d.arrow(['metrics.l', 'prune.r'], { tone: 'accent', dashed: true, label: 'never cited', dy: 22 });
@@ -711,7 +718,7 @@ written.push(
     d.box('msg', 170, 86, 230, 48, 'outside', 'you send a message');
     d.box('ups', 170, 150, 230, 64, 'gate', 'UserPromptSubmit', 'review-hooks.mjs --confirm\nkaizen waive / deploy <code>');
     d.arrow(['msg.b', 'ups.t'], {});
-    d.box('pre', 440, 214, 270, 76, 'gate', 'PreToolUse (Bash, Write, Edit…)', 'review-gate.mjs: git push without\nreview, raw protected deploy, forged\ntags, writes to review state → exit 2');
+    d.box('pre', 440, 214, 270, 76, 'gate', 'PreToolUse', 'review-gate.mjs: git push without\nreview, raw protected deploy, forged\ntags, writes to review state → exit 2');
     d.box('post1', 740, 160, 324, 64, 'gate', 'PostToolUse (Bash)', 'quality-gate.mjs --claim: binds the\ngate to the session after gate on');
     d.box('post2', 740, 238, 324, 64, 'gate', 'PostToolUse (Agent / Task)', 'review-hooks.mjs --evidence: logs\nreviewers launched, cycle subagents');
     d.box('stop', 440, 352, 270, 76, 'gate', 'Stop', 'quality-gate.mjs: verify while the\ngate is on · blocks ≤ 3 times\nrecords tokens');

@@ -68,7 +68,7 @@
 <rect class="gate" x="36" y="90" width="220" height="60" rx="8" stroke-width="1.5"/>
 <text class="label" x="146" y="110" text-anchor="middle">pr snapshot</text>
 <text class="sub" x="146" y="125" text-anchor="middle">paginated threads, comments,</text>
-<text class="sub" x="146" y="139" text-anchor="middle">reviews, head checks, merge state</text>
+<text class="sub" x="146" y="139" text-anchor="middle" style="font-size:11px">reviews, head checks, merge state</text>
 <rect class="plain" x="36" y="182" width="220" height="44" rx="8" stroke-width="1.5"/>
 <text class="label" x="146" y="208" text-anchor="middle">merged / closed → stop</text>
 <rect class="skill" x="320" y="90" width="300" height="64" rx="8" stroke-width="1.5"/>

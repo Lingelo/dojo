@@ -91,7 +91,7 @@
 <text class="sub" x="143" y="241" text-anchor="middle">always</text>
 <rect class="agent" x="250" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
 <text class="label" x="345" y="226" text-anchor="middle">standards</text>
-<text class="sub" x="345" y="241" text-anchor="middle">constitution · packs · learnings</text>
+<text class="sub" x="345" y="241" text-anchor="middle">constitution, packs</text>
 <rect class="agent" x="452" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
 <text class="label" x="547" y="226" text-anchor="middle">security</text>
 <text class="sub" x="547" y="241" text-anchor="middle">auth, input, secrets</text>

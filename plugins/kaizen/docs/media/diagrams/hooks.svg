@@ -79,7 +79,7 @@
 <text class="sub" x="285" y="201" text-anchor="middle">kaizen waive / deploy &lt;code&gt;</text>
 <path class="line" d="M285,134 L285,150" marker-end="url(#h-default)"/>
 <rect class="gate" x="440" y="214" width="270" height="76" rx="8" stroke-width="1.5"/>
-<text class="label" x="575" y="235" text-anchor="middle">PreToolUse (Bash, Write, Edit…)</text>
+<text class="label" x="575" y="235" text-anchor="middle">PreToolUse</text>
 <text class="sub" x="575" y="250" text-anchor="middle">review-gate.mjs: git push without</text>
 <text class="sub" x="575" y="264" text-anchor="middle">review, raw protected deploy, forged</text>
 <text class="sub" x="575" y="278" text-anchor="middle">tags, writes to review state → exit 2</text>

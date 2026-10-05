@@ -72,18 +72,18 @@
 <text class="sub" x="193" y="144" text-anchor="middle">launches reviewers through the Agent tool</text>
 <rect class="gate" x="44" y="186" width="298" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="193" y="211" text-anchor="middle">PostToolUse --evidence</text>
-<text class="sub" x="193" y="226" text-anchor="middle">logs each kaizen:*-reviewer actually launched</text>
+<text class="sub" x="193" y="226" text-anchor="middle" style="font-size:11.2px">logs each kaizen:*-reviewer actually launched</text>
 <rect class="state" x="44" y="270" width="298" height="46" rx="10" stroke-width="1.5"/>
 <text class="label" x="193" y="297" text-anchor="middle">review-evidence.json</text>
 <rect class="gate" x="44" y="344" width="298" height="70" rx="8" stroke-width="1.5"/>
 <text class="label" x="193" y="362" text-anchor="middle">review record --verdict</text>
-<text class="sub" x="193" y="377" text-anchor="middle">refused without a reviewer since the last review,</text>
+<text class="sub" x="193" y="377" text-anchor="middle" style="font-size:10.3px">refused without a reviewer since the last review,</text>
 <text class="sub" x="193" y="391" text-anchor="middle">except light (branch ≤ 20 lines)</text>
 <text class="sub" x="193" y="405" text-anchor="middle">or update after fixes (≤ 80 lines since)</text>
 <rect class="state" x="44" y="442" width="298" height="66" rx="10" stroke-width="1.5"/>
 <text class="label" x="193" y="465" text-anchor="middle">reviews.json[branch]</text>
-<text class="sub" x="193" y="480" text-anchor="middle">tree · head · verdict ready|concerns|blocked</text>
-<text class="sub" x="193" y="494" text-anchor="middle">depth agents|light|update · reviewers · models</text>
+<text class="sub" x="193" y="480" text-anchor="middle" style="font-size:11.4px">tree · head · verdict ready|concerns|blocked</text>
+<text class="sub" x="193" y="494" text-anchor="middle" style="font-size:10.9px">depth agents|light|update · reviewers · models</text>
 <path class="line accent" d="M193,158 L193,186" marker-end="url(#h-accent)"/>
 <path class="line bad" d="M193,242 L193,270" marker-end="url(#h-bad)"/>
 <path class="line" d="M193,316 L193,344" marker-end="url(#h-default)"/>
@@ -95,15 +95,15 @@
 <rect class="gate" x="396" y="176" width="300" height="44" rx="8" stroke-width="1.5"/>
 <text class="label" x="546" y="202" text-anchor="middle">require_before_push: false?</text>
 <rect class="gate" x="396" y="238" width="300" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="546" y="264" text-anchor="middle">default branch · detached · no change?</text>
+<text class="label" x="546" y="264" text-anchor="middle">default branch or no new code?</text>
 <rect class="gate" x="396" y="300" width="300" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="546" y="326" text-anchor="middle">no review recorded for the branch?</text>
+<text class="label" x="546" y="326" text-anchor="middle">no review recorded?</text>
 <rect class="gate" x="396" y="362" width="300" height="44" rx="8" stroke-width="1.5"/>
 <text class="label" x="546" y="388" text-anchor="middle">reviewed tree not found?</text>
 <rect class="gate" x="396" y="424" width="300" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="546" y="450" text-anchor="middle">verdict blocked and nothing changed?</text>
+<text class="label" x="546" y="450" text-anchor="middle">blocked and unchanged since?</text>
 <rect class="gate" x="396" y="486" width="300" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="546" y="512" text-anchor="middle">&gt; max_unreviewed_lines (80) since?</text>
+<text class="label" x="546" y="512" text-anchor="middle">&gt; 80 lines since the review?</text>
 <path class="line" d="M546,146 L546,176" marker-end="url(#h-default)"/>
 <rect class="pill" x="549" y="154" width="144.2" height="17" rx="4"/>
 <text class="edge" x="554" y="165" text-anchor="start">PreToolUse review-gate</text>

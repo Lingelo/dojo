@@ -66,34 +66,34 @@
 <text class="title" x="28" y="38">The Kaizen loop</text>
 <text class="desc" x="28" y="58">Each unit of work makes the next one easier: what a cycle learns is written where the next cycle reads it.</text>
 <rect class="band" x="36" y="76" width="1028" height="40" rx="8" stroke-width="1.5"/>
-<text class="label" x="550" y="100" text-anchor="middle">CONSTITUTION.md  ·  non-negotiable principles, each with a verifiable Check  ·  enforced at plan, doc-review and review</text>
+<text class="label" x="550" y="100" text-anchor="middle" style="font-size:13px">CONSTITUTION.md  ·  non-negotiable principles, each with a verifiable Check  ·  enforced at plan, doc-review and review</text>
 <rect class="skill" x="36" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="86" y="193" text-anchor="middle">ideate</text>
 <text class="sub" x="86" y="208" text-anchor="middle">optional</text>
 <rect class="skill" x="152" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="202" y="193" text-anchor="middle">brainstorm</text>
+<text class="label" x="202" y="193" text-anchor="middle" style="font-size:12.3px">brainstorm</text>
 <text class="sub" x="202" y="208" text-anchor="middle">WHAT</text>
 <rect class="skill" x="268" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="318" y="193" text-anchor="middle">plan</text>
 <text class="sub" x="318" y="208" text-anchor="middle">HOW</text>
 <rect class="skill" x="384" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="434" y="193" text-anchor="middle">doc-review</text>
-<text class="sub" x="434" y="208" text-anchor="middle">plan reviewers</text>
+<text class="label" x="434" y="193" text-anchor="middle" style="font-size:12.3px">doc-review</text>
+<text class="sub" x="434" y="208" text-anchor="middle">plan review</text>
 <rect class="skill" x="500" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="550" y="193" text-anchor="middle">work</text>
-<text class="sub" x="550" y="208" text-anchor="middle">test first · gate</text>
+<text class="sub" x="550" y="208" text-anchor="middle">test first</text>
 <rect class="skill" x="616" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="666" y="193" text-anchor="middle">review</text>
 <text class="sub" x="666" y="208" text-anchor="middle">multi-agent</text>
 <rect class="skill" x="732" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="782" y="193" text-anchor="middle">ship</text>
-<text class="sub" x="782" y="208" text-anchor="middle">reviewable PR</text>
+<text class="sub" x="782" y="208" text-anchor="middle" style="font-size:11.1px">reviewable PR</text>
 <rect class="skill" x="848" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="898" y="193" text-anchor="middle">watch-pr</text>
-<text class="sub" x="898" y="208" text-anchor="middle">→ looks ready</text>
+<text class="sub" x="898" y="208" text-anchor="middle" style="font-size:11.1px">→ looks ready</text>
 <rect class="skill" x="964" y="168" width="100" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="1014" y="193" text-anchor="middle">learn</text>
-<text class="sub" x="1014" y="208" text-anchor="middle">durable lesson</text>
+<text class="sub" x="1014" y="208" text-anchor="middle">one lesson</text>
 <path class="line accent dashed" d="M136,196 L152,196" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M252,196 L268,196" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M368,196 L384,196" marker-end="url(#h-accent)"/>
@@ -106,7 +106,7 @@
 <text class="small" x="608" y="140" text-anchor="middle">autopilot: plan → work → review → ship → watch-pr, autonomously (never merges, never deploys)</text>
 <rect class="outside" x="848" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="910" y="333" text-anchor="middle">you merge</text>
-<text class="sub" x="910" y="348" text-anchor="middle">Kaizen never does</text>
+<text class="sub" x="910" y="348" text-anchor="middle" style="font-size:11.1px">Kaizen never does</text>
 <rect class="skill" x="680" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="742" y="333" text-anchor="middle">release</text>
 <text class="sub" x="742" y="348" text-anchor="middle">notes · SemVer</text>
@@ -115,7 +115,7 @@
 <text class="sub" x="574" y="348" text-anchor="middle">your commands</text>
 <rect class="skill" x="344" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="406" y="333" text-anchor="middle">monitor</text>
-<text class="sub" x="406" y="348" text-anchor="middle">signals · incidents</text>
+<text class="sub" x="406" y="348" text-anchor="middle">incidents</text>
 <rect class="skill" x="176" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="238" y="333" text-anchor="middle">postmortem</text>
 <text class="sub" x="238" y="348" text-anchor="middle">blameless</text>
@@ -130,7 +130,7 @@
 <text class="edge" x="322" y="328" text-anchor="middle">breach</text>
 <text class="small" x="176" y="384" text-anchor="start">threshold breached → rollback first, then postmortem</text>
 <rect class="artifact" x="152" y="438" width="912" height="58" rx="8" stroke-width="1.5"/>
-<text class="label" x="608" y="464" text-anchor="middle">Project memory — docs/learnings/ · docs/adr/ · docs/postmortems/ · kaizen-packs/ · constitution amendments</text>
+<text class="label" x="608" y="464" text-anchor="middle" style="font-size:12.9px">Project memory — docs/learnings/ · docs/adr/ · docs/postmortems/ · kaizen-packs/ · constitution amendments</text>
 <text class="sub" x="608" y="479" text-anchor="middle">versioned in your repo, read back by learnings-researcher</text>
 <path class="line blue" d="M1014,224 L1014,438" marker-end="url(#h-blue)"/>
 <rect class="pill" x="990.7" y="389" width="46.599999999999994" height="17" rx="4"/>

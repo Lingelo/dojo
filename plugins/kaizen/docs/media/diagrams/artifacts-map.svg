@@ -73,7 +73,7 @@
 <rect class="artifact" x="320" y="100" width="380" height="44" rx="8" stroke-width="1.5"/>
 <text class="t12 mono" x="510" y="126" text-anchor="middle">docs/plans/&lt;date&gt;-&lt;type&gt;-&lt;topic&gt;-plan.md</text>
 <rect class="plain" x="734" y="100" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="126" text-anchor="middle">work · review · ship · release · monitor · metrics</text>
+<text class="t12" x="899" y="126" text-anchor="middle" style="font-size:11.2px">work · review · ship · release · monitor · metrics</text>
 <path class="line accent" d="M286,122 L320,122" marker-end="url(#h-accent)"/>
 <path class="line blue" d="M700,122 L734,122" marker-end="url(#h-blue)"/>
 <rect class="skill" x="36" y="158" width="250" height="44" rx="8" stroke-width="1.5"/>
@@ -113,11 +113,11 @@
 <rect class="artifact" x="320" y="390" width="380" height="44" rx="8" stroke-width="1.5"/>
 <text class="t12 mono" x="510" y="416" text-anchor="middle">CONSTITUTION.md</text>
 <rect class="plain" x="734" y="390" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="416" text-anchor="middle">plan check · doc-review · standards-reviewer · ship</text>
+<text class="t12" x="899" y="416" text-anchor="middle" style="font-size:11px">plan check · doc-review · standards-reviewer · ship</text>
 <path class="line accent" d="M286,412 L320,412" marker-end="url(#h-accent)"/>
 <path class="line blue" d="M700,412 L734,412" marker-end="url(#h-blue)"/>
 <rect class="skill" x="36" y="448" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="474" text-anchor="middle">setup (pack:&lt;name&gt;) · learn</text>
+<text class="label" x="161" y="474" text-anchor="middle" style="font-size:13.1px">setup (pack:&lt;name&gt;) · learn</text>
 <rect class="artifact" x="320" y="448" width="380" height="44" rx="8" stroke-width="1.5"/>
 <text class="t12 mono" x="510" y="474" text-anchor="middle">kaizen-packs/&lt;pack&gt;/&lt;rule&gt;.md</text>
 <rect class="plain" x="734" y="448" width="330" height="44" rx="8" stroke-width="1.5"/>
