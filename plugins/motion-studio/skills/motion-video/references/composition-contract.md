@@ -113,6 +113,11 @@ window.__seek = (t) => tl.seek(t, false);
   URL is served by the renderer from a local npm cache (`<home>/libs`, installed on first use). The page
   stays viewable as is in a browser; the render does not depend on the network. **Always pin the version**
   (`three@0.170.0`). Also works for GSAP, p5, pixi.js, lottie-web, d3, anime.js…
+- **Local assets (HDRI, glTF, textures, JSON)**: reference them with relative paths. The renderer serves the
+  composition's folder at `http://composition.local/` (not `file://`, where Chrome blocks `fetch()` and taints
+  WebGL textures), so `RGBELoader`, `GLTFLoader`, `TextureLoader` and `fetch()` work. Assets in a parent
+  folder: `--root <dir>` (it must contain the composition; nothing outside it is served). To preview the
+  page in a browser, serve the folder too (`npx serve`, `python3 -m http.server`): `file://` will not load them.
 - **Performance**: headless WebGL is computed by the CPU (SwiftShader): ~2–3 frames/s in 1080p with bloom
   (vs ~9 in 2D). Drafts with `--fps 30 --jpeg --from/--to`, `--motion-blur 2` max for the final, no
   real-time shadows or huge geometry. Run 3D renders in the background.

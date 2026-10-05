@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { analyze, mix } from './audio.mjs';
 import { parseSubs, toSrt, toVtt, wordsOf } from './captions.mjs';
-import { LAUNCH_ARGS, ensureDeps, routeCdnToLocal } from './deps.mjs';
+import { LAUNCH_ARGS, LOCAL_ORIGIN, ensureDeps, routeCdnToLocal, serveLocal } from './deps.mjs';
 
 const HELP = `
 motion-studio render — HTML animation → video (deterministic, frame by frame)
@@ -56,6 +56,8 @@ Options (CLI overrides the <body data-*> attributes of the composition):
       --stills <t,t,...>  Only export PNG stills at these times (seconds) — preview mode
       --from <s> --to <s> Render only a time range (fast iteration on one scene)
       --jpeg              Capture JPEG q95 instead of PNG (≈2× faster, slight loss)
+      --root <dir>        Folder served with a local file (default: its folder) at http://composition.local,
+                          so fetch(), HDRI / glTF / textures in WebGL work; nothing outside it is served
   -h, --help
 `;
 
@@ -303,8 +305,13 @@ const VIRTUAL_TIME = String.raw`
 
 // ---------------------------------------------------------------- main
 const input = args._[0];
-const url = /^(https?|file|data):/.test(input) ? input : pathToFileURL(path.resolve(input)).href;
+let url = /^(https?|file|data):/.test(input) ? input : pathToFileURL(path.resolve(input)).href;
 if (!/^(https?|data):/.test(url) && !fs.existsSync(new URL(url))) die(`Input not found: ${input}`);
+// a local file is served over a virtual http origin (see serveLocal), not loaded as file://
+const localFile = /^file:/.test(url) ? fileURLToPath(url) : null;
+const localRoot = localFile ? path.resolve(args.root ?? path.dirname(localFile)) : null;
+if (localFile && path.relative(localRoot, localFile).startsWith('..')) die(`--root ${args.root} must contain ${input}`);
+const serve = async (ctx) => { if (localFile) url = await serveLocal(ctx, localRoot, localFile); };
 
 let deps;
 try { deps = await ensureDeps({ needFfmpeg: !args.stills || !!args.audio }); } catch (e) { die(e.message); }
@@ -345,6 +352,7 @@ try {
   // 1. read composition config from <body data-*> / <html data-*>
   const probeCtx = await browser.newContext();
   await routeCdnToLocal(probeCtx, log);
+  await serve(probeCtx);
   const probe = await probeCtx.newPage();
   await probe.goto(url, { waitUntil: 'domcontentloaded' });
   const meta = await probe.evaluate(() => ({ ...document.documentElement.dataset, ...document.body.dataset }));
@@ -372,6 +380,7 @@ try {
       (captionData ? CAPTIONS_API.replace('__DATA__', () => JSON.stringify(captionData)).replace('__STYLE__', JSON.stringify(captionStyle)) : ''),
   });
   await routeCdnToLocal(context, log);
+  await serve(context);
   const page = await context.newPage();
   page.on('pageerror', (e) => log(`⚠ page error: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') log(`⚠ console: ${m.text()}`); });
@@ -450,13 +459,15 @@ try {
 
     // Sound follows image: every cue was stamped with its exact virtual time during the render.
     const cues = args.noSfx ? [] : await page.evaluate(() => window.__vt.cues());
+    // <audio src> resolved by the page against the virtual origin → back to a file under the served root
+    if (localRoot) for (const c of cues) if (c.src?.startsWith(LOCAL_ORIGIN + '/')) c.src = path.join(localRoot, decodeURIComponent(new URL(c.src).pathname));
     if (args.cues) fs.writeFileSync(path.resolve(args.cues), JSON.stringify(cues, null, 1));
     const beds = args.audio ? [{ src: path.resolve(args.audio), at: 0, gain: num(args.audioGain, 1) }] : [];
     const voices = voice ? [{ src: voice.file, at: 0, gain: num(args.voiceGain, 1) }] : [];
     const wav = format === 'gif' ? null : mix({
       ffmpeg, duration: to - from, from, beds, voices, duck: args.duck === 'off' ? 0 : num(args.duck, -9),
       cues: cues.filter((c) => c.at < to),
-      baseDir: /^file:/.test(url) ? path.dirname(fileURLToPath(url)) : process.cwd(),
+      baseDir: localFile ? path.dirname(localFile) : process.cwd(),
       out: out.replace(/(\.[^.]+)$/, '.mix.wav'),
     });
     // Subtitle sidecars (.srt / .vtt) cut to the rendered range, so they match the video's own timeline.

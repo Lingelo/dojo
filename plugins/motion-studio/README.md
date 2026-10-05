@@ -149,7 +149,8 @@ node ../scripts/render.mjs sketch-intro.html --audio bed.wav --beats bed.json --
 72 bars driven by the music (bass + level), bloom breathing on the beats, camera flying in then orbiting,
 HTML titles on top with spatialized ticks. Three.js is imported from jsDelivr; at render time, these URLs
 (jsDelivr, unpkg, esm.sh) are served from a local npm cache → offline render, pinned version, page still
-openable in a browser.
+openable in a browser. A local composition is served at `http://composition.local/` (its folder, or `--root`)
+rather than `file://`, so `fetch()` and local assets in WebGL (HDRI, glTF, textures) load.
 
 ```bash
 node ../scripts/render.mjs sketch-3d.html --audio bed.wav --beats bed.json --motion-blur 2

@@ -117,8 +117,11 @@ export function findFfmpeg() {
 // ---------------------------------------------------------------- CDN libraries → local npm cache
 const CDN = /^https:\/\/(?:cdn\.jsdelivr\.net\/npm|unpkg\.com|esm\.sh)\/((?:@[^/]+\/)?[^/@?#]+)(?:@([^/?#]+))?(\/[^?#]*)?/;
 const MIME = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.cjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css',
-  '.wasm': 'application/wasm', '.png': 'image/png', '.jpg': 'image/jpeg', '.hdr': 'application/octet-stream', '.glb': 'model/gltf-binary',
-  '.gltf': 'model/gltf+json', '.bin': 'application/octet-stream', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.ktx2': 'image/ktx2' };
+  '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8',
+  '.wasm': 'application/wasm', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.avif': 'image/avif',
+  '.gif': 'image/gif', '.hdr': 'application/octet-stream', '.exr': 'application/octet-stream', '.glb': 'model/gltf-binary',
+  '.gltf': 'model/gltf+json', '.bin': 'application/octet-stream', '.ttf': 'font/ttf', '.otf': 'font/otf', '.woff': 'font/woff',
+  '.woff2': 'font/woff2', '.ktx2': 'image/ktx2', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg', '.mp4': 'video/mp4', '.webm': 'video/webm' };
 
 /** npm-install `name@version` once into <home>/libs, return the package directory. */
 function localPackage(name, version = 'latest', log) {
@@ -158,6 +161,30 @@ export async function routeCdnToLocal(context, log = (m) => process.stderr.write
       headers: { 'content-type': MIME[path.extname(file)] || 'application/octet-stream', 'access-control-allow-origin': '*' },
     });
   });
+}
+
+// ---------------------------------------------------------------- local composition → virtual origin
+/** Origin the composition is served from: a real http origin, so fetch() and WebGL textures work. */
+export const LOCAL_ORIGIN = 'http://composition.local';
+
+/**
+ * Serve the folder `root` at LOCAL_ORIGIN, so `file` loads as http://composition.local/<rel>.
+ * Under file:// Chrome refuses fetch() of sibling files and taints WebGL textures (SecurityError):
+ * no HDRI, glTF or PBR texture could load. Playwright answers the requests itself: no port, no server.
+ * Returns the URL of `file`. Nothing outside `root` is served.
+ */
+export async function serveLocal(context, root, file) {
+  const base = path.resolve(root);
+  await context.route(`${LOCAL_ORIGIN}/**`, async (route) => {
+    let rel;
+    try { rel = decodeURIComponent(new URL(route.request().url()).pathname); } catch { return route.fulfill({ status: 400 }); }
+    const f = path.resolve(base, '.' + rel);
+    if (f !== base && !f.startsWith(base + path.sep)) return route.fulfill({ status: 403 });
+    let body;
+    try { body = fs.readFileSync(f); } catch { return route.fulfill({ status: 404, body: `not found: ${rel}` }); }
+    await route.fulfill({ status: 200, body, headers: { 'content-type': MIME[path.extname(f).toLowerCase()] || 'application/octet-stream' } });
+  });
+  return `${LOCAL_ORIGIN}/${path.relative(base, path.resolve(file)).split(path.sep).map(encodeURIComponent).join('/')}`;
 }
 
 // ---------------------------------------------------------------- one call for the renderer
