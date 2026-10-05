@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="640" viewBox="0 0 1100 640" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="800" viewBox="0 0 1100 800" role="img" aria-labelledby="t d">
 <title id="t">Autopilot: from a request to a PR that looks ready</title>
 <desc id="d">The right skill at every step, nothing that stops without a reason, nothing irreversible without your approval.</desc>
 <style>
@@ -62,67 +62,80 @@
   }
 </style>
 <defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
-<rect class="bg" x="0.5" y="0.5" width="1099" height="639" rx="14"/>
+<rect class="bg" x="0.5" y="0.5" width="1099" height="799" rx="14"/>
 <text class="title" x="28" y="38">Autopilot: from a request to a PR that looks ready</text>
 <text class="desc" x="28" y="58">The right skill at every step, nothing that stops without a reason, nothing irreversible without your approval.</text>
-<rect class="outside" x="36" y="86" width="240" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="156" y="115" text-anchor="middle">your request</text>
-<rect class="gate" x="36" y="160" width="262" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="167" y="189" text-anchor="middle">plan path / plan from this session</text>
-<rect class="skill" x="318" y="160" width="196" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="416" y="189" text-anchor="middle">straight to work</text>
-<path class="line" d="M298,185 L318,185" marker-end="url(#h-default)"/>
-<rect class="gate" x="36" y="226" width="262" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="167" y="255" text-anchor="middle">concrete bug (symptom, red test)</text>
-<rect class="skill" x="318" y="226" width="196" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="416" y="255" text-anchor="middle">debug mode:return</text>
-<path class="line" d="M298,251 L318,251" marker-end="url(#h-default)"/>
-<rect class="gate" x="36" y="292" width="262" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="167" y="321" text-anchor="middle">ambiguous product shape</text>
-<rect class="skill" x="318" y="292" width="196" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="416" y="321" text-anchor="middle" style="font-size:10.6px">brainstorm (you there) or plan</text>
-<path class="line" d="M298,317 L318,317" marker-end="url(#h-default)"/>
-<rect class="gate" x="36" y="358" width="262" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="167" y="387" text-anchor="middle">not code (ideas, explanation)</text>
-<rect class="skill" x="318" y="358" width="196" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="416" y="387" text-anchor="middle">that skill, and stop</text>
-<path class="line" d="M298,383 L318,383" marker-end="url(#h-default)"/>
-<rect class="gate" x="36" y="424" width="262" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="167" y="453" text-anchor="middle">any other code change</text>
-<rect class="skill" x="318" y="424" width="196" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="416" y="453" text-anchor="middle">plan mode:return</text>
-<path class="line" d="M298,449 L318,449" marker-end="url(#h-default)"/>
-<rect class="gate" x="36" y="490" width="262" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="167" y="519" text-anchor="middle" style="font-size:10.4px">lean profile, ≤ ~30 lines, no risk surface</text>
-<rect class="skill" x="318" y="490" width="196" height="50" rx="8" stroke-width="1.5"/>
-<text class="t12" x="416" y="519" text-anchor="middle" style="font-size:11.8px">work without a written plan</text>
-<path class="line" d="M298,515 L318,515" marker-end="url(#h-default)"/>
-<path class="line" d="M156,136 L167,160" marker-end="url(#h-default)"/>
-<rect class="region" x="530" y="76" width="534" height="476" rx="12"/>
-<text class="regionlabel" x="542" y="93">THE RUN (GATE ON FOR THE WHOLE RUN)</text>
-<rect class="state" x="546" y="102" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="122" text-anchor="start">1. work source: ready plan (plan check + doc-review) or a debug fix</text>
-<rect class="plain" x="546" y="142" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="162" text-anchor="start">2. work mode:return — units, test first, one commit each</text>
-<rect class="plain" x="546" y="182" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="202" text-anchor="start">3. simplification of the diff</text>
-<rect class="state" x="546" y="222" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="242" text-anchor="start">4. review mode:agent — a settled decision proven wrong stops all</text>
-<rect class="plain" x="546" y="262" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="282" text-anchor="start">5. fixes: P0/P1 and gated_auto P2, verified and committed</text>
-<rect class="plain" x="546" y="302" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="322" text-anchor="start">6. the rest recorded in the PR ("Open points")</text>
-<rect class="plain" x="546" y="342" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="362" text-anchor="start">7. learn mode:auto, if the run produced a durable lesson</text>
-<rect class="plain" x="546" y="382" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="402" text-anchor="start">8. browser checks if the UI changed and a tool exists</text>
-<rect class="plain" x="546" y="422" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="442" text-anchor="start">9. ship mode:auto — PR with reviewer guide</text>
-<rect class="plain" x="546" y="462" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="482" text-anchor="start">10. watch-pr mode:pipeline — ≤ 2 fixes per cause, no disabled test</text>
-<rect class="state" x="546" y="502" width="502" height="32" rx="6" stroke-width="1.5"/>
-<text class="t12" x="558" y="522" text-anchor="start">11. gate off, report, DONE</text>
-<rect class="gate" x="36" y="568" width="1028" height="52" rx="8" stroke-width="1.5"/>
-<text class="t12" x="550" y="590" text-anchor="middle">It stops — pushing nothing new and saying how to resume — on: an irreversible action not granted (merge, force push, data deletion, deployment),</text>
-<text class="t12" x="550" y="606" text-anchor="middle">no work source, an incomplete child return, a settled decision invalidated, or a review waiver needed while you are away.</text>
+<rect class="outside" x="425" y="80" width="250" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="550" y="106" text-anchor="middle">your request</text>
+<rect class="region" x="28" y="136" width="1044" height="196" rx="12"/>
+<text class="regionlabel" x="40" y="153">ROUTING</text>
+<rect class="gate" x="44" y="166" width="270" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="179" y="191" text-anchor="middle">plan path, or plan of this session</text>
+<rect class="skill" x="334" y="166" width="204" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="436" y="191" text-anchor="middle">straight to work</text>
+<path class="line" d="M314,187 L334,187" marker-end="url(#h-default)"/>
+<rect class="gate" x="562" y="166" width="270" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="697" y="191" text-anchor="middle">concrete bug (symptom, red test)</text>
+<rect class="skill" x="852" y="166" width="204" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="954" y="191" text-anchor="middle">debug mode:return</text>
+<path class="line" d="M832,187 L852,187" marker-end="url(#h-default)"/>
+<rect class="gate" x="44" y="220" width="270" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="179" y="245" text-anchor="middle">ambiguous product shape</text>
+<rect class="skill" x="334" y="220" width="204" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="436" y="245" text-anchor="middle" style="font-size:11.9px">brainstorm (or plan if away)</text>
+<path class="line" d="M314,241 L334,241" marker-end="url(#h-default)"/>
+<rect class="gate" x="562" y="220" width="270" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="697" y="245" text-anchor="middle">not code (ideas, explanation)</text>
+<rect class="skill" x="852" y="220" width="204" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="954" y="245" text-anchor="middle">that skill, and stop</text>
+<path class="line" d="M832,241 L852,241" marker-end="url(#h-default)"/>
+<rect class="gate" x="44" y="274" width="270" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="179" y="299" text-anchor="middle">any other code change</text>
+<rect class="skill" x="334" y="274" width="204" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="436" y="299" text-anchor="middle">plan mode:return</text>
+<path class="line" d="M314,295 L334,295" marker-end="url(#h-default)"/>
+<rect class="gate" x="562" y="274" width="270" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="697" y="299" text-anchor="middle">lean: ≤ ~30 lines, no risk surface</text>
+<rect class="skill" x="852" y="274" width="204" height="42" rx="8" stroke-width="1.5"/>
+<text class="t12" x="954" y="299" text-anchor="middle">work, no written plan</text>
+<path class="line" d="M832,295 L852,295" marker-end="url(#h-default)"/>
+<path class="line" d="M550,124 L550,136" marker-end="url(#h-default)"/>
+<rect class="region" x="28" y="350" width="1044" height="330" rx="12"/>
+<text class="regionlabel" x="40" y="367">THE RUN (QUALITY GATE ON FOR THE WHOLE RUN)</text>
+<rect class="state" x="44" y="380" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="56" y="402" text-anchor="start">1. work source: ready plan (plan check + doc-review) or debug fix</text>
+<rect class="plain" x="44" y="428" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="56" y="450" text-anchor="start">2. work mode:return — units, test first, one commit each</text>
+<rect class="plain" x="44" y="476" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="56" y="498" text-anchor="start">3. simplification of the diff</text>
+<rect class="state" x="44" y="524" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="56" y="546" text-anchor="start">4. review mode:agent — a settled decision proven wrong stops all</text>
+<rect class="plain" x="44" y="572" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="56" y="594" text-anchor="start">5. fixes: P0/P1 and gated_auto P2, verified and committed</text>
+<rect class="plain" x="44" y="620" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="56" y="642" text-anchor="start">6. the rest recorded in the PR ("Open points")</text>
+<rect class="plain" x="562" y="380" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="574" y="402" text-anchor="start">7. learn mode:auto, if the run produced a durable lesson</text>
+<rect class="plain" x="562" y="428" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="574" y="450" text-anchor="start">8. browser checks if the UI changed and a tool exists</text>
+<rect class="plain" x="562" y="476" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="574" y="498" text-anchor="start">9. ship mode:auto — PR with a reviewer guide</text>
+<rect class="plain" x="562" y="524" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="574" y="546" text-anchor="start">10. watch-pr mode:pipeline — ≤ 2 fixes per cause, no disabled test</text>
+<rect class="state" x="562" y="572" width="494" height="36" rx="6" stroke-width="1.5"/>
+<text class="t12" x="574" y="594" text-anchor="start">11. gate off, report, DONE</text>
+<path class="line" d="M73.64,416 L73.64,428" marker-end="url(#h-default)"/>
+<path class="line" d="M73.64,464 L73.64,476" marker-end="url(#h-default)"/>
+<path class="line" d="M73.64,512 L73.64,524" marker-end="url(#h-default)"/>
+<path class="line" d="M73.64,560 L73.64,572" marker-end="url(#h-default)"/>
+<path class="line" d="M73.64,608 L73.64,620" marker-end="url(#h-default)"/>
+<path class="line" d="M538,638 L544,638 L544,398 L562,398" marker-end="url(#h-default)"/>
+<path class="line" d="M591.64,416 L591.64,428" marker-end="url(#h-default)"/>
+<path class="line" d="M591.64,464 L591.64,476" marker-end="url(#h-default)"/>
+<path class="line" d="M591.64,512 L591.64,524" marker-end="url(#h-default)"/>
+<path class="line" d="M591.64,560 L591.64,572" marker-end="url(#h-default)"/>
+<rect class="gate" x="28" y="700" width="1044" height="72" rx="8" stroke-width="1.5"/>
+<text class="t12" x="550" y="724" text-anchor="middle">It stops — pushing nothing new and saying how to resume — on:</text>
+<text class="t12" x="550" y="740" text-anchor="middle">an irreversible action not granted (merge, force push, data deletion, deployment), no work source,</text>
+<text class="t12" x="550" y="756" text-anchor="middle">an incomplete child return, a settled decision invalidated, or a review waiver needed while you are away.</text>
 </svg>

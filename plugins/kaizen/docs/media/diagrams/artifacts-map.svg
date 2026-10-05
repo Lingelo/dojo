@@ -66,87 +66,87 @@
 <text class="title" x="28" y="38">What Kaizen writes in your repo, and who reads it</text>
 <text class="desc" x="28" y="58">Deliverables are versioned and shared; local state stays on your machine; tags carry the deployment history.</text>
 <text class="regionlabel" x="36" y="88" text-anchor="start">WRITTEN BY</text>
-<text class="regionlabel" x="330" y="88" text-anchor="start">FILE</text>
-<text class="regionlabel" x="734" y="88" text-anchor="start">READ BY</text>
-<rect class="skill" x="36" y="100" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="126" text-anchor="middle">brainstorm · plan</text>
-<rect class="artifact" x="320" y="100" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="126" text-anchor="middle">docs/plans/&lt;date&gt;-&lt;type&gt;-&lt;topic&gt;-plan.md</text>
-<rect class="plain" x="734" y="100" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="126" text-anchor="middle" style="font-size:11.2px">work · review · ship · release · monitor · metrics</text>
-<path class="line accent" d="M286,122 L320,122" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,122 L734,122" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="158" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="184" text-anchor="middle">learn · prune-learnings</text>
-<rect class="artifact" x="320" y="158" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="184" text-anchor="middle">docs/learnings/&lt;category&gt;/&lt;slug&gt;.md</text>
-<rect class="plain" x="734" y="158" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="184" text-anchor="middle">researcher → brainstorm, plan, review, debug</text>
-<path class="line accent" d="M286,180 L320,180" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,180 L734,180" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="216" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="242" text-anchor="middle">decide</text>
-<rect class="artifact" x="320" y="216" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="242" text-anchor="middle">docs/adr/NNNN-&lt;title&gt;.md</text>
-<rect class="plain" x="734" y="216" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="242" text-anchor="middle">learnings-researcher · metrics (ADR count)</text>
-<path class="line accent" d="M286,238 L320,238" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,238 L734,238" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="274" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="300" text-anchor="middle">postmortem</text>
-<rect class="artifact" x="320" y="274" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="300" text-anchor="middle">docs/postmortems/YYYY-MM-DD-&lt;title&gt;.md</text>
-<rect class="plain" x="734" y="274" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="300" text-anchor="middle">learnings-researcher · metrics · status</text>
-<path class="line accent" d="M286,296 L320,296" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,296 L734,296" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="332" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="358" text-anchor="middle">ideate · metrics</text>
-<rect class="artifact" x="320" y="332" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="358" text-anchor="middle">docs/ideation/ · docs/metrics/</text>
-<rect class="plain" x="734" y="332" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="358" text-anchor="middle">brainstorm · trend over time</text>
-<path class="line accent" d="M286,354 L320,354" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,354 L734,354" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="390" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="416" text-anchor="middle">constitution</text>
-<rect class="artifact" x="320" y="390" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="416" text-anchor="middle">CONSTITUTION.md</text>
-<rect class="plain" x="734" y="390" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="416" text-anchor="middle" style="font-size:11px">plan check · doc-review · standards-reviewer · ship</text>
-<path class="line accent" d="M286,412 L320,412" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,412 L734,412" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="448" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="474" text-anchor="middle" style="font-size:13.1px">setup (pack:&lt;name&gt;) · learn</text>
-<rect class="artifact" x="320" y="448" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="474" text-anchor="middle">kaizen-packs/&lt;pack&gt;/&lt;rule&gt;.md</text>
-<rect class="plain" x="734" y="448" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="474" text-anchor="middle">brainstorm · plan · review (pack rules)</text>
-<path class="line accent" d="M286,470 L320,470" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,470 L734,470" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="506" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="532" text-anchor="middle">setup · init</text>
-<rect class="artifact" x="320" y="506" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="532" text-anchor="middle">.kaizen/config.json (+ config.local.json)</text>
-<rect class="plain" x="734" y="506" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="532" text-anchor="middle">every skill, the CLI and the hooks</text>
-<path class="line accent" d="M286,528 L320,528" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,528 L734,528" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="564" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="590" text-anchor="middle">CLI · hooks</text>
-<rect class="state" x="320" y="564" width="380" height="44" rx="10" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="590" text-anchor="middle">.kaizen/state/ (git-ignored)</text>
-<rect class="plain" x="734" y="564" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="590" text-anchor="middle">gate, push gate, watch-pr, deploy, metrics</text>
-<path class="line accent" d="M286,586 L320,586" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,586 L734,586" marker-end="url(#h-blue)"/>
-<rect class="skill" x="36" y="622" width="250" height="44" rx="8" stroke-width="1.5"/>
-<text class="label" x="161" y="648" text-anchor="middle">deploy · monitor</text>
-<rect class="artifact" x="320" y="622" width="380" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12 mono" x="510" y="648" text-anchor="middle">tags deploy/ rollback/ incident/ resolve/</text>
-<rect class="plain" x="734" y="622" width="330" height="44" rx="8" stroke-width="1.5"/>
-<text class="t12" x="899" y="648" text-anchor="middle">metrics (DORA) · postmortem · release · status</text>
-<path class="line accent" d="M286,644 L320,644" marker-end="url(#h-accent)"/>
-<path class="line blue" d="M700,644 L734,644" marker-end="url(#h-blue)"/>
+<text class="regionlabel" x="296" y="88" text-anchor="start">FILE</text>
+<text class="regionlabel" x="678" y="88" text-anchor="start">READ BY</text>
+<rect class="skill" x="36" y="100" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="126" text-anchor="middle">brainstorm · plan</text>
+<rect class="artifact" x="296" y="100" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="126" text-anchor="middle">docs/plans/&lt;date&gt;-&lt;type&gt;-&lt;topic&gt;-plan.md</text>
+<rect class="plain" x="678" y="100" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="126" text-anchor="middle">work · review · ship · release · monitor · metrics</text>
+<path class="line accent" d="M266,122 L296,122" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,122 L678,122" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="158" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="184" text-anchor="middle">learn · prune-learnings</text>
+<rect class="artifact" x="296" y="158" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="184" text-anchor="middle">docs/learnings/&lt;category&gt;/&lt;slug&gt;.md</text>
+<rect class="plain" x="678" y="158" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="184" text-anchor="middle">researcher → brainstorm, plan, review, debug</text>
+<path class="line accent" d="M266,180 L296,180" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,180 L678,180" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="216" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="242" text-anchor="middle">decide</text>
+<rect class="artifact" x="296" y="216" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="242" text-anchor="middle">docs/adr/NNNN-&lt;title&gt;.md</text>
+<rect class="plain" x="678" y="216" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="242" text-anchor="middle">learnings-researcher · metrics</text>
+<path class="line accent" d="M266,238 L296,238" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,238 L678,238" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="274" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="300" text-anchor="middle">postmortem</text>
+<rect class="artifact" x="296" y="274" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="300" text-anchor="middle">docs/postmortems/&lt;date&gt;-&lt;title&gt;.md</text>
+<rect class="plain" x="678" y="274" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="300" text-anchor="middle">learnings-researcher · metrics · status</text>
+<path class="line accent" d="M266,296 L296,296" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,296 L678,296" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="332" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="358" text-anchor="middle">ideate · metrics</text>
+<rect class="artifact" x="296" y="332" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="358" text-anchor="middle">docs/ideation/ · docs/metrics/</text>
+<rect class="plain" x="678" y="332" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="358" text-anchor="middle">brainstorm · trend over time</text>
+<path class="line accent" d="M266,354 L296,354" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,354 L678,354" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="390" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="416" text-anchor="middle">constitution</text>
+<rect class="artifact" x="296" y="390" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="416" text-anchor="middle">CONSTITUTION.md</text>
+<rect class="plain" x="678" y="390" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="416" text-anchor="middle">plan check · doc-review · review · ship</text>
+<path class="line accent" d="M266,412 L296,412" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,412 L678,412" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="448" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="474" text-anchor="middle">setup · learn</text>
+<rect class="artifact" x="296" y="448" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="474" text-anchor="middle">kaizen-packs/&lt;pack&gt;/&lt;rule&gt;.md</text>
+<rect class="plain" x="678" y="448" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="474" text-anchor="middle">brainstorm · plan · review</text>
+<path class="line accent" d="M266,470 L296,470" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,470 L678,470" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="506" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="532" text-anchor="middle">setup · init</text>
+<rect class="artifact" x="296" y="506" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="532" text-anchor="middle">.kaizen/config.json</text>
+<rect class="plain" x="678" y="506" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="532" text-anchor="middle">every skill, the CLI and the hooks</text>
+<path class="line accent" d="M266,528 L296,528" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,528 L678,528" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="564" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="590" text-anchor="middle">CLI · hooks</text>
+<rect class="state" x="296" y="564" width="350" height="44" rx="10" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="590" text-anchor="middle">.kaizen/state/ (git-ignored)</text>
+<rect class="plain" x="678" y="564" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="590" text-anchor="middle">gate, push gate, watch-pr, deploy, metrics</text>
+<path class="line accent" d="M266,586 L296,586" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,586 L678,586" marker-end="url(#h-blue)"/>
+<rect class="skill" x="36" y="622" width="230" height="44" rx="8" stroke-width="1.5"/>
+<text class="label" x="151" y="648" text-anchor="middle">deploy · monitor</text>
+<rect class="artifact" x="296" y="622" width="350" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12 mono" x="471" y="648" text-anchor="middle" style="font-size:11.8px">tags deploy/ rollback/ incident/ resolve/</text>
+<rect class="plain" x="678" y="622" width="386" height="44" rx="8" stroke-width="1.5"/>
+<text class="t12" x="871" y="648" text-anchor="middle">metrics · postmortem · release · status</text>
+<path class="line accent" d="M266,644 L296,644" marker-end="url(#h-accent)"/>
+<path class="line blue" d="M646,644 L678,644" marker-end="url(#h-blue)"/>
 <text class="small" x="36" y="700" text-anchor="start">Default root docs/ (docs_root). No deliverable carries mutable state: progress is read from git, never from a "status" field.</text>
 </svg>

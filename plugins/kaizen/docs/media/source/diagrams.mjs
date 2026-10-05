@@ -638,25 +638,28 @@ written.push(
 // 11. Autopilot
 // ---------------------------------------------------------------------------------------------------
 written.push(
-  diagram('autopilot', 1100, 640, 'Autopilot: from a request to a PR that looks ready', 'The right skill at every step, nothing that stops without a reason, nothing irreversible without your approval.', (d) => {
-    d.box('req', 36, 86, 240, 50, 'outside', 'your request');
+  diagram('autopilot', 1100, 800, 'Autopilot: from a request to a PR that looks ready', 'The right skill at every step, nothing that stops without a reason, nothing irreversible without your approval.', (d) => {
+    d.box('req', 425, 80, 250, 44, 'outside', 'your request');
+    d.region(28, 136, 1044, 196, 'Routing');
     const routes = [
-      ['plan path / plan from this session', 'straight to work'],
+      ['plan path, or plan of this session', 'straight to work'],
       ['concrete bug (symptom, red test)', 'debug mode:return'],
-      ['ambiguous product shape', 'brainstorm (you there) or plan'],
+      ['ambiguous product shape', 'brainstorm (or plan if away)'],
       ['not code (ideas, explanation)', 'that skill, and stop'],
       ['any other code change', 'plan mode:return'],
-      ['lean profile, ≤ ~30 lines, no risk surface', 'work without a written plan'],
+      ['lean: ≤ ~30 lines, no risk surface', 'work, no written plan'],
     ];
-    routes.forEach(([a, b], i) => {
-      d.box(`q${i}`, 36, 160 + i * 66, 262, 50, 'gate', a, null, { cls: 't12' });
-      d.box(`a${i}`, 318, 160 + i * 66, 196, 50, 'skill', b, null, { cls: 't12' });
+    routes.forEach(([q, a2], i) => {
+      const x = i % 2 ? 562 : 44;
+      const y = 166 + Math.floor(i / 2) * 54;
+      d.box(`q${i}`, x, y, 270, 42, 'gate', q, null, { cls: 't12' });
+      d.box(`a${i}`, x + 290, y, 204, 42, 'skill', a2, null, { cls: 't12' });
       d.arrow([`q${i}.r`, `a${i}.l`], {});
     });
-    d.arrow(['req.b', 'q0.t'], {});
-    d.region(530, 76, 534, 476, 'The run (gate on for the whole run)');
+    d.arrow(['req.b', [550, 136]], {});
+    d.region(28, 350, 1044, 330, 'The run (quality gate on for the whole run)');
     const run = [
-      '1. work source: ready plan (plan check + doc-review) or a debug fix',
+      '1. work source: ready plan (plan check + doc-review) or debug fix',
       '2. work mode:return — units, test first, one commit each',
       '3. simplification of the diff',
       '4. review mode:agent — a settled decision proven wrong stops all',
@@ -664,12 +667,19 @@ written.push(
       '6. the rest recorded in the PR ("Open points")',
       '7. learn mode:auto, if the run produced a durable lesson',
       '8. browser checks if the UI changed and a tool exists',
-      '9. ship mode:auto — PR with reviewer guide',
+      '9. ship mode:auto — PR with a reviewer guide',
       '10. watch-pr mode:pipeline — ≤ 2 fixes per cause, no disabled test',
       '11. gate off, report, DONE',
     ];
-    run.forEach((r, i) => d.box(`r${i}`, 546, 102 + i * 40, 502, 32, i === 0 || i === 3 || i === 10 ? 'state' : 'plain', r, null, { align: 'left', round: 6, cls: 't12' }));
-    d.box('stop', 36, 568, 1028, 52, 'gate', 'It stops — pushing nothing new and saying how to resume — on: an irreversible action not granted (merge, force push, data deletion, deployment),\nno work source, an incomplete child return, a settled decision invalidated, or a review waiver needed while you are away.', null, { cls: 't12' });
+    run.forEach((r, i) => {
+      const col = i < 6 ? 0 : 1;
+      const row = col ? i - 6 : i;
+      d.box(`r${i}`, col ? 562 : 44, 380 + row * 48, 494, 36, i === 0 || i === 3 || i === 10 ? 'state' : 'plain', r, null, { align: 'left', round: 6, cls: 't12' });
+    });
+    for (let i = 0; i < 5; i++) d.arrow([`r${i}.b@0.06`, `r${i + 1}.t@0.06`], {});
+    d.arrow(['r5.r', [544, d.pt('r5.r')[1]], [544, d.pt('r6.l')[1]], 'r6.l'], {});
+    for (let i = 6; i < 10; i++) d.arrow([`r${i}.b@0.06`, `r${i + 1}.t@0.06`], {});
+    d.box('stop', 28, 700, 1044, 72, 'gate', 'It stops — pushing nothing new and saying how to resume — on:\nan irreversible action not granted (merge, force push, data deletion, deployment), no work source,\nan incomplete child return, a settled decision invalidated, or a review waiver needed while you are away.', null, { cls: 't12' });
   }),
 );
 
@@ -740,23 +750,23 @@ written.push(
     const rows = [
       ['brainstorm · plan', 'docs/plans/<date>-<type>-<topic>-plan.md', 'work · review · ship · release · monitor · metrics'],
       ['learn · prune-learnings', 'docs/learnings/<category>/<slug>.md', 'researcher → brainstorm, plan, review, debug'],
-      ['decide', 'docs/adr/NNNN-<title>.md', 'learnings-researcher · metrics (ADR count)'],
-      ['postmortem', 'docs/postmortems/YYYY-MM-DD-<title>.md', 'learnings-researcher · metrics · status'],
+      ['decide', 'docs/adr/NNNN-<title>.md', 'learnings-researcher · metrics'],
+      ['postmortem', 'docs/postmortems/<date>-<title>.md', 'learnings-researcher · metrics · status'],
       ['ideate · metrics', 'docs/ideation/ · docs/metrics/', 'brainstorm · trend over time'],
-      ['constitution', 'CONSTITUTION.md', 'plan check · doc-review · standards-reviewer · ship'],
-      ['setup (pack:<name>) · learn', 'kaizen-packs/<pack>/<rule>.md', 'brainstorm · plan · review (pack rules)'],
-      ['setup · init', '.kaizen/config.json (+ config.local.json)', 'every skill, the CLI and the hooks'],
+      ['constitution', 'CONSTITUTION.md', 'plan check · doc-review · review · ship'],
+      ['setup · learn', 'kaizen-packs/<pack>/<rule>.md', 'brainstorm · plan · review'],
+      ['setup · init', '.kaizen/config.json', 'every skill, the CLI and the hooks'],
       ['CLI · hooks', '.kaizen/state/ (git-ignored)', 'gate, push gate, watch-pr, deploy, metrics'],
-      ['deploy · monitor', 'tags deploy/ rollback/ incident/ resolve/', 'metrics (DORA) · postmortem · release · status'],
+      ['deploy · monitor', 'tags deploy/ rollback/ incident/ resolve/', 'metrics · postmortem · release · status'],
     ];
     d.text(36, 88, 'WRITTEN BY', 'regionlabel');
-    d.text(330, 88, 'FILE', 'regionlabel');
-    d.text(734, 88, 'READ BY', 'regionlabel');
+    d.text(296, 88, 'FILE', 'regionlabel');
+    d.text(678, 88, 'READ BY', 'regionlabel');
     rows.forEach(([w, f, r], i) => {
       const y = 100 + i * 58;
-      d.box(`w${i}`, 36, y, 250, 44, 'skill', w);
-      d.box(`f${i}`, 320, y, 380, 44, i === 8 ? 'state' : 'artifact', f, null, { mono: true, round: i === 8 ? 10 : 8, cls: 't12' });
-      d.box(`r${i}`, 734, y, 330, 44, 'plain', r, null, { cls: 't12' });
+      d.box(`w${i}`, 36, y, 230, 44, 'skill', w);
+      d.box(`f${i}`, 296, y, 350, 44, i === 8 ? 'state' : 'artifact', f, null, { mono: true, round: i === 8 ? 10 : 8, cls: 't12' });
+      d.box(`r${i}`, 678, y, 386, 44, 'plain', r, null, { cls: 't12' });
       d.arrow([`w${i}.r`, `f${i}.l`], { tone: 'accent' });
       d.arrow([`f${i}.r`, `r${i}.l`], { tone: 'blue' });
     });
