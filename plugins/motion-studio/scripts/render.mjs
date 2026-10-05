@@ -389,6 +389,14 @@ try {
     if (document.fonts) await document.fonts.ready;
     await Promise.all([...document.images].map((i) => (i.complete ? null : i.decode().catch(() => null))));
   });
+  // async assets (HDRI, glTF, textures): the page exposes window.__ready, a Promise resolved once the
+  // scene is complete — otherwise the first frames would depend on how fast the files load
+  let readyTimer;
+  const readyError = await Promise.race([
+    page.evaluate(async () => { try { if (window.__ready) await window.__ready; return null; } catch (e) { return String(e?.message || e); } }),
+    new Promise((r) => { readyTimer = setTimeout(r, 120000, 'still pending after 120 s (a loader waiting on a virtual-time setTimeout?)'); }),
+  ]).finally(() => clearTimeout(readyTimer));
+  if (readyError) { await browser.close(); die(`window.__ready: ${readyError}`); }
 
   const cdp = await context.newCDPSession(page);
   if (args.transparent) await cdp.send('Emulation.setDefaultBackgroundColorOverride', { color: { r: 0, g: 0, b: 0, a: 0 } });

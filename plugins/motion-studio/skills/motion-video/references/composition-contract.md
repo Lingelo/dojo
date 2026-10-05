@@ -118,6 +118,9 @@ window.__seek = (t) => tl.seek(t, false);
   WebGL textures), so `RGBELoader`, `GLTFLoader`, `TextureLoader` and `fetch()` work. Assets in a parent
   folder: `--root <dir>` (it must contain the composition; nothing outside it is served). To preview the
   page in a browser, serve the folder too (`npx serve`, `python3 -m http.server`): `file://` will not load them.
+- **Wait for async assets**: set `window.__ready = (async () => { …await loaders… })()` in the page. The
+  renderer awaits it before the first frame (a rejection stops the render with its message). Without it,
+  only fonts and `<img>` are awaited, and the first frames would render without the HDRI / models.
 - **Performance**: headless WebGL is computed by the CPU (SwiftShader): ~2–3 frames/s in 1080p with bloom
   (vs ~9 in 2D). Drafts with `--fps 30 --jpeg --from/--to`, `--motion-blur 2` max for the final, no
   real-time shadows or huge geometry. Run 3D renders in the background.
