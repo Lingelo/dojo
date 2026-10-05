@@ -103,7 +103,7 @@ repository not found`.
 - Skills are called with the prefix: `/kaizen:plan`, not `/plan`.
 - `/plugin` → is the plugin enabled? Is it the right version (3.0.0 or later for the English
   version)?
-- After a marketplace update: `/plugin marketplace update angelo-plugins`.
+- After a marketplace update: `/plugin marketplace update dojo`.
 
 ## The browser does not open (`polish`, UI checks)
 

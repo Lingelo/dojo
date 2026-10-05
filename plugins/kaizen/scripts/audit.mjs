@@ -264,7 +264,7 @@ ${eco.map((e) => `  - package-ecosystem: ${e}\n    directory: /\n    schedule:\n
 // Continuous detection workflows (docs/guides/monitor.md, "Continuous monitoring"). The Kaizen CLI,
 // dependency-free, comes from the marketplace repository: pin `ref` to a commit (sha) rather than a
 // branch. Incident tags are pushed by the CLI: it needs write access and a git identity.
-const KAIZEN_SOURCE = 'Lingelo/marketplace-claude-code';
+const KAIZEN_SOURCE = 'Lingelo/dojo';
 
 function monitorWorkflow(kind, { env, ref }) {
   const header =

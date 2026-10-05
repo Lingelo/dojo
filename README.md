@@ -1,6 +1,6 @@
-# Claude Code Marketplace
+# Dojo
 
-A plugin marketplace for Claude Code, providing an AI-assisted SDLC (Kaizen) and motion design as code (Motion Studio).
+A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen) and motion design as code (Motion Studio).
 
 ## Available plugins
 
@@ -16,15 +16,19 @@ Everything is in English. Claude still answers in the language you write in.
 ### 1. Add the marketplace
 
 ```bash
-/plugin marketplace add <YOUR_GIT_URL>
+/plugin marketplace add Lingelo/dojo
 ```
 
 Or interactively:
 ```bash
 /plugin
 # Go to the "Marketplaces" tab > "Add marketplace"
-# Paste the URL of your git repository
+# Enter Lingelo/dojo
 ```
+
+> **Coming from `angelo-plugins`?** The marketplace was renamed `dojo` (repo `Lingelo/dojo`).
+> Remove the old one (`/plugin marketplace remove angelo-plugins`), add `Lingelo/dojo`, reinstall the
+> plugins, and replace `@angelo-plugins` with `@dojo` in `enabledPlugins` / `extraKnownMarketplaces`.
 
 ### 2. Install the plugins
 
@@ -36,8 +40,8 @@ Or interactively:
 
 **Direct installation:**
 ```bash
-/plugin install motion-studio@angelo-plugins
-/plugin install kaizen@angelo-plugins
+/plugin install motion-studio@dojo
+/plugin install kaizen@dojo
 ```
 
 ## Team configuration
@@ -47,16 +51,16 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 ```json
 {
   "extraKnownMarketplaces": {
-    "angelo-plugins": {
+    "dojo": {
       "source": {
-        "source": "git",
-        "url": "<YOUR_GIT_URL>"
+        "source": "github",
+        "repo": "Lingelo/dojo"
       }
     }
   },
   "enabledPlugins": {
-    "kaizen@angelo-plugins": true,
-    "motion-studio@angelo-plugins": true
+    "kaizen@dojo": true,
+    "motion-studio@dojo": true
   }
 }
 ```
@@ -113,7 +117,7 @@ Dependencies (Playwright, Chromium, ffmpeg) installed automatically on first use
 ## Structure
 
 ```
-marketplace-claude-code/
+dojo/
 ├── .claude-plugin/
 │   └── marketplace.json      # Marketplace registry
 ├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows)

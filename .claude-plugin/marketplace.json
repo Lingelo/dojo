@@ -1,6 +1,6 @@
 {
     "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-    "name": "angelo-plugins",
+    "name": "dojo",
     "description": "Angelo Lima's Claude Code plugins: Kaizen (AI-assisted SDLC) and Motion Studio (motion design as code)",
     "owner": {
         "name": "Angelo Lima",
