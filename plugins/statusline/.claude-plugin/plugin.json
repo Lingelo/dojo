@@ -1,9 +1,0 @@
-{
-  "name": "statusline",
-  "description": "Setup wizard for hell0github/claude-statusline - supports subscriptions (Pro, Max) and API Usage (pay-as-you-go) with automatic cleanup",
-  "version": "2.1.0",
-  "author": {
-    "name": "Angelo LIMA",
-    "email": "contact@example.com"
-  }
-}

@@ -92,6 +92,6 @@ language and conventions.
 
 ## User interface
 
-Visible change: check in a browser if a tool is available (the marketplace's `playwright` plugin, a
-browser MCP) — rendering, empty/error/loading states, keyboard, small screen. Otherwise, record the
+Visible change: check in a browser if a tool is available (Playwright MCP or
+another browser MCP) — rendering, empty/error/loading states, keyboard, small screen. Otherwise, record the
 manual check to do.

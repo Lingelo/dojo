@@ -1,9 +1,0 @@
-{
-  "name": "notifications-system",
-  "description": "System sound & OS notifications when Claude completes tasks or needs attention",
-  "version": "2.1.0",
-  "author": {
-    "name": "Angelo LIMA",
-    "email": "contact@example.com"
-  }
-}

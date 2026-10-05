@@ -112,7 +112,7 @@ export function audit(root, { github = true } = {}) {
 
   const settings = `${read(root, '.claude/settings.json') || ''}${read(root, '.claude/settings.local.json') || ''}`;
   const scanning = /security@angelo-plugins/.test(settings) ? 'security plugin' : firstOf(root, ['.gitleaks.toml', '.secrets.baseline', '.trufflehog.yml']) || (/gitleaks|detect-secrets|trufflehog/.test(`${read(root, '.pre-commit-config.yaml') || ''}${ciText}`) ? 'scanner in pre-commit or CI' : null);
-  add('secret_scanning', 'Foundations', 'Secret scanning', scanning ? 'ok' : 'missing', scanning || 'no secret scanner', { how: 'enable the marketplace security plugin (enabledPlugins → security@angelo-plugins) or gitleaks in CI' }, 2);
+  add('secret_scanning', 'Foundations', 'Secret scanning', scanning ? 'ok' : 'missing', scanning || 'no secret scanner', { how: 'add gitleaks (or detect-secrets/trufflehog) to pre-commit or CI' }, 2);
 
   // --- Flow ---------------------------------------------------------------------------------------------
   const prot = github ? branchProtection(root, branch) : { status: 'unknown', evidence: 'not checked (--no-github)' };

@@ -29,8 +29,7 @@ Kaizen gives tooling to these three disciplines.
 > [Spec Kit](https://github.com/github/spec-kit). The delivery practices come from
 > [DORA 2025](https://dora.dev/research/), the [NIST SSDF](https://csrc.nist.gov/projects/ssdf) and
 > [Google's engineering practices](https://google.github.io/eng-practices/).
-> Kaizen is a **Claude Code-only** version, integrated with this marketplace's plugins (`git`,
-> `security`, `playwright`). It adds hook-enforced gates, a zero-dependency deterministic CLI, tests and
+> Kaizen is a **Claude Code-only** version. It adds hook-enforced gates, a zero-dependency deterministic CLI, tests and
 > end-to-end evals. See [LICENSE](LICENSE).
 
 ## Language
@@ -327,9 +326,8 @@ node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, co
   - that `learn` refuses a worthless learning.
 - **CI** (`.github/workflows/kaizen.yml`): Linux, macOS and Windows, Node 18 and 22.
 
-## Marketplace integration
+## Integrations
 
-- **git**: same commit format (`<type>(<JIRA>): …`, Jira key read from the branch).
-- **security**: its hooks stay active; no secret in reports (`<REDACTED>`).
-- **playwright**: used by `polish`, `work` and `autopilot` to see and verify the UI.
-- **experts**: the `architect` agent stays available for heavy decisions (with `/kaizen:decide`).
+- **Commits**: conventional format (`<type>(<JIRA>): …`, Jira key read from the branch).
+- **Secrets**: never in reports (`<REDACTED>`).
+- **Browser**: `polish`, `work` and `autopilot` use a Playwright MCP server, when installed, to see and verify the UI.

@@ -22,7 +22,7 @@ the plans, learnings and PR descriptions in the language of the conversation (or
 - Claude Code, Node ≥ 18, git.
 - An authenticated `gh` (`gh auth status`) to open and follow PRs. Without it, everything works except
   `ship`, `address-feedback` and `watch-pr`.
-- Optional: the marketplace's `playwright` plugin, so that Claude can see the interface.
+- Optional: a Playwright MCP server, so that Claude can see the interface.
 
 ## 1. Install
 

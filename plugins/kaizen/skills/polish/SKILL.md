@@ -53,7 +53,7 @@ project, unreachable server) exempts from it, and it is reported.
 ## 3. Open and wait
 
 Open the page (route passed as argument, otherwise the one the branch touches — `git diff --name-only`
-towards page/route files) with the available browser tool: the `playwright` plugin's Playwright MCP
+towards page/route files) with the available browser tool: a Playwright MCP server
 (`browser_navigate`, `browser_take_screenshot`, `browser_resize`), otherwise give the URL. Then say (in
 the user's language):
 
