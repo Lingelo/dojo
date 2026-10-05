@@ -1,7 +1,7 @@
 {
     "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
     "name": "angelo-plugins",
-    "description": "Plugins Claude Code d'Angelo Lima : sécurité, workflows git, tests E2E Playwright, statusline, SDLC assisté par IA (Kaizen), motion design et plus",
+    "description": "Angelo Lima's Claude Code plugins: security, git workflows, Playwright E2E tests, statusline, AI-assisted SDLC (Kaizen), motion design and more",
     "owner": {
         "name": "Angelo Lima",
         "email": "angelomiguellima@gmail.com"
@@ -28,13 +28,13 @@
         {
             "name": "playwright",
             "source": "./plugins/playwright",
-            "description": "Playwright MCP + agents pour les tests E2E automatises",
+            "description": "Playwright MCP server + agents (planner, generator, healer) for automated E2E tests",
             "category": "development"
         },
         {
             "name": "statusline",
             "source": "./plugins/statusline",
-            "description": "Custom statusline with cost tracking, git info, and multi-plan support",
+            "description": "Statusline setup wizard: cost, context, 5-hour window, burn rate and sessions, with multi-plan and pay-as-you-go support",
             "category": "productivity"
         },
         {
@@ -46,7 +46,7 @@
         {
             "name": "frustration-detector",
             "source": "./plugins/frustration-detector",
-            "description": "Detects developer frustration and adapts Claude's response style (less talk, more action)",
+            "description": "Detects developer frustration (French and English) and adapts Claude's response style (less talk, more action)",
             "category": "productivity"
         },
         {
@@ -58,7 +58,7 @@
         {
             "name": "kaizen",
             "source": "./plugins/kaizen",
-            "description": "AI-assisted SDLC adapted from the Compound Engineering loop: engineering constitution enforced as gates, plan with traceability/threats/rollout/PR-sized slices and independent doc review, test-first work with a Stop-hook quality gate, multi-agent code review, ship & PR watching, UI polish, learnings/ADRs/postmortems read back every cycle, DORA metrics, releases",
+            "description": "AI-assisted SDLC adapted from the Compound Engineering loop: engineering constitution enforced as gates, plan with traceability/threats/rollout/PR-sized slices and independent doc review, test-first work with a Stop-hook quality gate, multi-agent code review, ship & PR watching, UI polish, learnings/ADRs/postmortems read back every cycle, DORA metrics, releases, watched deployments with rollback and production monitoring",
             "category": "development"
         }
     ]

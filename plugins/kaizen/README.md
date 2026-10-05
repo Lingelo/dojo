@@ -332,7 +332,7 @@ node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, co
   - that the review enforces the constitution;
   - that an autonomous plan passes `plan check`;
   - that `learn` refuses a worthless learning.
-- **CI** (`.github/workflows/kaizen.yml`): Linux and macOS, Node 18 and 22.
+- **CI** (`.github/workflows/kaizen.yml`): Linux, macOS and Windows, Node 18 and 22.
 
 ## Marketplace integration
 
