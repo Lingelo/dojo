@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="600" viewBox="0 0 1100 600" role="img" aria-labelledby="t d">
+<title id="t">What /kaizen:help recommends next</title>
+<desc id="d">node $K status reads the repo and returns the first situation that applies, in this order.</desc>
+<style>
+  .bg { fill: #fbfaf7; stroke: #e4e0d8; }
+  text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
+  .title { font-size: 18px; font-weight: 700; }
+  .desc { font-size: 12.5px; fill: #5c6370; }
+  .label { font-size: 13.5px; font-weight: 600; }
+  .t12 { font-size: 12px; }
+  .sub { font-size: 11.5px; fill: #5c6370; }
+  .small { font-size: 11px; fill: #5c6370; }
+  .edge { font-size: 11px; fill: #5c6370; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .skill { fill: #fdf1ea; stroke: #d97757; }
+  .artifact { fill: #edf2fb; stroke: #5b7fbf; }
+  .gate { fill: #fdeeee; stroke: #c94a4a; }
+  .agent { fill: #ecf6ef; stroke: #3f8f5a; }
+  .outside { fill: #f3f0fa; stroke: #7a5fc0; }
+  .state { fill: #fff8e1; stroke: #b8901c; }
+  .plain { fill: #ffffff; stroke: #c9c4ba; }
+  .region { fill: none; stroke: #b9b3a6; stroke-dasharray: 5 4; }
+  .regionlabel { font-size: 11.5px; font-weight: 600; fill: #7d776b; letter-spacing: .04em; }
+  .band { fill: #fff4dd; stroke: #d6a645; }
+  .line { fill: none; stroke: #6e7681; stroke-width: 1.6; }
+  .line.accent { stroke: #d97757; }
+  .line.bad { stroke: #c94a4a; }
+  .line.ok { stroke: #3f8f5a; }
+  .line.blue { stroke: #5b7fbf; }
+  .dashed { stroke-dasharray: 6 4; }
+  .head { fill: #6e7681; }
+  .head.accent { fill: #d97757; }
+  .head.bad { fill: #c94a4a; }
+  .head.ok { fill: #3f8f5a; }
+  .head.blue { fill: #5b7fbf; }
+  .pill { fill: #ffffff; stroke: none; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #161b22; stroke: #30363d; }
+    text { fill: #e6edf3; }
+    .desc, .sub, .small, .edge { fill: #9aa4b0; }
+    .skill { fill: #3a2419; stroke: #e08b6c; }
+    .artifact { fill: #1b2638; stroke: #7c9fd8; }
+    .gate { fill: #3a1d1f; stroke: #e06c6c; }
+    .agent { fill: #18301f; stroke: #5fb07a; }
+    .outside { fill: #271f3d; stroke: #a08ae0; }
+    .state { fill: #33290f; stroke: #d6b043; }
+    .plain { fill: #1f2630; stroke: #4a525d; }
+    .region { stroke: #5a6270; }
+    .regionlabel { fill: #a39d90; }
+    .band { fill: #33290f; stroke: #c99a3b; }
+    .line { stroke: #9aa4b0; }
+    .line.accent { stroke: #e08b6c; }
+    .line.bad { stroke: #e06c6c; }
+    .line.ok { stroke: #5fb07a; }
+    .line.blue { stroke: #7c9fd8; }
+    .head { fill: #9aa4b0; }
+    .head.accent { fill: #e08b6c; }
+    .head.bad { fill: #e06c6c; }
+    .head.ok { fill: #5fb07a; }
+    .head.blue { fill: #7c9fd8; }
+    .pill { fill: #161b22; }
+  }
+</style>
+<defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="1099" height="599" rx="14"/>
+<text class="title" x="28" y="38">What /kaizen:help recommends next</text>
+<text class="desc" x="28" y="58">node $K status reads the repo and returns the first situation that applies, in this order.</text>
+<rect class="gate" x="36" y="84" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="104" text-anchor="start">open incident on an environment</text>
+<rect class="skill" x="600" y="84" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="104" text-anchor="start">/kaizen:monitor &lt;env&gt;</text>
+<path class="line bad" d="M516,100 L600,100" marker-end="url(#h-bad)"/>
+<text class="small" x="24" y="105" text-anchor="end">1</text>
+<rect class="gate" x="36" y="124" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="144" text-anchor="start">incident resolved &lt; 14 days ago, no postmortem</text>
+<rect class="skill" x="600" y="124" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="144" text-anchor="start">/kaizen:postmortem</text>
+<path class="line bad" d="M516,140 L600,140" marker-end="url(#h-bad)"/>
+<text class="small" x="24" y="145" text-anchor="end">2</text>
+<rect class="gate" x="36" y="164" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="184" text-anchor="start">Kaizen not initialized</text>
+<rect class="skill" x="600" y="164" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="184" text-anchor="start">/kaizen:setup</text>
+<path class="line" d="M516,180 L600,180" marker-end="url(#h-default)"/>
+<text class="small" x="24" y="185" text-anchor="end">3</text>
+<rect class="gate" x="36" y="204" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="224" text-anchor="start">no CONSTITUTION.md</text>
+<rect class="skill" x="600" y="204" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="224" text-anchor="start">/kaizen:constitution</text>
+<path class="line" d="M516,220 L600,220" marker-end="url(#h-default)"/>
+<text class="small" x="24" y="225" text-anchor="end">4</text>
+<rect class="gate" x="36" y="244" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="264" text-anchor="start">quality gate active</text>
+<rect class="skill" x="600" y="244" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="264" text-anchor="start">/kaizen:work (resume) or gate off</text>
+<path class="line" d="M516,260 L600,260" marker-end="url(#h-default)"/>
+<text class="small" x="24" y="265" text-anchor="end">5</text>
+<rect class="gate" x="36" y="284" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="304" text-anchor="start">feature branch with changes · waiver pending</text>
+<rect class="skill" x="600" y="284" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="304" text-anchor="start">kaizen waive &lt;code&gt; (you type it)</text>
+<path class="line" d="M516,300 L600,300" marker-end="url(#h-default)"/>
+<text class="small" x="24" y="305" text-anchor="end">6</text>
+<rect class="gate" x="36" y="324" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="344" text-anchor="start">feature branch · reviewed, committed, clean</text>
+<rect class="skill" x="600" y="324" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="344" text-anchor="start">/kaizen:ship</text>
+<path class="line ok" d="M516,340 L600,340" marker-end="url(#h-ok)"/>
+<text class="small" x="24" y="345" text-anchor="end">7</text>
+<rect class="gate" x="36" y="364" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="384" text-anchor="start">feature branch · not reviewed or changed since</text>
+<rect class="skill" x="600" y="364" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="384" text-anchor="start">/kaizen:review</text>
+<path class="line" d="M516,380 L600,380" marker-end="url(#h-default)"/>
+<text class="small" x="24" y="385" text-anchor="end">8</text>
+<rect class="gate" x="36" y="404" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="424" text-anchor="start">default branch · commits not deployed</text>
+<rect class="skill" x="600" y="404" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="424" text-anchor="start">/kaizen:deploy &lt;env&gt;</text>
+<path class="line" d="M516,420 L600,420" marker-end="url(#h-default)"/>
+<text class="small" x="24" y="425" text-anchor="end">9</text>
+<rect class="gate" x="36" y="444" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="464" text-anchor="start">latest plan is requirements only</text>
+<rect class="skill" x="600" y="444" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="464" text-anchor="start">/kaizen:plan &lt;plan&gt;</text>
+<path class="line" d="M516,460 L600,460" marker-end="url(#h-default)"/>
+<text class="small" x="24" y="465" text-anchor="end">10</text>
+<rect class="gate" x="36" y="484" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="504" text-anchor="start">latest plan is ready</text>
+<rect class="skill" x="600" y="484" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="504" text-anchor="start">/kaizen:work &lt;plan&gt;</text>
+<path class="line" d="M516,500 L600,500" marker-end="url(#h-default)"/>
+<text class="small" x="24" y="505" text-anchor="end">11</text>
+<rect class="gate" x="36" y="524" width="480" height="32" rx="6" stroke-width="1.5"/>
+<text class="label" x="48" y="544" text-anchor="start">otherwise</text>
+<rect class="skill" x="600" y="524" width="464" height="32" rx="6" stroke-width="1.5"/>
+<text class="label mono" x="612" y="544" text-anchor="start">/kaizen:brainstorm &lt;idea&gt; · ideate · debug</text>
+<path class="line ok" d="M516,540 L600,540" marker-end="url(#h-ok)"/>
+<text class="small" x="24" y="545" text-anchor="end">12</text>
+<text class="small" x="36" y="580" text-anchor="start">The first two are added before everything else; "otherwise" is also added when the repo is in a normal state. /kaizen:help explains the result and can also answer “what is Kaizen?”.</text>
+</svg>

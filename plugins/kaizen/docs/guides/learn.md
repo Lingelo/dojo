@@ -21,6 +21,10 @@
 /kaizen:learn mode:auto                 # no questions (used by work, autopilot, debug)
 ```
 
+![How learnings are written, read back, measured and pruned](../media/diagrams/learnings-loop.svg)
+
+In depth: [learnings](../concepts/learnings.md).
+
 ## The durability test
 
 > If this document disappeared, would a future developer reading the final implementation probably

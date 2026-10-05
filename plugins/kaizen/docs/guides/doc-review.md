@@ -67,4 +67,7 @@ example: "Cœur de ß" → `coeur-de-ss`.
 
 ## See also
 
+In depth: [review](../concepts/review.md#plan-review).
+
+
 [plan](plan.md) · [review](review.md) · [constitution](constitution.md)

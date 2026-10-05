@@ -23,6 +23,10 @@
 /kaizen:review apply                        # review then apply the fixes
 ```
 
+![The multi-agent review pipeline from scope to recorded verdict](../media/diagrams/review-pipeline.svg)
+
+In depth: [review](../concepts/review.md).
+
 ## The reviewers
 
 | Reviewer | When |

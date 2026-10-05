@@ -25,6 +25,10 @@ enriches in place with the "how".
 /kaizen:brainstorm                     # Claude asks what you want to explore
 ```
 
+![Anatomy of a plan: brainstorm writes the goal and product contract, plan adds the rest in place](../media/diagrams/plan-anatomy.svg)
+
+In depth: [plans](../concepts/plans.md).
+
 ## How it goes
 
 1. **Resume**: a recent plan on the same topic is offered for resumption rather than duplicated.

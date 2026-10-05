@@ -24,6 +24,10 @@ conclusion. A postmortem is worth its **tracked actions**, not its prose.
 /kaizen:postmortem near miss on the orders table migration
 ```
 
+![Incidents feed the postmortem timeline](../media/diagrams/incident-lifecycle.svg)
+
+In depth: [production](../concepts/production.md#postmortem).
+
 ## How it goes
 
 1. **Facts first**:

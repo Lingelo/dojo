@@ -21,6 +21,10 @@
 /kaizen:help what is the push gate?
 ```
 
+![The order in which /kaizen:help picks the next command](../media/diagrams/help-routing.svg)
+
+In depth: [the loop](../concepts/the-loop.md#knowing-where-you-are).
+
 ## The diagnosis
 
 `node $K status` (or `--json`) summarizes the repo's state in the loop and infers the next step:

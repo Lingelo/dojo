@@ -65,4 +65,7 @@
 
 ## See also
 
+In depth: [learnings](../concepts/learnings.md#read-back).
+
+
 [postmortem](postmortem.md) · [learn](learn.md) · [watch-pr](watch-pr.md)

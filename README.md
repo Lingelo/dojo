@@ -93,6 +93,8 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 
 <a href="plugins/kaizen/docs/media/kaizen-presentation.mp4"><img src="plugins/kaizen/docs/media/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds" width="100%"></a>
 
+![The Kaizen loop](plugins/kaizen/docs/media/diagrams/kaizen-loop.svg)
+
 ```bash
 /kaizen:help                                    # what it is, where the repo stands, which command to run
 /kaizen:setup audit                             # what the project lacks (CI, secrets, deployment…), fixed by priority
@@ -110,7 +112,9 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 Documentation: [getting started](plugins/kaizen/docs/getting-started.md) ·
 [guides per skill](plugins/kaizen/docs/README.md) ·
 [configuration](plugins/kaizen/docs/configuration.md) ·
-[troubleshooting](plugins/kaizen/docs/troubleshooting.md).
+[troubleshooting](plugins/kaizen/docs/troubleshooting.md) ·
+[how it works](plugins/kaizen/docs/README.md#how-it-works) ·
+[CLI reference](plugins/kaizen/docs/reference/cli.md).
 
 ### Security plugin
 Two automatic protections through `PreToolUse` hooks:

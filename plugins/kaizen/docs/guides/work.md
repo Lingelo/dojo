@@ -55,6 +55,10 @@
    - P0/P1 fixes, then the review is recorded again with its post-fix verdict.
 5. **End**: `gate off` and summary, then the offer to ship.
 
+![The Stop-hook quality gate flowchart](../media/diagrams/quality-gate.svg)
+
+In depth: [gates and hooks](../concepts/gates-and-hooks.md#the-quality-gate-stop-hook).
+
 ## The gate
 
 While it is active, every end of turn reruns `test`, `lint` and `typecheck`. If one of them is red, the

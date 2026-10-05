@@ -57,4 +57,7 @@
 
 ## See also
 
+In depth: [production](../concepts/production.md#release).
+
+
 [ship](ship.md) · [deploy](deploy.md) · [metrics](metrics.md)

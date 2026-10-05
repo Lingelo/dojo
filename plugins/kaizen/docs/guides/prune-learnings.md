@@ -25,6 +25,10 @@ is the maintenance of the corpus.
 /kaizen:prune-learnings mode:auto
 ```
 
+![How learnings are written, read back, measured and pruned](../media/diagrams/learnings-loop.svg)
+
+In depth: [learnings](../concepts/learnings.md#pruning).
+
 ## The five outcomes
 
 | Outcome | When |

@@ -77,4 +77,7 @@ sets the old one to `superseded`. Template: [`templates/adr.md`](../../templates
 
 ## See also
 
+In depth: [plans](../concepts/plans.md#key-technical-decisions).
+
+
 [plan](plan.md) · [constitution](constitution.md) · [learn](learn.md)

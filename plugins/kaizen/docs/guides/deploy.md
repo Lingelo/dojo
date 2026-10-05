@@ -66,6 +66,10 @@ its limits (`notes`): token required, SHA-tagged image to check, Terraform to re
 The commands receive `KAIZEN_ENV`, `KAIZEN_REF` and `KAIZEN_SHA`. `production` is protected by default
 (`"protected": true` to protect others).
 
+![A watched deployment from preconditions to rollback and postmortem](../media/diagrams/deploy-flow.svg)
+
+In depth: [production](../concepts/production.md#deploy).
+
 ## How it goes
 
 1. **Preconditions**:

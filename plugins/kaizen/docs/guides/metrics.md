@@ -53,4 +53,7 @@ machine-readable output).
 
 ## See also
 
+In depth: [metrics](../concepts/metrics.md).
+
+
 [postmortem](postmortem.md) · [prune-learnings](prune-learnings.md) · [release](release.md) · [deploy](deploy.md)

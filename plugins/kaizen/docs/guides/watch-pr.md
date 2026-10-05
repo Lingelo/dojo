@@ -21,6 +21,10 @@
 /kaizen:watch-pr 42 checkpoint   # a single cycle, then the resume command
 ```
 
+![The watch-pr cycle, watcher verdicts and looks-ready conditions](../media/diagrams/pr-watch.svg)
+
+In depth: [pull requests](../concepts/pull-requests.md#driving-the-pr-to-looks-ready).
+
 ## A cycle (imposed order)
 
 1. **Snapshot** `node $K pr snapshot`: the only source of truth. Threads are read in full (paginated),

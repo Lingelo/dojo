@@ -23,6 +23,10 @@
 /kaizen:setup pack:house-rules first rule: every CSV export starts with a BOM
 ```
 
+![What Kaizen writes in your repo and who reads it](../media/diagrams/artifacts-map.svg)
+
+In depth: [state and files](../reference/state-and-files.md).
+
 ## The audit: setting up the SDLC
 
 `node $K audit` (`--json`, `--no-github` without an authenticated `gh`) scores the project on five

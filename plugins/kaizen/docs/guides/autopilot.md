@@ -22,6 +22,10 @@
 /kaizen:autopilot the orders_csv_spec test fails since the Rails upgrade
 ```
 
+![Autopilot routing table and the eleven steps of the run](../media/diagrams/autopilot.svg)
+
+In depth: [the loop](../concepts/the-loop.md#autopilot).
+
 ## Routing
 
 | The request is… | Route |

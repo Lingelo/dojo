@@ -56,4 +56,7 @@
 
 ## See also
 
+In depth: [pull requests](../concepts/pull-requests.md#answering-review-feedback).
+
+
 [watch-pr](watch-pr.md) · [review](review.md) · [gh troubleshooting](../troubleshooting.md#gh-is-not-authenticated)

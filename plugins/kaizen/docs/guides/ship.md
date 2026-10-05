@@ -25,6 +25,10 @@ controls the size, pushes, and writes the description from the plan and the real
 /kaizen:ship refresh-description       # rewrites the description if it no longer matches the diff
 ```
 
+![The review required before git push, its evidence and the human-only waiver](../media/diagrams/push-gate.svg)
+
+In depth: [gates and hooks](../concepts/gates-and-hooks.md#the-review-required-before-git-push-pretooluse).
+
 ## Barriers
 
 1. `node $K verify` is green. Otherwise `ship` stops.

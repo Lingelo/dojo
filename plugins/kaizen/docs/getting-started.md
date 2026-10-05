@@ -6,6 +6,10 @@ application. Count on an hour the first time, most of it in discussion with Clau
 For an overview before starting: [the presentation video](media/kaizen-presentation.mp4) (80 seconds,
 voice-over and [subtitles](media/kaizen-presentation.srt)).
 
+The cycle you are about to run, end to end ([explained here](concepts/the-loop.md)):
+
+![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem, and the project memory read back by the next cycle](media/diagrams/kaizen-loop.svg)
+
 At any time, **`/kaizen:help`** tells you where the repo stands and which command to run next
 (`/kaizen:help I want to ship my branch`, `/kaizen:help I have a bug`…).
 

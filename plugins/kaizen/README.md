@@ -20,17 +20,7 @@ instability, except for teams that keep three disciplines:
 
 Kaizen gives tooling to these three disciplines.
 
-```
-                     CONSTITUTION.md — non-negotiable principles, enforced as checks
- ideate → brainstorm → plan ─► doc-review → work → review → ship → watch-pr → learn
-                        ▲                                                         │
-                        └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
- debug → fix → review → learn              polish: UI touch-ups guided by the user
- release → deploy → monitor ─(threshold breached)→ rollback → postmortem → learnings · packs · amendments
- decide → ADR      metrics (real DORA from deployments, cycle cost)
- autopilot: from request to ready PR, autonomously      prune-learnings: maintenance of the learnings
- help: which command to run now, from the state of the repo
-```
+![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem, and the project memory read back by the next cycle](docs/media/diagrams/kaizen-loop.svg)
 
 > Strongly inspired by Every's [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)
 > plugin (MIT) for the loop, the artifact contracts, the learnings schema, the review personas and PR
@@ -54,6 +44,8 @@ of the conversation). Plans and constitutions written in French with Kaizen 2.x 
 
 - **[Getting started](docs/getting-started.md)** — a first complete cycle, step by step
 - **[Guides per skill](docs/README.md)** — when to use each command, what it produces, its options
+- **[How it works](docs/README.md#how-it-works)** — in-depth pages with diagrams: [the loop](docs/concepts/the-loop.md), [plans](docs/concepts/plans.md), [constitution](docs/concepts/constitution.md), [gates and hooks](docs/concepts/gates-and-hooks.md), [review](docs/concepts/review.md), [pull requests](docs/concepts/pull-requests.md), [production](docs/concepts/production.md), [learnings](docs/concepts/learnings.md), [metrics](docs/concepts/metrics.md), [agents and models](docs/concepts/agents-and-models.md)
+- **Reference** — [CLI](docs/reference/cli.md) · [state and files](docs/reference/state-and-files.md) · [SDLC audit](docs/reference/audit.md)
 - [Assessment and positioning](docs/positioning.md) — what Kaizen covers, its limits, compared to classic SDLCs, Spec Kit, Kiro, BMAD and Compound Engineering
 - [Configuration](docs/configuration.md) · [Kaizen Packs](docs/packs.md) · [Troubleshooting](docs/troubleshooting.md) · [Changelog](CHANGELOG.md)
 
@@ -326,7 +318,8 @@ node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, co
   - that each cited file and each `kaizen:<name>` exist;
   - that each documented CLI command exists, and that this reference lists every command and hook;
   - that each plan marker is documented;
-  - that this README and the docs index are up to date, and that every relative link resolves.
+  - that this README and the docs index are up to date, and that every relative link and `#anchor`
+    resolves.
 - **Evals.** They prepare trapped repos and check:
   - that the review finds an injection and a rounding error;
   - that the review enforces the constitution;

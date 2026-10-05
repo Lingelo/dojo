@@ -30,6 +30,12 @@ documents written in the target repo follow `language` (`auto` = the language of
 - **Complete reference** in the README: one line per CLI command (`node $K <command>`), the five hooks
   with their role, exit codes; a contract test keeps it in sync with `kaizen.mjs` and `hooks.json`, and
   checks that every relative link of the documentation resolves.
+- **Exhaustive documentation with diagrams**: ten in-depth pages (`docs/concepts/`: the loop, plans,
+  constitution, gates and hooks, review, pull requests, production, learnings, metrics, agents and
+  models) and three reference pages (`docs/reference/`: CLI, state and files, SDLC audit), illustrated
+  by 14 SVG diagrams generated from `docs/media/source/diagrams.mjs` (light and dark themes); the loop
+  is drawn as SVG in the README and the docs; every guide links to the page explaining its mechanism.
+  A contract test checks every `#anchor` link.
 - Documentation completed: `monitor` incidents and continuous monitoring, `deploy detect` platforms,
   `audit fix monitor_patrol|monitor_alert`, cycle cost per role, troubleshooting for refused
   deployments and upgrading from 2.x.

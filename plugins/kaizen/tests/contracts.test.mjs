@@ -150,6 +150,31 @@ test('documentation: one guide per skill, valid relative links', () => {
   assert.deepEqual(broken, []);
 });
 
+test('documentation: every #anchor link points to an existing heading', () => {
+  // GitHub heading slugs: lower case, backticks and asterisks dropped, punctuation removed, spaces → dashes.
+  const slug = (h) => h.trim().toLowerCase().replace(/[`*]/g, '').replace(/[^\p{L}\p{N}_\- ]/gu, '').replace(/ /g, '-');
+  const anchorsOf = (file) => {
+    const seen = {};
+    const out = new Set();
+    for (const m of readFileSync(file, 'utf8').replace(/```[\s\S]*?```/g, '').matchAll(/^#{1,6}\s+(.*)$/gm)) {
+      const s = slug(m[1]);
+      out.add(seen[s] ? `${s}-${seen[s]}` : s);
+      seen[s] = (seen[s] || 0) + 1;
+    }
+    return out;
+  };
+  const broken = [];
+  for (const f of [...walk(join(PLUGIN, 'docs')), join(PLUGIN, 'README.md')]) {
+    const text = readFileSync(f, 'utf8').replace(/```[\s\S]*?```/g, '');
+    for (const m of text.matchAll(/\]\(([^)#\s]*)#([^)\s]+)\)/g)) {
+      const target = m[1] ? join(f, '..', m[1]) : f;
+      if (!target.endsWith('.md') || !existsSync(target)) continue;
+      if (!anchorsOf(target).has(m[2])) broken.push(`${relative(PLUGIN, f)} → ${m[1]}#${m[2]}`);
+    }
+  }
+  assert.deepEqual(broken, []);
+});
+
 test('no plugin deliverable contains an absolute path or an obvious secret', () => {
   for (const { file, text } of docs) {
     assert.doesNotMatch(text, /\/home\/user\/|\/Users\/[a-z]+\//, `${file}: absolute path`);

@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="640" viewBox="0 0 1100 640" role="img" aria-labelledby="t d">
+<title id="t">Autopilot: from a request to a PR that looks ready</title>
+<desc id="d">The right skill at every step, nothing that stops without a reason, nothing irreversible without your approval.</desc>
+<style>
+  .bg { fill: #fbfaf7; stroke: #e4e0d8; }
+  text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
+  .title { font-size: 18px; font-weight: 700; }
+  .desc { font-size: 12.5px; fill: #5c6370; }
+  .label { font-size: 13.5px; font-weight: 600; }
+  .t12 { font-size: 12px; }
+  .sub { font-size: 11.5px; fill: #5c6370; }
+  .small { font-size: 11px; fill: #5c6370; }
+  .edge { font-size: 11px; fill: #5c6370; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .skill { fill: #fdf1ea; stroke: #d97757; }
+  .artifact { fill: #edf2fb; stroke: #5b7fbf; }
+  .gate { fill: #fdeeee; stroke: #c94a4a; }
+  .agent { fill: #ecf6ef; stroke: #3f8f5a; }
+  .outside { fill: #f3f0fa; stroke: #7a5fc0; }
+  .state { fill: #fff8e1; stroke: #b8901c; }
+  .plain { fill: #ffffff; stroke: #c9c4ba; }
+  .region { fill: none; stroke: #b9b3a6; stroke-dasharray: 5 4; }
+  .regionlabel { font-size: 11.5px; font-weight: 600; fill: #7d776b; letter-spacing: .04em; }
+  .band { fill: #fff4dd; stroke: #d6a645; }
+  .line { fill: none; stroke: #6e7681; stroke-width: 1.6; }
+  .line.accent { stroke: #d97757; }
+  .line.bad { stroke: #c94a4a; }
+  .line.ok { stroke: #3f8f5a; }
+  .line.blue { stroke: #5b7fbf; }
+  .dashed { stroke-dasharray: 6 4; }
+  .head { fill: #6e7681; }
+  .head.accent { fill: #d97757; }
+  .head.bad { fill: #c94a4a; }
+  .head.ok { fill: #3f8f5a; }
+  .head.blue { fill: #5b7fbf; }
+  .pill { fill: #ffffff; stroke: none; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #161b22; stroke: #30363d; }
+    text { fill: #e6edf3; }
+    .desc, .sub, .small, .edge { fill: #9aa4b0; }
+    .skill { fill: #3a2419; stroke: #e08b6c; }
+    .artifact { fill: #1b2638; stroke: #7c9fd8; }
+    .gate { fill: #3a1d1f; stroke: #e06c6c; }
+    .agent { fill: #18301f; stroke: #5fb07a; }
+    .outside { fill: #271f3d; stroke: #a08ae0; }
+    .state { fill: #33290f; stroke: #d6b043; }
+    .plain { fill: #1f2630; stroke: #4a525d; }
+    .region { stroke: #5a6270; }
+    .regionlabel { fill: #a39d90; }
+    .band { fill: #33290f; stroke: #c99a3b; }
+    .line { stroke: #9aa4b0; }
+    .line.accent { stroke: #e08b6c; }
+    .line.bad { stroke: #e06c6c; }
+    .line.ok { stroke: #5fb07a; }
+    .line.blue { stroke: #7c9fd8; }
+    .head { fill: #9aa4b0; }
+    .head.accent { fill: #e08b6c; }
+    .head.bad { fill: #e06c6c; }
+    .head.ok { fill: #5fb07a; }
+    .head.blue { fill: #7c9fd8; }
+    .pill { fill: #161b22; }
+  }
+</style>
+<defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="1099" height="639" rx="14"/>
+<text class="title" x="28" y="38">Autopilot: from a request to a PR that looks ready</text>
+<text class="desc" x="28" y="58">The right skill at every step, nothing that stops without a reason, nothing irreversible without your approval.</text>
+<rect class="outside" x="36" y="86" width="240" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="156" y="115" text-anchor="middle">your request</text>
+<rect class="gate" x="36" y="160" width="262" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="167" y="189" text-anchor="middle">plan path / plan from this session</text>
+<rect class="skill" x="318" y="160" width="196" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="416" y="189" text-anchor="middle">straight to work</text>
+<path class="line" d="M298,185 L318,185" marker-end="url(#h-default)"/>
+<rect class="gate" x="36" y="226" width="262" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="167" y="255" text-anchor="middle">concrete bug (symptom, red test)</text>
+<rect class="skill" x="318" y="226" width="196" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="416" y="255" text-anchor="middle">debug mode:return</text>
+<path class="line" d="M298,251 L318,251" marker-end="url(#h-default)"/>
+<rect class="gate" x="36" y="292" width="262" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="167" y="321" text-anchor="middle">ambiguous product shape</text>
+<rect class="skill" x="318" y="292" width="196" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="416" y="321" text-anchor="middle">brainstorm (you there) or plan</text>
+<path class="line" d="M298,317 L318,317" marker-end="url(#h-default)"/>
+<rect class="gate" x="36" y="358" width="262" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="167" y="387" text-anchor="middle">not code (ideas, explanation)</text>
+<rect class="skill" x="318" y="358" width="196" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="416" y="387" text-anchor="middle">that skill, and stop</text>
+<path class="line" d="M298,383 L318,383" marker-end="url(#h-default)"/>
+<rect class="gate" x="36" y="424" width="262" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="167" y="453" text-anchor="middle">any other code change</text>
+<rect class="skill" x="318" y="424" width="196" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="416" y="453" text-anchor="middle">plan mode:return</text>
+<path class="line" d="M298,449 L318,449" marker-end="url(#h-default)"/>
+<rect class="gate" x="36" y="490" width="262" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="167" y="519" text-anchor="middle">lean profile, ≤ ~30 lines, no risk surface</text>
+<rect class="skill" x="318" y="490" width="196" height="50" rx="8" stroke-width="1.5"/>
+<text class="t12" x="416" y="519" text-anchor="middle">work without a written plan</text>
+<path class="line" d="M298,515 L318,515" marker-end="url(#h-default)"/>
+<path class="line" d="M156,136 L167,160" marker-end="url(#h-default)"/>
+<rect class="region" x="530" y="76" width="534" height="476" rx="12"/>
+<text class="regionlabel" x="542" y="93">THE RUN (GATE ON FOR THE WHOLE RUN)</text>
+<rect class="state" x="546" y="102" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="122" text-anchor="start">1. work source: ready plan (plan check + doc-review) or a debug fix</text>
+<rect class="plain" x="546" y="142" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="162" text-anchor="start">2. work mode:return — units, test first, one commit each</text>
+<rect class="plain" x="546" y="182" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="202" text-anchor="start">3. simplification of the diff</text>
+<rect class="state" x="546" y="222" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="242" text-anchor="start">4. review mode:agent — a settled decision proven wrong stops all</text>
+<rect class="plain" x="546" y="262" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="282" text-anchor="start">5. fixes: P0/P1 and gated_auto P2, verified and committed</text>
+<rect class="plain" x="546" y="302" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="322" text-anchor="start">6. the rest recorded in the PR ("Open points")</text>
+<rect class="plain" x="546" y="342" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="362" text-anchor="start">7. learn mode:auto, if the run produced a durable lesson</text>
+<rect class="plain" x="546" y="382" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="402" text-anchor="start">8. browser checks if the UI changed and a tool exists</text>
+<rect class="plain" x="546" y="422" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="442" text-anchor="start">9. ship mode:auto — PR with reviewer guide</text>
+<rect class="plain" x="546" y="462" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="482" text-anchor="start">10. watch-pr mode:pipeline — ≤ 2 fixes per cause, no disabled test</text>
+<rect class="state" x="546" y="502" width="502" height="32" rx="6" stroke-width="1.5"/>
+<text class="t12" x="558" y="522" text-anchor="start">11. gate off, report, DONE</text>
+<rect class="gate" x="36" y="568" width="1028" height="52" rx="8" stroke-width="1.5"/>
+<text class="t12" x="550" y="590" text-anchor="middle">It stops — pushing nothing new and saying how to resume — on: an irreversible action not granted (merge, force push, data deletion, deployment),</text>
+<text class="t12" x="550" y="606" text-anchor="middle">no work source, an incomplete child return, a settled decision invalidated, or a review waiver needed while you are away.</text>
+</svg>

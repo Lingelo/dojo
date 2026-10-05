@@ -64,6 +64,10 @@ language; the field names the tools read (`**Check:**`, `**Exceptions:**`, `NON-
 `## Amendments`, `Approved by:`) stay as in the template. Constitutions written in French before
 Kaizen 3.0 (`**Contrôle :**`, `NON NÉGOCIABLE`, `Approuvé par :`) are still read.
 
+![Where the constitution is enforced and what happens to exceptions](../media/diagrams/constitution-enforcement.svg)
+
+In depth: [constitution](../concepts/constitution.md).
+
 ## How it is enforced
 
 | Where | How |

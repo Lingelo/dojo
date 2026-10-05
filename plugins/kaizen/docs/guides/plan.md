@@ -26,6 +26,10 @@ pass, and how to roll back. The implementer (`/kaizen:work` or a human) keeps ju
 /kaizen:plan deepen docs/plans/2026-09-12-0900-refactor-auth-plan.md
 ```
 
+![Anatomy of a plan: sections, traceability from requirements to units, slices and PRs, plan check](../media/diagrams/plan-anatomy.svg)
+
+In depth: [plans](../concepts/plans.md).
+
 ## How it goes
 
 1. **Source and shape**:

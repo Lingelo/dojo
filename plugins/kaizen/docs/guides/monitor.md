@@ -53,6 +53,10 @@ A plan's "Rollout and rollback" section cites the signal by its name:
 This threshold wins over the config's during the watch of the deployment shipping this plan. A signal
 cited by a plan but not declared is reported: it is a monitoring gap.
 
+![Incident lifecycle from detection sources to resolution and consumers](../media/diagrams/incident-lifecycle.svg)
+
+In depth: [production](../concepts/production.md#incidents).
+
 ## Incidents
 
 A breach confirmed by `watch` (after a deployment) or `patrol` (scheduled check), or an alert received
