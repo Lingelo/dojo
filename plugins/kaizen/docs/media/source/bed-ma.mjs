@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Lit musical de la vidéo Kaizen : sobre, avec beaucoup de silence (ma).
-// Cordes pincées (Karplus-Strong) sur la gamme miyako-bushi en ré (ré, mi♭, sol, la, si♭),
-// bourdon grave et tambour sourd sur les temps forts. Déterministe, sans dépendance.
+// Music bed of the Kaizen video: sober, with a lot of silence (ma).
+// Plucked strings (Karplus-Strong) on the miyako-bushi scale in D (D, E♭, G, A, B♭),
+// a low drone and a muffled drum on the strong beats. Deterministic, no dependency.
 //
 //   node bed-ma.mjs --duration 61 --bpm 84 --start 9.1 -o <work>/bed.wav > <work>/bed.json
 //
-// Le JSON de sortie a le même format que `sfx.mjs bed` (beats exacts pour --beats).
+// The output JSON has the same format as `sfx.mjs bed` (exact beats for --beats).
 import path from 'node:path';
 import { SR, synth, writeWav } from '../../../../motion-studio/scripts/sfx.mjs';
 
@@ -25,7 +25,7 @@ function add(mono, at, gain = 1, pan = 0) {
   for (let i = 0; i < mono.length && off + i < L.length; i++) if (off + i >= 0) { L[off + i] += mono[i] * gl; R[off + i] += mono[i] * gr; }
 }
 
-// corde pincée : bruit filtré dans une ligne à retard, attaque légèrement brillante
+// plucked string: noise filtered through a delay line, slightly bright attack
 function pluck(note, dur = 3.2, bright = 0.5) {
   const n = Math.round(dur * SR), o = new Float32Array(n), period = SR / midi(note);
   const len = Math.floor(period), frac = period - len, line = new Float32Array(len + 2);
@@ -44,7 +44,7 @@ function pluck(note, dur = 3.2, bright = 0.5) {
   return o;
 }
 
-// bourdon : ré et la graves, battements lents, souffle filtré
+// drone: low D and A, slow beating, filtered breath
 function drone(dur) {
   const n = Math.round(dur * SR), o = new Float32Array(n);
   let lp = 0;
@@ -58,7 +58,7 @@ function drone(dur) {
   return o;
 }
 
-// tambour sourd (attaque douce, longue résonance grave)
+// muffled drum (soft attack, long low resonance)
 function drum() {
   const n = Math.round(1.6 * SR), o = new Float32Array(n);
   let ph = 0;
@@ -72,7 +72,7 @@ function drum() {
 
 add(drone(duration), 0, 0.9);
 
-// phrases : [temps dans la mesure, degré] ; beaucoup de mesures restent presque vides
+// phrases: [beat in the bar, degree]; many bars stay almost empty
 const SCALE = [62, 63, 67, 69, 70, 74, 75, 79, 81];
 const PHRASES = [
   [[0, 3], [1.5, 2], [3, 0]],
@@ -88,7 +88,7 @@ const beats = [];
 for (let t = start; t < duration - 0.05; t += beat) beats.push(+t.toFixed(4));
 
 for (let b = 0, t0 = start; t0 < duration - 3; b++, t0 = start + b * bar) {
-  // ma : pendant la constitution, le titre et la fin, on laisse respirer
+  // ma: during the constitution, the title and the end, let it breathe
   const dense = t0 > 17.5 && t0 < 47;
   const phrase = PHRASES[b % PHRASES.length];
   phrase.forEach(([pos, deg], k) => {
@@ -99,7 +99,7 @@ for (let b = 0, t0 = start; t0 < duration - 3; b++, t0 = start + b * bar) {
   if (dense && b % 2 === 0) add(drum(), t0, 0.32, 0);
 }
 
-// cadence finale : ré grave et ré aigu, laissés résonner
+// final cadence: low D and high D, left to ring
 add(pluck(50, 5, 0.6), 56.85, 0.4, -0.1);
 add(pluck(62, 5, 0.5), 57.0, 0.3, 0.15);
 add(drum(), 56.85, 0.35, 0);

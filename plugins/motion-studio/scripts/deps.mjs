@@ -68,7 +68,7 @@ export function findPlaywright() {
 export function browserCandidates() {
   const c = [];
   if (process.env.CHROMIUM_PATH) c.push({ label: `CHROMIUM_PATH (${process.env.CHROMIUM_PATH})`, opts: { executablePath: process.env.CHROMIUM_PATH } });
-  c.push({ label: 'Chromium de Playwright', opts: {} });
+  c.push({ label: "Playwright's Chromium", opts: {} });
   if (!ISOLATED) {
     c.push({ label: 'installed Google Chrome', opts: { channel: 'chrome' } });
     c.push({ label: 'installed Microsoft Edge', opts: { channel: 'msedge' } });

@@ -9,7 +9,7 @@
  * Only Node ≥ 18 + npm are assumed. Everything else is reused when present
  * (Playwright, a Chromium/Chrome/Edge, ffmpeg) or installed into the plugin's
  * data directory (${CLAUDE_PLUGIN_DATA}):
- *   - playwright-core   (~10 Mo, pilotage du navigateur)
+ *   - playwright-core   (~10 MB, browser automation)
  *   - ffmpeg-static     (~70 MB, static ffmpeg binary with libx264, macOS/Linux/Windows)
  *   - chromium-headless-shell (~100 MB, shared cache ~/.cache/ms-playwright, reused by the Playwright MCP)
  */
@@ -62,18 +62,18 @@ const major = Number(process.versions.node.split('.')[0]);
 if (major >= 18) ok(`Node ${process.versions.node}`);
 else { ko(`Node ${process.versions.node} : Node ≥ 18 required (https://nodejs.org)`); process.exit(1); }
 
-// 2. Playwright (pilotage du navigateur)
+// 2. Playwright (browser automation)
 let pw = findPlaywright();
 if (!pw && !CHECK) { npmInstall(['playwright-core']); pw = findPlaywright(); }
 if (pw) ok(`${pw.name} ${createRequire(pw.path)(path.join(path.dirname(pw.path), 'package.json')).version}  (${path.dirname(pw.path)})`);
-else { ko('Playwright introuvable'); missing++; }
+else { ko('Playwright not found'); missing++; }
 
 // 3. ffmpeg (video + audio encoding)
 let ffmpeg = findFfmpeg();
 if (!ffmpeg && !CHECK) { npmInstall(['ffmpeg-static']); ffmpeg = findFfmpeg(); }
 if (ffmpeg) ok(`ffmpeg with libx264  (${ffmpeg})`);
 else {
-  ko('ffmpeg introuvable. Installer au choix : brew install ffmpeg | sudo apt install ffmpeg | winget install ffmpeg | pip install imageio-ffmpeg');
+  ko('ffmpeg not found. Install one of: brew install ffmpeg | sudo apt install ffmpeg | winget install ffmpeg | pip install imageio-ffmpeg');
   missing++;
 }
 
@@ -82,9 +82,9 @@ let browser = null;
 if (pw) {
   browser = await findBrowser(pw.mod.chromium);
   if (browser.error && !CHECK) { installBrowser(pw); browser = await findBrowser(pw.mod.chromium); }
-  if (!browser.error) ok(`navigateur : ${browser.label}`);
+  if (!browser.error) ok(`browser: ${browser.label}`);
   else {
-    ko(`aucun navigateur utilisable.\n${browser.error.replace(/^/gm, '      ')}`);
+    ko(`no usable browser.\n${browser.error.replace(/^/gm, '      ')}`);
     if (process.platform === 'linux' && /shared librar|dependencies/i.test(browser.error))
       out('      → missing system libraries: sudo npx playwright install-deps chromium');
     missing++;

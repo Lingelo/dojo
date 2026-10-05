@@ -100,7 +100,7 @@ export function fetchPr(target) {
 }
 
 // ---------------------------------------------------------------------------
-// État local (.kaizen/state/pr/<owner>-<name>-<n>.json)
+// Local state (.kaizen/state/pr/<owner>-<name>-<n>.json)
 // ---------------------------------------------------------------------------
 
 export function statePath(stateRoot, t) {
@@ -120,7 +120,7 @@ export function saveState(file, state) {
 }
 
 // ---------------------------------------------------------------------------
-// Analyse
+// Analysis
 // ---------------------------------------------------------------------------
 
 const PASS = new Set(['SUCCESS', 'NEUTRAL', 'SKIPPED']);
@@ -288,7 +288,7 @@ export function analyze(pr, state, { now = Date.now(), settleSeconds = 300, budg
 }
 
 // ---------------------------------------------------------------------------
-// Commandes
+// Commands
 // ---------------------------------------------------------------------------
 
 export function snapshot(stateRoot, opts) {
@@ -328,7 +328,7 @@ export function mark(stateRoot, opts) {
   } else if (opts.check) {
     const head = pr.headRefOid;
     state.checks[`${head}:${opts.check}`] = { disposition, note: opts.note || null, at: now };
-  } else throw new Error('--thread, --comment ou --check requis');
+  } else throw new Error('--thread, --comment or --check required');
   saveState(file, state);
   return { ok: true, state_file: file };
 }
@@ -360,7 +360,7 @@ function withMarker(body) {
 }
 
 export function reply(opts) {
-  if (!opts.thread || !opts.bodyFile) throw new Error('--thread et --body-file requis');
+  if (!opts.thread || !opts.bodyFile) throw new Error('--thread and --body-file required');
   const body = withMarker(readFileSync(opts.bodyFile, 'utf8'));
   const data = graphql(
     'mutation($thread:ID!,$body:String!){ addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$thread, body:$body}){ comment{ url } } }',
@@ -370,14 +370,14 @@ export function reply(opts) {
 }
 
 export function resolveThread(opts) {
-  if (!opts.thread) throw new Error('--thread requis');
+  if (!opts.thread) throw new Error('--thread required');
   const data = graphql('mutation($thread:ID!){ resolveReviewThread(input:{threadId:$thread}){ thread{ id isResolved } } }', { thread: opts.thread });
   return data.resolveReviewThread.thread;
 }
 
 export function comment(opts) {
   const target = resolveTarget(opts);
-  if (!opts.bodyFile) throw new Error('--body-file requis');
+  if (!opts.bodyFile) throw new Error('--body-file required');
   const body = withMarker(readFileSync(opts.bodyFile, 'utf8'));
   const url = gh(['pr', 'comment', String(target.number), '-R', `${target.owner}/${target.name}`, '--body-file', '-'], { input: body }).trim();
   return { url };

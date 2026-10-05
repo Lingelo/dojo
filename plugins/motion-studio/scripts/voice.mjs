@@ -90,7 +90,7 @@ const ENGINES = {
       const [c, pre] = this.cmd();
       const pct = Math.round((rate - 1) * 100);
       const r = spawnSync(c, [...pre, '--voice', voice || EDGE_VOICES[lang] || `${lang}-${lang.toUpperCase()}`, `--rate=${pct >= 0 ? '+' : ''}${pct}%`, '--file', f, '--write-media', out], { encoding: 'utf8', timeout: 90000 });
-      return r.status === 0 ? null : `${(r.stderr || '').trim().split('\n').slice(-2).join(' ') || 'edge-tts failed'} (connexion Internet requise)`;
+      return r.status === 0 ? null : `${(r.stderr || '').trim().split('\n').slice(-2).join(' ') || 'edge-tts failed'} (Internet connection required)`;
     },
     ext: 'mp3',
   },
@@ -147,7 +147,7 @@ export function buildVoice({ script, outDir, ffmpeg, baseDir = process.cwd(), en
     if (!name || !ENGINES[name]) throw new Error(INSTALL_HINT);
     if (!ENGINES[name].available(lang)) throw new Error(`Engine "${name}" unavailable on this machine.\n${INSTALL_HINT}`);
     eng = name;
-    log(`🎙 moteur : ${ENGINES[name].label}${found.length > 1 ? `  (autres : ${found.filter((f) => f !== name).join(', ')})` : ''}`);
+    log(`🎙 engine: ${ENGINES[name].label}${found.length > 1 ? `  (others: ${found.filter((f) => f !== name).join(', ')})` : ''}`);
     if (ENGINES[name].online) log('⚠ online engine: the narration text is sent to an external service');
   }
 
@@ -213,7 +213,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     const found = detectEngines(opt.lang || 'en');
     for (const [k, e] of Object.entries(ENGINES)) console.log(`${found.includes(k) ? '✔' : '✖'} ${k.padEnd(7)} ${e.label}`);
     if (!found.length) console.log('\n' + INSTALL_HINT);
-    console.log('\nInstaller un moteur : node voice-setup.mjs install <edge|piper|espeak> [--lang fr]');
+    console.log('\nInstall an engine: node voice-setup.mjs install <edge|piper|espeak> [--lang en]');
     process.exit(found.length ? 0 : 1);
   }
   if (!pos[0] || !fs.existsSync(pos[0])) {

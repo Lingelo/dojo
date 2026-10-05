@@ -3,7 +3,7 @@
  * motion-studio voice-setup — detect and install the voice-over engines.
  *
  *   node voice-setup.mjs                         state of every engine + recommendation
- *   node voice-setup.mjs install piper [--lang fr]   neural, local, free  (pip venv + voice model ~60 Mo)
+ *   node voice-setup.mjs install piper [--lang en]   neural, local, free  (pip venv + voice model ~60 MB)
  *   node voice-setup.mjs install edge                neural, ONLINE, free, no key (pip venv)
  *   node voice-setup.mjs install espeak              Linux system package (needs root/sudo)
  *
@@ -60,7 +60,7 @@ async function download(url, file) {
   const chunks = []; let got = 0, lastLog = 0;
   for await (const c of r.body) {
     chunks.push(c); got += c.length;
-    if (Date.now() - lastLog > 1500) { lastLog = Date.now(); out(`    ${(got / 1e6).toFixed(0)}${total ? ` / ${(total / 1e6).toFixed(0)}` : ''} Mo`); }
+    if (Date.now() - lastLog > 1500) { lastLog = Date.now(); out(`    ${(got / 1e6).toFixed(0)}${total ? ` / ${(total / 1e6).toFixed(0)}` : ''} MB`); }
   }
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, Buffer.concat(chunks));
