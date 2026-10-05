@@ -49,7 +49,7 @@ test('tooled project: every check green (branch protection not checked outside G
     '.github/CODEOWNERS': '* @acme/web\n',
     '.github/pull_request_template.md': '## Why\n',
     '.github/dependabot.yml': 'version: 2\n',
-    '.claude/settings.json': { enabledPlugins: { 'security@angelo-plugins': true } },
+    '.gitleaks.toml': 'title = "gitleaks"\n',
     'CLAUDE.md': '# Project\nLearnings: docs/learnings/\n',
     'CONSTITUTION.md': CONSTITUTION,
     '.kaizen/config.json': {

@@ -4,7 +4,7 @@
   "pr": {
     "number": 7, "url": "https://github.com/acme/shop/pull/7", "title": "feat: export CSV", "state": "OPEN", "isDraft": false,
     "updatedAt": "2026-10-02T08:00:00Z", "headRefName": "feat/export", "headRefOid": "abc123", "baseRefName": "main",
-    "mergeable": "MERGEABLE", "mergeStateStatus": "BLOCKED", "reviewDecision": "REVIEW_REQUIRED", "author": {"login": "angelo"},
+    "mergeable": "MERGEABLE", "mergeStateStatus": "BLOCKED", "reviewDecision": "REVIEW_REQUIRED", "author": {"login": "octocat"},
     "commits": {"nodes": [{"commit": {"oid": "abc123", "committedDate": "2026-10-02T08:00:00Z", "statusCheckRollup": {"state": "FAILURE", "contexts": {"nodes": [
       {"__typename": "CheckRun", "name": "test", "status": "COMPLETED", "conclusion": "FAILURE", "detailsUrl": "https://ci/1", "startedAt": "2026-10-02T08:01:00Z", "completedAt": "2026-10-02T08:05:00Z", "checkSuite": {"workflowRun": {"databaseId": 99}}},
       {"__typename": "CheckRun", "name": "lint", "status": "COMPLETED", "conclusion": "SUCCESS", "detailsUrl": "https://ci/2", "startedAt": "2026-10-02T08:01:00Z", "completedAt": "2026-10-02T08:02:00Z", "checkSuite": {"workflowRun": {"databaseId": 98}}}
@@ -16,7 +16,7 @@
     ],
     "comments": {"nodes": [
       {"id": "IC1", "databaseId": 10, "author": {"login": "carol"}, "body": "Could you add a screenshot?", "createdAt": "2026-10-02T08:12:00Z", "updatedAt": "2026-10-02T08:12:00Z", "url": "https://x/ic1"},
-      {"id": "IC2", "databaseId": 11, "author": {"login": "angelo"}, "body": "Status: in progress\n\n<!-- kaizen -->", "createdAt": "2026-10-02T08:13:00Z", "updatedAt": "2026-10-02T08:13:00Z", "url": "https://x/ic2"}
+      {"id": "IC2", "databaseId": 11, "author": {"login": "octocat"}, "body": "Status: in progress\n\n<!-- kaizen -->", "createdAt": "2026-10-02T08:13:00Z", "updatedAt": "2026-10-02T08:13:00Z", "url": "https://x/ic2"}
     ]},
     "reviews": {"nodes": [{"id": "R1", "databaseId": 20, "author": {"login": "bob"}, "body": "", "state": "COMMENTED", "submittedAt": "2026-10-02T08:10:00Z", "updatedAt": "2026-10-02T08:10:00Z", "url": "https://x/r1"}]}
   }

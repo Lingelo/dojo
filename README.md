@@ -26,9 +26,8 @@ Or interactively:
 # Enter Lingelo/dojo
 ```
 
-> **Coming from `angelo-plugins`?** The marketplace was renamed `dojo` (repo `Lingelo/dojo`).
-> Remove the old one (`/plugin marketplace remove angelo-plugins`), add `Lingelo/dojo`, reinstall the
-> plugins, and replace `@angelo-plugins` with `@dojo` in `enabledPlugins` / `extraKnownMarketplaces`.
+> **Installed under the marketplace's previous name?** Remove it (`/plugin marketplace remove <old name>`),
+> add `Lingelo/dojo`, reinstall the plugins, and use `@dojo` in `enabledPlugins` / `extraKnownMarketplaces`.
 
 ### 2. Install the plugins
 

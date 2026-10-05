@@ -110,8 +110,7 @@ export function audit(root, { github = true } = {}) {
   const envIgnored = /(^|\n)\s*\/?\.env(\*|\b)/.test(gi);
   add('gitignore_env', 'Foundations', 'Secret files ignored by git', envIgnored ? 'ok' : 'missing', envIgnored ? '.env ignored' : '.env missing from .gitignore', { how: 'ignore .env and its variants', scaffold: 'gitignore_env' }, 1);
 
-  const settings = `${read(root, '.claude/settings.json') || ''}${read(root, '.claude/settings.local.json') || ''}`;
-  const scanning = /security@angelo-plugins/.test(settings) ? 'security plugin' : firstOf(root, ['.gitleaks.toml', '.secrets.baseline', '.trufflehog.yml']) || (/gitleaks|detect-secrets|trufflehog|kaizen\.mjs\s+secrets\s+scan/.test(`${read(root, '.pre-commit-config.yaml') || ''}${ciText}`) ? 'scanner in pre-commit or CI' : null);
+  const scanning = firstOf(root, ['.gitleaks.toml', '.secrets.baseline', '.trufflehog.yml']) || (/gitleaks|detect-secrets|trufflehog|kaizen\.mjs\s+secrets\s+scan/.test(`${read(root, '.pre-commit-config.yaml') || ''}${ciText}`) ? 'scanner in pre-commit or CI' : null);
   add('secret_scanning', 'Foundations', 'Secret scanning', scanning ? 'ok' : 'missing', scanning || 'no secret scanner', { how: 'Kaizen\'s hook only covers Claude\'s commits: scan every PR in CI (Kaizen secrets scan, or gitleaks)', scaffold: 'secret_scanning' }, 2);
 
   // --- Flow ---------------------------------------------------------------------------------------------
