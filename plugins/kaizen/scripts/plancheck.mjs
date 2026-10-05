@@ -1,10 +1,11 @@
-// Kaizen — contrôle déterministe d'un plan (contrat kaizen-plan/v1).
-// Vérifie la structure ; le jugement sur le fond reste à /kaizen:doc-review.
+// Kaizen — deterministic check of a plan (kaizen-plan/v1 contract).
+// Checks the structure; judging the substance is left to /kaizen:doc-review.
+// French field names from plans written before Kaizen 3.0 are still accepted.
 
 import { readFileSync } from 'node:fs';
 import { parseFrontmatter } from './lib.mjs';
 
-const CLARIFY_RE = /\[(À CLARIFIER|A CLARIFIER|NEEDS CLARIFICATION)\s*:[^\]]*\]/gi;
+const CLARIFY_RE = /\[(NEEDS CLARIFICATION|À CLARIFIER|A CLARIFIER)\s*:[^\]]*\]/gi;
 
 export function sectionText(body, id) {
   const start = body.indexOf(`<!-- kaizen:${id} -->`);
@@ -23,7 +24,7 @@ function ids(text, prefix) {
 }
 
 function definedIds(text, prefix) {
-  // Une définition = un identifiant en tête de puce ou de titre : « - R1. », « ### U2. », « KTD1. »
+  // A definition = an id at the start of a bullet or heading: "- R1.", "### U2.", "KTD1."
   const out = [];
   const re = new RegExp(`^\\s*(?:[-*]\\s+|#{2,4}\\s+)?(${prefix}\\d+)[.:]`, 'gm');
   let m;
@@ -36,103 +37,103 @@ export function checkPlan(file, { constitution = null, stage = 'auto' } = {}) {
   const { data, body, error } = parseFrontmatter(text);
   const errors = [];
   const warnings = [];
-  if (!data) return { stage: 'invalid', errors: [error || 'frontmatter absent'], warnings };
+  if (!data) return { stage: 'invalid', errors: [error || 'missing frontmatter'], warnings };
 
-  for (const k of ['title', 'type', 'date', 'topic', 'artifact']) if (!data[k]) errors.push(`frontmatter : ${k} manquant`);
-  if (data.artifact && data.artifact !== 'kaizen-plan/v1') errors.push(`artifact inattendu : ${data.artifact}`);
-  if (data.title && !/ - Plan$/.test(data.title)) warnings.push('title : suffixe « - Plan » attendu');
-  if ('status' in data) errors.push('champ status interdit : l’avancement se lit dans git');
+  for (const k of ['title', 'type', 'date', 'topic', 'artifact']) if (!data[k]) errors.push(`frontmatter: ${k} missing`);
+  if (data.artifact && data.artifact !== 'kaizen-plan/v1') errors.push(`unexpected artifact: ${data.artifact}`);
+  if (data.title && !/ - Plan$/.test(data.title)) warnings.push('title: " - Plan" suffix expected');
+  if ('status' in data) errors.push('status field forbidden: progress is read from git');
 
   const hasUnits = body.includes('<!-- kaizen:units -->');
   const detected = stage === 'auto' ? (hasUnits ? 'implementation-ready' : 'requirements') : stage;
 
-  for (const id of ['goal', 'product']) if (!body.includes(`<!-- kaizen:${id} -->`)) errors.push(`section kaizen:${id} manquante`);
+  for (const id of ['goal', 'product']) if (!body.includes(`<!-- kaizen:${id} -->`)) errors.push(`section kaizen:${id} missing`);
 
   const product = sectionText(body, 'product') || '';
   const reqs = definedIds(product, 'R');
   const aes = definedIds(product, 'AE');
-  if (!reqs.length) errors.push('aucune exigence R1… dans le contrat produit');
+  if (!reqs.length) errors.push('no requirement R1… in the product contract');
   reqs.forEach((r, i) => {
-    if (r !== `R${i + 1}`) errors.push(`exigences : numérotation non continue (${r} en position ${i + 1})`);
+    if (r !== `R${i + 1}`) errors.push(`requirements: non-continuous numbering (${r} at position ${i + 1})`);
   });
-  if (new Set(reqs).size !== reqs.length) errors.push('exigences : identifiant R en double');
+  if (new Set(reqs).size !== reqs.length) errors.push('requirements: duplicate R id');
 
   const clarify = body.match(CLARIFY_RE) || [];
   if (detected === 'implementation-ready' && clarify.length) {
-    errors.push(`${clarify.length} marqueur(s) [À CLARIFIER : …] restant(s) — un plan prêt à implémenter n'en a aucun`);
+    errors.push(`${clarify.length} [NEEDS CLARIFICATION: …] marker(s) left — an implementation-ready plan has none`);
   } else if (clarify.length) {
-    warnings.push(`${clarify.length} marqueur(s) [À CLARIFIER : …] à résoudre avant planification`);
+    warnings.push(`${clarify.length} [NEEDS CLARIFICATION: …] marker(s) to resolve before planning`);
   }
-  if (/\bTBD\b|\bTODO\b|\{\{[^}]+\}\}/.test(body)) errors.push('placeholder restant (TBD, TODO ou {{…}})');
+  if (/\bTBD\b|\bTODO\b|\{\{[^}]+\}\}/.test(body)) errors.push('placeholder left (TBD, TODO or {{…}})');
 
   const report = { stage: detected, requirements: reqs.length, acceptance_examples: aes.length, units: 0, errors, warnings };
   if (detected !== 'implementation-ready') return report;
 
-  for (const id of ['planning', 'units', 'verification', 'done']) if (!body.includes(`<!-- kaizen:${id} -->`)) errors.push(`section kaizen:${id} manquante`);
-  if (!body.includes('<!-- kaizen:rollout -->')) warnings.push('section kaizen:rollout absente (déploiement et retour arrière) — requise dès que le changement atteint la production');
+  for (const id of ['planning', 'units', 'verification', 'done']) if (!body.includes(`<!-- kaizen:${id} -->`)) errors.push(`section kaizen:${id} missing`);
+  if (!body.includes('<!-- kaizen:rollout -->')) warnings.push('section kaizen:rollout missing (rollout and rollback) — required as soon as the change reaches production');
   else {
-    // Sans signal ni retour arrière, la mise en production n'a ni critère de succès ni sortie de secours.
+    // Without a signal or a rollback, the release has neither a success criterion nor an emergency exit.
     const r = parseRollout(sectionText(body, 'rollout') || '');
-    if (!r.rollback) warnings.push('kaizen:rollout : **Retour arrière** manquant');
-    if (!r.signal) warnings.push('kaizen:rollout : **Signal** manquant (quoi surveiller après déploiement)');
-    else if (!/[<>≤≥]|seuil|threshold|%|\d+\s*(ms|s|min|h)\b|au-del[àa]|plus de|more than/i.test(r.signal)) warnings.push('kaizen:rollout : **Signal** sans seuil — à quelle valeur revient-on en arrière ?');
+    if (!r.rollback) warnings.push('kaizen:rollout: **Rollback** missing');
+    if (!r.signal) warnings.push('kaizen:rollout: **Signal** missing (what to watch after deploying)');
+    else if (!/[<>≤≥]|seuil|threshold|%|\d+\s*(ms|s|min|h)\b|au-del[àa]|plus de|more than|above|below|exceed/i.test(r.signal)) warnings.push('kaizen:rollout: **Signal** without a threshold — at what value do we roll back?');
   }
 
   const units = sectionText(body, 'units') || '';
   const unitIds = definedIds(units, 'U');
   report.units = unitIds.length;
-  if (!unitIds.length) errors.push('aucune unité U1…');
+  if (!unitIds.length) errors.push('no unit U1…');
   unitIds.forEach((u, i) => {
-    if (u !== `U${i + 1}`) errors.push(`unités : numérotation non continue (${u} en position ${i + 1})`);
+    if (u !== `U${i + 1}`) errors.push(`units: non-continuous numbering (${u} at position ${i + 1})`);
   });
 
-  // Chaque unité : Couvre, Fichiers, Preuve, Vérification.
+  // Each unit: Covers, Files, Evidence, Verification.
   const blocks = units.split(/^#{2,4}\s+(?=U\d+[.:])/m).slice(1);
   for (const b of blocks) {
     const id = /^(U\d+)/.exec(b)?.[1] || '?';
     for (const [label, re] of [
-      ['Couvre', /\*\*(Couvre|Covers)\s*:/i],
-      ['Fichiers', /\*\*(Fichiers|Files)\s*:/i],
-      ['Preuve', /\*\*(Preuve|Proof|Evidence)\s*:/i],
-      ['Vérification', /\*\*(Vérification|Verification)\s*:/i],
+      ['Covers', /\*\*(Covers|Couvre)\s*:/i],
+      ['Files', /\*\*(Files|Fichiers)\s*:/i],
+      ['Evidence', /\*\*(Evidence|Proof|Preuve)\s*:/i],
+      ['Verification', /\*\*(Verification|Vérification)\s*:/i],
     ]) {
-      if (!re.test(b)) errors.push(`${id} : champ **${label} :** manquant`);
+      if (!re.test(b)) errors.push(`${id}: field **${label}:** missing`);
     }
   }
 
-  // Traçabilité : chaque R et chaque AE est couvert par une unité.
+  // Traceability: every R and every AE is covered by a unit.
   const covered = new Set([...ids(units, 'R'), ...ids(units, 'AE')]);
-  for (const r of reqs) if (!covered.has(r)) errors.push(`${r} n'est couvert par aucune unité`);
-  for (const a of aes) if (!covered.has(a)) errors.push(`${a} n'est couvert par aucune unité (pas de scénario de test)`);
+  for (const r of reqs) if (!covered.has(r)) errors.push(`${r} is not covered by any unit`);
+  for (const a of aes) if (!covered.has(a)) errors.push(`${a} is not covered by any unit (no test scenario)`);
   for (const ref of covered) {
-    if (/^R\d+$/.test(ref) && !reqs.includes(ref)) errors.push(`${ref} cité par une unité mais non défini`);
-    if (/^AE\d+$/.test(ref) && !aes.includes(ref)) errors.push(`${ref} cité par une unité mais non défini`);
+    if (/^R\d+$/.test(ref) && !reqs.includes(ref)) errors.push(`${ref} cited by a unit but not defined`);
+    if (/^AE\d+$/.test(ref) && !aes.includes(ref)) errors.push(`${ref} cited by a unit but not defined`);
   }
 
-  // Tranches : une tranche = une PR. Chaque unité appartient à une tranche si des tranches sont déclarées.
-  const slices = [...units.matchAll(/\*\*(Tranche|Slice)\s*:\*\*\s*(\S+)/gi)].map((m) => m[2]);
+  // Slices: one slice = one PR. Each unit belongs to a slice if slices are declared.
+  const slices = [...units.matchAll(/\*\*(Slice|Tranche)\s*:\*\*\s*(\S+)/gi)].map((m) => m[2]);
   report.slices = new Set(slices).size || (unitIds.length ? 1 : 0);
-  if (slices.length && slices.length !== blocks.length) warnings.push('certaines unités n’ont pas de **Tranche :** alors que d’autres en ont');
+  if (slices.length && slices.length !== blocks.length) warnings.push('some units have no **Slice:** while others do');
 
-  // Constitution : chaque article apparaît dans le contrôle constitutionnel.
+  // Constitution: every article appears in the constitution check.
   if (constitution?.articles?.length) {
     const cc = sectionText(body, 'constitution');
-    if (!cc) errors.push('section kaizen:constitution manquante (CONSTITUTION.md existe)');
+    if (!cc) errors.push('section kaizen:constitution missing (CONSTITUTION.md exists)');
     else {
       for (const a of constitution.articles) {
-        // L'article est cité sous la forme « IV. » en début de cellule, de puce ou de ligne.
+        // The article is cited as "IV." at the start of a cell, bullet or line.
         const re = new RegExp(`(^|[|\\s*-])${a.id}\\.`, 'm');
-        if (!re.test(cc)) errors.push(`contrôle constitutionnel : article ${a.id} (${a.title}) non évalué`);
+        if (!re.test(cc)) errors.push(`constitution check: article ${a.id} (${a.title}) not assessed`);
       }
-      if (/⚠️|exception/i.test(cc) && !/Justification|justifi/i.test(cc)) warnings.push('exception constitutionnelle sans justification visible');
+      if (/⚠️|exception/i.test(cc) && !/Justification|justifi/i.test(cc)) warnings.push('constitutional exception without a visible justification');
     }
   }
   return report;
 }
 
-// Champs de la section kaizen:rollout : « - **Exposition** : … » (plusieurs lignes possibles).
+// Fields of the kaizen:rollout section: "- **Exposure**: …" (may span several lines).
 export function parseRollout(text) {
-  const fields = { exposure: /^exposition|^exposure/i, order: /^ordre|^order/i, rollback: /^retour arri|^rollback/i, signal: /^signal/i };
+  const fields = { exposure: /^exposition|^exposure/i, order: /^ordre|^order/i, rollback: /^rollback|^retour arri/i, signal: /^signal/i };
   const out = { exposure: '', order: '', rollback: '', signal: '' };
   let current = null;
   for (const line of text.split(/\r?\n/)) {

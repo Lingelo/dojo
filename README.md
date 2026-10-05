@@ -1,45 +1,47 @@
 # Claude Code Marketplace
 
-Marketplace de plugins pour Claude Code, fournissant des outils et workflows de développement.
+A plugin marketplace for Claude Code, providing development tools and workflows.
 
-## Plugins disponibles
+## Available plugins
 
-| Plugin | Description | Composants |
-|--------|-------------|------------|
-| [**security**](plugins/security/README.md) | Bloque l'accès aux fichiers sensibles + scanne les commits pour détecter les secrets + circuit breaker | Hook, Utility |
-| [**notifications-system**](plugins/notifications-system/README.md) | Sons système et notifications OS | Hook |
-| [**git**](plugins/git/README.md) | Commits conventionnels + push securisé (bloque main/master) | Skills |
-| [**playwright**](plugins/playwright/README.md) | MCP Playwright + agents tests E2E (planner, generator, healer) | MCP, Agents |
-| [**statusline**](plugins/statusline/README.md) | Statusline avec suivi des coûts, git et support multi-plans | Command, Script |
-| [**experts**](plugins/experts/README.md) | Agent architecte pour analyse de code et évolutions | Agent |
-| [**frustration-detector**](plugins/frustration-detector/README.md) | Détecte la frustration et adapte le style de Claude (moins de blabla, plus d'action) | Hook |
-| [**motion-studio**](plugins/motion-studio/README.md) | Motion design en code : HTML/CSS/SVG/Canvas → MP4/WebM/GIF image par image, son synchronisé (Playwright + ffmpeg) | Skill, Script |
-| [**kaizen**](plugins/kaizen/README.md) | SDLC assisté par IA (adapté de Compound Engineering) : constitution d'ingénierie appliquée comme contrôles, brainstorm → plan (traçabilité, menaces, retour arrière, tranches de PR) → doc-review → work (garde-fou) → review multi-agents → ship → watch-pr, polish UI, leçons/ADR/post-mortems relus à chaque cycle, métriques DORA et coût des cycles, release ; revue imposée par hook avant tout push, déploiement surveillé avec retour arrière (`/kaizen:deploy`, `/kaizen:monitor`), profils lean/standard/full, `/kaizen:help` pour s'orienter | Skills, Agents, Hook, Script |
+| Plugin | Description | Components |
+|---|---|---|
+| [**kaizen**](plugins/kaizen/README.md) | AI-assisted SDLC (adapted from Compound Engineering): engineering constitution enforced as checks, brainstorm → plan (traceability, threats, rollback, PR-sized slices) → doc-review → work (quality gate) → multi-agent review → ship → watch-pr, UI polish, learnings/ADRs/postmortems read back every cycle, DORA metrics and cycle cost, release; review enforced by a hook before any push, watched deployment with rollback (`/kaizen:deploy`, `/kaizen:monitor`), lean/standard/full profiles, `/kaizen:help` to find your way | 23 skills, 21 agents, hooks, CLI |
+| [**security**](plugins/security/README.md) | Blocks access to sensitive files + scans commits for secrets (~30 types) + circuit breaker utility | Hooks, utility |
+| [**notifications-system**](plugins/notifications-system/README.md) | System sounds and OS notifications when Claude finishes or needs you | Hooks |
+| [**git**](plugins/git/README.md) | Conventional commits with the Jira key from the branch + safe push (blocks main/master) | Skills |
+| [**playwright**](plugins/playwright/README.md) | Playwright MCP + E2E test agents (planner, generator, healer) | MCP, agents |
+| [**statusline**](plugins/statusline/README.md) | Statusline with cost, context, 5-hour window, burn rate and multi-plan support | Skill |
+| [**experts**](plugins/experts/README.md) | Architect agent for deep code analysis and evolution proposals | Agent |
+| [**frustration-detector**](plugins/frustration-detector/README.md) | Detects frustration (FR/EN) and adapts Claude's style (less talk, more action) | Hook |
+| [**motion-studio**](plugins/motion-studio/README.md) | Motion design as code: HTML/CSS/SVG/Canvas → MP4/WebM/GIF frame by frame, synced sound, voice-over and subtitles (Playwright + ffmpeg) | Skill, scripts |
+
+Everything is in English. Claude still answers in the language you write in.
 
 ## Installation
 
-### 1. Ajouter la Marketplace
+### 1. Add the marketplace
 
 ```bash
 /plugin marketplace add <YOUR_GIT_URL>
 ```
 
-Ou via le mode interactif :
+Or interactively:
 ```bash
 /plugin
-# Aller dans l'onglet "Marketplaces" > "Add marketplace"
-# Coller l'URL de votre repository git
+# Go to the "Marketplaces" tab > "Add marketplace"
+# Paste the URL of your git repository
 ```
 
-### 2. Installer les plugins
+### 2. Install the plugins
 
-**Interactif (recommandé) :**
+**Interactive (recommended):**
 ```bash
 /plugin
-# Aller dans l'onglet "Discover" et sélectionner les plugins à installer
+# Go to the "Discover" tab and select the plugins to install
 ```
 
-**Installation directe :**
+**Direct installation:**
 ```bash
 /plugin install security@angelo-plugins
 /plugin install notifications-system@angelo-plugins
@@ -52,9 +54,9 @@ Ou via le mode interactif :
 /plugin install kaizen@angelo-plugins
 ```
 
-## Configuration équipe
+## Team configuration
 
-Ajouter dans le `.claude/settings.json` de votre projet pour auto-configurer tous les membres de l'équipe :
+Add to your project's `.claude/settings.json` to configure every team member automatically:
 
 ```json
 {
@@ -73,127 +75,145 @@ Ajouter dans le `.claude/settings.json` de votre projet pour auto-configurer tou
 }
 ```
 
-## Gestion des plugins
+## Managing plugins
 
-| Commande | Description |
-|----------|-------------|
-| `/plugin` | Ouvrir le gestionnaire de plugins interactif |
-| `/plugin install name@marketplace` | Installer un plugin |
-| `/plugin uninstall name@marketplace` | Supprimer un plugin |
-| `/plugin enable name@marketplace` | Activer un plugin désactivé |
-| `/plugin disable name@marketplace` | Désactiver sans supprimer |
-| `/plugin marketplace list` | Lister les marketplaces enregistrées |
-| `/plugin marketplace update` | Mettre à jour les métadonnées |
+| Command | Description |
+|---|---|
+| `/plugin` | Open the interactive plugin manager |
+| `/plugin install name@marketplace` | Install a plugin |
+| `/plugin uninstall name@marketplace` | Remove a plugin |
+| `/plugin enable name@marketplace` | Enable a disabled plugin |
+| `/plugin disable name@marketplace` | Disable without removing |
+| `/plugin marketplace list` | List the registered marketplaces |
+| `/plugin marketplace update` | Update the metadata |
 
-## Exemples d'utilisation
+## Usage examples
 
-### Plugin Security
-Deux protections automatiques via hooks `PreToolUse` :
-- **Blocage fichiers sensibles** — empêche l'accès aux `.env`, `credentials.json`, `.pem`, etc.
-- **Secret Scanner** — scanne les `git commit` pour détecter ~30 types de secrets (Anthropic, OpenAI, AWS, GitHub, GitLab, Slack, Stripe...) et bloque si des clés API ou tokens sont trouvés dans les fichiers stagés.
+### Kaizen
 
-Aucune commande nécessaire - fonctionne automatiquement via hook.
+<a href="plugins/kaizen/docs/media/kaizen-presentation.mp4"><img src="plugins/kaizen/docs/media/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds" width="100%"></a>
 
-> **Note sécurité** : Ce plugin utilise des **hooks `PreToolUse`** plutôt que les `deny` rules de `settings.json`. Les deny rules ont des [bugs connus](https://github.com/anthropics/claude-code/issues/6699) où elles sont parfois ignorées. Les hooks avec exit code 2 garantissent un blocage fiable.
+![The Kaizen loop](plugins/kaizen/docs/media/diagrams/kaizen-loop.svg)
 
-### Plugin Git
+```bash
+/kaizen:help                                    # what it is, where the repo stands, which command to run
+/kaizen:setup audit                             # what the project lacks (CI, secrets, deployment…), fixed by priority
+/kaizen:setup                                   # config, profile (lean to start), detected deployment
+/kaizen:constitution                            # the project's non-negotiable principles
+/kaizen:brainstorm orders CSV export            # WHAT to build → docs/plans/…-plan.md
+/kaizen:plan                                    # HOW → units, tests, rollback + plan review
+/kaizen:work                                    # test first, quality gate, multi-agent review
+/kaizen:ship                                    # reviewable PR, then /kaizen:watch-pr until "ready"
+/kaizen:learn                                   # the learning, read back by the next plan
+/kaizen:autopilot                               # or chain everything after the brainstorm
+/kaizen:deploy production                       # approved, watched production release, rollback ready
+```
+
+Documentation: [getting started](plugins/kaizen/docs/getting-started.md) ·
+[guides per skill](plugins/kaizen/docs/README.md) ·
+[configuration](plugins/kaizen/docs/configuration.md) ·
+[troubleshooting](plugins/kaizen/docs/troubleshooting.md) ·
+[how it works](plugins/kaizen/docs/README.md#how-it-works) ·
+[CLI reference](plugins/kaizen/docs/reference/cli.md).
+
+### Security plugin
+Two automatic protections through `PreToolUse` hooks:
+- **Sensitive file blocking** — prevents access to `.env`, `credentials.json`, `.pem`, keys, cloud
+  credentials, etc.
+- **Secret scanner** — scans `git commit` for ~30 types of secrets (Anthropic, OpenAI, AWS, GitHub,
+  GitLab, Slack, Stripe…) and blocks if API keys or tokens are found in the staged files; also blocks
+  `git commit --no-verify`.
+
+No command needed - it works automatically through hooks.
+
+> **Security note**: this plugin uses **`PreToolUse` hooks** rather than `deny` rules in
+> `settings.json`. Deny rules have [known bugs](https://github.com/anthropics/claude-code/issues/6699)
+> where they are sometimes ignored. Hooks with exit code 2 guarantee reliable blocking.
+
+### Git plugin
 ```bash
 /commit
-# Analyse les changements et cree un commit conventionnel avec le Jira de la branche
+# Analyzes the changes and creates a conventional commit with the branch's Jira key
 
 /push
-# Pousse les commits (BLOQUE si sur main/master)
+# Pushes the commits (BLOCKED on main/master)
 ```
 
 ### Statusline
 ```bash
 /statusline-setup
-# Configure la statusline avec suivi des coûts, git, et support multi-plans (Pro, Max5, Max20, Pay-as-you-go)
+# Sets up the statusline with cost tracking and multi-plan support (Pro, Max5, Max20, pay-as-you-go)
 ```
-Nécessite `jq` et optionnellement `ccusage`.
+Requires `jq` and optionally `ccusage`.
 
 ### Experts
 ```bash
-# L'agent se déclenche sur les questions d'architecture
-Analyse l'architecture du module orders
-Comment découper ce service monolithique ?
-Quelle est la dette technique de ce projet ?
+# The agent triggers on architecture questions
+Analyze the architecture of the orders module
+How should I split this monolithic service?
+What is the technical debt of this project?
 ```
-Agent Opus pour analyses approfondies et propositions d'évolution.
+Opus agent for deep analysis and evolution proposals (best with `ultrathink`).
 
 ### Playwright
-Le plugin inclut un serveur MCP Playwright et 3 agents spécialisés pour les tests E2E :
-- **Planner** — explore l'application et conçoit les scénarios de test
-- **Generator** — génère le code de test Playwright
-- **Healer** — débugge et corrige les tests en échec
+The plugin includes a Playwright MCP server and 3 specialized agents for E2E tests:
+- **Planner** — explores the application and designs the test scenarios
+- **Generator** — generates the Playwright test code
+- **Healer** — debugs and fixes failing tests
+
+### Notifications system
+A sound and an OS notification when Claude finishes a response (`Stop`) or asks for a permission
+(`Notification`). macOS, Linux and Windows; configurable in `~/.claude/config/notifications.json`.
 
 ### Frustration Detector
-Détecte automatiquement la frustration dans vos prompts et adapte le style de Claude :
-- **Colère** (`putain`, `wtf`, `fuck`...) → mode action silencieuse, zéro blabla
-- **Impatience** (`finis`, `just do it`...) → code uniquement, pas d'explication
-- **Confusion** (`ça marche pas`, `I'm stuck`...) → diagnostic bref + fix immédiat
-- **Sarcasme** (`merci pour rien`, `I'll use Cursor`...) → action immédiate, pas d'excuses
+Detects frustration in your prompts automatically and adapts Claude's style:
+- **Anger** (`wtf`, `fuck`, `putain`…) → silent action mode, zero fluff
+- **Impatience** (`just do it`, `finis`…) → code only, no explanation
+- **Confusion** (`I'm stuck`, `ça marche pas`…) → brief diagnosis + immediate fix
+- **Sarcasm** (`I'll use Cursor`, `merci pour rien`…) → immediate action, no apologies
 
-Fonctionne en FR et EN (~200 termes détectés). Aucune commande nécessaire.
+Works in French and English (~200 detected terms). No command needed.
 
 ### Motion Studio
 ```bash
-/motion-video Teaser 8s 16:9 pour le lancement de notre API, style sombre, accent orange
+/motion-video 8-second 16:9 teaser for our API launch, dark style, orange accent
 ```
-Storyboard → composition HTML/CSS/SVG/Canvas → stills de contrôle → rendu MP4 image par image
-(horloge virtuelle, motion blur, supersampling) avec bruitages et musique synchronisés. Dépendances (Playwright, Chromium, ffmpeg) installées automatiquement au premier usage.
-
-### Kaizen
-
-```bash
-/kaizen:help                                    # c'est quoi, où en est le repo, quelle commande lancer
-/kaizen:setup audit                             # ce qui manque au projet (CI, secrets, déploiement…), corrigé par priorité
-/kaizen:setup                                   # config, profil (lean pour commencer), déploiement détecté
-/kaizen:constitution                            # principes non négociables du projet
-/kaizen:brainstorm export CSV des commandes     # QUOI construire → docs/plans/…-plan.md
-/kaizen:plan                                    # COMMENT → unités, tests, retour arrière + relecture du plan
-/kaizen:work                                    # test d'abord, garde-fou, revue multi-agents
-/kaizen:ship                                    # PR relisible, puis /kaizen:watch-pr jusqu'à « prête »
-/kaizen:learn                                   # la leçon, relue par le prochain plan
-/kaizen:autopilot                               # ou tout enchaîner après le brainstorm
-/kaizen:deploy production                       # mise en prod approuvée, surveillée, retour arrière prêt
-```
-
-Documentation : [démarrage](plugins/kaizen/docs/demarrage.md) · [guides par skill](plugins/kaizen/docs/README.md).
-
-### Claude Factory — Dream Consolidation
-```bash
-/factory:dream              # Consolide les CLAUDE.md et rules/
-/factory:dream --dry-run    # Rapport sans modifications
-```
-Déduplication, détection de contradictions, nettoyage des références obsolètes.
+Storyboard → HTML/CSS/SVG/Canvas composition → control stills → frame-by-frame MP4 render (virtual
+clock, motion blur, supersampling) with synced sound effects, music, voice-over and subtitles.
+Dependencies (Playwright, Chromium, ffmpeg) installed automatically on first use.
 
 ## Structure
 
 ```
 marketplace-claude-code/
 ├── .claude-plugin/
-│   └── marketplace.json      # Registre de la marketplace
+│   └── marketplace.json      # Marketplace registry
+├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows)
+├── docs/                     # This repo's own brainstorms, plans and learnings
 ├── plugins/
-│   ├── security/             # Protection fichiers sensibles + secret scanner + circuit breaker
-│   ├── notifications-system/ # Notifications sons système + OS
-│   ├── git/                  # Commits + push securise
-│   ├── playwright/           # MCP + Agents tests E2E
-│   ├── statusline/           # Statusline personnalisée
-│   ├── experts/              # Agent architecte
-│   ├── frustration-detector/ # Détection frustration + adaptation style
-│   └── motion-studio/        # Vidéos motion design depuis HTML (Playwright + ffmpeg)
+│   ├── kaizen/               # AI-assisted SDLC: skills, agents, hooks, zero-dependency CLI
+│   ├── security/             # Sensitive file protection + secret scanner + circuit breaker
+│   ├── notifications-system/ # System sound + OS notifications
+│   ├── git/                  # Commits + safe push
+│   ├── playwright/           # MCP + E2E test agents
+│   ├── statusline/           # Custom statusline
+│   ├── experts/              # Architect agent
+│   ├── frustration-detector/ # Frustration detection + style adaptation
+│   └── motion-studio/        # Motion design videos from HTML (Playwright + ffmpeg)
+├── CLAUDE.md
 └── README.md
 ```
 
-## Contribuer
+## Contributing
 
-1. Créer un nouveau plugin dans `plugins/votre-plugin/`
-2. Ajouter `.claude-plugin/plugin.json` avec les métadonnées
-3. Ajouter commands, agents, skills ou hooks selon les besoins
-4. Enregistrer dans `.claude-plugin/marketplace.json`
-5. Ajouter un `README.md` documentant votre plugin
+1. Create a new plugin in `plugins/your-plugin/`
+2. Add `.claude-plugin/plugin.json` with the metadata (`name`, `version`, `description`, `author`)
+3. Add commands, agents, skills or hooks as needed
+4. Register it in `.claude-plugin/marketplace.json`
+5. Add a `README.md` documenting your plugin, in English
 
-## Licence
+Kaizen has a test suite: `node --test plugins/kaizen/tests/*.test.mjs`.
+
+## License
 
 MIT

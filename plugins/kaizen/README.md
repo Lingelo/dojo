@@ -1,53 +1,53 @@
 # Kaizen Plugin
 
-**Un SDLC assisté par IA où chaque unité de travail rend la suivante plus facile.**
+**An AI-assisted SDLC where each unit of work makes the next one easier.**
 
-<a href="docs/media/kaizen-presentation.mp4"><img src="docs/media/kaizen-presentation.jpg" alt="Présentation de Kaizen en 80 secondes : la spirale du cycle au-dessus d'un jardin sec" width="100%"></a>
+<a href="docs/media/kaizen-presentation.mp4"><img src="docs/media/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds: the cycle's spiral above a dry garden" width="100%"></a>
 
-*Présentation en 80 secondes, avec voix off : [regarder la vidéo (MP4)](docs/media/kaizen-presentation.mp4)
-· [sous-titres](docs/media/kaizen-presentation.srt). Source reproductible :
-[docs/media/source/](docs/media/source/kaizen-presentation.html), rendue avec le plugin `motion-studio`.*
+*80-second presentation with voice-over: [watch the video (MP4)](docs/media/kaizen-presentation.mp4)
+· [subtitles](docs/media/kaizen-presentation.srt). Reproducible source:
+[docs/media/source/](docs/media/source/kaizen-presentation.html), rendered with the `motion-studio` plugin.*
 
-Kaizen structure le travail avec Claude Code de la constitution du projet jusqu'à la PR prête à
-merger, puis **referme la boucle** : ce qui a été appris est écrit là où le prochain cycle le relira.
+Kaizen structures work with Claude Code from the project's constitution to the merge-ready PR and the
+production deployment, then **closes the loop**: what was learned is written where the next cycle will
+read it.
 
-DORA 2025 (confirmé par son rapport ROI de 2026) montre que l'IA **amplifie**. Elle augmente le débit, mais aussi l'instabilité, sauf
-pour les équipes qui gardent trois disciplines :
-- des principes clairs ;
-- de **petits lots** ;
-- un vrai retour d'expérience.
+DORA 2025 (confirmed by its 2026 ROI report) shows that AI **amplifies**. It raises throughput, but also
+instability, except for teams that keep three disciplines:
+- clear principles;
+- **small batches**;
+- real feedback.
 
-Kaizen outille ces trois disciplines.
+Kaizen gives tooling to these three disciplines.
 
-```
-                     CONSTITUTION.md — principes non négociables, appliqués comme contrôles
- ideate → brainstorm → plan ─► doc-review → work → review → ship → watch-pr → learn
-                        ▲                                                         │
-                        └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
- debug → correctif → review → learn        polish : retouches UI guidées par l'utilisateur
- release → deploy → monitor ─(seuil franchi)→ rollback → postmortem → leçons · packs · amendements
- decide → ADR      metrics (DORA réel depuis les déploiements, coût des cycles)
- autopilot : de la demande à la PR prête, en autonomie      prune-learnings : entretien des leçons
- help : quelle commande lancer maintenant, d'après l'état du repo
-```
+![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem, and the project memory read back by the next cycle](docs/media/diagrams/kaizen-loop.svg)
 
-> Inspiré très fortement du plugin [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)
-> d'Every (MIT) pour la boucle, les contrats d'artefacts, le schéma des leçons, les personas de revue
-> et le suivi de PR.
-> La **constitution** et ses contrôles viennent du
-> [Spec Kit de GitHub](https://github.com/github/spec-kit). Les pratiques de livraison viennent de
-> [DORA 2025](https://dora.dev/research/), du [NIST SSDF](https://csrc.nist.gov/projects/ssdf) et des
-> [engineering practices de Google](https://google.github.io/eng-practices/).
-> Kaizen est une version **uniquement pour Claude Code, en français**, intégrée aux plugins de ce
-> marketplace (`git`, `security`, `playwright`). Elle ajoute un garde-fou par hook, un CLI
-> déterministe sans dépendances, des tests et des évaluations de bout en bout. Voir [LICENSE](LICENSE).
+> Strongly inspired by Every's [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)
+> plugin (MIT) for the loop, the artifact contracts, the learnings schema, the review personas and PR
+> tracking.
+> The **constitution** and its checks come from GitHub's
+> [Spec Kit](https://github.com/github/spec-kit). The delivery practices come from
+> [DORA 2025](https://dora.dev/research/), the [NIST SSDF](https://csrc.nist.gov/projects/ssdf) and
+> [Google's engineering practices](https://google.github.io/eng-practices/).
+> Kaizen is a **Claude Code-only** version, integrated with this marketplace's plugins (`git`,
+> `security`, `playwright`). It adds hook-enforced gates, a zero-dependency deterministic CLI, tests and
+> end-to-end evals. See [LICENSE](LICENSE).
+
+## Language
+
+Kaizen is written in English since 3.0: skills, agents, CLI and hook messages, documentation. Claude
+still **talks to you in your language**, and the documents it writes in your repo (plans, learnings,
+ADRs, PR descriptions, release notes) follow `language` in `.kaizen/config.json` (`auto` = the language
+of the conversation). Plans and constitutions written in French with Kaizen 2.x are still read.
 
 ## Documentation
 
-- **[Démarrage](docs/demarrage.md)** — un premier cycle complet, pas à pas
-- **[Guides par skill](docs/README.md)** — quand utiliser chaque commande, ce qu'elle produit, ses options
-- [Bilan et positionnement](docs/positionnement.md) — ce que Kaizen couvre, ses limites, face aux SDLC classiques, à Spec Kit, Kiro, BMAD et Compound Engineering
-- [Configuration](docs/configuration.md) · [Kaizen Packs](docs/packs.md) · [Dépannage](docs/depannage.md) · [Changelog](CHANGELOG.md)
+- **[Getting started](docs/getting-started.md)** — a first complete cycle, step by step
+- **[Guides per skill](docs/README.md)** — when to use each command, what it produces, its options
+- **[How it works](docs/README.md#how-it-works)** — in-depth pages with diagrams: [the loop](docs/concepts/the-loop.md), [plans](docs/concepts/plans.md), [constitution](docs/concepts/constitution.md), [gates and hooks](docs/concepts/gates-and-hooks.md), [review](docs/concepts/review.md), [pull requests](docs/concepts/pull-requests.md), [production](docs/concepts/production.md), [learnings](docs/concepts/learnings.md), [metrics](docs/concepts/metrics.md), [agents and models](docs/concepts/agents-and-models.md)
+- **Reference** — [CLI](docs/reference/cli.md) · [state and files](docs/reference/state-and-files.md) · [SDLC audit](docs/reference/audit.md)
+- [Assessment and positioning](docs/positioning.md) — what Kaizen covers, its limits, compared to classic SDLCs, Spec Kit, Kiro, BMAD and Compound Engineering
+- [Configuration](docs/configuration.md) · [Kaizen Packs](docs/packs.md) · [Troubleshooting](docs/troubleshooting.md) · [Changelog](CHANGELOG.md)
 
 ## Installation
 
@@ -55,171 +55,175 @@ Kaizen outille ces trois disciplines.
 { "enabledPlugins": { "kaizen@angelo-plugins": true } }
 ```
 
-Prérequis : Node ≥ 18 et git ; `gh` pour les PR. Aucune dépendance npm. Dans un repo :
+Prerequisites: Node ≥ 18 and git; `gh` for PRs. No npm dependency. In a repo:
 
 ```
 /kaizen:setup
 /kaizen:constitution
 ```
 
-## Les commandes (23 skills)
+## The commands (23 skills)
 
-Perdu ? **`/kaizen:help`** explique Kaizen, regarde où en est votre repo et vous dit quelle commande
-lancer ensuite.
+Lost? **`/kaizen:help`** explains Kaizen, looks at where your repo stands and tells you which command to
+run next.
 
-### Cadrer
+### Frame
 
-| Commande | Rôle |
+| Command | Role |
 |---|---|
-| `/kaizen:constitution` | Crée, amende (`amend`) ou audite (`audit`) `CONSTITUTION.md` : 5 à 9 principes non négociables, **chacun avec un contrôle vérifiable**, et une politique IA (ce que les agents font seuls). Interview qui repousse les principes vagues, puis stress test. Versionnée (SemVer), gouvernée. |
-| `/kaizen:ideate` | 5 angles en parallèle, chaque idée avec une base vérifiable, critique à froid, 5 à 7 survivantes classées. |
-| `/kaizen:brainstorm` | Définit **QUOI** construire par un dialogue d'une question à la fois. Écrit les exigences (R1…) et les exemples d'acceptation (AE1…). Les zones floues sont marquées `[À CLARIFIER : …]` au lieu d'être devinées. |
-| `/kaizen:decide` | Décision difficile ou irréversible : options comparées sur preuves, verdict avec niveau de confiance et signal de révision, puis **ADR** (`docs/adr/`). |
+| `/kaizen:constitution` | Creates, amends (`amend`) or audits (`audit`) `CONSTITUTION.md`: 5 to 9 non-negotiable principles, **each with a verifiable check**, and an AI policy (what agents do on their own). An interview that pushes back on vague principles, then a stress test. Versioned (SemVer), governed. |
+| `/kaizen:ideate` | 5 angles in parallel, each idea with a verifiable basis, cold critique, 5 to 7 ranked survivors. |
+| `/kaizen:brainstorm` | Defines **WHAT** to build through a one-question-at-a-time dialogue. Writes the requirements (R1…) and acceptance examples (AE1…). Unclear areas are marked `[NEEDS CLARIFICATION: …]` instead of being guessed. |
+| `/kaizen:decide` | A hard or irreversible decision: options compared on evidence, a verdict with a confidence level and a revisit signal, then an **ADR** (`docs/adr/`). |
 
-### Construire
+### Build
 
-| Commande | Rôle |
+| Command | Role |
 |---|---|
-| `/kaizen:plan` | Décide **COMMENT** : recherche en parallèle, décisions justifiées (KTD). Le plan contient en plus : contrôle constitutionnel, **menaces (STRIDE)**, **déploiement et retour arrière**, unités groupées en **tranches de la taille d'une PR**. `plan check` déterministe, puis `doc-review` obligatoire. |
-| `/kaizen:doc-review` | Relecture du plan avant de coder : contrôle déterministe, puis 2 à 6 relecteurs (cohérence, faisabilité, périmètre, sécurité, adversarial, design). Corrections mécaniques appliquées, décisions soumises à l'auteur. |
-| `/kaizen:work` | Exécute unité par unité, test d'abord, un commit par unité. **Garde-fou qualité** actif, contrôle de taille, revue obligatoire avant de livrer. |
-| `/kaizen:debug` | Reproduction, traçage, une hypothèse à la fois. Chaîne causale complète **avant** de corriger, correctif test d'abord. |
-| `/kaizen:polish` | Détecte et lance le serveur de dev. L'utilisateur dit ce qui ne va pas, Claude corrige à chaud (Playwright pour voir). Commits locaux, jamais de push. |
+| `/kaizen:plan` | Decides **HOW**: parallel research, justified decisions (KTD). The plan also holds: constitution check, **threats (STRIDE)**, **rollout and rollback**, units grouped into **PR-sized slices**. Deterministic `plan check`, then mandatory `doc-review`. |
+| `/kaizen:doc-review` | Reviews the plan before coding: deterministic check, then 2 to 6 reviewers (coherence, feasibility, scope, security, adversarial, design). Mechanical fixes applied, decisions put to the author. |
+| `/kaizen:work` | Executes unit by unit, test first, one commit per unit. **Quality gate** on, size check, review required before shipping. |
+| `/kaizen:debug` | Reproduce, trace, one hypothesis at a time. Full causal chain **before** fixing, test-first fix. |
+| `/kaizen:polish` | Detects and starts the dev server. The user says what is wrong, Claude fixes live (Playwright to see). Local commits, never a push. |
 
-### Vérifier et livrer
+### Verify and ship
 
-| Commande | Rôle |
+| Command | Role |
 |---|---|
-| `/kaizen:review` | Revue multi-agents choisis selon le diff. **Constitution appliquée**, filtrage par confiance, chaque P0/P1 vérifié par l'orchestrateur, conformité au plan. |
-| `/kaizen:ship` | PR relisible : vérifications, taille (sinon PR empilées), description tirée du plan, **guide du relecteur**, retour arrière, exceptions à la constitution. |
-| `/kaizen:address-feedback` | Chaque retour de revue reçoit un verdict, un correctif poussé **avant** la réponse, une réponse qui cite le retour, et la résolution du fil. Les décisions humaines restent ouvertes. |
-| `/kaizen:watch-pr` | Mène une PR jusqu'à « semble prête » : retours **avant** la CI, réparation de la CI (jamais de test désactivé). Mise à jour depuis la base seulement sur signal de GitHub, contrôle qu'aucune revue n'est encore en route, budget de 8 h. **Ne merge jamais.** |
-| `/kaizen:release` | Notes de version depuis les commits conventionnels, version SemVer vérifiée, CHANGELOG, checklist de mise en production. Ne tague jamais sans accord. |
+| `/kaizen:review` | Multi-agent review with reviewers chosen from the diff. **Constitution enforced**, confidence filtering, every P0/P1 verified by the orchestrator, conformance to the plan. |
+| `/kaizen:ship` | A reviewable PR: checks, size (otherwise stacked PRs), description drawn from the plan, **reviewer guide**, rollback, constitution exceptions. |
+| `/kaizen:address-feedback` | Each piece of review feedback gets a verdict, a fix pushed **before** the reply, a reply quoting the feedback, and the thread's resolution. Human decisions stay open. |
+| `/kaizen:watch-pr` | Drives a PR to "looks ready": feedback **before** CI, CI repair (never a disabled test). Update from the base only on GitHub's signal, check that no review is still on its way, 8 h budget. **Never merges.** |
+| `/kaizen:release` | Release notes from conventional commits, checked SemVer version, CHANGELOG, production checklist. Never tags without approval. |
 
-### Mettre en production et surveiller
+### Deploy and monitor
 
-| Commande | Rôle |
+| Command | Role |
 |---|---|
-| `/kaizen:deploy` | Déploie par **vos** commandes (`deploy.environments`) : préconditions, approbation que vous tapez pour la production, tag `deploy/<env>/…`, surveillance des signaux du plan, **retour arrière** si un seuil est franchi. |
-| `/kaizen:monitor` | Signaux de production (health-check HTTP natif ou toute commande qui affiche un nombre) contre les seuils de la config et des plans livrés. Seuil franchi → incident daté, retour arrière, puis post-mortem. Surveillance continue au-delà du déploiement : contrôle planifié (`patrol`) ou alertes de l'équipe (`alert`). |
+| `/kaizen:deploy` | Deploys through **your** commands (`deploy.environments`, recognized by `deploy detect`): preconditions, approval you type for production, `deploy/<env>/…` tag, watch of the plan's signals, **rollback** if a threshold is breached. Feature flags (`deploy flag`). |
+| `/kaizen:monitor` | Production signals (native HTTP health-check or any command printing a number) against the thresholds of the config and of shipped plans. Threshold breached → dated incident, rollback, then postmortem. Continuous monitoring beyond the deployment: scheduled check (`patrol`) or the team's alerts (`alert`: Alertmanager, PagerDuty, Datadog, plain JSON). |
 
-### Apprendre et mesurer
+### Learn and measure
 
-| Commande | Rôle |
+| Command | Role |
 |---|---|
-| `/kaizen:learn` | Capitalise **une** leçon durable dans `docs/learnings/`, si elle passe le test « sans ce document, referait-on l'erreur ? ». |
-| `/kaizen:prune-learnings` | Audite les leçons contre le code actuel : garder, mettre à jour, fusionner, remplacer ou supprimer, avec preuves. |
-| `/kaizen:postmortem` | Post-mortem sans recherche de coupable : chronologie depuis git et la CI, facteurs contributifs, actions avec porteurs. Puis leçon, règle de pack et amendement de constitution. |
-| `/kaizen:metrics` | Indicateurs DORA approchés depuis git et GitHub (fréquence, délai, taux de reprise, taux d'échec, rétablissement), taille des lots, **réutilisation des leçons**. |
+| `/kaizen:learn` | Captures **one** durable learning in `docs/learnings/`, if it passes the test "without this document, would we make the mistake again?". |
+| `/kaizen:prune-learnings` | Audits the learnings against the current code: keep, update, merge, replace or delete, with evidence. |
+| `/kaizen:postmortem` | Blameless postmortem: timeline from git, CI and deployment tags, contributing factors, actions with owners. Then learning, pack rule and constitution amendment. |
+| `/kaizen:metrics` | DORA metrics, real from tracked deployments or approximated from git and GitHub (frequency, lead time, rework rate, failure rate, time to restore), batch size, **learnings reuse**, cycle cost. |
 
-### Orchestrer
+### Orchestrate
 
-| Commande | Rôle |
+| Command | Role |
 |---|---|
-| `/kaizen:autopilot` | Autonome : plan ou debug → work → simplification → revue avec correctifs → learn → ship → watch-pr. S'arrête à « semble prête ». |
-| `/kaizen:setup` | Configuration, détection de la stack, trouvabilité depuis `CLAUDE.md`, création de packs (`pack:<nom>`), bilan de santé (`check`). |
-| `/kaizen:help` | Explique Kaizen et recommande la commande à lancer selon votre situation et l'état du repo (`node $K status`). Lecture seule. |
+| `/kaizen:autopilot` | Autonomous: plan or debug → work → simplification → review with fixes → learn → ship → watch-pr. Stops at "looks ready". Never deploys. |
+| `/kaizen:setup` | Configuration, stack detection, discoverability from `CLAUDE.md`, pack creation (`pack:<name>`), health check (`check`), SDLC maturity audit and scaffolding (`audit`). |
+| `/kaizen:help` | Explains Kaizen and recommends the command to run for your situation and the state of the repo (`node $K status`). Read-only. |
 
-## Ce qui garantit la qualité
+## What guarantees quality
 
-**Constitution → contrôles.** Chaque article de `CONSTITUTION.md` porte un **Contrôle :**.
-- `plan check` vérifie que chaque article est évalué dans le plan.
-- `doc-review` et `standards-reviewer` l'appliquent au plan puis au diff.
-- Un article NON NÉGOCIABLE n'admet aucune exception sans amendement versionné.
-- Hiérarchie des règles : **constitution > packs > leçons > préférences**.
+**Constitution → checks.** Each article of `CONSTITUTION.md` carries a **Check:**.
+- `plan check` verifies that each article is assessed in the plan.
+- `doc-review` and `standards-reviewer` enforce it on the plan, then on the diff.
+- A NON-NEGOTIABLE article admits no exception without a versioned amendment.
+- Rule hierarchy: **constitution > packs > learnings > preferences**.
 
-**Traçabilité de bout en bout.** Chaque exigence R et chaque exemple AE est couvert par une unité,
-chaque unité a une preuve et une vérification exécutable (contrôlé par `plan check`). La revue
-vérifie la conformité du code au plan, et la PR reprend les exigences couvertes.
+**End-to-end traceability.** Each requirement R and each example AE is covered by a unit, each unit has
+evidence and an executable verification (checked by `plan check`). The review checks the code's
+conformance to the plan, and the PR lists the covered requirements.
 
-**Petits lots** (le premier levier selon DORA) :
-- le plan découpe en tranches de la taille d'une PR ;
-- `size` mesure le diff contre `pr.max_lines` (400 par défaut) ;
-- `ship` propose des PR empilées ;
-- `metrics` suit la part des PR trop grosses.
+**Small batches** (the first lever according to DORA):
+- the plan slices into PR-sized slices;
+- `size` measures the diff against `pr.max_lines` (400 by default);
+- `ship` proposes stacked PRs;
+- `metrics` tracks the share of oversized PRs.
 
-**Sécurité intégrée au cycle (NIST SSDF)** :
-- menaces STRIDE dans le plan, relecteur sécurité du plan puis du code ;
-- audit des dépendances (`verify --only audit`) ;
-- plugin `security` du marketplace pour les secrets ;
-- texte des commentaires de PR traité comme non fiable.
+**Security built into the cycle (NIST SSDF)**:
+- STRIDE threats in the plan, security reviewer for the plan then the code;
+- dependency audit (`verify --only audit`);
+- the marketplace's `security` plugin for secrets;
+- PR comment text treated as untrusted.
 
-**Garde-fou par hook `Stop`.** Pendant `work` et `autopilot`, Claude ne peut pas terminer tant que test,
-lint ou typage sont rouges. Le hook bloque 3 fois au maximum puis laisse passer en exigeant que
-l'échec soit signalé, et s'éteint seul après 24 h. Il appartient à la session qui l'a posé et tient
-dans un budget de temps sous le délai du hook.
+**Quality gate through the `Stop` hook.** During `work` and `autopilot`, Claude cannot finish while tests,
+lint or typing are red. The hook blocks 3 times at most, then lets through while requiring the failure to
+be reported, and turns itself off after 24 h. It belongs to the session that turned it on and runs within
+a time budget under the hook's timeout.
 
-**Revue imposée par hook, pas par consigne.** Un hook `PreToolUse` refuse `git push` d'une branche tant
-que `/kaizen:review` n'a pas enregistré l'état poussé (au-delà de 80 lignes modifiées depuis, nouvelle
-revue). L'enregistrement exige une preuve : un hook consigne les relecteurs réellement lancés, l'agent
-ne peut pas déclarer une revue qui n'a pas eu lieu. Seul l'utilisateur peut y renoncer, en tapant
-lui-même le code de confirmation, et la renonciation figure dans la PR.
+**Review enforced by a hook, not by an instruction.** A `PreToolUse` hook refuses `git push` of a branch
+until `/kaizen:review` recorded the pushed state (beyond 80 lines changed since, a new review). The record
+requires evidence: a hook logs the reviewers actually launched, the agent cannot declare a review that
+did not happen. Only the user can waive it, by typing the confirmation code themselves, and the waiver
+appears in the PR.
 
-**Adoption par paliers.** `profile` : `lean` (cérémonie minimale, pour commencer), `standard`, `full`.
-Le profil règle la cérémonie (taille du plan, nombre de relecteurs), jamais les garde-fous
-déterministes. De petits pas, dans l'esprit kaizen.
+**Staged adoption.** `profile`: `lean` (minimal ceremony, to start), `standard`, `full`. The profile sets
+the ceremony (plan size, number of reviewers), never the deterministic gates. Small steps, in the kaizen
+spirit.
 
-**De la production au cycle suivant.** Chaque plan dit comment revenir en arrière et quel signal
-surveiller, avec son seuil (`plan check` le signale sinon). `release` en tire la checklist de mise en
-production ; un seuil franchi mène au post-mortem, dont les leçons et amendements nourrissent le
-cycle suivant.
+**From production to the next cycle.** Each plan says how to roll back and which signal to watch, with
+its threshold (`plan check` warns otherwise). `release` derives the production checklist from it,
+`deploy` and `monitor` watch those thresholds; a breached threshold leads to the rollback and the
+postmortem, whose learnings and amendments feed the next cycle.
 
-**Gouvernance d'équipe.** Avec `approvers` déclarés, chaque amendement de la constitution doit être
-approuvé par l'un d'eux, jamais par un agent (`constitution check`).
+**Team governance.** With declared `approvers`, each constitution amendment must be approved by one of
+them, never by an agent (`constitution check`).
 
-**L'effet cumulatif, mesuré.** Les leçons (`docs/learnings/`), les ADR et les post-mortems sont
-relus par `learnings-researcher` à chaque plan, revue et debug. `/kaizen:metrics` distingue les leçons
-**lues** (citées par un plan récent) des leçons **appliquées** (citées par un commit arrivé sur la
-branche par défaut), et liste celles que personne n'a jamais citées. Une leçon jamais réutilisée
-signale une boucle qui ne se referme pas. `metrics` mesure aussi le **coût** de chaque cycle (durée,
-tokens, blocages du garde-fou) pour juger si la cérémonie rapporte plus qu'elle ne coûte.
+**The compounding effect, measured.** Learnings (`docs/learnings/`), ADRs and postmortems are read by
+`learnings-researcher` at every plan, review and debug. `/kaizen:metrics` distinguishes learnings
+**read** (cited by a recent plan) from learnings **applied** (cited by a commit landed on the default
+branch), and lists the ones nobody ever cited. A learning never reused signals a loop that does not
+close. `metrics` also measures the **cost** of each cycle (duration, tokens, gate blocks) to judge
+whether the ceremony pays back more than it costs.
 
-**Le bon modèle pour chaque tâche.** Chaque agent a un rôle, chaque rôle un modèle selon le profil :
-recherche économe, relecteurs critiques (sécurité, migrations, adversarial) au modèle le plus fort.
-Ajustable par rôle ou par agent (`models`), vérifiable (`node $K models`, modèle enregistré par
-relecteur).
+**The right model for each task.** Each agent has a role, each role a model per profile: frugal
+research, critical reviewers (security, migrations, adversarial) on the strongest model. Adjustable per
+role or per agent (`models`), verifiable (`node $K models`, model recorded per reviewer).
 
-**Mettre le SDLC en place.** `/kaizen:setup audit` note le projet sur cinq domaines (fondations,
-flux, livraison, exploitation, boucle Kaizen) et corrige dans l'ordre de priorité : CI, modèle de
-PR, Dependabot, CODEOWNERS générés depuis votre stack ; plateforme de déploiement reconnue par
-`deploy detect` (Vercel, Fly.io, Heroku, Kamal, Helm, Kustomize, GitHub Actions…).
+**Setting up the SDLC.** `/kaizen:setup audit` scores the project in five areas (foundations, flow,
+delivery, operations, Kaizen loop) and fixes in priority order: CI, PR template, Dependabot, CODEOWNERS
+generated from your stack, monitoring workflows; deployment platform recognized by `deploy detect`
+(Vercel, Netlify, Fly.io, Heroku, Kamal, Capistrano, Helm, Kustomize, Serverless, SAM, Firebase, GitHub
+Actions, Makefile/npm, Compose, Terraform).
 
 ## Agents (21)
 
-| Rôle | Agents |
+| Role | Agents |
 |---|---|
-| Recherche | `repo-researcher`, `learnings-researcher`, `git-historian`, `docs-researcher`, `flow-analyst` |
-| Relecture de plan | `plan-coherence-reviewer`, `plan-feasibility-reviewer`, `plan-scope-reviewer`, `plan-security-reviewer`, `plan-adversarial-reviewer`, `plan-design-reviewer` |
-| Revue de code (socle) | `correctness-reviewer`, `standards-reviewer` (constitution, standards, packs, leçons) |
-| Revue de code (selon le diff) | `security-reviewer`, `testing-reviewer`, `performance-reviewer`, `reliability-reviewer`, `api-contract-reviewer`, `data-migration-reviewer`, `maintainability-reviewer`, `adversarial-reviewer` |
+| Research | `repo-researcher`, `learnings-researcher`, `git-historian`, `docs-researcher`, `flow-analyst` |
+| Plan review | `plan-coherence-reviewer`, `plan-feasibility-reviewer`, `plan-scope-reviewer`, `plan-security-reviewer`, `plan-adversarial-reviewer`, `plan-design-reviewer` |
+| Code review (baseline) | `correctness-reviewer`, `standards-reviewer` (constitution, standards, packs, learnings) |
+| Code review (depending on the diff) | `security-reviewer`, `testing-reviewer`, `performance-reviewer`, `reliability-reviewer`, `api-contract-reviewer`, `data-migration-reviewer`, `maintainability-reviewer`, `adversarial-reviewer` |
 
-Tous les agents sont en lecture seule.
-- Les relecteurs de code partagent [`references/review-contract.md`](references/review-contract.md) :
-  sévérité P0 à P3, confiance ancrée à 50, 75 ou 100, et règle « cite la ligne ».
-- Les relecteurs de plan partagent [`references/doc-review-contract.md`](references/doc-review-contract.md).
+All agents are read-only.
+- Code reviewers share [`references/review-contract.md`](references/review-contract.md): severity P0 to
+  P3, confidence anchored at 50, 75 or 100, and the "cite the line" rule.
+- Plan reviewers share [`references/doc-review-contract.md`](references/doc-review-contract.md).
+- `node $K models` shows the model each agent runs on.
 
-## Fichiers dans le repo cible
+## Files in the target repo
 
 ```
-CONSTITUTION.md              principes non négociables (versionnés)
-.kaizen/config.json          configuration (config.local.json = surcharge perso, ignorée par git)
-.kaizen/state/               état local : garde-fou, suivi de PR, revues — auto-ignoré par git
-docs/plans/                  plans unifiés (exigences → plan prêt), un fichier par sujet
-docs/learnings/              leçons capitalisées
-docs/adr/                    décisions d'architecture (NNNN-titre.md)
-docs/postmortems/            post-mortems
+CONSTITUTION.md              non-negotiable principles (versioned)
+.kaizen/config.json          configuration (config.local.json = personal override, ignored by git)
+.kaizen/state/               local state: gate, PR tracking, reviews, deployments, cycles — auto-ignored by git
+docs/plans/                  unified plans (requirements → ready plan), one file per topic
+docs/learnings/              captured learnings
+docs/adr/                    architecture decisions (NNNN-title.md)
+docs/postmortems/            postmortems
 docs/ideation/  docs/metrics/
-kaizen-packs/<pack>/         règles d'équipe prescriptives
+kaizen-packs/<pack>/         prescriptive team rules
 ```
 
 ```json
 {
   "docs_root": "docs",
   "language": "auto",
+  "profile": "standard",
   "tracker": "auto",
   "verify": { "test": "pnpm vitest run", "lint": "pnpm eslint ." },
   "gate": { "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "max_age_hours": 24 },
   "pr": { "max_lines": 400 },
+  "deploy": { "environments": { "production": { "command": "make deploy", "rollback": "make rollback" } } },
+  "monitor": { "signals": { "health": { "type": "http", "url": "https://shop.example/health", "expect": 200 } } },
   "packs": [
     { "source": "kaizen-packs/house-rules" },
     { "source": "https://github.com/org/packs", "ref": "v1.2.0", "pack": ["rails"] }
@@ -227,51 +231,105 @@ kaizen-packs/<pack>/         règles d'équipe prescriptives
 }
 ```
 
-## CLI
+Every key is described in [Configuration](docs/configuration.md).
 
-Tout le travail déterministe passe par `scripts/kaizen.mjs` (Node ≥ 18, zéro dépendance) :
+## Reference
+
+### CLI
+
+All deterministic work goes through `scripts/kaizen.mjs` (Node ≥ 18, zero dependencies). Skills call it;
+you can call it too. `node $K help` prints this summary.
 
 ```bash
 K=plugins/kaizen/scripts/kaizen.mjs
-node $K init | root | config | detect
-node $K verify [--only test,lint|audit]        # vérifications (exit 1 si rouge)
-node $K constitution [check]                   # articles / validation de CONSTITUTION.md
-node $K plan new --type feat --topic x | plan list | plan check <chemin>
-node $K size [--base ref]                      # taille du diff vs pr.max_lines
-node $K learnings search <mots> | validate | stats
-node $K packs | pack new <nom>
-node $K gate on|off|status                     # garde-fou du hook Stop
-node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch
-node $K dev detect | dev probe --url <u>       # serveur de dev
-node $K metrics [--since 90d] [--no-github]
-node $K adr new --title "…" | adr list
-node $K postmortem new --title "…"
-node $K release notes [--from <tag>]
+
+# Orientation and setup
+node $K status [--json]                        # where the repo stands in the loop, and the next command
+node $K root                                   # deliverable paths (JSON)
+node $K init [--docs-root d] [--language en] [--profile lean|standard|full]   # .kaizen/ and the folders
+node $K config                                 # effective configuration (JSON)
+node $K detect                                 # stack and verification commands (JSON)
+node $K audit [--json] [--no-github]           # SDLC maturity in five areas
+node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]
+node $K models [--json] [--agent a]            # model of each agent per profile and config
+
+# Principles, plans, learnings
+node $K constitution [check] [--json]          # CONSTITUTION.md articles / validation
+node $K plan new --type feat --topic x | plan latest | plan list
+node $K plan check <path> [--json]             # structure, R/AE → U traceability, constitution, rollout
+node $K learnings search <words…> [--limit 8] [--json] | validate [files…] | list | stats
+node $K packs [--json] [--refresh]             # rules of the declared Kaizen Packs
+node $K pack new <name>                        # creates and declares a local pack
+node $K adr new --title "…" | adr list         # architecture decisions (docs/adr)
+node $K postmortem new --title "…"             # reserves a postmortem (docs/postmortems)
+
+# Building and verifying
+node $K verify [--only test,lint|audit] [--json]   # runs the checks (exit 1 if red)
+node $K gate on [--plan p] | off | status      # Stop-hook quality gate
+node $K size [--base ref] [--max n] [--json]   # diff size vs pr.max_lines (exit 1 if above)
+node $K dev detect | dev probe --url <u> [--timeout-seconds 30]   # dev server (polish)
+node $K run-dir <type>                         # local run folder (e.g. reviews), ignored by git
+
+# Review and PR
+node $K review record --verdict ready|concerns|blocked [--run d]   # requires reviewers that actually ran
+node $K review waive --reason "…" | review status | review check  # waiver = code typed by the user
+node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch [--pr n] [--repo o/r] …
+
+# Release, deployment, monitoring
+node $K release notes [--from <tag>] [--to <ref>]  # grouped commits, breaking changes, SemVer, rollout
+node $K deploy detect [--json] | deploy configure <id> [--force]
+node $K deploy request|run <env> [--ref r]     # approval code / deployment + deploy/<env>/… tag
+node $K deploy rollback <env> [--reason …] [--to r] | deploy list [--env e]
+node $K deploy flag on|off <name> [--env e]    # deploy.flags commands
+node $K monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]
+node $K monitor patrol --env e [--interval 60] # confirmed check → incident (exit 1)
+node $K monitor alert [--env e] [--file f|-]   # alert payload → incident opened/resolved
+node $K monitor incident open|resolve --env e [--at iso] [--summary …] | monitor incident list [--env e]
+node $K metrics [--since 90d] [--no-github]    # DORA, batch size, Kaizen loop, cycle cost
 ```
 
-## Qualité du plugin lui-même
+Exit codes: 0 = OK, 1 = red check (verify, size, plan check, deploy, monitor breach…), 2 = usage error.
+
+### Hooks
+
+Declared in [`hooks/hooks.json`](hooks/hooks.json); they work without any action on your part.
+
+| Event | Script | Role |
+|---|---|---|
+| `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | Refuses `git push` of a branch without a recorded review of the pushed tree, a direct deploy command of a protected environment, hand-made `deploy/…`, `rollback/…`, `incident/…` tags, and direct writes to Kaizen's review and deployment state |
+| `PostToolUse` (Bash) | `scripts/quality-gate.mjs --claim` | Ties the gate to the session that ran `gate on` |
+| `PostToolUse` (Agent/Task) | `scripts/review-hooks.mjs --evidence` | Logs the Kaizen reviewers actually launched (evidence required by `review record`) and the agents of the cycle |
+| `Stop` | `scripts/quality-gate.mjs` | Blocks the end of the turn while `verify` is red during `work`/`autopilot`; records the cycle's token usage |
+| `UserPromptSubmit` | `scripts/review-hooks.mjs --confirm` | Confirms a review waiver (`kaizen waive <code>`) or a protected deployment (`kaizen deploy <code>`) typed by the user |
+
+### Environment variables
+
+See [Configuration — Environment variables](docs/configuration.md#environment-variables).
+
+## Quality of the plugin itself
 
 ```bash
-node --test plugins/kaizen/tests/*.test.mjs    # unitaires, CLI, garde-fou, PR (faux gh), contrats
-node plugins/kaizen/evals/run.mjs              # évaluations de bout en bout (claude -p, coûteuses)
+node --test plugins/kaizen/tests/*.test.mjs    # unit, CLI, gate, PR (fake gh), contracts
+node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, costly)
 ```
 
-- **Tests de contrat.** Ils vérifient :
-  - le frontmatter de chaque skill et de chaque agent ;
-  - que chaque fichier cité et chaque `kaizen:<nom>` existent ;
-  - que chaque commande CLI documentée existe ;
-  - que chaque marqueur de plan est documenté ;
-  - que ce README est à jour.
-- **Évaluations.** Elles préparent des dépôts piégés et vérifient :
-  - que la revue trouve une injection et une erreur d'arrondi ;
-  - que la revue applique la constitution ;
-  - qu'un plan autonome passe `plan check` ;
-  - que `learn` refuse une leçon sans valeur.
-- **CI** (`.github/workflows/kaizen.yml`) : Linux et macOS, Node 18 et 22.
+- **Contract tests.** They check:
+  - the frontmatter of each skill and each agent;
+  - that each cited file and each `kaizen:<name>` exist;
+  - that each documented CLI command exists, and that this reference lists every command and hook;
+  - that each plan marker is documented;
+  - that this README and the docs index are up to date, and that every relative link and `#anchor`
+    resolves.
+- **Evals.** They prepare trapped repos and check:
+  - that the review finds an injection and a rounding error;
+  - that the review enforces the constitution;
+  - that an autonomous plan passes `plan check`;
+  - that `learn` refuses a worthless learning.
+- **CI** (`.github/workflows/kaizen.yml`): Linux, macOS and Windows, Node 18 and 22.
 
-## Intégration au marketplace
+## Marketplace integration
 
-- **git** : même format de commit (`<type>(<JIRA>): …`, clé Jira lue dans la branche).
-- **security** : ses hooks restent actifs ; aucun secret dans les rapports (`<REDACTED>`).
-- **playwright** : utilisé par `polish`, `work` et `autopilot` pour voir et vérifier l'interface.
-- **experts** : l'agent `architect` reste disponible pour les décisions lourdes (avec `/kaizen:decide`).
+- **git**: same commit format (`<type>(<JIRA>): …`, Jira key read from the branch).
+- **security**: its hooks stay active; no secret in reports (`<REDACTED>`).
+- **playwright**: used by `polish`, `work` and `autopilot` to see and verify the UI.
+- **experts**: the `architect` agent stays available for heavy decisions (with `/kaizen:decide`).

@@ -1,6 +1,6 @@
-# Plugin Experts
+# Experts plugin
 
-Collection d'agents experts spécialisés pour analyses approfondies.
+A collection of specialized expert agents for in-depth analysis.
 
 ## Installation
 
@@ -8,164 +8,170 @@ Collection d'agents experts spécialisés pour analyses approfondies.
 /plugin install experts@angelo-plugins
 ```
 
-## Utilisation
+## Components
 
-### Avec Ultrathink (recommandé pour analyses complexes)
+| Type | Name | Description | Model |
+|---|---|---|---|
+| Agent | `architect` | In-depth architectural analysis and evolution proposals | Opus |
 
-Pour une analyse en profondeur maximale, utilisez le mot-clé `ultrathink` :
+The agent is read-only in spirit (tools: `Glob`, `Grep`, `Read`, `Bash`): it analyzes and recommends, it
+does not change your code. It answers in the language of your request.
 
-```
-ultrathink Analyse l'architecture du module orders
-ultrathink Quelle est la dette technique de ce projet ?
-ultrathink Comment faire évoluer vers une Clean Architecture ?
-```
+## Usage
 
-> **Opus + Ultrathink** = meilleure combinaison pour les décisions architecturales complexes
+### With ultrathink (recommended for complex analyses)
 
-### Usage standard
-
-L'agent se déclenche aussi sur les questions d'architecture sans ultrathink :
+For maximum depth, use the `ultrathink` keyword:
 
 ```
-Analyse l'architecture du module authentication
-Comment découper ce service monolithique ?
-Compare les approches pour implémenter le caching
+ultrathink Analyze the architecture of the orders module
+ultrathink What is the technical debt of this project?
+ultrathink How do we move toward a Clean Architecture?
 ```
 
-## Capacités
+> **Opus + ultrathink** = the best combination for complex architectural decisions
 
-### Analyse de structure
-- Séparation des responsabilités (SRP)
-- Cohésion et couplage des modules
-- God classes et fichiers trop volumineux
-- Conventions de nommage
-- Barrel files et re-exports
+### Standard usage
 
-### Détection de patterns
-- Patterns d'architecture (Clean, Hexagonal, DDD, CQRS, Vertical Slice...)
-- Anti-patterns (Big Ball of Mud, Spaghetti, Distributed Monolith...)
-- Code smells (Long Method, Feature Envy, Shotgun Surgery...)
-- Violations DRY/SOLID/YAGNI
+The agent also triggers on architecture questions without ultrathink:
 
-### Analyse de dépendances
-- Graph des imports
-- Dépendances circulaires
-- Couplage avec librairies externes
-- Points de contention
-- Dépendances obsolètes/vulnérables
+```
+Analyze the architecture of the authentication module
+How should I split this monolithic service?
+Compare the approaches to implement caching
+```
 
-### Évaluation dette technique
-- Code legacy
-- TODOs/FIXMEs non résolus
-- Tests manquants
-- Dépendances obsolètes
-- Code mort
+You can also call it explicitly: "use the architect agent to…".
 
-### Analyse de performance
-- Détection N+1 queries
-- Stratégies de caching
+## Capabilities
+
+### Structure analysis
+- Separation of concerns (SRP)
+- Module cohesion and coupling
+- God classes and oversized files
+- Naming conventions
+- Barrel files and re-exports
+
+### Pattern detection
+- Architecture patterns (Clean, Hexagonal, DDD, CQRS, Vertical Slice…)
+- Anti-patterns (Big Ball of Mud, Spaghetti, Distributed Monolith…)
+- Code smells (Long Method, Feature Envy, Shotgun Surgery…)
+- DRY/SOLID/YAGNI violations
+
+### Dependency analysis
+- Import graph
+- Circular dependencies
+- Coupling to external libraries
+- Contention points
+- Outdated/vulnerable dependencies
+
+### Technical debt assessment
+- Legacy code
+- Unresolved TODOs/FIXMEs
+- Missing tests
+- Outdated dependencies
+- Dead code
+
+### Performance analysis
+- N+1 query detection
+- Caching strategies
 - Pagination
-- Index DB
+- DB indexes
 
-### Propositions d'évolution
-- Stratégies de refactoring progressif (Strangler Fig, Branch by Abstraction)
-- Comparaison d'approches avec trade-offs
-- Plans de migration réversibles
+### Evolution proposals
+- Gradual refactoring strategies (Strangler Fig, Branch by Abstraction)
+- Comparison of approaches with trade-offs
+- Reversible migration plans
 
-## Stacks supportées
+## Supported stacks
 
-L'agent est **agnostique** et s'adapte à la stack détectée :
+The agent is **stack-agnostic** and adapts to the detected stack:
 
-| Stack | Spécificités analysées |
-|-------|------------------------|
+| Stack | Analyzed specifics |
+|---|---|
 | **Node.js** (Hapi, Express, Fastify, NestJS) | Middleware, validation (Joi, Zod), async errors, transactions |
-| **ORM** (Sequelize, Prisma, TypeORM) | Models, N+1, migrations, transactions, soft delete |
-| **Vue/Nuxt** | Composants smart/dumb, Pinia/Vuex, SSR, routing |
+| **ORM** (Sequelize, Prisma, TypeORM, Mongoose) | Models, N+1, migrations, transactions, soft delete |
+| **Vue/Nuxt** | Smart/dumb components, Pinia/Vuex, SSR, routing |
 | **React/Next** | Components, hooks, Server Components, React Query |
-| **PostgreSQL/MySQL** | Schema, index, normalisation, JSON columns |
-| **API Design** | REST/GraphQL, versioning, auth, rate limiting |
+| **PostgreSQL/MySQL** | Schema, indexes, normalization, JSON columns |
+| **API design** | REST/GraphQL, versioning, auth, rate limiting |
 
-## Format de sortie
+## Output format
 
-L'agent produit un rapport structuré :
+The agent produces a structured report:
 
-1. **Contexte** - Stack, périmètre, question initiale
-2. **Synthèse exécutive** - Findings principaux en 3-5 phrases
-3. **Forces** - Ce qui est bien fait
-4. **Faiblesses** - Problèmes par criticité (🔴 Critique, 🟠 Important, 🟡 Mineur)
-5. **Analyse détaillée** - Avec extraits de code réels et localisation
-6. **Recommandations** - Quick wins, moyen terme, long terme
-7. **Trade-offs** - Tableau comparatif des options
-8. **Réponse directe** - Synthèse actionnable
+1. **Context** - stack, scope, initial question
+2. **Executive summary** - main findings in 3-5 sentences
+3. **Strengths** - what is done well
+4. **Weaknesses** - problems by severity (🔴 Critical, 🟠 Important, 🟡 Minor)
+5. **Detailed analysis** - with real code excerpts and locations
+6. **Recommendations** - quick wins, medium term, long term
+7. **Trade-offs** - comparison table of the options
+8. **Direct answer** - actionable summary
 
-## Méthodologie
+## Methodology
 
-L'agent suit une méthodologie rigoureuse en 3 phases :
+The agent follows a rigorous 3-phase methodology:
 
-### Phase 1 : Reconnaissance (obligatoire)
-- Détection de la stack technique
-- Cartographie de la structure projet
-- Identification des conventions locales
-- Compréhension du contexte métier
+### Phase 1: Reconnaissance (required)
+- Tech stack detection
+- Project structure mapping
+- Local conventions
+- Business context
 
-### Phase 2 : Analyse approfondie
-- Application des grilles d'analyse pertinentes
-- Utilisation d'exemples concrets du code
-- Exploration de toutes les dimensions
+### Phase 2: In-depth analysis
+- The relevant analysis grids
+- Concrete examples from the code
+- Every dimension explored
 
-### Phase 3 : Rapport structuré
-- Format standardisé et navigable
-- Priorisation des actions
-- Trade-offs documentés
+### Phase 3: Structured report
+- Standard, navigable format
+- Prioritized actions
+- Documented trade-offs
 
-## Composants
+## Examples
 
-| Type | Nom | Description | Modèle |
-|------|-----|-------------|--------|
-| Agent | `architect` | Analyse architecturale approfondie | Opus |
-
-## Exemples
-
-### Analyse de module
+### Module analysis
 ```
-ultrathink Analyse-moi l'architecture du module authentication
-et dis-moi comment je pourrais améliorer sa testabilité
+ultrathink Analyze the architecture of the authentication module
+and tell me how I could improve its testability
 ```
 
-### Découpage de service
+### Splitting a service
 ```
-ultrathink J'ai un service UserService de 2000 lignes,
-comment le découper proprement sans casser l'existant ?
-```
-
-### Évaluation dette
-```
-ultrathink Fais-moi un audit de dette technique du dossier src/legacy
-avec une priorisation des actions
+ultrathink I have a 2,000-line UserService,
+how do I split it cleanly without breaking anything?
 ```
 
-### Comparaison d'approches
+### Debt assessment
 ```
-Je dois implémenter un système de cache.
-Compare Redis vs in-memory vs file-based pour mon contexte
+ultrathink Audit the technical debt of the src/legacy folder
+with prioritized actions
 ```
 
-### Évolution architecturale
+### Comparing approaches
 ```
-ultrathink Comment migrer progressivement mon API monolithique
-vers une architecture hexagonale ?
+I need to implement a cache.
+Compare Redis vs in-memory vs file-based for my context
+```
+
+### Architectural evolution
+```
+ultrathink How do I gradually migrate my monolithic API
+to a hexagonal architecture?
 ```
 
 ## Tips
 
-- **Utilisez ultrathink** pour les décisions importantes - le surcoût en tokens est compensé par la qualité de l'analyse
-- **Soyez précis** dans votre question pour obtenir une analyse ciblée
-- **Mentionnez le contexte** (contraintes, deadline, équipe) pour des recommandations pragmatiques
-- L'agent ne fait **jamais de recommandations** sans avoir lu le code concerné
+- **Use ultrathink** for important decisions - the extra tokens pay back in analysis quality
+- **Be precise** in your question to get a targeted analysis
+- **Mention the context** (constraints, deadline, team) for pragmatic recommendations
+- The agent **never makes recommendations** without having read the code concerned
+- To record the outcome as an ADR, pair it with [`/kaizen:decide`](../kaizen/docs/guides/decide.md)
 
 ## Sources
 
-Ce plugin intègre les meilleures pratiques de :
+This plugin builds on the best practices of:
 - [Claude Code Best Practices](https://www.anthropic.com/engineering/claude-code-best-practices)
 - [Extended Thinking Documentation](https://platform.claude.com/docs/en/build-with-claude/extended-thinking)
 - [ClaudeLog - UltraThink](https://claudelog.com/faqs/what-is-ultrathink/)

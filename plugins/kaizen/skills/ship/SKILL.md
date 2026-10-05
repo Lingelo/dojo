@@ -1,107 +1,108 @@
 ---
 name: ship
-description: Livre le travail Kaizen en PR relisible — vérifications vertes, taille sous le plafond (sinon découpage en PR empilées), commits conventionnels avec Jira, push de la branche (jamais la branche par défaut), PR avec description tirée du plan (objectif, exigences couvertes, preuves, contrôle constitutionnel, déploiement et retour arrière) et guide du relecteur ; propose ensuite /kaizen:watch-pr. Sait aussi seulement rédiger ou rafraîchir une description de PR. Utiliser pour « ouvre la PR », « livre », « pousse et crée la PR », « mets à jour la description de la PR », /kaizen:ship.
+description: Ships Kaizen work as a reviewable PR — green checks, size under the limit (otherwise split into stacked PRs), conventional commits with Jira, branch push (never the default branch), PR with a description from the plan (goal, covered requirements, evidence, constitution check, rollout and rollback) and a reviewer guide; then offers /kaizen:watch-pr. Can also only draft or refresh a PR description. Use when the user says "open the PR", "ship it", "push and create the PR", "update the PR description", /kaizen:ship.
 allowed-tools: Bash(node:*), Bash(git:*), Bash(gh:*), Read, Write, Edit, Glob, Grep, AskUserQuestion
-argument-hint: "[chemin du plan] [description-only | refresh-description] [draft] [mode:auto]"
+argument-hint: "[plan path] [description-only | refresh-description] [draft] [mode:auto]"
 ---
 
-# Ship — une PR que les relecteurs ont envie de relire
+# Ship — a PR reviewers want to review
 
-DORA 2025 : avec l'IA, les PR grossissent et **la revue humaine devient le goulot**. Une PR Kaizen
-est petite, se raconte d'elle-même, et dit au relecteur où regarder.
+DORA 2025: with AI, PRs grow and **human review becomes the bottleneck**. A Kaizen PR is small, tells its
+own story, and tells the reviewer where to look.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:auto`** (posé par `/kaizen:work`, `/kaizen:autopilot`, `/kaizen:watch-pr`) : aucune question ;
-rend `{ status: shipped|local-only|blocked, pr_url, branch, commits, size, notes }`.
+**`mode:auto`** (set by `/kaizen:work`, `/kaizen:autopilot`, `/kaizen:watch-pr`): no questions; returns
+`{ status: shipped|local-only|blocked, pr_url, branch, commits, size, notes }`.
 
 ## Modes
 
-- **description-only** — rédige la description (étape 4) et l'affiche ; ne publie que si on le demande.
-- **refresh-description** — la PR existe : réécris sa description si elle ne correspond plus au
-  diff (comportement ajouté/retiré, approche changée, réserves levées) et applique-la avec
-  `gh pr edit <n> --body-file`. Si elle est encore juste, ne touche à rien et dis-le.
-- **défaut** — étapes 1 à 6.
+- **description-only** — draft the description (step 4) and show it; only publish if asked.
+- **refresh-description** — the PR exists: rewrite its description if it no longer matches the diff
+  (behavior added/removed, approach changed, concerns lifted) and apply it with
+  `gh pr edit <n> --body-file`. If it is still accurate, touch nothing and say so.
+- **default** — steps 1 to 6.
 
-## 1. Préconditions
+## 1. Preconditions
 
-- `git status --short` : fichiers non commités ? Ceux du travail en cours sont commités par unité ;
-  ceux de l'utilisateur ne partent jamais sans son accord (question en interactif, `blocked` en auto).
-- Branche courante ≠ branche par défaut (sinon crée `<type>/<topic>` et déplace les commits locaux
-  non poussés avec l'accord de l'utilisateur). Jamais de push sur la branche par défaut.
-- `git remote` vide → **local seulement** : commits faits, rien d'autre ; dis-le en une ligne.
+- `git status --short`: uncommitted files? Those of the work in progress are committed per unit; the
+  user's never leave without their approval (question interactively, `blocked` in auto).
+- Current branch ≠ default branch (otherwise create `<type>/<topic>` and move the unpushed local
+  commits with the user's approval). Never a push to the default branch.
+- Empty `git remote` → **local only**: commits made, nothing else; say so in one line.
 
-## 2. Barrières
+## 2. Barriers
 
-1. `node "$K" verify` vert (rouge → stop : `/kaizen:work` ou `/kaizen:debug`).
-2. Revue faite : un rapport `/kaizen:review` de cette session sur ce diff, ou instruction explicite de
-   s'en passer. Sinon, lance-la (`mode:agent` en auto) et traite les P0/P1.
-3. `node "$K" size` sous `pr.max_lines`. Au-delà :
-   - **interactif** — propose de **découper** en PR empilées : une branche par tranche du plan (ou
-     par groupe d'unités cohérent), chacune basée sur la précédente, `gh pr create --base
-     <branche précédente>`. Ou de livrer en un bloc en le justifiant dans la PR ;
-   - **auto** — livre en un bloc, avec la section « Taille » qui explique pourquoi.
-4. Constitution : si le plan déclare des exceptions, elles iront dans la PR.
+1. `node "$K" verify` green (red → stop: `/kaizen:work` or `/kaizen:debug`).
+2. Review done: a `/kaizen:review` report from this session on this diff, or an explicit instruction
+   to skip it. Otherwise, run it (`mode:agent` in auto) and handle the P0/P1.
+3. `node "$K" size` under `pr.max_lines`. Above it:
+   - **interactive** — propose **splitting** into stacked PRs: one branch per plan slice (or per
+     coherent group of units), each based on the previous one, `gh pr create --base <previous
+     branch>`. Or shipping as one block with a justification in the PR;
+   - **auto** — ship as one block, with the "Size" section explaining why.
+4. Constitution: if the plan declares exceptions, they go into the PR.
 
-## 3. Commits et push
+## 3. Commits and push
 
-Commits restants au format conventionnel (`<type>(<JIRA>): …`, clé lue dans la branche), fichiers
-nommés explicitement. Vérifie la revue : `node "$K" review check` — refusé → `kaizen:review`
-(`mode:agent` en `mode:auto`), correctifs P0/P1, puis reprends ; une renonciation n'est possible que sur
-demande de l'utilisateur, confirmée par lui (`review waive --reason`, puis il tape `kaizen waive
-<code>`) — jamais en `mode:auto`. Puis `git push -u origin <branche>` (jamais `--force` ; `--force-with-lease`
-seulement sur une branche que cette session a créée et réécrite, avec accord).
+Remaining commits in conventional format (`<type>(<JIRA>): …`, key read from the branch), files named
+explicitly. Check the review: `node "$K" review check` — refused → `kaizen:review` (`mode:agent` in
+`mode:auto`), P0/P1 fixes, then resume; a waiver is only possible at the user's request, confirmed by
+them (`review waive --reason`, then they type `kaizen waive <code>`) — never in `mode:auto`. Then
+`git push -u origin <branch>` (never `--force`; `--force-with-lease` only on a branch this session
+created and rewrote, with approval).
 
 ## 4. Description
 
-Titre : conventionnel, ≤ 72 caractères (`feat(SHOP-412): export CSV des commandes filtrées`).
-Corps, tiré du plan (`plan:` ou le plan cité dans les commits) et du diff réel — **jamais** du plan
-seul si le code a divergé :
+Title: conventional, ≤ 72 characters (`feat(SHOP-412): export filtered orders as CSV`). Body, from the
+plan (`plan:` or the plan cited in the commits) and the real diff — **never** from the plan alone if the
+code diverged. Written in the configured language (`config.language`, `auto` = the conversation's);
+the section titles below are translated with it:
 
 ```markdown
-## Pourquoi
-<objectif de la capsule, 1 à 2 phrases ; lien vers le plan et le ticket>
+## Why
+<capsule goal, 1 to 2 sentences; link to the plan and the ticket>
 
-## Ce qui change
-- <comportement visible, une puce par exigence couverte : R1, R2…>
+## What changes
+- <visible behavior, one bullet per covered requirement: R1, R2…>
 
-## Comment relire (guide du relecteur)
-1. Commencer par `<fichier>` : <le cœur du changement>
-2. Puis `<fichier>` : <…>
-- À regarder de près : <la décision ou le risque où un œil humain compte le plus>
-- Peut se survoler : <tests générés, renommages, fichiers mécaniques>
+## How to review (reviewer guide)
+1. Start with `<file>`: <the heart of the change>
+2. Then `<file>`: <…>
+- Look closely at: <the decision or risk where a human eye matters most>
+- Can be skimmed: <generated tests, renames, mechanical files>
 
-## Preuves
-- `<commande de vérification>` ✅ · exemples d'acceptation AE1–AE3 couverts par <tests>
-- Revue Kaizen : <verdict, constats restants>
+## Evidence
+- `<verification command>` ✅ · acceptance examples AE1–AE3 covered by <tests>
+- Kaizen review: <verdict, remaining findings>
 
-## Déploiement et retour arrière
-<résumé de kaizen:rollout : exposition, ordre, retour arrière, signal>
+## Rollout and rollback
+<summary of kaizen:rollout: exposure, order, rollback, signal>
 
 ## Constitution
-<seulement s'il y a des exceptions : article, raison>
+<only if there are exceptions: article, reason>
 
-## Revue écartée
-<seulement si `node "$K" review status` montre `verdict: waived` : raison donnée par l'utilisateur,
-date de confirmation, et ce qui n'a donc pas été relu — section obligatoire, jamais supprimée>
+## Review waived
+<only if `node "$K" review status` shows `verdict: waived`: reason given by the user, confirmation
+date, and what was therefore not reviewed — mandatory section, never removed>
 
-## Points ouverts
-<constats non appliqués, décisions laissées à l'humain — ou supprimer la section>
+## Open points
+<findings not applied, decisions left to the human — or delete the section>
 
-🤖 Préparé avec Kaizen
+🤖 Prepared with Kaizen
 ```
 
-Ajoute le marqueur `<!-- kaizen -->` en dernière ligne (il évite que le suivi de PR prenne ce texte
-pour un retour à traiter).
+Add the `<!-- kaizen -->` marker as the last line (it keeps PR watching from taking this text for
+feedback to handle).
 
-## 5. Ouvrir
+## 5. Open
 
-Une PR existe déjà pour la branche (`gh pr view --json url`) → mets-la à jour (`gh pr edit`) au lieu
-d'en ouvrir une seconde. Sinon `gh pr create --title … --body-file … [--draft] [--base <base>]`. Sans
-`gh`, utilise les outils GitHub MCP s'ils sont disponibles ; sinon donne l'URL de création et le corps.
+A PR already exists for the branch (`gh pr view --json url`) → update it (`gh pr edit`) instead of
+opening a second one. Otherwise `gh pr create --title … --body-file … [--draft] [--base <base>]`.
+Without `gh`, use the GitHub MCP tools if available; otherwise give the creation URL and the body.
 
-## 6. Suite
+## 6. Follow-up
 
-Donne l'URL. Propose `/kaizen:watch-pr <url>` (Recommandé) pour la mener jusqu'à « prête à merger »
-— commentaires traités, CI réparée — sans jamais merger à la place de l'humain.
+Give the URL. Propose `/kaizen:watch-pr <url>` (Recommended) to drive it to "ready to merge" —
+comments handled, CI repaired — without ever merging in the human's place.

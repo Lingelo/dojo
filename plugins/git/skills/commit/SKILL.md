@@ -1,23 +1,25 @@
 ---
 name: commit
-description: Crée des commits en format conventional commits avec extraction automatique du numéro Jira de la branche. Utiliser quand l'utilisateur demande de faire un commit, /commit, ou veut commiter ses changements.
+description: Creates commits in the Conventional Commits format with the Jira ticket number extracted automatically from the branch name. Use when the user asks to commit, says /commit, or wants to commit their changes.
+allowed-tools: Bash(git *), Read, Grep, Glob
 ---
 
-# Commit Conventionnel avec Jira
+# Conventional commit with Jira
 
-Crée des commits respectant la spécification [Conventional Commits](https://www.conventionalcommits.org/) avec extraction automatique du numéro de ticket Jira depuis la branche courante.
+Creates commits following the [Conventional Commits](https://www.conventionalcommits.org/) specification,
+with the Jira ticket number extracted automatically from the current branch.
 
-## Format du commit
+## Commit format
 
 ```
 <type>(<jira>): <description>
 
-[corps optionnel]
+[optional body]
 
-[footer optionnel]
+[optional footer]
 ```
 
-**Si aucun numéro Jira n'est trouvé dans la branche :**
+**If no Jira number is found in the branch:**
 
 ```
 <type>: <description>
@@ -25,22 +27,22 @@ Crée des commits respectant la spécification [Conventional Commits](https://ww
 
 ## Instructions
 
-### 1. Extraire le numéro Jira de la branche
+### 1. Extract the Jira number from the branch
 
 ```bash
 git branch --show-current
 ```
 
-Chercher un pattern de ticket Jira dans le nom de la branche :
-- Patterns courants : `MOJ-1234`, `UNIV-456`, `ABC-789`
-- Regex : `[A-Z]+-[0-9]+`
-- Exemples de branches :
+Look for a Jira ticket pattern in the branch name:
+- Common patterns: `MOJ-1234`, `UNIV-456`, `ABC-789`
+- Regex: `[A-Z]+-[0-9]+`
+- Branch examples:
   - `feature/MOJ-1234-add-login` → `MOJ-1234`
   - `fix/UNIV-456-fix-bug` → `UNIV-456`
   - `MOJ-789-refactor` → `MOJ-789`
-  - `main` → pas de Jira
+  - `main` → no Jira
 
-### 2. Analyser les changements
+### 2. Analyze the changes
 
 ```bash
 git status
@@ -48,119 +50,120 @@ git diff --staged
 git diff
 ```
 
-Comprendre :
-- Quels fichiers sont modifiés
-- La nature des changements (nouvelle fonctionnalité, correction, refactoring...)
-- L'intention de l'utilisateur
+Understand:
+- which files are modified;
+- the nature of the changes (new feature, fix, refactoring…);
+- the user's intent.
 
-### 3. Déterminer le type de commit
+### 3. Pick the commit type
 
-| Type | Description | Quand l'utiliser |
-|------|-------------|------------------|
-| `feat` | Nouvelle fonctionnalité | Ajout d'une nouvelle feature pour l'utilisateur |
-| `fix` | Correction de bug | Correction d'un bug |
-| `docs` | Documentation | Changements de documentation uniquement |
-| `style` | Style de code | Formatage, point-virgules, pas de changement de logique |
-| `refactor` | Refactoring | Restructuration du code sans changer le comportement |
-| `perf` | Performance | Amélioration des performances |
-| `test` | Tests | Ajout ou correction de tests |
-| `build` | Build | Changements du système de build ou dépendances |
-| `ci` | CI/CD | Changements de configuration CI/CD |
-| `chore` | Maintenance | Tâches de maintenance, mise à jour de dépendances |
+| Type | Description | When to use it |
+|---|---|---|
+| `feat` | New feature | Adding a new feature for the user |
+| `fix` | Bug fix | Fixing a bug |
+| `docs` | Documentation | Documentation-only changes |
+| `style` | Code style | Formatting, semicolons, no logic change |
+| `refactor` | Refactoring | Restructuring the code without changing behavior |
+| `perf` | Performance | Performance improvement |
+| `test` | Tests | Adding or fixing tests |
+| `build` | Build | Build system or dependency changes |
+| `ci` | CI/CD | CI/CD configuration changes |
+| `chore` | Maintenance | Maintenance tasks, dependency updates |
 
-### 4. Rédiger la description
+### 4. Write the description
 
-- En français ou anglais selon le projet
-- Commencer par un verbe à l'impératif : "ajoute", "corrige", "met à jour"
-- Maximum 72 caractères
-- Pas de point final
-- Décrire le "quoi" et le "pourquoi", pas le "comment"
+- In the language the project's history already uses (`git log --oneline -10`); English by default
+- Start with an imperative verb: "add", "fix", "update"
+- 72 characters at most
+- No trailing period
+- Describe the "what" and the "why", not the "how"
 
-### 5. Créer le commit
+### 5. Create the commit
 
-**Avec Jira :**
+**With Jira:**
 ```bash
-git add <fichiers>
+git add <files>
 git commit -m "<type>(<JIRA-123>): <description>"
 ```
 
-**Sans Jira :**
+**Without Jira:**
 ```bash
-git add <fichiers>
+git add <files>
 git commit -m "<type>: <description>"
 ```
 
-## Exemples
+## Examples
 
-### Avec numéro Jira
+### With a Jira number
 
-Branche : `feature/MOJ-1234-user-authentication`
+Branch: `feature/MOJ-1234-user-authentication`
 
 ```bash
-git commit -m "feat(MOJ-1234): ajoute l'authentification OAuth2"
+git commit -m "feat(MOJ-1234): add OAuth2 authentication"
 ```
 
 ```bash
-git commit -m "fix(UNIV-456): corrige la validation des formulaires"
+git commit -m "fix(UNIV-456): fix form validation"
 ```
 
 ```bash
-git commit -m "refactor(MOJ-789): simplifie la logique de calcul"
+git commit -m "refactor(MOJ-789): simplify the computation logic"
 ```
 
-### Sans numéro Jira
+### Without a Jira number
 
-Branche : `main` ou `develop`
+Branch: `main` or `develop`
 
 ```bash
-git commit -m "chore: met à jour les dépendances"
+git commit -m "chore: update dependencies"
 ```
 
 ```bash
-git commit -m "docs: améliore le README"
+git commit -m "docs: improve the README"
 ```
 
-### Avec corps détaillé
+### With a detailed body
 
 ```bash
-git commit -m "feat(MOJ-1234): ajoute la pagination des résultats
+git commit -m "feat(MOJ-1234): add result pagination
 
-Implémente la pagination côté serveur pour améliorer
-les performances sur les grandes listes.
+Implement server-side pagination to improve
+performance on large lists.
 
-- Ajoute les paramètres page et limit
-- Retourne le total dans les headers
-- Met à jour les tests d'intégration"
+- Add the page and limit parameters
+- Return the total in the headers
+- Update the integration tests"
 ```
 
-## Breaking Changes
+## Breaking changes
 
-Pour les changements cassants, ajouter un point d'exclamation (!) après le type ou le scope :
+For breaking changes, add an exclamation mark (!) after the type or the scope:
 
 ```bash
-git commit -m "feat(MOJ-1234)!: change le format de l'API de réponse"
+git commit -m "feat(MOJ-1234)!: change the API response format"
 ```
 
-Ou dans le footer :
+Or in the footer:
 
 ```bash
-git commit -m "feat(MOJ-1234): refonte de l'API utilisateurs
+git commit -m "feat(MOJ-1234): redesign the users API
 
-BREAKING CHANGE: le format de réponse a changé de array à objet paginé"
+BREAKING CHANGE: the response format changed from an array to a paginated object"
 ```
 
-## Workflow complet
+## Full workflow
 
-1. Vérifier la branche : `git branch --show-current`
-2. Extraire le Jira (si présent)
-3. Vérifier les changements : `git status` et `git diff`
-4. Stager les fichiers pertinents : `git add <fichiers>`
-5. Demander l'intention à l'utilisateur si pas claire
-6. Créer le commit avec le bon format
+1. Check the branch: `git branch --show-current`
+2. Extract the Jira key (if any)
+3. Check the changes: `git status` and `git diff`
+4. Stage the relevant files: `git add <files>`
+5. Ask the user for the intent if it is unclear
+6. Create the commit with the right format
 
-## Notes importantes
+## Important notes
 
-- Ne jamais mentionner d'outils IA dans les messages de commit
-- Un commit = une modification logique cohérente
-- Préférer plusieurs petits commits à un gros commit
-- Vérifier que le code compile/lint avant de commiter
+- Never mention AI tools in commit messages
+- One commit = one coherent logical change
+- Prefer several small commits to one big commit
+- Check that the code builds/lints before committing
+- Never `--no-verify` (the `security` plugin blocks it anyway)

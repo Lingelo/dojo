@@ -1,8 +1,9 @@
-# Plugin Notifications System
+# Notifications System plugin
 
-Notifications sonores système et visuelles (OS) quand Claude termine une tâche ou a besoin d'attention.
+System sounds and OS notifications when Claude finishes a task or needs your attention.
 
-> **Migration** : Ce plugin s'appelait auparavant `notifications`. Si vous aviez `notifications@angelo-plugins` installé, désinstallez-le et réinstallez sous le nouveau nom :
+> **Migration**: this plugin used to be called `notifications`. If you had
+> `notifications@angelo-plugins` installed, uninstall it and reinstall it under the new name:
 > ```bash
 > /plugin install notifications-system@angelo-plugins
 > ```
@@ -13,9 +14,26 @@ Notifications sonores système et visuelles (OS) quand Claude termine une tâche
 /plugin install notifications-system@angelo-plugins
 ```
 
+Prerequisite: Node.js. On Linux, see [Linux dependencies](#linux-installing-the-dependencies).
+
+## Features
+
+| Event | Sound | Notification | When |
+|---|---|---|---|
+| **Stop** | completion sound | "Task complete" | Claude finishes a response |
+| **Notification** (`permission_prompt`) | attention sound | "Action required" | Claude asks for an interaction (tool permission, interactive question, form) |
+
+> **Note**: the attention sound does not fire after 60 s of inactivity (`idle_prompt`), only on active
+> interactions.
+
 ## Configuration
 
-Créer le fichier `~/.claude/config/notifications.json` :
+Both channels are on by default. Configuration is read on every notification: no need to restart Claude
+Code.
+
+### Configuration file
+
+Create `~/.claude/config/notifications.json`:
 
 ```bash
 mkdir -p ~/.claude/config
@@ -28,74 +46,73 @@ mkdir -p ~/.claude/config
 }
 ```
 
-**Exemples de configuration :**
-
 | Mode | sound | visual |
-|------|-------|--------|
-| Son + Visuel (défaut) | `true` | `true` |
-| Visuel uniquement | `false` | `true` |
-| Son uniquement | `true` | `false` |
-| Désactivé | `false` | `false` |
+|---|---|---|
+| Sound + visual (default) | `true` | `true` |
+| Visual only | `false` | `true` |
+| Sound only | `true` | `false` |
+| Off | `false` | `false` |
 
-**Commandes rapides :**
+Quick commands:
 
 ```bash
-# Visuel uniquement (pas de son)
+# Visual only (no sound)
 echo '{"sound": false, "visual": true}' > ~/.claude/config/notifications.json
 
-# Son uniquement (pas de notification visuelle)
+# Sound only (no visual notification)
 echo '{"sound": true, "visual": false}' > ~/.claude/config/notifications.json
 
-# Les deux (défaut)
+# Both (default)
 echo '{"sound": true, "visual": true}' > ~/.claude/config/notifications.json
 ```
 
-> **Note** : La configuration est lue à chaque notification, pas besoin de redémarrer Claude Code.
+### Environment variables
 
-## Fonctionnalités
+When a key is missing from the file, the environment variables are used:
 
-| Événement | Son | Quand |
-|-----------|-----|-------|
-| **Stop** | Son de complétion | Claude termine une réponse |
-| **Notification** | Son d'attention | Claude demande une interaction (permission outil, question interactive, formulaire) |
+| Variable | Values | Default |
+|---|---|---|
+| `CLAUDE_NOTIFY_SOUND` | `true` / `false` | `true` |
+| `CLAUDE_NOTIFY_VISUAL` | `true` / `false` | `true` |
 
-> **Note** : Le son d'attention ne se déclenche pas après 60 sec d'inactivité (`idle_prompt`), uniquement lors d'interactions actives.
+Precedence: file > environment variables > defaults.
 
-## Compatibilité
+## Compatibility
 
-| OS | Son | Notification visuelle |
-|----|-----|----------------------|
-| **macOS** | `afplay` (natif) | `osascript` (natif) |
-| **Linux** | `paplay` / `aplay` | `notify-send` (libnotify) |
-| **Windows** | PowerShell SystemSounds | PowerShell Toast |
+| OS | Sound | Visual notification |
+|---|---|---|
+| **macOS** | `afplay` (built in) | `osascript` (built in) |
+| **Linux** | `paplay`, then `aplay` | `notify-send` (libnotify) |
+| **Windows** | PowerShell `System.Media.SystemSounds` | PowerShell toast |
 
 ### macOS
 
-Utilise les sons système :
-- Complétion : `/System/Library/Sounds/Glass.aiff`
-- Attention : `/System/Library/Sounds/Ping.aiff`
+Uses the system sounds:
+- Completion: `/System/Library/Sounds/Glass.aiff`
+- Attention: `/System/Library/Sounds/Ping.aiff`
 
 ### Linux
 
-Cherche les sons dans l'ordre :
-1. `/usr/share/sounds/freedesktop/stereo/`
-2. `/usr/share/sounds/ubuntu/stereo/`
-3. `/usr/share/sounds/gnome/default/alerts/`
-4. Fallback : terminal bell (`\x07`)
+Looks for sounds in this order:
+1. `/usr/share/sounds/freedesktop/stereo/complete.oga` (completion) or `bell.oga` (attention)
+2. `/usr/share/sounds/sound-icons/prompt.wav`
+3. `/usr/share/sounds/ubuntu/stereo/message.ogg`
+4. `/usr/share/sounds/gnome/default/alerts/drip.ogg`
+5. Fallback: terminal bell (`\x07`)
 
 ### Windows
 
-Utilise PowerShell avec `System.Media.SystemSounds` :
-- Complétion : `Asterisk`
-- Attention : `Exclamation`
+Uses PowerShell with `System.Media.SystemSounds`:
+- Completion: `Asterisk`
+- Attention: `Exclamation`
 
-## Pourquoi ce plugin ?
+## Why this plugin?
 
-Quand Claude travaille sur des tâches longues, vous pouvez faire autre chose et être notifié quand :
-- Claude a terminé son travail
-- Claude demande une permission ou pose une question interactive
+When Claude works on long tasks, you can do something else and be notified when:
+- Claude has finished its work;
+- Claude asks for a permission or asks an interactive question.
 
-Plus besoin de surveiller constamment le terminal !
+No more watching the terminal all the time.
 
 ## Structure
 
@@ -106,30 +123,36 @@ notifications-system/
 ├── hooks/
 │   └── hooks.json
 ├── scripts/
-│   ├── notify.js          # Son + notification visuelle
-│   └── install-deps.sh    # Installation dépendances Linux
+│   ├── notify.js          # sound + visual notification
+│   └── install-deps.sh    # Linux dependencies
 └── README.md
 ```
 
-## Dépannage
+## Troubleshooting
 
-### Pas de son sur macOS
+### No sound on macOS
 
-Vérifier que le volume n'est pas à zéro et que les sons système sont activés dans Préférences Système > Son.
+Check that the volume is not at zero and that system sounds are enabled in System Settings > Sound.
 
-### Linux : Installation des dépendances
+### Linux: installing the dependencies
 
-Un script d'installation est fourni pour toutes les distributions :
+An installation script is provided for the main distributions:
 
 ```bash
-# Depuis le répertoire du plugin
+# From the plugin folder
 ./scripts/install-deps.sh
 ```
 
-Le script détecte automatiquement votre distribution (Debian/Ubuntu, Fedora/RHEL, Arch, openSUSE) et installe :
-- `libnotify` — pour les notifications visuelles (`notify-send`)
-- `pulseaudio-utils` — pour le son (`paplay`)
+The script detects your distribution (Debian/Ubuntu, Fedora/RHEL, Arch, openSUSE) and installs:
+- `libnotify` — for visual notifications (`notify-send`)
+- `pulseaudio-utils` — for sound (`paplay`)
 
-### Pas de son sur Windows
+### No sound on Windows
 
-Vérifier que PowerShell est disponible et que les sons système sont activés.
+Check that PowerShell is available and that system sounds are enabled.
+
+### No notification at all
+
+- Check that the plugin is enabled (`/plugin`).
+- Check `~/.claude/config/notifications.json` is valid JSON (an invalid file is ignored and the defaults
+  apply).

@@ -1,32 +1,32 @@
 ---
-title: [Titre clair et descriptif]
+title: [Clear, descriptive title]
 date: [YYYY-MM-DD]
-category: [sous-dossier de learnings/]
-module: [Module ou zone]
-problem_type: [énumération, piste savoir]
-component: [valeur du corpus, sinon défaut suggéré]
+category: [subfolder of learnings/]
+module: [Module or area]
+problem_type: [enumeration, knowledge track]
+component: [corpus value, otherwise suggested default]
 severity: [critical|high|medium|low]
 applies_when:
-  - [Situation où cette consigne s'applique]
-tags: [mot-cle-un, mot-cle-deux]
+  - [Situation where this guidance applies]
+tags: [keyword-one, keyword-two]
 ---
 
-# [Titre clair et descriptif]
+# [Clear, descriptive title]
 
-## Contexte
-[La situation, le manque ou la friction qui a motivé cette consigne.]
+## Context
+[The situation, gap or friction that motivated this guidance.]
 
-## Consigne
-[La pratique, le motif ou la recommandation, avec exemples de code si utile.]
+## Guidance
+[The practice, pattern or recommendation, with code examples if useful.]
 
-## Pourquoi c'est important
-[La raison et l'impact de la suivre ou non.]
+## Why it matters
+[The reason, and the impact of following it or not.]
 
-## Quand l'appliquer
-- [Conditions ou situations]
+## When to apply it
+- [Conditions or situations]
 
-## Exemples
-[Avant/après ou usage concret.]
+## Examples
+[Before/after or concrete usage.]
 
-## Liens
-- [Leçons, tickets, PR liés — ou supprimer la section]
+## Links
+- [Related learnings, tickets, PRs — or delete the section]

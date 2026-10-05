@@ -1,103 +1,96 @@
 WEBVTT
 
-00:00:00.600 --> 00:00:02.732
-L'IA écrit du code
-plus vite que jamais.
+00:00:00.600 --> 00:00:02.747
+AI writes code faster than ever.
 
-00:00:03.000 --> 00:00:05.003
-Selon DORA 2025 et 2026,
+00:00:03.000 --> 00:00:05.858
+According to DORA 2025 and 2026,
 
-00:00:05.003 --> 00:00:07.127
-elle accélère la livraison,
+00:00:05.858 --> 00:00:07.900
+it speeds up delivery,
 
-00:00:07.127 --> 00:00:09.744
-mais augmente aussi
-l'instabilité.
+00:00:07.900 --> 00:00:10.600
+but also increases instability.
 
-00:00:11.070 --> 00:00:13.010
-Kaizen fait de
-Claude Code un cycle
+00:00:11.070 --> 00:00:12.895
+Kaizen turns Claude Code into a
 
-00:00:13.010 --> 00:00:14.613
-de développement maîtrisé.
+00:00:12.895 --> 00:00:14.729
+controlled development cycle.
 
-00:00:14.950 --> 00:00:16.781
-Tout part d'une constitution :
+00:00:14.950 --> 00:00:16.319
+Everything starts from a
 
-00:00:16.781 --> 00:00:18.566
-vos principes, chacun avec un
+00:00:16.319 --> 00:00:18.208
+constitution: your principles,
 
-00:00:18.566 --> 00:00:19.896
-contrôle vérifiable.
+00:00:18.208 --> 00:00:20.111
+each with a verifiable check.
 
-00:00:21.580 --> 00:00:23.893
-Le brainstorm définit
-quoi construire.
+00:00:21.580 --> 00:00:23.730
+The brainstorm defines
+what to build.
 
-00:00:23.893 --> 00:00:25.439
-Le plan décide comment.
+00:00:23.730 --> 00:00:25.098
+The plan decides how.
 
-00:00:27.040 --> 00:00:29.450
-Exigences, tests,
-retour arrière :
+00:00:27.040 --> 00:00:28.536
+Requirements, tests,
 
-00:00:29.450 --> 00:00:31.368
-tout est tracé, puis relu par
+00:00:28.536 --> 00:00:30.702
+rollback: everything is traced,
 
-00:00:31.368 --> 00:00:32.946
-des agents spécialisés.
+00:00:30.702 --> 00:00:33.119
+then reviewed by
+specialized agents.
 
-00:00:35.440 --> 00:00:36.547
-Pendant le travail,
+00:00:35.440 --> 00:00:37.828
+During the work, a
+quality gate blocks the
 
-00:00:36.547 --> 00:00:38.464
-un garde-fou bloque
-la fin de l'étape
+00:00:37.828 --> 00:00:39.979
+end of a step while
+tests are red.
 
-00:00:38.464 --> 00:00:40.162
-quand les tests sont rouges.
+00:00:41.690 --> 00:00:43.635
+Reviewers chosen for
+the changed code
 
-00:00:41.690 --> 00:00:43.355
-Des relecteurs
-choisis selon le code
+00:00:43.635 --> 00:00:45.316
+inspect it, and without their
 
-00:00:43.355 --> 00:00:44.401
-modifié l'inspectent,
+00:00:45.316 --> 00:00:47.069
+review, nothing is pushed.
 
-00:00:44.401 --> 00:00:46.549
-et sans leur revue,
-rien n'est poussé.
+00:00:48.870 --> 00:00:51.256
+The PR is described,
+its size checked,
 
-00:00:48.870 --> 00:00:51.844
-La PR est décrite,
-sa taille contrôlée,
+00:00:51.256 --> 00:00:53.662
+then it is followed
+until it is ready.
 
-00:00:51.844 --> 00:00:54.787
-puis elle est suivie
-jusqu'à être prête.
+00:00:57.260 --> 00:00:58.295
+Merging and going to
 
-00:00:57.260 --> 00:00:58.483
-Le merge et la mise en
+00:00:58.295 --> 00:01:00.036
+production stay in your hands.
 
-00:00:58.483 --> 00:01:00.589
-production, eux, restent à vous.
+00:01:01.240 --> 00:01:03.431
+Finally, durable
+lessons are captured,
 
-00:01:01.240 --> 00:01:03.095
-Enfin, les leçons durables sont
+00:01:03.431 --> 00:01:05.433
+and read back by the next cycle.
 
-00:01:03.095 --> 00:01:05.710
-capitalisées, et relues
-au cycle suivant.
+00:01:07.760 --> 00:01:09.514
+The goal: every unit of work
 
-00:01:07.760 --> 00:01:09.987
-L'objectif : que chaque
-unité de travail
+00:01:09.514 --> 00:01:11.241
+makes the next one easier.
 
-00:01:09.987 --> 00:01:11.809
-rende la suivante plus facile.
-
-00:01:14.060 --> 00:01:14.880
+00:01:14.060 --> 00:01:14.747
 Kaizen.
 
-00:01:14.880 --> 00:01:16.277
-Pour Claude Code.
+00:01:14.747 --> 00:01:15.912
+For Claude Code.

@@ -118,11 +118,11 @@ function findLinuxSound(type) {
 const NOTIFICATIONS = {
   complete: {
     title: 'Claude Code',
-    message: 'Tâche terminée'
+    message: 'Task complete'
   },
   attention: {
     title: 'Claude Code',
-    message: 'Action requise'
+    message: 'Action required'
   }
 };
 

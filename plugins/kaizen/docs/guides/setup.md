@@ -1,92 +1,99 @@
 # `/kaizen:setup`
 
-> Mettre en place le SDLC sur un projet : diagnostiquer ce qui lui manque, installer Kaizen, vérifier
-> qu'il est en bonne santé, ou créer un Kaizen Pack.
+> Set up the SDLC on a project: diagnose what it is missing, install Kaizen, check it is healthy, or
+> create a Kaizen Pack.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Crée la config et les dossiers, fait valider les commandes de vérification, règle la langue, le tracker, l'emplacement des documents et le plafond des PR, rend les leçons trouvables depuis `CLAUDE.md`, propose la constitution |
-| **Quand l'utiliser** | Première utilisation dans un repo ; `audit` pour savoir ce qui manque au projet et le corriger dans l'ordre ; `check` quand quelque chose semble anormal ; `pack:<nom>` pour créer un pack |
-| **Quand ne pas l'utiliser** | Écrire les principes du projet (→ [constitution](constitution.md), que `setup` propose à la fin) |
-| **Ce qu'elle produit** | `.kaizen/config.json`, `docs/{plans,learnings,ideation}/`, une ligne dans `.gitignore`, éventuellement une section dans `CLAUDE.md` |
-| **Et ensuite** | `/kaizen:constitution`, puis `/kaizen:brainstorm <idée>` ou `/kaizen:ideate` |
+| **What it does** | Creates the config and the folders, has the verification commands validated, sets language, tracker, documents location and PR limit, makes the learnings findable from `CLAUDE.md`, proposes the constitution, detects the deployment platform |
+| **When to use it** | First use in a repo; `audit` to find out what the project is missing and fix it in order; `check` when something looks wrong; `pack:<name>` to create a pack |
+| **When not to use it** | Writing the project's principles (→ [constitution](constitution.md), which `setup` proposes at the end) |
+| **What it produces** | `.kaizen/config.json`, `docs/{plans,learnings,ideation}/`, one line in `.gitignore`, possibly a section in `CLAUDE.md` and scaffolded files (`audit`) |
+| **What next** | `/kaizen:constitution`, then `/kaizen:brainstorm <idea>` or `/kaizen:ideate` |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:setup audit           # maturité SDLC du projet, corrections guidées par priorité
-/kaizen:setup                 # installation guidée
-/kaizen:setup check           # bilan de santé, aucune écriture
+/kaizen:setup audit           # project SDLC maturity, guided fixes by priority
+/kaizen:setup                 # guided installation
+/kaizen:setup check           # health check, no writes
 /kaizen:setup pack:house-rules
-/kaizen:setup pack:house-rules première règle : tout export CSV commence par un BOM
+/kaizen:setup pack:house-rules first rule: every CSV export starts with a BOM
 ```
 
-## L'audit : mettre en place le SDLC
+![What Kaizen writes in your repo and who reads it](../media/diagrams/artifacts-map.svg)
 
-`node $K audit` évalue le projet sur cinq domaines et donne une note à chacun :
+In depth: [state and files](../reference/state-and-files.md).
 
-| Domaine | Contrôles |
+## The audit: setting up the SDLC
+
+`node $K audit` (`--json`, `--no-github` without an authenticated `gh`) scores the project on five
+areas:
+
+| Area | Checks |
 |---|---|
-| **Fondations** | dépôt distant, CI qui lance les tests, tests automatisés, lint, typage, `.env` ignoré, détection de secrets |
-| **Flux** | protection de la branche par défaut (via `gh`), CODEOWNERS, modèle de PR, Dependabot/Renovate, `CLAUDE.md` |
-| **Livraison** | déploiement outillé (ou reconnu par `deploy detect`), retour arrière, production protégée |
-| **Exploitation** | signaux surveillés, endpoint de santé (route trouvée dans le code) |
-| **Boucle Kaizen** | Kaizen initialisé, constitution, leçons trouvables |
+| **Foundations** | remote repository, CI running the tests, automated tests, lint, type checking, `.env` ignored, secret scanning |
+| **Flow** | default branch protection (through `gh`), CODEOWNERS, PR template, Dependabot/Renovate, `CLAUDE.md` |
+| **Delivery** | tooled deployment (or recognized by `deploy detect`), rollback, protected production |
+| **Operations** | watched signals, continuous incident detection, health endpoint (route found in the code) |
+| **Kaizen loop** | Kaizen initialized, constitution, findable learnings |
 
-Puis Claude propose de corriger chaque point, **P1 d'abord** (ce qui protège), un par un, avec votre
-accord :
-- **gabarits** générés depuis votre stack, jamais par-dessus un fichier existant :
-  `audit fix ci` (GitHub Actions : installation et commandes de vérification détectées),
-  `pr_template`, `dependabot` (écosystèmes détectés), `codeowners --owner @équipe`, `gitignore_env`,
-  `monitor_patrol` et `monitor_alert` (détection continue des incidents, `--env`, `--ref <sha>`) ;
-- **déploiement** : `deploy detect`, vous choisissez, `deploy configure <id>` ;
-- **réglages d'administration** (protection de branche) : Claude donne les réglages exacts, vous les
-  appliquez ;
-- **skills** : constitution, installation.
+Each check is `ok`, `warn`, `missing` or `unknown`, with its evidence and a priority (P1 protects, P3
+improves). Then Claude offers to fix each point, **P1 first**, one by one, with your approval:
+- **scaffolds** generated from your stack, never over an existing file:
+  `audit fix ci` (GitHub Actions: install and detected verification commands),
+  `pr_template`, `dependabot` (detected ecosystems), `codeowners --owner @team`, `gitignore_env`,
+  `monitor_patrol` and `monitor_alert` (continuous incident detection, `--env`, `--ref <sha>`);
+- **deployment**: `deploy detect`, you choose, `deploy configure <id>`;
+- **administration settings** (branch protection): Claude gives the exact settings, you apply them;
+- **skills**: constitution, installation.
 
-L'audit se relance à la fin pour montrer l'avant/après.
+The audit is rerun at the end to show the before/after.
 
-## L'installation, étape par étape
+## The installation, step by step
 
-1. **Initialiser** : `node $K init`, idempotent (n'écrase jamais une config existante).
-2. **Vérifications** : Claude vous montre les commandes `test`, `lint` et `typecheck` détectées.
-   Vous les gardez, les ajustez, ou désactivez le garde-fou. Il les lance une fois pour s'assurer
-   qu'elles passent déjà sur la branche par défaut.
-3. **Langue** : `auto` (suit la conversation), ou fixée.
-4. **Tracker** : `auto` (Jira lu dans la branche, GitHub via `gh`).
-5. **Emplacement** : `docs_root` (`docs` par défaut). À changer **avant** les premiers documents si
-   `docs/` est déjà un site publié.
-6. **Trouvabilité** (avec votre accord) : une courte section dans `CLAUDE.md`, pour que tout agent
-   aille lire `docs/learnings/` avant de planifier ou de déboguer.
-7. **Constitution** : proposée si elle est absente, vérifiée si elle existe.
-8. **Taille des PR** : `pr.max_lines` (400 par défaut).
-9. **Déploiement et monitoring** (facultatif) : `deploy detect` reconnaît votre plateforme et propose
-   commandes, retour arrière et health-check ; vous choisissez. Voir [deploy](deploy.md).
-10. **Profil** : `lean` (recommandé pour commencer), `standard` ou `full`. Il fixe aussi le modèle de
-    chaque agent. Voir [Configuration](../configuration.md#profile) et
-    [`models`](../configuration.md#models--le-bon-modèle-pour-chaque-tâche).
-11. **Bilan**.
+1. **Initialize**: `node $K init`, idempotent (never overwrites an existing config).
+2. **Checks**: Claude shows you the detected `test`, `lint` and `typecheck` commands. You keep them,
+   adjust them, or disable the gate. It runs them once to make sure they already pass on the default
+   branch. Slow suite → targeted checks for the gate (`gate.targeted` with `{files}`).
+3. **Language**: `auto` (follows the conversation), or pinned (`en`, `fr`…) for the deliverables.
+4. **Tracker**: `auto` (Jira read from the branch, GitHub through `gh`).
+5. **Location**: `docs_root` (`docs` by default). To change **before** the first documents if `docs/`
+   is already a published site.
+6. **Findability** (with your approval): a short section in `CLAUDE.md`, so that any agent reads
+   `docs/learnings/` before planning or debugging.
+7. **Constitution**: proposed if missing, checked if it exists.
+8. **PR size**: `pr.max_lines` (400 by default).
+9. **Deployment and monitoring** (optional): `deploy detect` recognizes your platform and proposes
+   commands, rollback and health-check; you choose. See [deploy](deploy.md).
+10. **Profile**: `lean` (recommended to start), `standard` or `full`. It also sets each agent's model.
+    See [Configuration](../configuration.md#profile) and
+    [`models`](../configuration.md#models--the-right-model-for-each-task).
+11. **Summary**.
 
-## Le bilan (`check`)
+## The health check (`check`)
 
-| Point | Commande |
+| Point | Command |
 |---|---|
-| Racine et config | `node $K root`, `node $K config` |
-| Vérifications | `node $K detect` |
-| Leçons | `node $K learnings validate` |
+| Root and config | `node $K root`, `node $K config` |
+| Checks | `node $K detect` |
+| Learnings | `node $K learnings validate` |
 | Packs | `node $K packs` |
 | Constitution | `node $K constitution check` |
-| Garde-fou | `node $K gate status` (un garde-fou resté actif sans travail en cours → `gate off`) |
+| Gate | `node $K gate status` (a gate left active without work in progress → `gate off`) |
+| Review | `node $K review status` |
+| Models | `node $K models` (invalid values reported) |
 
-Chaque point affiche ✔ ou ⚠, avec la correction proposée.
+Each point shows ✔ or ⚠, with the proposed fix.
 
-## Bon à savoir
+## Good to know
 
-- Ce que `setup` crée est à **commiter** : la config et les dossiers sont partagés par l'équipe.
-  `.kaizen/config.local.json` et `.kaizen/state/` ne sont pas versionnés.
+- What `setup` creates is to be **committed**: the config and the folders are shared by the team.
+  `.kaizen/config.local.json` and `.kaizen/state/` are not versioned.
+- The scaffolds stay uncommitted: review them before committing.
 
-## Voir aussi
+## See also
 
-[Démarrage](../demarrage.md) · [Configuration](../configuration.md) · [Kaizen Packs](../packs.md) · [constitution](constitution.md)
+[Getting started](../getting-started.md) · [Configuration](../configuration.md) · [Kaizen Packs](../packs.md) · [constitution](constitution.md)

@@ -1,55 +1,58 @@
 # `/kaizen:prune-learnings`
 
-> Garder les leçons dignes de confiance : chacune est confrontée au code actuel, puis gardée, mise à
-> jour, fusionnée, remplacée ou supprimée, preuves à l'appui.
+> Keep the learnings trustworthy: each one is checked against the current code, then kept, updated,
+> merged, replaced or deleted, with evidence.
 
-Une leçon fausse est **pire** qu'aucune leçon, parce que `plan` et `review` l'appliquent. `prune-learnings`
-est l'entretien du corpus.
+A wrong learning is **worse** than no learning, because `plan` and `review` apply it. `prune-learnings`
+is the maintenance of the corpus.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Valide le frontmatter, vérifie chaque leçon (chemins, symboles, comportement, `retire_when`), détecte doublons et contradictions, classe, applique, rend un rapport |
-| **Quand l'utiliser** | Après un gros refactor, une migration ou une montée de version ; quand une leçon s'est révélée fausse ; quand `metrics` montre des leçons jamais réutilisées ; tous les trimestres |
-| **Quand ne pas l'utiliser** | Écrire une nouvelle leçon (→ [learn](learn.md)) |
-| **Ce qu'elle produit** | Leçons corrigées, un rapport « Appliqué / Recommandé », un commit des seuls fichiers touchés |
-| **Et ensuite** | Les contradictions avec des consignes vous sont signalées, à trancher |
+| **What it does** | Validates the frontmatter, checks each learning (paths, symbols, behavior, `retire_when`), detects duplicates and contradictions, classifies, applies, reports |
+| **When to use it** | After a big refactor, a migration or an upgrade; when a learning turned out wrong; when `metrics` shows learnings never reused; every quarter |
+| **When not to use it** | Writing a new learning (→ [learn](learn.md)) |
+| **What it produces** | Corrected learnings, an "Applied / Recommended" report, a commit of the touched files only |
+| **What next** | Contradictions with instructions are reported to you, to settle |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:prune-learnings                       # tout docs/learnings/
-/kaizen:prune-learnings exports               # une zone (dossier, module, mot-clé)
-/kaizen:prune-learnings élaguer               # juger aussi la valeur (après confirmation)
+/kaizen:prune-learnings                       # all of docs/learnings/
+/kaizen:prune-learnings exports               # one area (folder, module, keyword)
+/kaizen:prune-learnings prune                 # also judge the value (after confirmation)
 /kaizen:prune-learnings mode:auto
 ```
 
-## Les cinq issues
+![How learnings are written, read back, measured and pruned](../media/diagrams/learnings-loop.svg)
 
-| Issue | Quand |
+In depth: [learnings](../concepts/learnings.md#pruning).
+
+## The five outcomes
+
+| Outcome | When |
 |---|---|
-| **Garder** | exacte et distincte |
-| **Mettre à jour** | le fond tient, des détails ont dérivé (chemin déplacé, nom changé, frontmatter invalide) |
-| **Fusionner** | plusieurs leçons disent la même chose : on garde la meilleure, enrichie, et on supprime les autres |
-| **Remplacer** | le fond est devenu faux, mais la zone mérite une leçon : réécriture d'après le code actuel |
-| **Supprimer** | le problème ne peut plus se produire et la leçon n'apprend plus rien |
+| **Keep** | accurate and distinct |
+| **Update** | the substance holds, details drifted (moved path, renamed symbol, invalid frontmatter) |
+| **Merge** | several learnings say the same thing: the best one is kept, enriched, and the others deleted |
+| **Replace** | the substance became wrong, but the area deserves a learning: rewritten from the current code |
+| **Delete** | the problem can no longer happen and the learning teaches nothing anymore |
 
-Frontière : si un lecteur de l'ancienne version prendrait une **mauvaise décision**, c'est Remplacer.
+Boundary: if a reader of the old version would make a **wrong decision**, it is Replace.
 
-## Bon à savoir
+## Good to know
 
-- **Ne modifie jamais le code produit**, ni une skill, un runbook ou `CLAUDE.md`. Une contradiction
-  avec une consigne est **signalée**, avec les deux citations et ce que fait le code.
-- En interactif, Remplacer et Supprimer demandent votre accord. En `mode:auto`, ces leçons sont
-  seulement marquées « Possiblement périmée » et listées.
-- **Invérifiable n'est pas faux** : une leçon sur un comportement de production qu'on ne peut pas
-  observer reste en place, avec une note.
-- `élaguer` supprime aussi des leçons **exactes** dont le raisonnement est désormais porté par un
-  test ou un commentaire. Chaque suppression cite le fichier qui la justifie, et rien ne part sans
-  votre confirmation.
-- Pas de dossier `_archived` : l'historique git sert d'archive.
+- **Never modifies product code**, nor a skill, a runbook or `CLAUDE.md`. A contradiction with an
+  instruction is **reported**, with both quotes and what the code does.
+- Interactively, Replace and Delete ask for your approval. In `mode:auto`, those learnings are only
+  marked "Possibly stale" and listed.
+- **Unverifiable is not wrong**: a learning about a production behavior that cannot be observed stays,
+  with a note.
+- `prune` also deletes **accurate** learnings whose reasoning is now carried by a test or a comment.
+  Each deletion cites the file that justifies it, and nothing goes without your confirmation.
+- No `_archived` folder: git history is the archive.
 
-## Voir aussi
+## See also
 
 [learn](learn.md) · [metrics](metrics.md)

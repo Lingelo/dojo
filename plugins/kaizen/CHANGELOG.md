@@ -1,191 +1,231 @@
 # Changelog
 
-Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : [SemVer](https://semver.org/lang/fr/).
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
+
+## [3.0.0] - 2026-10-04
+
+Kaizen is now written in English (#17). Claude still talks to the user in their language, and the
+documents written in the target repo follow `language` (`auto` = the language of the conversation).
+
+### Breaking changes
+- **Everything is in English**: skills, agents, references, templates, CLI and hook messages,
+  documentation, tests and evals. Scripts that parsed the CLI's French output must read the English
+  messages (or use `--json`).
+- **Renamed values** in the JSON output and in the state files:
+  - review verdict `reserves` → `concerns` (`review record --verdict reserves` is still accepted);
+  - review depth `light` / `update`, confidence `high` / `medium` / `low`;
+  - release note groups `Features`, `Fixes`, `Performance`, `Refactoring`, `Documentation`, `Reverts`,
+    `Other`;
+  - unattributed agent roles `unknown` / `other`; manual incident source `manual`.
+- **English plan and constitution fields** in new documents: `**Check:**`, `NON-NEGOTIABLE`,
+  `## AI policy`, `## Governance`, `## Amendments`, `Approved by:`, `**Covers:**`, `**Files:**`,
+  `**Evidence:**`, `**Verification:**`, `**Slice:**`, `**Exposure**`, `**Rollback**`, `**Signal**`,
+  `[NEEDS CLARIFICATION: …]`. The French fields of Kaizen 2.x (`**Contrôle :**`, `NON NÉGOCIABLE`,
+  `Approuvé par :`, `[À CLARIFIER : …]`…) are **still read**: existing plans and constitutions keep
+  passing `plan check` and `constitution check`.
+- Documentation pages renamed: `docs/demarrage.md` → `docs/getting-started.md`,
+  `docs/depannage.md` → `docs/troubleshooting.md`, `docs/positionnement.md` → `docs/positioning.md`.
+
+### Added
+- **Complete reference** in the README: one line per CLI command (`node $K <command>`), the five hooks
+  with their role, exit codes; a contract test keeps it in sync with `kaizen.mjs` and `hooks.json`, and
+  checks that every relative link of the documentation resolves.
+- **Exhaustive documentation with diagrams**: ten in-depth pages (`docs/concepts/`: the loop, plans,
+  constitution, gates and hooks, review, pull requests, production, learnings, metrics, agents and
+  models) and three reference pages (`docs/reference/`: CLI, state and files, SDLC audit), illustrated
+  by 14 SVG diagrams generated from `docs/media/source/diagrams.mjs` (light and dark themes); the loop
+  is drawn as SVG in the README and the docs; every guide links to the page explaining its mechanism.
+  A contract test checks every `#anchor` link.
+- Documentation completed: `monitor` incidents and continuous monitoring, `deploy detect` platforms,
+  `audit fix monitor_patrol|monitor_alert`, cycle cost per role, troubleshooting for refused
+  deployments and upgrading from 2.x.
+- English presentation video: narration, burned-in subtitles, `.srt` / `.vtt`.
+
+### Upgrading from 2.x
+- Nothing to migrate in the repo: French plans, learnings, constitutions and ADRs stay valid.
+- Set `"language": "fr"` in `.kaizen/config.json` to keep writing deliverables in French whatever the
+  conversation language.
 
 ## [2.1.0] - 2026-10-04
 
-### Ajouté
-- **Coût des sous-agents** dans `cycle_cost` (#15) : le hook Stop additionne aussi les transcripts des
-  sous-agents de la session (`<session>/subagents/agent-*.jsonl`), dédoublonnés par message ; le hook
-  `Agent` consigne chaque lancement pendant un cycle (`.kaizen/state/agent-runs.jsonl` : rôle, modèle,
-  id) pour ventiler les tokens par rôle de la politique de modèles. `metrics` expose le total
-  (principal + sous-agents), `main_tokens_median`, `subagent_tokens_median`, `subagent_share` et
-  `tokens_by_role`.
+### Added
+- **Subagent cost** in `cycle_cost` (#15): the Stop hook also adds up the transcripts of the session's
+  subagents (`<session>/subagents/agent-*.jsonl`), deduplicated by message; the `Agent` hook logs each
+  launch during a cycle (`.kaizen/state/agent-runs.jsonl`: role, model, id) to break tokens down by role
+  of the model policy. `metrics` exposes the total (main + subagents), `main_tokens_median`,
+  `subagent_tokens_median`, `subagent_share` and `tokens_by_role`.
+- **Continuous monitoring** (#16): `monitor patrol` (confirmed check to schedule: routine, cron, CI
+  workflow) and `monitor alert` (Alertmanager, PagerDuty, Datadog or plain JSON, for example through
+  `repository_dispatch`) open an **incident** dated at its detection — `incident/<env>/…` tag, resolved
+  by a rollback or `monitor incident resolve` (`resolve/<env>/…`). `monitor watch` also records its
+  breach as an incident. `monitor incident open|resolve|list`.
+- DORA: an incident before the next deployment counts as a failure, and the time to restore runs from
+  detection to resolution; `deployments.incidents`. The postmortem reuses the tracked detection. The hook
+  also refuses hand-made `incident/…` and `resolve/…` tags.
+- `status` (and so `/kaizen:help`) puts an open incident first (`/kaizen:monitor <env>`), then an
+  incident resolved less than 14 days ago without a postmortem (`/kaizen:postmortem`).
+- `audit` checks continuous incident detection; `audit fix monitor_patrol` and `audit fix monitor_alert`
+  generate the matching GitHub Actions workflows (`--env`, `--ref`).
+- End-to-end evals `monitor-alert`, `help-incident` and `cycle-cost-subagents` (29 in total). The last
+  one confirms on a real session that the `Agent` tool's response carries the agent id: subagents are
+  tied to their role by id, not only by prompt.
+- `/kaizen:monitor` instruction clarified: with nobody to answer, rollback is the default even if
+  `deploy.auto_rollback` is off, unless the incident predates the last deployment.
 
-- **Surveillance continue** (#16) : `monitor patrol` (contrôle confirmé à planifier : routine, cron,
-  workflow CI) et `monitor alert` (Alertmanager, PagerDuty, Datadog ou JSON simple, par exemple via
-  `repository_dispatch`) ouvrent un **incident** daté de sa détection — tag `incident/<env>/…`, résolu
-  par un retour arrière ou `monitor incident resolve` (`resolve/<env>/…`). `monitor watch` trace aussi
-  sa violation comme incident. `monitor incident open|resolve|list`.
-- DORA : un incident avant le déploiement suivant compte comme un échec, et le temps de rétablissement
-  court de la détection à la résolution ; `deployments.incidents`. Le post-mortem reprend la détection
-  tracée. Le hook refuse aussi les tags `incident/…` et `resolve/…` forgés à la main.
-
-- `status` (et donc `/kaizen:help`) place en tête un incident ouvert (`/kaizen:monitor <env>`), puis
-  un incident résolu depuis moins de 14 jours sans post-mortem (`/kaizen:postmortem`).
-- `audit` contrôle la détection continue des incidents ; `audit fix monitor_patrol` et
-  `audit fix monitor_alert` génèrent les workflows GitHub Actions correspondants (`--env`, `--ref`).
-- Évaluations de bout en bout `monitor-alert`, `help-incident` et `cycle-cost-subagents` (29 au total).
-  La dernière confirme sur une vraie session que la réponse de l'outil `Agent` porte l'identifiant
-  d'agent : les sous-agents sont rattachés à leur rôle par id, pas seulement par prompt.
-- Consigne de `/kaizen:monitor` précisée : sans personne pour répondre, le retour arrière est le
-  défaut même si `deploy.auto_rollback` est désactivé, sauf si l'incident précède le dernier déploiement.
-
-### Corrigé
-- Un incident est rattaché au commit déployé **au moment de sa détection**, et non au dernier
-  déploiement : une alerte antérieure à un déploiement ne l'incrimine plus.
-- `deploy run`, `deploy rollback` et `deploy flag` ont un délai (`deploy.timeout_seconds`, 30 min, ou
-  `environments.<env>.timeout_seconds`) : une commande bloquée est coupée avec tout son arbre de
-  processus, le déploiement est en échec sans tag et le rapport signale un état incertain.
-- Une vérification coupée par son délai (`verify`, garde-fou Stop, signaux `monitor` par commande)
-  ne survit plus en arrière-plan : `scripts/run-bounded.mjs` tue tout l'arbre de processus
-  (`taskkill /T /F` sous Windows, groupe de processus sous POSIX), et plus seulement le shell (#14).
+### Fixed
+- An incident is tied to the commit deployed **at the time of its detection**, not to the last
+  deployment: an alert older than a deployment no longer blames it.
+- `deploy run`, `deploy rollback` and `deploy flag` have a timeout (`deploy.timeout_seconds`, 30 min, or
+  `environments.<env>.timeout_seconds`): a stuck command is killed with its whole process tree, the
+  deployment fails without a tag and the report flags an uncertain state.
+- A check killed by its timeout (`verify`, Stop gate, command-based `monitor` signals) no longer
+  survives in the background: `scripts/run-bounded.mjs` kills the whole process tree (`taskkill /T /F`
+  on Windows, process group on POSIX), not only the shell (#14).
 
 ## [2.0.0] - 2026-10-04
 
-### Changements cassants
-- Skills renommées (`compound` → `learn`, `refresh` → `prune-learnings`, `lfg` → `autopilot`,
-  `babysit-pr` → `watch-pr`, `resolve-pr-feedback` → `address-feedback`) et dossier des leçons
-  `docs/solutions/` → `docs/learnings/`, sans compatibilité : un repo 1.x renomme son dossier.
-  Publiés en 1.2.0 par erreur ; un renommage sans compatibilité exige une version majeure.
-- **`git push` d'une branche exige une revue enregistrée** dans un repo initialisé par Kaizen
-  (`review.require_before_push: false` pour revenir au comportement 1.x).
+### Breaking changes
+- Renamed skills (`compound` → `learn`, `refresh` → `prune-learnings`, `lfg` → `autopilot`,
+  `babysit-pr` → `watch-pr`, `resolve-pr-feedback` → `address-feedback`) and learnings folder
+  `docs/solutions/` → `docs/learnings/`, without compatibility: a 1.x repo renames its folder. Published
+  in 1.2.0 by mistake; a rename without compatibility requires a major version.
+- **`git push` of a branch requires a recorded review** in a repo initialized by Kaizen
+  (`review.require_before_push: false` to go back to the 1.x behavior).
 
-### Ajouté
-- Hook `PreToolUse` `review-gate.mjs` : la revue « obligatoire » de `work`, `autopilot` et `ship` est
-  imposée par un contrôle déterministe et non plus seulement par la consigne. `/kaizen:review`
-  enregistre l'arbre relu (non commité compris) avec `node $K review record` ; au-delà de
-  `review.max_unreviewed_lines` (80) lignes modifiées depuis, nouvelle revue. `review status` et
+### Added
+- `PreToolUse` hook `review-gate.mjs`: the "mandatory" review of `work`, `autopilot` and `ship` is
+  enforced by a deterministic check, not only by the instruction. `/kaizen:review` records the reviewed
+  tree (uncommitted changes included) with `node $K review record`; beyond
+  `review.max_unreviewed_lines` (80) lines changed since, a new review. `review status` and
   `review check`.
-- **Preuve de revue** : un hook `PostToolUse` sur l'outil `Agent` (`review-hooks.mjs --evidence`)
-  consigne chaque relecteur de code Kaizen réellement lancé ; `review record` le refuse sans relecteur
-  depuis la revue précédente, sauf revue légère (≤ 20 lignes) ou mise à jour après correctifs.
-- **Renonciation confirmée par l'utilisateur** : `review waive --reason` n'affiche qu'un code ; seule
-  la saisie de `kaizen waive <code>` par l'utilisateur (hook `UserPromptSubmit`, 30 min, usage unique)
-  la rend effective. `ship` ajoute une section « Revue écartée » à la PR. Le hook `PreToolUse` refuse
-  l'écriture directe des fichiers d'état de revue et l'appel manuel des hooks de preuve.
-- **`deploy detect` / `deploy configure`** : reconnaît la plateforme de déploiement (Vercel, Netlify,
-  Fly.io, Heroku, Kamal, Capistrano, Helm, Kustomize, Serverless, AWS SAM, Firebase, workflows GitHub
-  Actions `workflow_dispatch` ou déploiement continu, Makefile, scripts npm, Compose, Terraform) et
-  propose commandes, retour arrière natif (ou redéploiement du commit précédent depuis un worktree)
-  et health-check, avec confiance et limites ; écrit le candidat choisi sans écraser l'existant.
-- **Politique de modèles** (`models`, `node $K models`) : un rôle par agent, un modèle par rôle selon
-  le profil (recherche économe, relecteurs critiques au plus fort), ajustable par rôle ou par agent ;
-  les skills passent le modèle à chaque sous-agent et la revue enregistre celui réellement demandé.
-- **`/kaizen:setup audit`** et `node $K audit` : maturité SDLC du projet sur cinq domaines (fondations,
-  flux, livraison, exploitation, boucle Kaizen), feuille de route priorisée, corrections guidées, et
-  gabarits générés depuis la stack sans jamais écraser (`audit fix ci|pr_template|dependabot|codeowners|gitignore_env`).
-- **Déploiement et monitoring** :
-  - `/kaizen:deploy` : déploie par les commandes de l'équipe (`deploy.environments`), préconditions
-    (CI verte, checklist des plans livrés, retour arrière prêt, signaux sains), approbation que
-    l'utilisateur tape (`kaizen deploy <code>`) pour un environnement protégé, tag annoté
-    `deploy/<env>/…` poussé, surveillance des signaux, retour arrière (`rollback/<env>/…`), feature
-    flags (`deploy.flags`) ;
-  - `/kaizen:monitor` et `node $K monitor check|watch` : health-check HTTP natif ou toute commande
-    qui affiche un nombre, seuils de la config remplacés par ceux des plans livrés
-    (`` `error_rate` > 1 % ``), violation confirmée sur échantillons consécutifs, retour arrière
-    automatique optionnel (`deploy.auto_rollback`) ;
-  - `metrics` : DORA mesuré sur les vrais déploiements (fréquence, délai commit → production, taux
-    d'échec, temps de rétablissement) quand des tags `deploy/` existent ;
-  - `postmortem` lit la chronologie dans les tags et `monitor.jsonl` ; `release` propose
-    `/kaizen:deploy` ; `status` et `help` suggèrent de déployer les commits en attente ;
-  - hook : la commande brute d'un environnement protégé et les tags `deploy/`/`rollback/` forgés sont
-    refusés ; `release notes` ignore les tags de déploiement comme point de départ.
-- **`/kaizen:help`** : explique Kaizen et recommande la commande à lancer selon la situation décrite
-  et l'état réel du repo. S'appuie sur **`node $K status`**, un diagnostic déterministe (initialisation,
-  profil, constitution, dernier plan, garde-fou, revue de la branche) qui déduit l'étape suivante.
-- **Profils d'adoption** `profile: lean | standard | full` (`init --profile`, question dans `setup`) :
-  la cérémonie s'ajuste (plan, `doc-review`, relecteurs, raccourci `autopilot` en `lean`), jamais les
-  garde-fous déterministes.
-- `/kaizen:metrics` : `learnings_applied_in_commits` (leçon citée dans un message de commit = appliquée,
-  pas seulement lue), `learnings_never_cited` et un échantillon pour `prune-learnings`, et la méthode
-  de `learning_reuse_rate`. Les commits qui appliquent une leçon la citent dans leur corps.
-- **Coût des cycles** : le hook `Stop` relève les tokens de la session principale depuis `gate on`
-  (transcript), `gate off` consigne le cycle (plan, durée, blocages, tokens) dans
-  `.kaizen/state/cycles.jsonl`, et `/kaizen:metrics` l'agrège (`cycle_cost`).
-- **Vérifications ciblées** du garde-fou : `gate.targeted` avec `{files}` (fichiers touchés par la
-  branche) ; la vérification complète reste celle de `work` et `ship`.
-- **Exploitation** : `plan check` signale un déploiement sans retour arrière, sans signal ou avec un
-  signal sans seuil ; `release notes` extrait le déploiement des plans livrés (`rollout`, champs
-  manquants) pour la checklist ; un seuil franchi renvoie vers `/kaizen:postmortem`.
-- **Gouvernance d'équipe** de la constitution : `approvers` et `ratified_by` dans le frontmatter ;
-  `constitution check` exige un amendement « Approuvé par : @… » d'un approbateur déclaré pour chaque
-  version, et refuse une approbation par un agent. `setup` propose `CODEOWNERS`.
+- **Review evidence**: a `PostToolUse` hook on the `Agent` tool (`review-hooks.mjs --evidence`) logs
+  each Kaizen code reviewer actually launched; `review record` refuses without a reviewer since the
+  previous review, except a light review (≤ 20 lines) or an update after fixes.
+- **Waiver confirmed by the user**: `review waive --reason` only shows a code; only the user typing
+  `kaizen waive <code>` (`UserPromptSubmit` hook, 30 min, single use) makes it effective. `ship` adds a
+  "Review waived" section to the PR. The `PreToolUse` hook refuses direct writes to the review state
+  files and manual calls of the evidence hooks.
+- **`deploy detect` / `deploy configure`**: recognizes the deployment platform (Vercel, Netlify, Fly.io,
+  Heroku, Kamal, Capistrano, Helm, Kustomize, Serverless, AWS SAM, Firebase, GitHub Actions
+  `workflow_dispatch` or continuous deployment workflows, Makefile, npm scripts, Compose, Terraform) and
+  proposes commands, native rollback (or redeploy of the previous commit from a worktree) and
+  health-check, with confidence and limits; writes the chosen candidate without overwriting.
+- **Model policy** (`models`, `node $K models`): a role per agent, a model per role per profile (frugal
+  research, critical reviewers on the strongest), adjustable per role or per agent; skills pass the
+  model to each subagent and the review records the one actually requested.
+- **`/kaizen:setup audit`** and `node $K audit`: the project's SDLC maturity in five areas (foundations,
+  flow, delivery, operations, Kaizen loop), prioritized roadmap, guided fixes, and templates generated
+  from the stack without ever overwriting
+  (`audit fix ci|pr_template|dependabot|codeowners|gitignore_env`).
+- **Deployment and monitoring**:
+  - `/kaizen:deploy`: deploys through the team's commands (`deploy.environments`), preconditions (green
+    CI, checklist of the shipped plans, rollback ready, healthy signals), approval typed by the user
+    (`kaizen deploy <code>`) for a protected environment, annotated `deploy/<env>/…` tag pushed, signal
+    watch, rollback (`rollback/<env>/…`), feature flags (`deploy.flags`);
+  - `/kaizen:monitor` and `node $K monitor check|watch`: native HTTP health-check or any command
+    printing a number, config thresholds overridden by those of the shipped plans
+    (`` `error_rate` > 1 % ``), breach confirmed over consecutive samples, optional automatic rollback
+    (`deploy.auto_rollback`);
+  - `metrics`: DORA measured on real deployments (frequency, commit → production lead time, failure
+    rate, time to restore) when `deploy/` tags exist;
+  - `postmortem` reads the timeline from the tags and `monitor.jsonl`; `release` proposes
+    `/kaizen:deploy`; `status` and `help` suggest deploying pending commits;
+  - hook: the raw command of a protected environment and hand-made `deploy/`/`rollback/` tags are
+    refused; `release notes` ignores deployment tags as a starting point.
+- **`/kaizen:help`**: explains Kaizen and recommends the command to run for the described situation and
+  the real state of the repo. Relies on **`node $K status`**, a deterministic diagnosis (initialization,
+  profile, constitution, last plan, gate, branch review) that infers the next step.
+- **Adoption profiles** `profile: lean | standard | full` (`init --profile`, question in `setup`): the
+  ceremony adjusts (plan, `doc-review`, reviewers, `autopilot` shortcut in `lean`), never the
+  deterministic gates.
+- `/kaizen:metrics`: `learnings_applied_in_commits` (a learning cited in a commit message = applied, not
+  only read), `learnings_never_cited` and a sample for `prune-learnings`, and the method of
+  `learning_reuse_rate`. Commits applying a learning cite it in their body.
+- **Cycle cost**: the `Stop` hook records the main session's tokens since `gate on` (transcript),
+  `gate off` logs the cycle (plan, duration, blocks, tokens) in `.kaizen/state/cycles.jsonl`, and
+  `/kaizen:metrics` aggregates it (`cycle_cost`).
+- **Targeted gate checks**: `gate.targeted` with `{files}` (files touched by the branch); the full check
+  stays the one of `work` and `ship`.
+- **Operations**: `plan check` warns on a rollout without rollback, without signal or with a signal
+  without threshold; `release notes` extracts the rollout of shipped plans (`rollout`, missing fields)
+  for the checklist; a breached threshold points to `/kaizen:postmortem`.
+- **Team governance** of the constitution: `approvers` and `ratified_by` in the frontmatter;
+  `constitution check` requires an "Approved by: @…" amendment from a declared approver for each
+  version, and refuses an approval by an agent. `setup` proposes `CODEOWNERS`.
 
-### Corrigé
-- Garde-fou du hook `Stop` propre à la session qui l'a posé (hook `PostToolUse` `--claim` après
-  `gate on`) : une autre session sur le même repo n'est plus bloquée.
-- Garde-fou tenu dans `gate.budget_seconds` (840 s) sous le délai du hook (900 s) : avant, plusieurs
-  commandes de 600 s pouvaient faire tuer le hook, qui ne protégeait alors plus rien.
-- `/kaizen:polish` lance toujours le serveur de dev, même quand l'utilisateur annonce qu'il ne
-  regardera pas : la page servie est la preuve de la retouche (l'évaluation échouait par intermittence).
-- `dev detect` lit le port par défaut d'un serveur Node maison dans son point d'entrée
-  (`process.env.PORT || 5173`, `.listen(8080)`) au lieu d'annoncer 3000 à tort.
+### Fixed
+- `Stop`-hook gate owned by the session that turned it on (`PostToolUse` `--claim` hook after
+  `gate on`): another session on the same repo is no longer blocked.
+- Gate held within `gate.budget_seconds` (840 s) under the hook timeout (900 s): before, several
+  600-second commands could get the hook killed, which then protected nothing.
+- `/kaizen:polish` always starts the dev server, even when the user says they will not look: the served
+  page is the evidence of the touch-up (the eval failed intermittently).
+- `dev detect` reads the default port of a custom Node server in its entry point
+  (`process.env.PORT || 5173`, `.listen(8080)`) instead of wrongly announcing 3000.
 
 ## [1.2.0] - 2026-10-04
 
-### Modifié
-- Vocabulaire propre à Kaizen pour les skills et le dossier des leçons (`docs/learnings/`).
-- Vidéo de présentation re-rendue avec les nouveaux noms.
+### Changed
+- Kaizen's own vocabulary for the skills and the learnings folder (`docs/learnings/`).
+- Presentation video re-rendered with the new names.
 
 ## [1.1.0] - 2026-10-02
 
-### Ajouté
-- **Constitution d'ingénierie** : `/kaizen:constitution` (création, `amend`, `audit`) et
-  `CONSTITUTION.md`. Chaque article porte un **Contrôle**, et une politique IA est incluse. La
-  constitution est appliquée par `plan check`, `/kaizen:doc-review` et le relecteur `standards`.
-- **Plan enrichi** :
-  - contrôle constitutionnel ;
-  - menaces STRIDE ;
-  - déploiement et retour arrière ;
-  - marqueurs `[À CLARIFIER : …]` ;
-  - tranches de la taille d'une PR ;
-  - `node $K plan check` : traçabilité R/AE → U, champs obligatoires, constitution.
-- `/kaizen:doc-review` et 6 relecteurs de plan : cohérence, faisabilité, périmètre, sécurité,
-  adversarial, design.
-- **Livraison** :
-  - `/kaizen:ship`, avec description tirée du plan et guide du relecteur ;
-  - `/kaizen:address-feedback` ;
-  - `/kaizen:watch-pr`, qui s'appuie sur `scripts/pr.mjs` : instantané paginé, état des éléments
-    traités, veilleur sans tokens, mise à jour de la branche seulement sur `BEHIND`.
-- `/kaizen:polish` : détection et lancement du serveur de dev, retouches guidées par l'utilisateur.
-- **Apprentissage** :
-  - `/kaizen:decide` (ADR) ;
-  - `/kaizen:postmortem` (sans recherche de coupable) ;
-  - `/kaizen:metrics` (DORA approché et réutilisation des leçons) ;
-  - `/kaizen:release` (notes de version et SemVer).
-- `node $K size` (plafond `pr.max_lines`) et `verify --only audit` (audit des dépendances).
-- Tests `node:test` (unitaires, CLI, garde-fou, PR avec un faux `gh`, contrats), CI GitHub Actions et
-  19 évaluations de bout en bout (`evals/run.mjs`, vrai `claude -p` sur un projet de démonstration)
-  couvrant 17 skills : review, plan, doc-review, learn, work, debug, autopilot, polish, brainstorm,
-  constitution, decide, ideate, postmortem, metrics, release, prune-learnings, setup.
-- Documentation utilisateur dans `docs/` : démarrage, configuration, packs, dépannage, un guide par
+### Added
+- **Engineering constitution**: `/kaizen:constitution` (creation, `amend`, `audit`) and
+  `CONSTITUTION.md`. Each article carries a **Check**, and an AI policy is included. The constitution is
+  enforced by `plan check`, `/kaizen:doc-review` and the `standards` reviewer.
+- **Richer plan**:
+  - constitution check;
+  - STRIDE threats;
+  - rollout and rollback;
+  - clarification markers;
+  - PR-sized slices;
+  - `node $K plan check`: R/AE → U traceability, required fields, constitution.
+- `/kaizen:doc-review` and 6 plan reviewers: coherence, feasibility, scope, security, adversarial,
+  design.
+- **Shipping**:
+  - `/kaizen:ship`, with a description drawn from the plan and a reviewer guide;
+  - `/kaizen:address-feedback`;
+  - `/kaizen:watch-pr`, built on `scripts/pr.mjs`: paginated snapshot, state of handled items,
+    token-free watcher, branch update only on `BEHIND`.
+- `/kaizen:polish`: dev server detection and start, touch-ups guided by the user.
+- **Learning**:
+  - `/kaizen:decide` (ADR);
+  - `/kaizen:postmortem` (blameless);
+  - `/kaizen:metrics` (approximated DORA and learnings reuse);
+  - `/kaizen:release` (release notes and SemVer).
+- `node $K size` (`pr.max_lines` ceiling) and `verify --only audit` (dependency audit).
+- `node:test` tests (unit, CLI, gate, PR with a fake `gh`, contracts), GitHub Actions CI and 19
+  end-to-end evals (`evals/run.mjs`, real `claude -p` on a demo project) covering 17 skills: review,
+  plan, doc-review, learn, work, debug, autopilot, polish, brainstorm, constitution, decide, ideate,
+  postmortem, metrics, release, prune-learnings, setup.
+- User documentation in `docs/`: getting started, configuration, packs, troubleshooting, one guide per
   skill.
-- Vidéo de présentation d'une minute (`docs/media/`), avec voix off, sous-titres et source
-  reproductible.
+- One-minute presentation video (`docs/media/`), with voice-over, subtitles and a reproducible source.
 
-### Modifié
-- `/kaizen:work` : contrôle de taille, audit des dépendances, livraison via `/kaizen:ship`.
-- `/kaizen:autopilot` : livraison via `ship`, puis suivi par `watch-pr`.
-- `learnings-researcher` lit aussi les ADR et les post-mortems.
-- Le parseur de frontmatter ignore les commentaires YAML en fin de ligne.
-- Corrections issues des évaluations de bout en bout :
-  - `autopilot` n'accepte plus de raccourci « changement trivial » : plan, garde-fou, `verify` et revue
-    tournent toujours ;
-  - `polish` crée une branche locale au lieu de s'arrêter sur la branche par défaut ;
-  - `release` écrit le CHANGELOG et la version sans commiter ; commit, tag et publication sur accord ;
-  - `ideate` part en « Surprends-moi » quand personne ne peut choisir le sujet ;
-  - `decide` n'écrit un ADR que pour une décision coûteuse à défaire (description alignée).
-- Windows : `KAIZEN_GH` peut pointer vers un script Node, chemins affichés en style POSIX, CI sur
-  `windows-latest`.
+### Changed
+- `/kaizen:work`: size check, dependency audit, shipping through `/kaizen:ship`.
+- `/kaizen:autopilot`: shipping through `ship`, then follow-up by `watch-pr`.
+- `learnings-researcher` also reads ADRs and postmortems.
+- The frontmatter parser ignores trailing YAML comments.
+- Fixes from the end-to-end evals:
+  - `autopilot` no longer accepts a "trivial change" shortcut: plan, gate, `verify` and review always
+    run;
+  - `polish` creates a local branch instead of stopping on the default branch;
+  - `release` writes the CHANGELOG and the version without committing; commit, tag and publication on
+    approval;
+  - `ideate` goes "Surprise me" when nobody can pick the topic;
+  - `decide` only writes an ADR for a decision costly to undo (description aligned).
+- Windows: `KAIZEN_GH` can point to a Node script, paths shown in POSIX style, CI on `windows-latest`.
 
 ## [1.0.0] - 2026-10-02
 
-### Ajouté
-- Boucle compound engineering, adaptée du plugin Compound Engineering d'Every (MIT) :
-  - `brainstorm`, `plan`, `work`, `review`, `learn` ;
+### Added
+- Compound engineering loop, adapted from Every's Compound Engineering plugin (MIT):
+  - `brainstorm`, `plan`, `work`, `review`, `learn`;
   - `ideate`, `debug`, `prune-learnings`, `autopilot`, `setup`.
-- 15 agents : 5 de recherche et 10 relecteurs de code, avec un contrat de constats commun.
-- Plan unifié `kaizen-plan/v1`, schéma des leçons, Kaizen Packs (locaux ou git épinglés).
-- CLI déterministe `scripts/kaizen.mjs`, sans dépendance.
-- Garde-fou par hook `Stop` (`scripts/quality-gate.mjs`).
+- 15 agents: 5 research and 10 code reviewers, with a shared findings contract.
+- Unified plan `kaizen-plan/v1`, learnings schema, Kaizen Packs (local or pinned git).
+- Zero-dependency deterministic CLI `scripts/kaizen.mjs`.
+- `Stop`-hook gate (`scripts/quality-gate.mjs`).

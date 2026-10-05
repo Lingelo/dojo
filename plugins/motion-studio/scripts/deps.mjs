@@ -68,10 +68,10 @@ export function findPlaywright() {
 export function browserCandidates() {
   const c = [];
   if (process.env.CHROMIUM_PATH) c.push({ label: `CHROMIUM_PATH (${process.env.CHROMIUM_PATH})`, opts: { executablePath: process.env.CHROMIUM_PATH } });
-  c.push({ label: 'Chromium de Playwright', opts: {} });
+  c.push({ label: "Playwright's Chromium", opts: {} });
   if (!ISOLATED) {
-    c.push({ label: 'Google Chrome installé', opts: { channel: 'chrome' } });
-    c.push({ label: 'Microsoft Edge installé', opts: { channel: 'msedge' } });
+    c.push({ label: 'installed Google Chrome', opts: { channel: 'chrome' } });
+    c.push({ label: 'installed Microsoft Edge', opts: { channel: 'msedge' } });
   }
   return c;
 }
@@ -126,7 +126,7 @@ function localPackage(name, version = 'latest', log) {
   const pkgDir = path.join(dir, 'node_modules', name);
   if (!fs.existsSync(path.join(pkgDir, 'package.json'))) {
     if (process.env.MOTION_STUDIO_NO_INSTALL === '1') return null;
-    log(`📦 ${name}@${version} → cache local (npm)`);
+    log(`📦 ${name}@${version} → local cache (npm)`);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'package.json'), '{"private":true}');
     const isWin = process.platform === 'win32';
@@ -171,10 +171,10 @@ export async function ensureDeps({ needBrowser = true, needFfmpeg = true, log = 
     && (!needFfmpeg || hasX264(cached.ffmpeg))
     && (!needBrowser || (cached.playwright && fs.existsSync(cached.playwright)));
   if (!valid) {
-    if (process.env.MOTION_STUDIO_NO_INSTALL === '1') throw new Error('Dépendances manquantes et MOTION_STUDIO_NO_INSTALL=1 : lancer node scripts/setup.mjs');
-    log('⚙ Première utilisation : installation des dépendances (setup.mjs)…');
+    if (process.env.MOTION_STUDIO_NO_INSTALL === '1') throw new Error('Missing dependencies and MOTION_STUDIO_NO_INSTALL=1: run node scripts/setup.mjs');
+    log('⚙ First use: installing the dependencies (setup.mjs)…');
     const r = spawnSync(process.execPath, [path.join(HERE, 'setup.mjs')], { stdio: ['ignore', 'inherit', 'inherit'], env: process.env });
-    if (r.status !== 0) throw new Error('setup.mjs a échoué — voir les messages ci-dessus');
+    if (r.status !== 0) throw new Error('setup.mjs failed — see the messages above');
   }
   const env = readEnv();
   const pw = needBrowser ? createRequire(import.meta.url)(env.playwright) : null;

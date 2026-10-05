@@ -1,31 +1,33 @@
-// Kaizen — état des revues par branche, lu par le hook PreToolUse qui garde `git push`.
+// Kaizen — review state per branch, read by the PreToolUse hook that guards `git push`.
 //
-// Une revue enregistre l'arbre qu'elle a réellement lu (commité + non commité). Au moment du push, on
-// compare cet arbre à HEAD : au-delà de `review.max_unreviewed_lines` lignes changées depuis, le push
-// attend une nouvelle revue.
+// A review records the tree it actually read (committed + uncommitted). At push time, that tree is
+// compared to HEAD: beyond `review.max_unreviewed_lines` lines changed since, the push waits for a
+// new review.
 //
-// Ce qui ne repose pas sur la parole de l'agent :
-// - **Preuve de revue.** Le hook PostToolUse sur l'outil Agent consigne chaque relecteur de code Kaizen
-//   réellement lancé (`review-evidence.json`). `review record` exige au moins un relecteur lancé depuis
-//   la revue précédente de la branche — sauf revue légère (diff de la branche ≤ LIGHT_MAX_LINES), que
-//   la skill fait sans sous-agents, et sauf mise à jour après correctifs (≤ max_unreviewed_lines
-//   depuis l'arbre relu, relecteurs repris de la revue précédente).
-// - **Renonciation humaine.** `review waive` ne crée qu'une demande en attente, avec un code. Seul un
-//   message de l'utilisateur contenant `kaizen waive <code>` (hook UserPromptSubmit) la confirme.
+// What does not rely on the agent's word:
+// - **Review evidence.** The PostToolUse hook on the Agent tool logs every Kaizen code reviewer
+//   actually launched (`review-evidence.json`). `review record` requires at least one reviewer
+//   launched since the branch's previous review — except for a light review (branch diff ≤
+//   LIGHT_MAX_LINES), which the skill does without subagents, and except for an update after fixes
+//   (≤ max_unreviewed_lines since the reviewed tree, reviewers carried over from the previous review).
+// - **Human waiver.** `review waive` only creates a pending request, with a code. Only a user message
+//   containing `kaizen waive <code>` (UserPromptSubmit hook) confirms it.
 //
-// Limite assumée : ces garde-fous arrêtent l'oubli et la dérive, pas un agent décidé à les contourner
-// (le hook PreToolUse refuse toutefois l'écriture directe de ces fichiers d'état).
+// Accepted limit: these gates stop forgetfulness and drift, not an agent set on bypassing them
+// (the PreToolUse hook does refuse direct writes to these state files).
 
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { changedLines, defaultBranch, diffBase, git, loadConfig, worktreeTree } from './lib.mjs';
 
-export const VERDICTS = ['ready', 'reserves', 'blocked'];
+export const VERDICTS = ['ready', 'concerns', 'blocked'];
+// Verdict names used before Kaizen 3.0, still accepted.
+const VERDICT_ALIASES = { reserves: 'concerns' };
 export const LIGHT_MAX_LINES = 20;
 const EVIDENCE_MAX_AGE_MS = 12 * 3600 * 1000;
 const WAIVER_MAX_AGE_MS = 30 * 60 * 1000;
-// Fichiers d'état que seuls le CLI et les hooks écrivent (le hook PreToolUse en refuse l'écriture directe).
+// State files only the CLI and the hooks write (the PreToolUse hook refuses direct writes).
 export const PROTECTED_STATE = ['reviews.json', 'review-evidence.json', 'waivers.json'];
 
 function stateDir(root) {
@@ -62,17 +64,17 @@ function snapshot(root, branch) {
   return { branch, head: git(root, ['rev-parse', 'HEAD']), tree: worktreeTree(root) };
 }
 
-// --- Preuves : relecteurs réellement lancés -------------------------------------------------------
+// --- Evidence: reviewers actually launched ---------------------------------------------------------
 
-// Relecteur de code Kaizen dans un appel de l'outil Agent : `kaizen:<nom>-reviewer` (hors relecteurs
-// de plan), ou `general-purpose` avec le prompt de la skill review (repli prévu par les conventions).
+// Kaizen code reviewer in an Agent tool call: `kaizen:<name>-reviewer` (excluding plan reviewers), or
+// `general-purpose` with the review skill's prompt (fallback provided for by the conventions).
 export function reviewerOf(toolInput = {}) {
   const type = String(toolInput.subagent_type || '');
   const m = /^kaizen:([a-z-]+-reviewer)$/.exec(type);
   if (m) return m[1].startsWith('plan-') ? null : m[1];
   const prompt = String(toolInput.prompt || '');
-  if (prompt.includes('<contexte-de-revue>')) {
-    const r = /Relecteur\s*:\s*(?:kaizen:)?([a-z-]+)/.exec(prompt);
+  if (prompt.includes('<review-context>') || prompt.includes('<contexte-de-revue>')) {
+    const r = /(?:Reviewer|Relecteur)\s*:\s*(?:kaizen:)?([a-z-]+)/.exec(prompt);
     if (r && !r[1].startsWith('plan-')) return r[1].endsWith('-reviewer') ? r[1] : `${r[1]}-reviewer`;
   }
   return null;
@@ -90,50 +92,51 @@ function evidenceSince(root, since) {
   return readJson(root, 'review-evidence.json', []).filter((e) => Date.parse(e.at) > from);
 }
 
-// --- Enregistrement d'une revue -------------------------------------------------------------------
+// --- Recording a review ----------------------------------------------------------------------------
 
 export function recordReview(root, { verdict, run = null } = {}) {
+  verdict = VERDICT_ALIASES[verdict] || verdict;
   const branch = currentBranch(root);
-  if (!branch) throw new Error('HEAD détachée : une revue s’enregistre sur une branche');
-  if (!VERDICTS.includes(verdict)) throw new Error(`--verdict attendu : ${VERDICTS.join(' | ')}`);
+  if (!branch) throw new Error('detached HEAD: a review is recorded on a branch');
+  if (!VERDICTS.includes(verdict)) throw new Error(`--verdict expected: ${VERDICTS.join(' | ')}`);
   const config = loadConfig(root);
   const state = readJson(root, 'reviews.json', {});
   const previous = state[branch];
   const evidence = evidenceSince(root, previous?.at);
   const reviewers = [...new Set(evidence.map((e) => e.reviewer))].sort();
-  // Modèle réellement demandé pour chaque relecteur (paramètre `model` de l'appel Agent, sinon celui
-  // de la définition de l'agent).
-  const models = Object.fromEntries(evidence.map((e) => [e.reviewer, e.model || 'défaut de l’agent']));
+  // Model actually requested for each reviewer (`model` parameter of the Agent call, otherwise the one
+  // from the agent's definition).
+  const models = Object.fromEntries(evidence.map((e) => [e.reviewer, e.model || 'agent default']));
   const lines = branchLines(root, config);
-  // Mise à jour après les correctifs de la revue elle-même : sans nouveau relecteur, seulement si ce qui
-  // a changé depuis l'arbre relu reste sous le plafond de lignes non relues.
+  // Update after the review's own fixes: without a new reviewer, only if what changed since the
+  // reviewed tree stays under the unreviewed-lines ceiling.
   const tree = worktreeTree(root);
   const sincePrevious = previous && previous.verdict !== 'waived' ? changedLines(root, previous.tree, tree, config.pr.ignore) : null;
   const max = Number(config.review.max_unreviewed_lines ?? 80);
   if (!reviewers.length && sincePrevious !== null && sincePrevious <= max) {
-    const entry = { ...snapshot(root, branch), verdict, depth: 'mise à jour', reviewers: previous.reviewers || [], run: run || previous.run || null, updated_lines: sincePrevious, at: new Date().toISOString() };
+    const entry = { ...snapshot(root, branch), verdict, depth: 'update', reviewers: previous.reviewers || [], run: run || previous.run || null, updated_lines: sincePrevious, at: new Date().toISOString() };
     state[branch] = entry;
     writeJson(root, 'reviews.json', state);
     return entry;
   }
   if (!reviewers.length && lines > LIGHT_MAX_LINES) {
     throw new Error(
-      `aucun relecteur Kaizen lancé depuis la dernière revue de ${branch} (${lines} lignes sur la branche, ` +
-        `revue légère seulement jusqu’à ${LIGHT_MAX_LINES}) : lance /kaizen:review, qui exécute les relecteurs, avant d’enregistrer`,
+      `no Kaizen reviewer launched since the last review of ${branch} (${lines} lines on the branch, ` +
+        `light review only up to ${LIGHT_MAX_LINES}): run /kaizen:review, which runs the reviewers, before recording`,
     );
   }
-  const entry = { ...snapshot(root, branch), verdict, depth: reviewers.length ? 'agents' : 'légère', reviewers, models, run, at: new Date().toISOString() };
+  const entry = { ...snapshot(root, branch), verdict, depth: reviewers.length ? 'agents' : 'light', reviewers, models, run, at: new Date().toISOString() };
   state[branch] = entry;
   writeJson(root, 'reviews.json', state);
   return entry;
 }
 
-// --- Renonciation : demandée par l'agent, confirmée par l'utilisateur ------------------------------
+// --- Waiver: requested by the agent, confirmed by the user ----------------------------------------
 
 export function requestWaiver(root, { reason }) {
   const branch = currentBranch(root);
-  if (!branch) throw new Error('HEAD détachée : une renonciation porte sur une branche');
-  if (!reason) throw new Error('review waive exige --reason "<demande de l’utilisateur>"');
+  if (!branch) throw new Error('detached HEAD: a waiver applies to a branch');
+  if (!reason) throw new Error('review waive requires --reason "<the user\'s request>"');
   const code = randomBytes(4).toString('hex').slice(0, 6).toUpperCase();
   const now = Date.now();
   const pending = readJson(root, 'waivers.json', []).filter((w) => now - Date.parse(w.at) < WAIVER_MAX_AGE_MS && w.branch !== branch);
@@ -144,11 +147,11 @@ export function requestWaiver(root, { reason }) {
     branch,
     code,
     expires_in_minutes: WAIVER_MAX_AGE_MS / 60000,
-    instruction: `Demande à l’utilisateur de taper lui-même : kaizen waive ${code}`,
+    instruction: `Ask the user to type it themselves: kaizen waive ${code}`,
   };
 }
 
-// Appelée par le hook UserPromptSubmit : seul un message de l'utilisateur atteint ce chemin.
+// Called by the UserPromptSubmit hook: only a user message reaches this path.
 export function confirmWaiver(root, code, { session = null } = {}) {
   const now = Date.now();
   const pending = readJson(root, 'waivers.json', []);
@@ -162,7 +165,7 @@ export function confirmWaiver(root, code, { session = null } = {}) {
     verdict: 'waived',
     reason: w.reason,
     reviewers: [],
-    confirmed_by: 'utilisateur (message)',
+    confirmed_by: 'user (message)',
     session,
     at: new Date(now).toISOString(),
   };
@@ -172,30 +175,30 @@ export function confirmWaiver(root, code, { session = null } = {}) {
   return entry;
 }
 
-// --- Décision au moment du push --------------------------------------------------------------------
+// --- Decision at push time ---------------------------------------------------------------------------
 
-// Décide si l'état courant de la branche peut être poussé. Toujours { allowed, reason, ... }.
+// Decides whether the branch's current state may be pushed. Always { allowed, reason, ... }.
 export function checkPush(root, config = loadConfig(root)) {
-  if (config.review.require_before_push === false) return { allowed: true, reason: 'review.require_before_push désactivé' };
+  if (config.review.require_before_push === false) return { allowed: true, reason: 'review.require_before_push disabled' };
   const branch = currentBranch(root);
-  if (!branch) return { allowed: true, reason: 'HEAD détachée' };
-  if (branch === defaultBranch(root)) return { allowed: true, reason: 'branche par défaut (gardée par le plugin git)' };
-  if (!diffBase(root)) return { allowed: true, reason: 'base introuvable' };
+  if (!branch) return { allowed: true, reason: 'detached HEAD' };
+  if (branch === defaultBranch(root)) return { allowed: true, reason: 'default branch (guarded by the git plugin)' };
+  if (!diffBase(root)) return { allowed: true, reason: 'base not found' };
   const lines = branchLines(root, config);
-  if (!lines) return { allowed: true, reason: 'aucun changement de code sur la branche' };
+  if (!lines) return { allowed: true, reason: 'no code change on the branch' };
 
   const max = Number(config.review.max_unreviewed_lines ?? 80);
   const rec = readJson(root, 'reviews.json', {})[branch];
-  if (!rec) return { allowed: false, branch, reason: 'aucune revue enregistrée pour cette branche', branch_lines: lines };
+  if (!rec) return { allowed: false, branch, reason: 'no review recorded for this branch', branch_lines: lines };
   const since = changedLines(root, rec.tree, 'HEAD', config.pr.ignore);
-  if (since === null) return { allowed: false, branch, reason: 'l’arbre relu est introuvable (historique réécrit ?)', review: rec };
+  if (since === null) return { allowed: false, branch, reason: 'the reviewed tree cannot be found (history rewritten?)', review: rec };
   if (rec.verdict === 'blocked' && since === 0) {
-    return { allowed: false, branch, reason: 'la dernière revue a rendu ⛔ et rien n’a changé depuis', review: rec, unreviewed_lines: 0 };
+    return { allowed: false, branch, reason: 'the last review returned ⛔ and nothing changed since', review: rec, unreviewed_lines: 0 };
   }
   if (since > max) {
-    return { allowed: false, branch, reason: `${since} lignes modifiées depuis la revue (plafond ${max})`, review: rec, unreviewed_lines: since };
+    return { allowed: false, branch, reason: `${since} lines changed since the review (ceiling ${max})`, review: rec, unreviewed_lines: since };
   }
-  const reason = rec.verdict === 'waived' ? `revue écartée par l’utilisateur : ${rec.reason}` : `revue ${rec.verdict} (${rec.depth === 'légère' ? 'légère' : rec.reviewers.join(', ')})`;
+  const reason = rec.verdict === 'waived' ? `review waived by the user: ${rec.reason}` : `review ${rec.verdict} (${rec.depth === 'light' ? 'light' : rec.reviewers.join(', ')})`;
   return { allowed: true, branch, reason, review: rec, unreviewed_lines: since };
 }
 

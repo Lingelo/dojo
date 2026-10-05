@@ -1,68 +1,68 @@
 # `/kaizen:ideate`
 
-> « Qu'est-ce qui vaudrait la peine d'être construit ? » : beaucoup d'idées ancrées dans le repo,
-> toutes critiquées, 5 à 7 survivantes expliquées.
+> "What would be worth building?": many ideas grounded in the repo, all critiqued, 5 to 7 survivors
+> explained.
 
-`ideate` vient **avant** le brainstorm. Il ne précise pas une idée, il en cherche. Chaque idée doit
-avoir une **base vérifiable** (une ligne de code, une issue, une leçon, une source externe, ou un
-raisonnement écrit de bout en bout). Une idée sans base est jetée, aussi séduisante soit-elle.
+`ideate` comes **before** the brainstorm. It does not refine an idea, it looks for some. Each idea must
+have a **verifiable basis** (a line of code, an issue, a learning, an external source, or reasoning
+written end to end). An idea without a basis is thrown away, however attractive.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Ancrage dans le repo, 5 générateurs d'idées en parallèle (chacun avec un angle), vérification à froid par un agent qui n'a pas vu la génération, rejet motivé, classement |
-| **Quand l'utiliser** | « Que pourrait-on améliorer dans X ? », « surprends-moi », en préparation d'un trimestre, après une série de bugs dans une zone |
-| **Quand ne pas l'utiliser** | Vous avez déjà une idée à préciser (→ [brainstorm](brainstorm.md)) ; vous devez trancher entre deux options (→ [decide](decide.md)) |
-| **Ce qu'elle produit** | `docs/ideation/AAAA-MM-JJ-<sujet>-ideation.md` : ancrage, axes, idées classées, combinaisons, rejets motivés |
-| **Et ensuite** | `/kaizen:brainstorm` sur l'idée retenue |
+| **What it does** | Anchoring in the repo, 5 idea generators in parallel (each with an angle), cold verification by an agent that did not see the generation, motivated rejection, ranking |
+| **When to use it** | "What could we improve in X?", "surprise me", when preparing a quarter, after a series of bugs in an area |
+| **When not to use it** | You already have an idea to refine (→ [brainstorm](brainstorm.md)); you must choose between two options (→ [decide](decide.md)) |
+| **What it produces** | `docs/ideation/YYYY-MM-DD-<topic>-ideation.md`: anchoring, axes, ranked ideas, combinations, motivated rejections |
+| **What next** | `/kaizen:brainstorm` on the chosen idea |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:ideate le tunnel de commande
-/kaizen:ideate surprends-moi
-/kaizen:ideate l'onboarding des nouveaux développeurs top 3
-/kaizen:ideate la page de facturation rapide
-/kaizen:ideate l'observabilité en profondeur
+/kaizen:ideate the checkout flow
+/kaizen:ideate surprise me
+/kaizen:ideate onboarding of new developers top 3
+/kaizen:ideate the billing page quick
+/kaizen:ideate observability deep
 ```
 
-## Comment ça se passe
+## How it goes
 
-1. **Sujet** : sans sujet, Claude demande (« Surprends-moi » est une vraie option) ; si personne ne
-   peut répondre, il part d'office en « Surprends-moi » et l'indique. Le périmètre
-   demandé est respecté : « la page de facturation » ne déborde pas sur tout le produit.
-2. **Ancrage** :
-   - repo, plans récents, leçons (les zones à beaucoup de bugs sont des frictions documentées) ;
-   - issues ouvertes regroupées en thèmes, si `gh` est disponible.
-3. **Axes** : le sujet est découpé en 3 à 5 parties orthogonales, pour ne pas tout concentrer sur
-   une seule.
-4. **Génération** : 5 agents en parallèle, avec 6 à 8 idées chacun. Les angles :
-   - frictions ;
-   - inversion, suppression ou automatisation ;
-   - hypothèses cassées ;
-   - effet de levier ;
-   - analogies venues d'autres domaines et contraintes renversées.
-5. **Combinaisons** : les idées de deux angles qui ensemble valent plus que séparément.
-6. **Critique** : un agent neuf vérifie chaque base, puis Claude tranche. Chaque rejet a un motif :
-   trop vague, non ancrée, doublon, trop chère, déborde du périmètre…
-7. **Document** et résumé de 5 à 7 lignes dans le chat.
+1. **Topic**: without a topic, Claude asks ("Surprise me" is a real option); if nobody can answer, it
+   goes with "Surprise me" and says so. The requested scope is respected: "the billing page" does not
+   spill over onto the whole product.
+2. **Anchoring**:
+   - repo, recent plans, learnings (areas with many bugs are documented frictions);
+   - open issues grouped into themes, if `gh` is available.
+3. **Axes**: the topic is split into 3 to 5 orthogonal parts, so as not to concentrate everything on
+   one.
+4. **Generation**: 5 agents in parallel, with 6 to 8 ideas each. The angles:
+   - frictions;
+   - inversion, removal or automation;
+   - broken assumptions;
+   - leverage;
+   - analogies from other domains and flipped constraints.
+5. **Combinations**: ideas from two angles worth more together than apart.
+6. **Critique**: a fresh agent checks each basis, then Claude decides. Each rejection has a reason:
+   too vague, not grounded, duplicate, too expensive, outside the scope…
+7. **Document** and a 5-to-7-line summary in the chat.
 
 ## Options
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `surprends-moi` | pas de sujet imposé ; chaque angle choisit le sien |
-| `top N` | N survivantes (la génération ne change pas) |
-| `rapide` | 3 à 4 idées par angle |
-| `en profondeur` | plus de vérification par idée |
+| `surprise me` | no imposed topic; each angle picks its own |
+| `top N` | N survivors (generation does not change) |
+| `quick` | 3 to 4 ideas per angle |
+| `deep` | more verification per idea |
 
-## Bon à savoir
+## Good to know
 
-- Le coût (nombre d'agents) est annoncé avant le lancement.
-- Un document d'idéation de moins de 30 jours sur le même sujet est **enrichi** plutôt que dupliqué.
-- `ideate` ne planifie jamais : il envoie toujours vers le brainstorm.
+- The cost (number of agents) is announced before launching.
+- An ideation document less than 30 days old on the same topic is **enriched** rather than duplicated.
+- `ideate` never plans: it always sends to the brainstorm.
 
-## Voir aussi
+## See also
 
 [brainstorm](brainstorm.md) · [decide](decide.md)

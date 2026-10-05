@@ -1,93 +1,96 @@
 # `/kaizen:work`
 
-> Exécuter le plan : branche dédiée, une unité à la fois, test d'abord, un commit par unité, et un
-> garde-fou qui empêche de finir tant que c'est rouge.
+> Execute the plan: dedicated branch, one unit at a time, test first, one commit per unit, and a gate
+> that prevents finishing while things are red.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Prépare l'espace de travail, active le garde-fou, déroule chaque unité (preuve rouge → implémentation → vérification → commit), puis taille, couverture du plan, simplification, **revue obligatoire** |
-| **Quand l'utiliser** | Un plan prêt (`plan check` vert) ; une demande concrète et bornée |
-| **Quand ne pas l'utiliser** | Exigences floues (→ [brainstorm](brainstorm.md)) ; plan non prêt (→ [plan](plan.md)) ; bug sans cause connue (→ [debug](debug.md)) |
-| **Ce qu'elle produit** | Une branche, un commit conventionnel par unité, des preuves consignées, un rapport de revue |
-| **Et ensuite** | Livrer avec `/kaizen:ship` (recommandé), garder en local, ou capitaliser d'abord (`/kaizen:learn`) |
+| **What it does** | Prepares the workspace, turns the gate on, runs each unit (red evidence → implementation → verification → commit), then size, plan coverage, simplification, **mandatory review** |
+| **When to use it** | A ready plan (`plan check` green); a concrete, bounded request |
+| **When not to use it** | Fuzzy requirements (→ [brainstorm](brainstorm.md)); plan not ready (→ [plan](plan.md)); bug without a known cause (→ [debug](debug.md)) |
+| **What it produces** | A branch, one conventional commit per unit, recorded evidence, a review report |
+| **What next** | Ship with `/kaizen:ship` (recommended), keep it local, or capture first (`/kaizen:learn`) |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:work                                     # dernier plan (confirmé avant de commencer)
-/kaizen:work docs/plans/2026-10-02-1430-feat-export-csv-commandes-plan.md
-/kaizen:work renommer le champ amount en total_cents dans le sérialiseur des factures
+/kaizen:work                                     # latest plan (confirmed before starting)
+/kaizen:work docs/plans/2026-10-02-1430-feat-orders-csv-export-plan.md
+/kaizen:work rename the amount field to total_cents in the invoices serializer
 ```
 
-## Comment ça se passe
+## How it goes
 
-1. **Triage** :
-   - un plan sans unités vous renvoie vers `/kaizen:plan` ;
-   - une demande triviale est faite directement (vérification comprise) ;
-   - une demande bornée est découpée en 2 à 6 unités annoncées ;
-   - une demande floue vous renvoie vers plan ou brainstorm.
-2. **Espace de travail** :
-   - les fichiers que vous aviez déjà modifiés ne partent jamais dans un commit sans votre accord ;
-   - sur la branche par défaut, une branche `<type>/<sujet>` est créée, préfixée par la clé Jira si
-     elle est connue ;
-   - `node $K gate on` active le garde-fou ;
-   - le plan est relu en entier, avec les leçons et règles qu'il cite et la constitution.
-3. **Pour chaque unité** :
-   1. Trouver les tests existants.
-   2. Choisir la stratégie de preuve :
-      - un test existant déjà rouge ;
-      - un test renforcé ;
-      - un nouveau test ;
-      - une caractérisation de l'existant ;
-      - ou une exception justifiée.
-   3. Écrire le test, puis **constater qu'il échoue pour la bonne raison**.
-   4. Implémenter selon le motif cité.
-   5. Relancer les tests ciblés et vérifier l'impact transverse.
-   6. Consigner la preuve.
-   7. Commiter les **seuls fichiers de l'unité** : `feat(SHOP-412): …`.
-4. **Qualité** :
-   - `node $K verify` (et `--only audit` si des dépendances ont changé) ;
-   - `node $K size` : au-delà du plafond, Claude propose des PR empilées ;
-   - couverture de chaque R et AE ;
-   - simplification ;
-   - **`/kaizen:review` obligatoire**, et exigée par un hook avant tout `git push` ;
-   - correctifs P0/P1, puis la revue est ré-enregistrée avec son verdict après correctifs.
-5. **Fin** : `gate off` et résumé, puis la proposition de livrer.
+1. **Triage**:
+   - a plan without units sends you to `/kaizen:plan`;
+   - a trivial request is done directly (verification included);
+   - a bounded request is split into 2 to 6 announced units;
+   - a fuzzy request sends you to plan or brainstorm.
+2. **Workspace**:
+   - files you had already changed never go into a commit without your approval;
+   - on the default branch, a `<type>/<topic>` branch is created, prefixed with the Jira key if known;
+   - `node $K gate on` turns the gate on;
+   - the plan is read in full, with the learnings and rules it cites and the constitution.
+3. **For each unit**:
+   1. Find the existing tests.
+   2. Choose the evidence strategy:
+      - an existing test already red;
+      - a strengthened test;
+      - a new test;
+      - a characterization of what exists;
+      - or a justified exception.
+   3. Write the test, then **observe that it fails for the right reason**.
+   4. Implement following the cited pattern.
+   5. Rerun the targeted tests and check the cross-cutting impact.
+   6. Record the evidence.
+   7. Commit **only the unit's files**: `feat(SHOP-412): …`.
+4. **Quality**:
+   - `node $K verify` (and `--only audit` if dependencies changed);
+   - `node $K size`: above the limit, Claude proposes stacked PRs;
+   - coverage of each R and AE;
+   - simplification;
+   - **mandatory `/kaizen:review`**, required by a hook before any `git push`;
+   - P0/P1 fixes, then the review is recorded again with its post-fix verdict.
+5. **End**: `gate off` and summary, then the offer to ship.
 
-## Le garde-fou
+![The Stop-hook quality gate flowchart](../media/diagrams/quality-gate.svg)
 
-Tant qu'il est actif, chaque fin de tour relance `test`, `lint` et `typecheck`. Si l'un d'eux est
-rouge, le hook `Stop` refuse la fin (code 2) et renvoie à Claude la fin de la sortie en erreur.
-Après 3 blocages, il laisse passer en exigeant que l'échec vous soit signalé. Il ne bloque jamais
-indéfiniment et expire après 24 h. Réglages : [Configuration](../configuration.md#gate--le-garde-fou-du-hook-stop).
+In depth: [gates and hooks](../concepts/gates-and-hooks.md#the-quality-gate-stop-hook).
 
-## Quand ça résiste
+## The gate
 
-Deux correctifs ratés pour le même échec, et Claude arrête de patcher. Il nomme l'hypothèse commune
-aux deux tentatives et la vérifie. Si elle venait du plan et que la corriger reste dans le périmètre,
-il la corrige et le dit. Sinon, il vous rapporte un bloquant.
+While it is active, every end of turn reruns `test`, `lint` and `typecheck`. If one of them is red, the
+`Stop` hook refuses the end (code 2) and sends Claude the end of the failing output. After 3 blocks, it
+lets through while requiring the failure to be reported to you. It never blocks forever and expires
+after 24 h. Settings: [Configuration](../configuration.md#gate--the-stop-hook-quality-gate).
+
+## When it resists
+
+Two failed fixes for the same failure, and Claude stops patching. It names the assumption common to both
+attempts and checks it. If it came from the plan and fixing it stays in scope, it fixes it and says so.
+Otherwise, it reports a blocker to you.
 
 ## Options
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `mode:return` | implémentation et vérification locale seulement ; pas de revue, de push ni de question ; résultat structuré (utilisé par `autopilot`) |
+| `mode:return` | implementation and local verification only; no review, push or question; structured result (used by `autopilot`) |
 
-## Bon à savoir
+## Good to know
 
-- Jamais de `git add -A` ni de `commit -a`, jamais d'écriture sur la branche par défaut sans demande
-  explicite.
-- Unités indépendantes et nombreuses : Claude peut les confier à des sous-agents en parallèle, mais
-  il reste l'intégrateur (diff inspecté, vérification relancée, commits faits par lui).
-- Interface touchée : vérification dans un navigateur si le plugin `playwright` est installé.
-- Une unité qui applique une leçon la cite dans son commit (`Applique docs/learnings/…`) : c'est ce
-  que `/kaizen:metrics` compte comme leçon **appliquée**.
-- Le garde-fou relance les vérifications à chaque fin de tour. Suite lente : configurez des
-  vérifications ciblées (`gate.targeted`, [Configuration](../configuration.md#gate--le-garde-fou-du-hook-stop)).
-- `gate off` consigne le cycle (durée, tokens, blocages) pour `/kaizen:metrics`.
+- Never `git add -A` or `commit -a`, never a write to the default branch without an explicit request.
+- Many independent units: Claude may hand them to subagents in parallel (model of the `implement`
+  role), but it stays the integrator (diff inspected, verification rerun, commits made by it).
+- Interface touched: check in a browser if the `playwright` plugin is installed.
+- A unit applying a learning cites it in its commit (`Applies docs/learnings/…`): that is what
+  `/kaizen:metrics` counts as a learning **applied**.
+- The gate reruns the checks at every end of turn. Slow suite: configure targeted checks
+  (`gate.targeted`, [Configuration](../configuration.md#gate--the-stop-hook-quality-gate)).
+- `gate off` records the cycle (duration, tokens of the session and its subagents per role, blocks)
+  for `/kaizen:metrics`.
 
-## Voir aussi
+## See also
 
-[plan](plan.md) · [review](review.md) · [ship](ship.md) · [Dépannage du garde-fou](../depannage.md#le-garde-fou-bloque-la-fin-de-la-session)
+[plan](plan.md) · [review](review.md) · [ship](ship.md) · [Gate troubleshooting](../troubleshooting.md#the-quality-gate-blocks-the-end-of-the-session)

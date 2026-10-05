@@ -1,15 +1,15 @@
-# Git Plugin
+# Git plugin
 
-Utilitaires Git pour Claude Code : conventional commits avec extraction Jira et push securise.
+Git utilities for Claude Code: conventional commits with Jira extraction, and safe push.
 
-## Fonctionnalites
+## Features
 
-- **Commit** : Commits conventionnels avec extraction automatique du numero Jira depuis la branche
-- **Push** : Push securise avec verrou sur les branches principales (main/master)
+- **Commit**: conventional commits with the Jira number extracted automatically from the branch
+- **Push**: safe push with a lock on the main branches (main/master)
 
 ## Installation
 
-Activer le plugin dans les parametres Claude Code :
+Enable the plugin in the Claude Code settings:
 
 ```json
 {
@@ -23,24 +23,28 @@ Activer le plugin dans les parametres Claude Code :
 
 ### /commit
 
-Cree des commits respectant la specification [Conventional Commits](https://www.conventionalcommits.org/) avec extraction automatique du ticket Jira.
+Creates commits following the [Conventional Commits](https://www.conventionalcommits.org/) specification,
+with the Jira ticket extracted automatically.
 
 ```bash
 /commit
 ```
 
-**Format :**
+**Format:**
 ```
 <type>(<JIRA-123>): <description>
 ```
 
-**Types supportes :**
+The Jira key is the first `[A-Z]+-[0-9]+` match in the branch name (`feature/MOJ-1234-add-login` →
+`MOJ-1234`). Without a key, the scope is omitted: `<type>: <description>`.
+
+**Supported types:**
 | Type | Description |
-|------|-------------|
-| `feat` | Nouvelle fonctionnalite |
-| `fix` | Correction de bug |
+|---|---|
+| `feat` | New feature |
+| `fix` | Bug fix |
 | `docs` | Documentation |
-| `style` | Formatage |
+| `style` | Formatting |
 | `refactor` | Refactoring |
 | `perf` | Performance |
 | `test` | Tests |
@@ -48,68 +52,80 @@ Cree des commits respectant la specification [Conventional Commits](https://www.
 | `ci` | CI/CD |
 | `chore` | Maintenance |
 
-**Exemples :**
+**Examples:**
 ```bash
-# Branche : feature/MOJ-1234-add-login
-git commit -m "feat(MOJ-1234): ajoute l'authentification OAuth2"
+# Branch: feature/MOJ-1234-add-login
+git commit -m "feat(MOJ-1234): add OAuth2 authentication"
 
-# Branche : main (pas de Jira)
-git commit -m "chore: met a jour les dependances"
+# Branch: main (no Jira)
+git commit -m "chore: update dependencies"
+
+# Breaking change
+git commit -m "feat(MOJ-1234)!: change the API response format"
 ```
+
+**Rules:** imperative verb, 72 characters at most, no trailing period, the "what" and "why" rather than
+the "how", one logical change per commit, never a mention of AI tools. The description follows the
+language of the project's history (English by default).
 
 ### /push
 
-Pousse les commits vers le remote avec un verrou de securite.
+Pushes commits to the remote with a safety lock.
 
 ```bash
 /push
 ```
 
-**Verrou de securite :**
-
-Ce skill **REFUSE** de pousser vers :
+**Safety lock:** this skill **REFUSES** to push to:
 - `origin/main`
 - `origin/master`
 
-**Comportement :**
-- Sur une branche de feature → Push normal
-- Sur main/master → Bloque avec message d'erreur
+**Behavior:**
+- On a feature branch → normal push (`git push -u origin <branch>` the first time)
+- On main/master → blocked with an error message
 
-**Message en cas de blocage :**
+**Message when blocked:**
 ```
-ERREUR : Push vers origin/main ou origin/master bloque
+ERROR: Push to origin/main or origin/master blocked
 
-Le push direct vers les branches principales est interdit.
+Pushing directly to the main branches is forbidden.
 
-Pour pousser vos changements :
-1. Creez une branche : git checkout -b feature/ma-feature
-2. Poussez : git push -u origin feature/ma-feature
-3. Creez une Merge Request
+To push your changes:
+1. Create a branch: git checkout -b feature/my-feature
+2. Push it: git push -u origin feature/my-feature
+3. Open a Merge Request
 ```
 
-## Workflow recommande
+## Recommended workflow
 
-1. Creer une branche depuis main :
+1. Create a branch from main:
    ```bash
-   git checkout -b feature/MOJ-1234-ma-feature origin/main
+   git checkout -b feature/MOJ-1234-my-feature origin/main
    ```
 
-2. Faire des modifications et commiter :
+2. Make changes and commit:
    ```
    /commit
    ```
 
-3. Pousser la branche :
+3. Push the branch:
    ```
    /push
    ```
 
-4. Creer une Merge Request sur GitLab/GitHub
+4. Open a Merge Request on GitLab/GitHub
 
-## Pourquoi ce verrou ?
+## Why this lock?
 
-Le verrou sur main/master est une mesure de securite pour :
-- Eviter les push accidentels sur les branches protegees
-- Forcer le workflow via Merge Request / Pull Request
-- Permettre la revue de code avant integration
-- Proteger l'historique des branches principales
+The lock on main/master is a safety measure to:
+- avoid accidental pushes to protected branches;
+- enforce the Merge Request / Pull Request workflow;
+- allow code review before integration;
+- protect the history of the main branches.
+
+It is an instruction followed by Claude, not a hook: also protect your branches server-side (GitHub
+branch protection, GitLab protected branches).
+
+## Used by
+
+The [Kaizen](../kaizen/README.md) plugin uses the same commit format (`<type>(<JIRA>): …`).

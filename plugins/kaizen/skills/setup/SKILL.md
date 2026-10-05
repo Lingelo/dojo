@@ -1,124 +1,120 @@
 ---
 name: setup
-description: Installe le SDLC Kaizen dans un repo et l'audite — diagnostic de maturité du projet (audit : CI, tests, secrets, protection de branche, CODEOWNERS, dépendances, déploiement, retour arrière, monitoring, constitution) avec feuille de route priorisée et corrections guidées ; crée .kaizen/config.json et les dossiers de livrables, détecte la stack, les commandes de vérification et la plateforme de déploiement, règle profil, modèles, langue et tracker, crée un Kaizen Pack (pack:<nom>), bilan de santé (check). Utiliser pour « installe/configure kaizen », « mets en place le SDLC », « audite le projet », « qu'est-ce qui manque à ce repo ? », /kaizen:setup.
+description: Installs the Kaizen SDLC in a repo and audits it — project maturity diagnosis (audit: CI, tests, secrets, branch protection, CODEOWNERS, dependencies, deployment, rollback, monitoring, constitution) with a prioritized roadmap and guided fixes; creates .kaizen/config.json and the deliverable folders, detects the stack, the verification commands and the deployment platform, sets profile, models, language and tracker, creates a Kaizen Pack (pack:<name>), health check (check). Use when the user says "install/configure kaizen", "set up the SDLC", "audit the project", "what is this repo missing?", /kaizen:setup.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, AskUserQuestion
-argument-hint: "[audit] [pack:<nom>] [check]"
+argument-hint: "[audit] [pack:<name>] [check]"
 ---
 
-# Setup — préparer le repo pour la boucle Kaizen
+# Setup — preparing the repo for the Kaizen loop
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-Prérequis : Node ≥ 18 et un dépôt git. Sinon, dis ce qui manque et arrête.
+Prerequisites: Node ≥ 18 and a git repository. Otherwise, say what is missing and stop.
 
-## `check` — bilan de santé seul (aucune écriture)
+## `check` — health check only (no writes)
 
 `node "$K" root`, `node "$K" config`, `node "$K" detect`, `node "$K" learnings validate`,
 `node "$K" packs`, `node "$K" constitution check`, `node "$K" gate status`, `node "$K" review status`,
-`node "$K" models` (avertissements) → rapport : ✔/⚠ par point, avec la correction proposée.
-Un garde-fou resté actif sans travail en cours (`gate status` actif) → propose `gate off`.
+`node "$K" models` (warnings) → report: ✔/⚠ per point, with the proposed fix.
+A gate left active without work in progress (`gate status` active) → propose `gate off`.
 
-## `audit` — mettre en place le SDLC, dans l'ordre
+## `audit` — set up the SDLC, in order
 
-Pour un projet qui démarre avec Kaizen, ou qui veut savoir ce qui lui manque.
+For a project starting with Kaizen, or one that wants to know what it is missing.
 
-1. `node "$K" audit` (ajoute `--no-github` si `gh` n'est pas authentifié). Montre les domaines et leur
-   score, puis la liste **par priorité** : P1 d'abord (ce qui protège : CI, tests, secrets, protection
-   de branche, déploiement et retour arrière), puis P2 et P3. Rien de ce qui est vert n'est à refaire.
-2. Propose de traiter les points **un par un**, du plus prioritaire, une question à la fois
-   (**corriger** (Recommandé) · **plus tard** · **jamais pour ce repo**) :
-   - **gabarit** (`scaffold` non nul) → `node "$K" audit fix <id>` (CODEOWNERS : demande d'abord
-     `--owner @…`, ne l'invente pas ; `monitor_patrol` : propose aussi `monitor_alert` si l'équipe a
-     des alertes, et un `--ref <sha>` épinglé du dépôt Kaizen). Montre le fichier écrit ; il reste non
-     commité, à relire ;
-   - **déploiement** → `node "$K" deploy detect`, montre les candidats (commandes, retour arrière,
-     confiance, notes), fais choisir, puis `node "$K" deploy configure <id>` ; rien de reconnu →
-     étape 9 de l'installation ;
-   - **monitoring / santé** → déclare au moins le health-check (URL de l'environnement, route de
-     santé trouvée), puis `node "$K" monitor check --env <env>` ;
-   - **protection de branche** → donne les réglages exacts (PR obligatoire, une approbation, CI
-     requise) : c'est un réglage d'administration du dépôt, tu ne le modifies pas ;
-   - **skill** (`skill` non nul : constitution, setup) → propose-la, ne l'enchaîne qu'avec accord.
-3. Relance `node "$K" audit` à la fin et montre l'avant/après des scores. Ce qui reste est noté avec
-   sa raison (« plus tard », « jamais »).
+1. `node "$K" audit` (add `--no-github` if `gh` is not authenticated). Show the areas and their score,
+   then the list **by priority**: P1 first (what protects: CI, tests, secrets, branch protection,
+   deployment and rollback), then P2 and P3. Nothing green needs redoing.
+2. Offer to handle the points **one by one**, highest priority first, one question at a time
+   (**fix** (Recommended) · **later** · **never for this repo**):
+   - **scaffold** (`scaffold` not null) → `node "$K" audit fix <id>` (CODEOWNERS: ask for
+     `--owner @…` first, never invent it; `monitor_patrol`: also offer `monitor_alert` if the team has
+     alerts, and a pinned `--ref <sha>` of the Kaizen repository). Show the written file; it stays
+     uncommitted, to be reviewed;
+   - **deployment** → `node "$K" deploy detect`, show the candidates (commands, rollback, confidence,
+     notes), have the user choose, then `node "$K" deploy configure <id>`; nothing recognized →
+     installation step 9;
+   - **monitoring / health** → declare at least the health-check (environment URL, health route
+     found), then `node "$K" monitor check --env <env>`;
+   - **branch protection** → give the exact settings (required PR, one approval, required CI): it is a
+     repository administration setting, you do not change it;
+   - **skill** (`skill` not null: constitution, setup) → propose it, only chain it with approval.
+3. Rerun `node "$K" audit` at the end and show the before/after scores. What remains is noted with its
+   reason ("later", "never").
 
-## Installation (défaut)
+## Installation (default)
 
-1. **Initialiser** — `node "$K" init` (idempotent : ne réécrit pas une config existante). Montre ce qui
-   a été créé.
-2. **Vérifications** — montre les commandes détectées (`test`, `lint`, `typecheck`). Demande (une
-   question) : **les garder** (Recommandé) · **les ajuster** (écris alors `verify` dans
-   `.kaizen/config.json`, ex. `{"test": "pnpm vitest run", "lint": "pnpm eslint ."}`) · **désactiver le
-   garde-fou** (`gate.enabled: false`). Rien de détecté → demande les commandes ou désactive.
-   Lance une fois `node "$K" verify` pour vérifier qu'elles tournent ; une commande qui échoue déjà
-   sur la branche par défaut est signalée (le garde-fou bloquerait à tort). Suite lente (plus d'une
-   minute) → propose des vérifications **ciblées** pour le garde-fou, `gate.targeted` avec `{files}`
-   (ex. `{"test": "pnpm vitest related --run {files}", "lint": "pnpm eslint {files}"}`) ; la
-   vérification complète reste celle de `work` et `ship`.
-3. **Langue** — `language: auto` suit la conversation ; propose de la fixer (`fr`, `en`) si l'équipe
-   écrit ses livrables dans une langue précise.
-4. **Tracker** — `tracker: auto` (clé Jira lue dans la branche, issues GitHub via `gh`) ; ajuste si
-   l'équipe utilise autre chose.
-5. **Emplacement** — `docs_root: docs` par défaut. Si `docs/` est déjà un site de documentation
-   publié, propose un autre dossier (ex. `.kaizen/docs` ou `engineering/`) avant tout premier
-   livrable.
-6. **Trouvabilité** — avec accord, ajoute à `CLAUDE.md` (existant seulement ; sinon propose `/init`
-   d'abord) une courte section :
+1. **Initialize** — `node "$K" init` (idempotent: does not rewrite an existing config). Show what was
+   created.
+2. **Verification** — show the detected commands (`test`, `lint`, `typecheck`). Ask (one question):
+   **keep them** (Recommended) · **adjust them** (then write `verify` in `.kaizen/config.json`, e.g.
+   `{"test": "pnpm vitest run", "lint": "pnpm eslint ."}`) · **disable the gate** (`gate.enabled:
+   false`). Nothing detected → ask for the commands or disable it. Run `node "$K" verify` once to check
+   they work; a command already failing on the default branch is reported (the gate would block
+   wrongly). Slow suite (over a minute) → propose **targeted** checks for the gate, `gate.targeted`
+   with `{files}` (e.g. `{"test": "pnpm vitest related --run {files}", "lint": "pnpm eslint
+   {files}"}`); the full verification remains the one of `work` and `ship`.
+3. **Language** — `language: auto` follows the conversation; offer to pin it (`en`, `fr`…) if the team
+   writes its deliverables in a specific language.
+4. **Tracker** — `tracker: auto` (Jira key read from the branch, GitHub issues through `gh`); adjust if
+   the team uses something else.
+5. **Location** — `docs_root: docs` by default. If `docs/` is already a published documentation site,
+   propose another folder (e.g. `.kaizen/docs` or `engineering/`) before any first deliverable.
+6. **Findability** — with approval, add to `CLAUDE.md` (existing only; otherwise propose `/init`
+   first) a short section:
 
    ```markdown
    ## Kaizen
-   - Avant de planifier ou de déboguer, cherche les leçons du projet dans `docs/learnings/`
-     (frontmatter : module, tags, symptoms, applies_when).
-   - Plans dans `docs/plans/` ; boucle : /kaizen:brainstorm → plan → work → review → learn.
+   - Before planning or debugging, look for the project's learnings in `docs/learnings/`
+     (frontmatter: module, tags, symptoms, applies_when).
+   - Plans in `docs/plans/`; loop: /kaizen:brainstorm → plan → work → review → learn.
    ```
-7. **Constitution** — `CONSTITUTION.md` absente → propose `/kaizen:constitution` (Recommandé) : sans
-   elle, plan et revue n'ont que les règles génériques. Présente → `node "$K" constitution check`.
-8. **Taille des PR** — `pr.max_lines` (400 par défaut) : demande si l'équipe a un autre plafond.
-9. **Déploiement et monitoring** (facultatif) — si l'équipe veut que Kaizen mène aussi la mise en
-   production : `node "$K" deploy detect` reconnaît la plateforme (Vercel, Netlify, Fly.io, Heroku,
-   Kamal, Capistrano, Helm, Kustomize, Serverless, SAM, Firebase, workflows GitHub Actions,
-   Makefile, scripts npm, Compose, Terraform) et propose commandes, retour arrière et health-check.
-   Montre-les avec leurs notes, fais choisir, puis `node "$K" deploy configure <id>`. Rien de reconnu
-   → demande les commandes, ne les invente pas. Complète les signaux (taux d'erreur, latence : une
-   commande qui affiche un nombre). `production` est protégée par défaut. Vérifie avec
-   `node "$K" monitor check --env <env>`.
-10. **Profil** — demande (une question) : **lean** (Recommandé pour une première adoption : cérémonie
-   minimale, garde-fous gardés) · **standard** · **full** (domaines régulés, équipe rodée). Le profil
-   fixe aussi le **modèle de chaque agent** (`node "$K" models`) : montre-le, et propose d'ajuster un
-   rôle (`models.roles`) ou un agent (`models.agents`) si l'équipe a une contrainte de coût ou
-   d'exigence. Écris
-   `profile` dans `.kaizen/config.json`. Équipe de plusieurs personnes → propose `approvers` dans
-   `CONSTITUTION.md` et une ligne `CODEOWNERS` pour `CONSTITUTION.md` et `kaizen-packs/`. Rappelle que la revue est exigée avant tout `git push` d'une
-   branche (`review.require_before_push`) et que seule l'équipe peut choisir de l'assouplir.
-11. **Bilan** — termine par le bilan de santé ci-dessus et la commande à lancer ensuite
-   (`/kaizen:brainstorm <idée>` ou `/kaizen:ideate`) ; rappelle que `/kaizen:help` dit à tout moment
-   quoi faire ensuite.
+7. **Constitution** — no `CONSTITUTION.md` → propose `/kaizen:constitution` (Recommended): without it,
+   plan and review only have generic rules. Present → `node "$K" constitution check`.
+8. **PR size** — `pr.max_lines` (400 by default): ask whether the team has another limit.
+9. **Deployment and monitoring** (optional) — if the team wants Kaizen to drive production releases
+   too: `node "$K" deploy detect` recognizes the platform (Vercel, Netlify, Fly.io, Heroku, Kamal,
+   Capistrano, Helm, Kustomize, Serverless, SAM, Firebase, GitHub Actions workflows, Makefile, npm
+   scripts, Compose, Terraform) and proposes commands, rollback and health-check. Show them with their
+   notes, have the user choose, then `node "$K" deploy configure <id>`. Nothing recognized → ask for
+   the commands, never invent them. Complete the signals (error rate, latency: a command printing a
+   number). `production` is protected by default. Check with `node "$K" monitor check --env <env>`.
+10. **Profile** — ask (one question): **lean** (Recommended for a first adoption: minimal ceremony,
+   gates kept) · **standard** · **full** (regulated domains, seasoned team). The profile also sets
+   **each agent's model** (`node "$K" models`): show it, and offer to adjust a role (`models.roles`)
+   or an agent (`models.agents`) if the team has a cost or quality constraint. Write `profile` in
+   `.kaizen/config.json`. Team of several people → propose `approvers` in `CONSTITUTION.md` and a
+   `CODEOWNERS` line for `CONSTITUTION.md` and `kaizen-packs/`. Remind that a review is required
+   before any `git push` of a branch (`review.require_before_push`) and that only the team can choose
+   to relax it.
+11. **Summary** — finish with the health check above and the command to run next
+   (`/kaizen:brainstorm <idea>` or `/kaizen:ideate`); remind that `/kaizen:help` says at any time what
+   to do next.
 
-## `pack:<nom>` — créer un Kaizen Pack
+## `pack:<name>` — create a Kaizen Pack
 
-1. `node "$K" pack new <nom>` crée `kaizen-packs/<nom>/` (README + dossier `research/` de stockage) et
-   le déclare dans `.kaizen/config.json`. Refuse d'écrire dans un dossier non vide.
-2. Si l'utilisateur a décrit une première règle, écris-la : `kaizen-packs/<nom>/<slug>.md`
+1. `node "$K" pack new <name>` creates `kaizen-packs/<name>/` (README + `research/` storage folder) and
+   declares it in `.kaizen/config.json`. Refuses to write into a non-empty folder.
+2. If the user described a first rule, write it: `kaizen-packs/<name>/<slug>.md`
 
    ```markdown
    ---
-   title: Les pages reçoivent leurs données en props serveur, jamais par un endpoint JSON parallèle
+   title: Pages receive their data as server props, never through a parallel JSON endpoint
    applies_when:
-     - ajouter une page qui a besoin de données serveur
-     - ajouter ou modifier un endpoint consommé par les pages de l'application
+     - adding a page that needs server data
+     - adding or changing an endpoint consumed by the application's pages
    tags: [routes, props, api]
    ---
 
-   <la règle, sa raison, et l'exception éventuelle — sans biographie ni historique>
+   <the rule, its reason, and the exception if any — no biography or history>
    ```
 
-   `applies_when` décrit des **situations**, avec les mots qu'une demande de fonctionnalité
-   utiliserait (« ajouter une page… »), pas des étiquettes de sujet (« architecture »). Une situation
-   par ligne ; deux ou trois conditions concrètes valent mieux qu'une abstraite. Deux règles d'un même
-   pack ne prescrivent pas la même chose.
-3. `node "$K" packs` pour montrer le pack résolu et ses éventuels avertissements.
+   `applies_when` describes **situations**, with the words a feature request would use ("adding a
+   page…"), not topic labels ("architecture"). One situation per line; two or three concrete
+   conditions beat an abstract one. Two rules of the same pack do not prescribe the same thing.
+3. `node "$K" packs` to show the resolved pack and its warnings, if any.
 
-Packs partagés entre repos : déclare une source git épinglée (`{"source":
-"https://github.com/org/packs", "ref": "v1.2.0", "pack": ["rails"]}`) ; elle est clonée en cache dans
-les données du plugin (`node "$K" packs --refresh` pour la mettre à jour).
+Packs shared between repos: declare a pinned git source (`{"source": "https://github.com/org/packs",
+"ref": "v1.2.0", "pack": ["rails"]}`); it is cloned into a cache in the plugin's data
+(`node "$K" packs --refresh` to update it).

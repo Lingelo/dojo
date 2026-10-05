@@ -1,83 +1,85 @@
 # `/kaizen:autopilot`
 
-> De la demande à la PR « semble prête », en autonomie : la bonne skill à chaque étape, rien qui
-> s'arrête sans raison, rien d'irréversible sans votre accord.
+> From the request to a PR that "looks ready", autonomously: the right skill at every step, nothing that
+> stops without a reason, nothing irreversible without your approval.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Route la demande, produit une source de travail (plan ou correctif), puis enchaîne work → simplification → revue avec correctifs → learn → tests navigateur → ship → watch-pr |
-| **Quand l'utiliser** | Vous voulez explicitement un travail de bout en bout sans suivi pas à pas, idéalement **après un brainstorm** |
-| **Quand ne pas l'utiliser** | Vous voulez valider chaque étape (→ `plan`, `work`, `ship` séparément) ; la demande est encore floue et vous n'êtes pas là pour répondre |
-| **Ce qu'elle produit** | Une PR ouverte, revue et suivie jusqu'à un état vrai, et le rapport `DONE` |
-| **Et ensuite** | **Vous mergez.** |
+| **What it does** | Routes the request, produces a work source (plan or fix), then chains work → simplification → review with fixes → learn → browser tests → ship → watch-pr |
+| **When to use it** | You explicitly want end-to-end work without step-by-step follow-up, ideally **after a brainstorm** |
+| **When not to use it** | You want to validate each step (→ `plan`, `work`, `ship` separately); the request is still vague and you are not there to answer |
+| **What it produces** | An open PR, reviewed and followed to a true state, and the `DONE` report |
+| **What next** | **You merge.** |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:brainstorm export CSV des commandes
-/kaizen:autopilot                                     # sur le plan que le brainstorm vient d'écrire
+/kaizen:brainstorm orders CSV export
+/kaizen:autopilot                                     # on the plan the brainstorm just wrote
 /kaizen:autopilot docs/plans/…-plan.md
-/kaizen:autopilot le test orders_csv_spec échoue depuis la montée de version de Rails
+/kaizen:autopilot the orders_csv_spec test fails since the Rails upgrade
 ```
 
-## Le routage
+![Autopilot routing table and the eleven steps of the run](../media/diagrams/autopilot.svg)
 
-| La demande est… | Route |
+In depth: [the loop](../concepts/the-loop.md#autopilot).
+
+## Routing
+
+| The request is… | Route |
 |---|---|
-| un chemin de plan, ou un plan écrit dans la session | directement à l'implémentation |
-| un bug concret (symptôme, test rouge, ticket) | `debug mode:return` |
-| une forme produit ambiguë | `brainstorm` si vous êtes là, sinon `plan mode:return` (hypothèses consignées) |
-| un résultat qui n'est pas du code (idées, explication) | la skill concernée, et c'est tout |
-| tout autre changement de code | `plan mode:return` |
+| a plan path, or a plan written in the session | straight to implementation |
+| a concrete bug (symptom, red test, ticket) | `debug mode:return` |
+| an ambiguous product shape | `brainstorm` if you are there, otherwise `plan mode:return` (assumptions recorded) |
+| a result that is not code (ideas, explanation) | the relevant skill, and that is all |
+| any other code change | `plan mode:return` |
 
-Pas de raccourci pour un « petit » changement : plan, garde-fou, `verify` et revue tournent toujours.
-Seules la simplification (petit diff) et la livraison (pas de remote) peuvent être sautées.
-**Exception, profil `lean`** : un changement de 30 lignes environ, sans surface à risque (auth,
-données sensibles, migration, API publique, dépendance), part directement dans `work` sans plan écrit.
-Garde-fou, `verify`, revue et livraison restent identiques. Voir [Configuration](../configuration.md#profile).
+No shortcut for a "small" change: plan, gate, `verify` and review always run. Only simplification (small
+diff) and shipping (no remote) can be skipped.
+**Exception, `lean` profile**: a change of about 30 lines, with no risky surface (auth, sensitive data,
+migration, public API, dependency), goes straight into `work` without a written plan. Gate, `verify`,
+review and shipping stay the same. See [Configuration](../configuration.md#profile).
 
-## La course
+## The run
 
-1. **Source de travail** : un plan prêt (qui passe `plan check` et `doc-review`), ou un correctif de
-   `debug`.
-2. `work mode:return`, avec le **garde-fou actif pendant toute la course**.
+1. **Work source**: a ready plan (passing `plan check` and `doc-review`), or a fix from `debug`.
+2. `work mode:return`, with the **gate active for the whole run**.
 3. Simplification.
-4. `review mode:agent`. Un constat qui montre qu'une décision acquise ne peut pas marcher arrête tout,
-   avant tout push.
-5. Correctifs P0/P1 et `gated_auto` P2, vérifiés et commités.
-6. Le reste est consigné dans la PR (« Points ouverts »).
-7. `learn mode:auto`, si la course a produit une leçon durable.
-8. Tests navigateur si l'interface est touchée et qu'un outil est disponible.
+4. `review mode:agent`. A finding showing that a settled decision cannot work stops everything, before
+   any push.
+5. P0/P1 fixes and `gated_auto` P2 fixes, verified and committed.
+6. The rest is recorded in the PR ("Open points").
+7. `learn mode:auto`, if the run produced a durable learning.
+8. Browser tests if the UI is touched and a tool is available.
 9. `ship mode:auto`.
-10. `watch-pr mode:pipeline` : au plus 2 correctifs par cause, aucun test désactivé.
-11. `gate off`, rapport, `DONE`.
+10. `watch-pr mode:pipeline`: at most 2 fixes per cause, no disabled test.
+11. `gate off`, report, `DONE`.
 
 ```text
-DONE — Export CSV des commandes
-PR : https://github.com/acme/shop/pull/42 — ✅ semble prête
-Plan : docs/plans/…-plan.md · Unités : 3/3 · Revue : 1 P1 corrigé, 2 P3 consignés · Leçon : docs/learnings/…
+DONE — Orders CSV export
+PR: https://github.com/acme/shop/pull/42 — ✅ looks ready
+Plan: docs/plans/…-plan.md · Units: 3/3 · Review: 1 P1 fixed, 2 P3 recorded · Learning: docs/learnings/…
 ```
 
-## Bon à savoir
+## Good to know
 
-- **Questions** : seulement à travers le brainstorm, et seulement si vous êtes présent. Le reste
-  avance : ce qui est réversible est fait puis montré.
-- **Pas de renonciation à la revue** : autopilot ne peut pas pousser sans revue enregistrée, et la
-  renonciation exige que vous tapiez vous-même un code. Sans vous, la course s'arrête et dit pourquoi.
-- **Ce qui arrête la course** :
-  - une action irréversible hors de ce qui a été accordé (merge, push forcé, suppression de données,
-    déploiement) ;
-  - une source de travail impossible à produire ;
-  - un retour enfant incomplet ;
-  - une décision acquise invalidée.
+- **Questions**: only through the brainstorm, and only if you are present. The rest moves on: what is
+  reversible is done, then shown.
+- **No review waiver**: autopilot cannot push without a recorded review, and the waiver requires you to
+  type a code yourself. Without you, the run stops and says why.
+- **What stops the run**:
+  - an irreversible action outside what was granted (merge, force push, data deletion, deployment);
+  - a work source impossible to produce;
+  - an incomplete child return;
+  - a settled decision invalidated.
 
-  Un arrêt ne pousse rien de nouveau et explique comment reprendre.
-- Sans remote : tout reste en commits locaux.
-- La qualité de `autopilot` dépend de la qualité du plan. Lancez-le après un brainstorm plutôt que sur une
-  phrase.
+  A stop pushes nothing new and explains how to resume.
+- Without a remote: everything stays in local commits.
+- The quality of `autopilot` depends on the quality of the plan. Run it after a brainstorm rather than
+  on a single sentence.
 
-## Voir aussi
+## See also
 
 [brainstorm](brainstorm.md) · [plan](plan.md) · [work](work.md) · [watch-pr](watch-pr.md)

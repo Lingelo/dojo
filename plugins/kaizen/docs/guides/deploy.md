@@ -1,57 +1,57 @@
 # `/kaizen:deploy`
 
-> Mettre un commit en production par **vos** commandes de déploiement, avec votre approbation pour la
-> production, puis surveiller ses signaux et revenir en arrière si un seuil est franchi.
+> Release a commit to production through **your** deploy commands, with your approval for production,
+> then watch its signals and roll back if a threshold is breached.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Préconditions (CI verte, checklist des plans livrés, retour arrière prêt, signaux sains) → approbation tapée par vous pour un environnement protégé → déploiement → tag `deploy/<env>/…` → surveillance des signaux → retour arrière si un seuil est franchi |
-| **Quand l'utiliser** | Mettre une version ou la branche par défaut en staging ou en production ; revenir en arrière |
-| **Quand ne pas l'utiliser** | Ouvrir une PR (→ [ship](ship.md)) ; préparer une version (→ [release](release.md)) |
-| **Ce qu'elle produit** | Le commit déployé, un tag git partagé, un relevé des signaux pendant la fenêtre de surveillance ; en cas de problème, un tag `rollback/<env>/…` et la chronologie du post-mortem |
-| **Et ensuite** | Rien si tout va bien ; sinon [postmortem](postmortem.md) |
+| **What it does** | Preconditions (green CI, checklist of the shipped plans, rollback ready, healthy signals) → approval typed by you for a protected environment → deployment → `deploy/<env>/…` tag → signal watch → rollback if a threshold is breached |
+| **When to use it** | Releasing a version or the default branch to staging or production; rolling back |
+| **When not to use it** | Opening a PR (→ [ship](ship.md)); preparing a release (→ [release](release.md)) |
+| **What it produces** | The deployed commit, a shared git tag, a record of the signals during the watch window; on a problem, a `rollback/<env>/…` tag and the postmortem timeline |
+| **What next** | Nothing if all is well; otherwise [postmortem](postmortem.md) |
 
-## Exemples
+## Examples
 
 ```text
 /kaizen:deploy staging
 /kaizen:deploy production v2.3.0
-/kaizen:deploy rollback production erreurs 5xx après la v2.3.0
+/kaizen:deploy rollback production 5xx errors after v2.3.0
 /kaizen:deploy flag off export_csv production
 ```
 
-## Configurer
+## Configure
 
-Kaizen n'impose aucune plateforme : il exécute **vos** commandes, déclarées dans `.kaizen/config.json`.
-Pour ne pas les écrire à la main, `deploy detect` reconnaît comment le projet se déploie :
+Kaizen imposes no platform: it runs **your** commands, declared in `.kaizen/config.json`. To avoid
+writing them by hand, `deploy detect` recognizes how the project deploys:
 
-| Reconnu par | Plateforme | Retour arrière proposé |
+| Recognized by | Platform | Proposed rollback |
 |---|---|---|
 | `vercel.json`, `.vercel/` | Vercel | `vercel rollback` |
-| `netlify.toml` | Netlify | redéploiement du commit précédent |
-| `fly.toml` (app, health-check) | Fly.io | redéploiement du commit précédent |
-| remote `heroku`, `app.json` | Heroku | `heroku rollback` |
+| `netlify.toml` | Netlify | redeploy of the previous commit |
+| `fly.toml` (app, health-check) | Fly.io | redeploy of the previous commit |
+| `heroku` remote, `app.json` | Heroku | `heroku rollback` |
 | `config/deploy.yml` (+ destinations) | Kamal | `kamal rollback <sha>` |
-| `config/deploy.rb` (+ étapes) | Capistrano | `cap <étape> deploy:rollback` |
+| `config/deploy.rb` (+ stages) | Capistrano | `cap <stage> deploy:rollback` |
 | `Chart.yaml` (+ `values-<env>.yaml`) | Kubernetes (Helm) | `helm rollback` |
 | `kustomization.yaml` (overlays) | Kubernetes (Kustomize) | `kubectl rollout undo` |
-| `serverless.yml`, `template.yaml` (SAM), `firebase.json` | Serverless, AWS SAM, Firebase | redéploiement du commit précédent |
-| workflow GitHub Actions `workflow_dispatch` | votre pipeline existant | le même workflow sur le commit cible (si un input `ref`) |
-| workflow de déploiement sur `push` | déploiement continu | Kaizen suit le run du commit ; retour arrière par revert |
-| cibles `deploy*`/`rollback*` du Makefile, scripts npm | vos scripts | `rollback*` s'il existe, sinon redéploiement |
-| `docker-compose*.yml`, `*.tf` | Compose, Terraform (confiance faible) | redéploiement / réapplication du commit précédent |
+| `serverless.yml`, `template.yaml` (SAM), `firebase.json` | Serverless, AWS SAM, Firebase | redeploy of the previous commit |
+| GitHub Actions `workflow_dispatch` workflow | your existing pipeline | the same workflow on the target commit (if a `ref` input exists) |
+| deploy workflow on `push` | continuous deployment | Kaizen follows the commit's run; rollback by revert |
+| Makefile `deploy*`/`rollback*` targets, npm scripts | your scripts | `rollback*` if it exists, otherwise redeploy |
+| `docker-compose*.yml`, `*.tf` | Compose, Terraform (low confidence) | redeploy / re-apply of the previous commit |
 
 ```text
-node $K deploy detect              # candidats : commandes, retour arrière, confiance, notes
-node $K deploy configure fly       # écrit le candidat choisi (sans écraser un environnement existant)
+node $K deploy detect              # candidates: commands, rollback, confidence, notes
+node $K deploy configure fly       # writes the chosen candidate (without overwriting an existing environment)
 ```
 
-Le **redéploiement du commit précédent** lance la même commande depuis un worktree git du commit
-cible, sans toucher à votre copie de travail (shell POSIX : Linux, macOS, Git Bash). Chaque candidat
-porte ses limites (`notes`) : jeton requis, image taguée par SHA à vérifier, Terraform à relire… Voir
-[Configuration](../configuration.md#deploy--déploiement-et-retour-arrière).
+The **redeploy of the previous commit** runs the same command from a git worktree of the target
+commit, without touching your working copy (POSIX shell: Linux, macOS, Git Bash). Each candidate carries
+its limits (`notes`): token required, SHA-tagged image to check, Terraform to review… See
+[Configuration](../configuration.md#deploy--deployment-and-rollback).
 
 ```json
 "deploy": {
@@ -63,38 +63,52 @@ porte ses limites (`notes`) : jeton requis, image taguée par SHA à vérifier, 
 }
 ```
 
-Les commandes reçoivent `KAIZEN_ENV`, `KAIZEN_REF` et `KAIZEN_SHA`. `production` est protégée par
-défaut (`"protected": true` pour en protéger d'autres).
+The commands receive `KAIZEN_ENV`, `KAIZEN_REF` and `KAIZEN_SHA`. `production` is protected by default
+(`"protected": true` to protect others).
 
-## Comment ça se passe
+![A watched deployment from preconditions to rollback and postmortem](../media/diagrams/deploy-flow.svg)
 
-1. **Préconditions** :
-   - commit fusionné, CI verte ;
-   - ce qui part depuis le dernier déploiement : commits et plans livrés, avec leur retour arrière et
-     leur signal. Un plan sans retour arrière ni signal bloque un déploiement protégé ;
-   - retour arrière déclaré ;
-   - signaux déjà sains : on ne déploie pas par-dessus un incident.
-2. **Approbation** (environnement protégé) : Claude affiche un code, vous tapez vous-même
-   `kaizen deploy <code>`. Valable 30 minutes, pour ce commit seulement. Claude ne peut pas approuver
-   à votre place, et en mode autonome il n'y a pas de déploiement protégé.
-3. **Déploiement** : la commande tourne, puis un tag annoté `deploy/<env>/<horodatage>` est posé sur
-   le commit et poussé.
-4. **Surveillance** pendant `watch_minutes` (voir [monitor](monitor.md)) : les seuils viennent des
-   plans livrés (`` `error_rate` > 1 % `` dans leur section « Déploiement et retour arrière ») et de la
-   config.
-5. **Seuil franchi** : retour arrière d'abord (automatique si `deploy.auto_rollback`), vérification,
-   puis proposition de post-mortem.
+In depth: [production](../concepts/production.md#deploy).
 
-## Bon à savoir
+## How it goes
 
-- Lancer directement la commande de déploiement d'un environnement protégé est **refusé** par un
-  hook : elle contournerait l'approbation, le tag et la surveillance.
-- Les tags `deploy/…` et `rollback/…` ne se créent que par Kaizen. Ils alimentent les **vraies**
-  métriques DORA de [metrics](metrics.md) (fréquence, délai commit → production, taux d'échec, temps
-  de rétablissement) et la chronologie des post-mortems.
-- Le retour arrière n'exige pas d'approbation : il rétablit, et c'est urgent.
-- `autopilot` ne déploie jamais.
+1. **Preconditions**:
+   - merged commit, green CI;
+   - what goes out since the last deployment: commits and shipped plans, with their rollback and
+     signal. A plan without a rollback or signal blocks a protected deployment;
+   - declared rollback;
+   - signals already healthy: no deploying on top of an incident.
+2. **Approval** (protected environment): Claude shows a code, you type `kaizen deploy <code>` yourself.
+   Valid 30 minutes, for this commit only. Claude cannot approve for you, and in autonomous mode there
+   is no protected deployment.
+3. **Deployment**: the command runs (killed beyond `deploy.timeout_seconds`), then an annotated
+   `deploy/<env>/<timestamp>` tag is created on the commit and pushed.
+4. **Watch** for `watch_minutes` (see [monitor](monitor.md)): the thresholds come from the shipped plans
+   (`` `error_rate` > 1 % `` in their "Rollout and rollback" section) and from the config.
+5. **Threshold breached**: rollback first (automatic if `deploy.auto_rollback`), an incident opened and
+   resolved by the rollback, a check, then a postmortem proposed.
 
-## Voir aussi
+## The CLI underneath
+
+```bash
+node $K deploy request <env> [--ref r]           # approval code for a protected environment
+node $K deploy run <env> [--ref r]               # runs the command, tags, logs (exit 1 on failure)
+node $K deploy rollback <env> [--reason …] [--to r]
+node $K deploy list [--env e]                    # deployments, rollbacks, incidents from the tags
+node $K deploy flag on|off <name> [--env e]      # deploy.flags commands
+node $K deploy detect [--json] | configure <id> [--force]
+```
+
+## Good to know
+
+- Running a protected environment's deploy command directly is **refused** by a hook: it would bypass
+  the approval, the tag and the watch.
+- `deploy/…`, `rollback/…`, `incident/…` and `resolve/…` tags are only created by Kaizen. They feed the
+  **real** DORA metrics of [metrics](metrics.md) (frequency, commit → production lead time, failure
+  rate, time to restore) and the postmortem timelines.
+- A rollback needs no approval: it restores, and it is urgent.
+- `autopilot` never deploys.
+
+## See also
 
 [monitor](monitor.md) · [release](release.md) · [postmortem](postmortem.md) · [metrics](metrics.md)

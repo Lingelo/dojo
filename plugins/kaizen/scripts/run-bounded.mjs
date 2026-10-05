@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// Kaizen — lance une commande shell avec un délai, et tue tout son arbre de processus s'il est dépassé.
+// Kaizen — runs a shell command with a timeout, and kills its whole process tree when it is exceeded.
 //
-//   node run-bounded.mjs <délai ms> <commande>
+//   node run-bounded.mjs <timeout ms> <command>
 //
-// `spawnSync(cmd, { shell: true, timeout })` ne tue que le shell : sous Windows, le processus que la
-// commande a lancé (node, runner de tests…) survit, consomme du CPU et verrouille des fichiers. Ce
-// lanceur, appelé de façon synchrone par `runBounded` (lib.mjs), tue l'arbre entier : `taskkill /T /F`
-// sous Windows, le groupe de processus (`detached`) sous POSIX.
-// Sorties de la commande transmises telles quelles ; le bilan ({ timedOut, code, signal }) part sur le
-// descripteur 3, pour ne pas se confondre avec un code de sortie choisi par la commande.
+// `spawnSync(cmd, { shell: true, timeout })` only kills the shell: on Windows, the process the command
+// started (node, a test runner…) survives, burns CPU and locks files. This launcher, called
+// synchronously by `runBounded` (lib.mjs), kills the whole tree: `taskkill /T /F` on Windows, the
+// process group (`detached`) on POSIX.
+// The command's output is passed through as is; the summary ({ timedOut, code, signal }) goes to file
+// descriptor 3, so it cannot be confused with an exit code chosen by the command.
 
 import { spawn, spawnSync } from 'node:child_process';
 import { writeSync } from 'node:fs';
@@ -39,7 +39,7 @@ const timer = setTimeout(() => {
   killTree();
 }, Number(delay) || 1);
 
-// Lanceur tué de l'extérieur (délai du hook) : il n'abandonne pas la commande derrière lui.
+// Launcher killed from outside (hook timeout): it does not leave the command behind.
 for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP']) {
   process.on(sig, () => {
     killTree();

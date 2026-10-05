@@ -1,12 +1,12 @@
-// Kaizen — le bon modèle pour chaque tâche.
+// Kaizen — the right model for each task.
 //
-// Chaque agent du plugin a un **rôle** ; chaque rôle a un modèle selon le **profil** (lean, standard,
-// full), que l'équipe peut ajuster dans `.kaizen/config.json → models` (par rôle ou par agent). Les
-// skills lisent `kaizen.mjs models --json` et passent ce modèle à chaque appel de l'outil Agent.
+// Each agent of the plugin has a **role**; each role has a model per **profile** (lean, standard,
+// full), which the team can adjust in `.kaizen/config.json → models` (per role or per agent). Skills
+// read `kaizen.mjs models --json` and pass that model to every Agent tool call.
 //
-// Principe : la lecture et la synthèse en volume (recherche) coûtent peu d'erreurs ; les jugements
-// dont l'erreur coûte cher (sécurité, migrations de données, adversarial, décisions de plan) méritent
-// le modèle le plus fort. `inherit` = le modèle de la session.
+// Principle: bulk reading and synthesis (research) rarely cost much when wrong; judgments whose errors
+// are expensive (security, data migrations, adversarial, plan decisions) deserve the strongest model.
+// `inherit` = the session's model.
 
 export const MODELS = ['haiku', 'sonnet', 'opus', 'inherit'];
 
@@ -16,17 +16,17 @@ export const ROLES = {
   review_critical: ['security-reviewer', 'data-migration-reviewer', 'adversarial-reviewer'],
   plan_review: ['plan-coherence-reviewer', 'plan-feasibility-reviewer', 'plan-scope-reviewer', 'plan-design-reviewer'],
   plan_review_critical: ['plan-security-reviewer', 'plan-adversarial-reviewer'],
-  // Sous-agents general-purpose auxquels /kaizen:work confie des unités indépendantes.
+  // general-purpose subagents to which /kaizen:work hands independent units.
   implement: [],
 };
 
 export const ROLE_LABELS = {
-  research: 'recherche (repo, leçons, historique, doc)',
-  review: 'revue de code courante',
-  review_critical: 'revue critique (sécurité, migrations, adversarial)',
-  plan_review: 'relecture de plan',
-  plan_review_critical: 'relecture de plan critique (sécurité, adversarial)',
-  implement: 'implémentation déléguée (work)',
+  research: 'research (repo, learnings, history, docs)',
+  review: 'regular code review',
+  review_critical: 'critical review (security, migrations, adversarial)',
+  plan_review: 'plan review',
+  plan_review_critical: 'critical plan review (security, adversarial)',
+  implement: 'delegated implementation (work)',
 };
 
 export const PROFILE_MODELS = {
@@ -48,16 +48,16 @@ export function resolveModels(config) {
   const valid = (v, where) => {
     if (v === undefined) return false;
     if (MODELS.includes(v)) return true;
-    warnings.push(`${where} : modèle inconnu "${v}" (attendu : ${MODELS.join(', ')}) — ignoré`);
+    warnings.push(`${where}: unknown model "${v}" (expected: ${MODELS.join(', ')}) — ignored`);
     return false;
   };
-  for (const r of Object.keys(custom.roles || {})) if (!ROLES[r]) warnings.push(`models.roles.${r} : rôle inconnu (rôles : ${Object.keys(ROLES).join(', ')})`);
-  for (const a of Object.keys(custom.agents || {})) if (!roleOf(a)) warnings.push(`models.agents.${a} : agent inconnu`);
+  for (const r of Object.keys(custom.roles || {})) if (!ROLES[r]) warnings.push(`models.roles.${r}: unknown role (roles: ${Object.keys(ROLES).join(', ')})`);
+  for (const a of Object.keys(custom.agents || {})) if (!roleOf(a)) warnings.push(`models.agents.${a}: unknown agent`);
 
   const roles = {};
   for (const r of Object.keys(ROLES)) {
     const own = custom.roles?.[r];
-    roles[r] = valid(own, `models.roles.${r}`) ? { model: own, source: 'config' } : { model: PROFILE_MODELS[profile][r], source: `profil ${profile}` };
+    roles[r] = valid(own, `models.roles.${r}`) ? { model: own, source: 'config' } : { model: PROFILE_MODELS[profile][r], source: `profile ${profile}` };
   }
   const agents = {};
   for (const [r, list] of Object.entries(ROLES)) {

@@ -1,12 +1,12 @@
-// Le test de durabilité : une faute de frappe corrigée ne mérite pas de leçon.
+// The durability test: a fixed typo does not deserve a learning.
 export default {
   name: 'learn-skip',
   timeoutMinutes: 8,
-  files: { 'README.md': '# Projet\n\nUn petit projt.\n', 'docs/learnings/.gitkeep': '' },
-  steps: [{ files: { 'README.md': '# Projet\n\nUn petit projet.\n' }, commit: 'docs: corrige une faute de frappe (projt → projet)' }],
-  prompt: "/kaizen:learn mode:auto J'ai corrigé une faute de frappe dans le README (projt → projet).",
+  files: { 'README.md': '# Project\n\nA small projet.\n', 'docs/learnings/.gitkeep': '' },
+  steps: [{ files: { 'README.md': '# Project\n\nA small project.\n' }, commit: 'docs: fix a typo (projet → project)' }],
+  prompt: '/kaizen:learn mode:auto I fixed a typo in the README (projet → project).',
   checks: [
-    ['signal « Leçon non écrite »', (out) => /Leçon non écrite/i.test(out)],
-    ['aucune leçon créée', (_, c) => c.ls('docs/learnings').filter((f) => f.endsWith('.md')).length === 0],
+    ['"Learning not written" signal', (out) => /Learning not written/i.test(out)],
+    ['no learning created', (_, c) => c.ls('docs/learnings').filter((f) => f.endsWith('.md')).length === 0],
   ],
 };

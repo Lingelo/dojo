@@ -1,77 +1,80 @@
 # `/kaizen:learn`
 
-> Écrire **une** leçon durable dans `docs/learnings/`, là où le prochain plan et la prochaine revue la
-> liront. C'est l'étape qui rend le cycle suivant plus facile.
+> Write **one** durable learning in `docs/learnings/`, where the next plan and the next review will read
+> it. This is the step that makes the next cycle easier.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Applique le test de durabilité, rassemble le problème, les symptômes, les impasses, la solution et la prévention, cherche une leçon existante à mettre à jour, classe selon le vocabulaire du corpus, écrit et valide |
-| **Quand l'utiliser** | Après un travail **vérifié** qui a produit un raisonnement non évident : piège d'API, cause surprenante, impasse coûteuse, décision difficile à reconstituer |
-| **Quand ne pas l'utiliser** | Correctif de routine que le test et le message de commit expliquent déjà ; problème pas encore résolu |
-| **Ce qu'elle produit** | `docs/learnings/<catégorie>/<titre>.md`, nouvelle ou mise à jour, frontmatter validé ; ou « Leçon non écrite : <raison> » |
-| **Et ensuite** | La leçon est relue par `learnings-researcher` à chaque plan, brainstorm, revue et debug |
+| **What it does** | Applies the durability test, gathers the problem, symptoms, dead ends, solution and prevention, looks for an existing learning to update, classifies with the corpus vocabulary, writes and validates |
+| **When to use it** | After **verified** work that produced non-obvious reasoning: an API trap, a surprising cause, a costly dead end, a decision hard to reconstruct |
+| **When not to use it** | A routine fix the test and the commit message already explain; a problem not solved yet |
+| **What it produces** | `docs/learnings/<category>/<title>.md`, new or updated, validated frontmatter; or "Learning not written: <reason>" |
+| **What next** | The learning is read by `learnings-researcher` at every plan, brainstorm, review and debug |
 
-## Exemples
+## Examples
 
 ```text
 /kaizen:learn
-/kaizen:learn le BOM UTF-8 pour Excel
-/kaizen:learn mode:auto                 # sans question (utilisé par work, autopilot, debug)
+/kaizen:learn the UTF-8 BOM for Excel
+/kaizen:learn mode:auto                 # no questions (used by work, autopilot, debug)
 ```
 
-## Le test de durabilité
+![How learnings are written, read back, measured and pruned](../media/diagrams/learnings-loop.svg)
 
-> Si ce document disparaissait, un futur développeur qui lit l'implémentation finale referait-il
-> probablement l'erreur, ou la même enquête ?
+In depth: [learnings](../concepts/learnings.md).
 
-Ni l'effort fourni ni la taille du diff ne comptent. Si la réponse est non, rien n'est écrit et
-Claude dit pourquoi. Exemple réel tiré d'une évaluation : pour une faute de frappe corrigée dans le
-README, la réponse est « Leçon non écrite : … le diff et le message de commit suffisent ».
+## The durability test
 
-## Une leçon
+> If this document disappeared, would a future developer reading the final implementation probably
+> make the mistake again, or redo the same investigation?
 
-Deux pistes, selon `problem_type` :
-- **bug** : `runtime_error`, `test_failure`, `security_issue`…, avec `symptoms`, `root_cause` et
-  `resolution_type` obligatoires ;
-- **savoir** : `best_practice`, `convention`, `architecture_pattern`, `tooling_decision`…, avec
-  `applies_when` conseillé.
+Neither the effort spent nor the size of the diff counts. If the answer is no, nothing is written and
+Claude says why. A real example from an eval: for a typo fixed in the README, the answer is "Learning
+not written: … the diff and the commit message are enough".
+
+## A learning
+
+Two tracks, depending on `problem_type`:
+- **bug**: `runtime_error`, `test_failure`, `security_issue`…, with `symptoms`, `root_cause` and
+  `resolution_type` required;
+- **knowledge**: `best_practice`, `convention`, `architecture_pattern`, `tooling_decision`…, with
+  `applies_when` recommended.
 
 ```markdown
 ---
-title: Excel affiche des accents cassés dans les exports CSV
+title: Excel shows broken accents in CSV exports
 date: 2026-09-12
 category: runtime-errors
 module: exports
 problem_type: runtime_error
 component: service_layer
 symptoms:
-  - "Les accents apparaissent comme Ã© à l'ouverture dans Excel"
+  - "Accents show up as Ã© when opened in Excel"
 root_cause: wrong_api
 resolution_type: code_fix
 severity: medium
-tags: [csv, excel, encodage, bom]
+tags: [csv, excel, encoding, bom]
 ---
-# Excel affiche des accents cassés dans les exports CSV
-## Problème · ## Symptômes · ## Ce qui n'a pas marché · ## Solution · ## Pourquoi ça marche · ## Prévention
+# Excel shows broken accents in CSV exports
+## Problem · ## Symptoms · ## What didn't work · ## Solution · ## Why it works · ## Prevention
 ```
 
-La section **« Ce qui n'a pas marché »** est souvent la plus précieuse. Schéma complet :
-[`references/learnings-schema.md`](../../references/learnings-schema.md). Validation :
+The **"What didn't work"** section is often the most valuable. Full schema:
+[`references/learnings-schema.md`](../../references/learnings-schema.md). Validation:
 `node $K learnings validate`.
 
-## Bon à savoir
+## Good to know
 
-- **Une leçon par exécution.** Plusieurs leçons, c'est plusieurs exécutions successives.
-- **Vocabulaire du corpus d'abord** : `component`, `root_cause` et le dossier reprennent les valeurs
-  déjà utilisées dans `docs/learnings/` (`node $K learnings stats`), pour que les recherches les
-  retrouvent.
-- Une leçon existante devenue fausse est **mise à jour**, pas doublée.
-- Une leçon qui vaut pour toute l'équipe peut devenir une **règle de pack** : Claude le propose.
-- `retire_when` : seulement si la leçon tient à un état hors du repo (bug amont, version d'outil).
-- Rien de secret ni de personnel dans une leçon (`<REDACTED>`).
+- **One learning per run.** Several learnings means several successive runs.
+- **Corpus vocabulary first**: `component`, `root_cause` and the folder reuse the values already used in
+  `docs/learnings/` (`node $K learnings stats`), so that searches find them.
+- An existing learning that became wrong is **updated**, not duplicated.
+- A learning that holds for the whole team can become a **pack rule**: Claude proposes it.
+- `retire_when`: only if the learning depends on a state outside the repo (upstream bug, tool version).
+- Nothing secret or personal in a learning (`<REDACTED>`).
 
-## Voir aussi
+## See also
 
 [prune-learnings](prune-learnings.md) · [Kaizen Packs](../packs.md) · [metrics](metrics.md)

@@ -1,8 +1,8 @@
-// Projet de démonstration partagé par les évaluations : une petite boutique (commandes, totaux),
-// en JavaScript sans dépendance, testée avec node:test.
+// Demo project shared by the evaluations: a small shop (orders, totals), in dependency-free
+// JavaScript, tested with node:test.
 
 export const CONSTITUTION = `---
-name: Boutique
+name: Shop
 version: 1.0.0
 ratified: 2026-09-01
 last_amended: 2026-09-01
@@ -12,39 +12,39 @@ artifact: kaizen-constitution/v1
 
 ## Articles
 
-### I. Preuve d'abord — NON NÉGOCIABLE
-Tout changement de comportement arrive avec un test qui échouait avant.
-**Contrôle :** chaque unité a-t-elle une stratégie de preuve test d'abord ?
+### I. Evidence first — NON-NEGOTIABLE
+Every behavior change comes with a test that failed before.
+**Check:** does each unit have a test-first evidence strategy?
 
-### II. Simplicité
-Pas de dépendance ni de mécanisme non demandé.
-**Contrôle :** aucune dépendance ajoutée sans justification ?
+### II. Simplicity
+No dependency or mechanism nobody asked for.
+**Check:** no dependency added without justification?
 
-### III. Petits lots
-Un changement tient dans une PR relisible.
-**Contrôle :** le diff reste-t-il sous le plafond de taille ?
+### III. Small batches
+A change fits in a reviewable PR.
+**Check:** does the diff stay under the size limit?
 
-## Politique IA
+## AI policy
 
-### IV. Autonomie des agents
-Les agents ne mergent jamais, ne poussent pas de force et ne publient pas de version seuls.
-**Contrôle :** aucune action réservée faite seule ?
+### IV. Agent autonomy
+Agents never merge, never force push and never publish a release on their own.
+**Check:** no reserved action taken alone?
 `;
 
 export const SHOP = {
-  'package.json': { name: 'boutique', version: '1.0.0', type: 'module', scripts: { test: 'node --test' } },
+  'package.json': { name: 'shop', version: '1.0.0', type: 'module', scripts: { test: 'node --test' } },
   'src/orders.js': `export const orders = [];
 
-export function addOrder({ customer, items, status = 'nouvelle' }) {
+export function addOrder({ customer, items, status = 'new' }) {
   const order = { id: orders.length + 1, customer, items, status, date: '2026-09-15' };
   orders.push(order);
   return order;
 }
 
-// Total TTC en centimes : prix unitaire (centimes) × quantité, TVA 20 %.
+// Total including tax, in cents: unit price (cents) × quantity, 20 % VAT.
 export function totalCents(order) {
-  const ht = order.items.reduce((sum, it) => sum + it.priceCents * it.qty, 0);
-  return Math.round(ht * 1.2);
+  const net = order.items.reduce((sum, it) => sum + it.priceCents * it.qty, 0);
+  return Math.round(net * 1.2);
 }
 
 export function byStatus(status) {
@@ -55,124 +55,124 @@ export function byStatus(status) {
 import assert from 'node:assert/strict';
 import { addOrder, totalCents, byStatus } from './orders.js';
 
-test('total TTC', () => {
+test('total including tax', () => {
   const o = addOrder({ customer: 'Ana', items: [{ priceCents: 1000, qty: 2 }] });
   assert.equal(totalCents(o), 2400);
 });
 
-test('filtre par statut', () => {
-  addOrder({ customer: 'Bo', items: [], status: 'expédiée' });
-  assert.equal(byStatus('expédiée').length, 1);
+test('filter by status', () => {
+  addOrder({ customer: 'Bo', items: [], status: 'shipped' });
+  assert.equal(byStatus('shipped').length, 1);
 });
 `,
   'CONSTITUTION.md': CONSTITUTION,
   '.gitignore': 'node_modules\n.kaizen/runs\n',
 };
 
-// Plan prêt à exécuter (passe `plan check`) : export CSV des commandes, version bibliothèque.
+// Implementation-ready plan (passes `plan check`): orders CSV export, library version.
 export const CSV_PLAN = `---
-title: Export CSV des commandes - Plan
+title: Orders CSV export - Plan
 type: feat
 date: 2026-10-02
-topic: export-csv-commandes
+topic: orders-csv-export
 artifact: kaizen-plan/v1
 source: brainstorm
 ---
 
-# Export CSV des commandes - Plan
+# Orders CSV export - Plan
 
 <!-- kaizen:goal -->
-## Capsule d'objectif
+## Goal capsule
 
-**Objectif :** produire, à partir d'une liste de commandes, un texte CSV qu'Excel ouvre correctement.
-**Autorité produit :** périmètre tranché par l'utilisateur (2026-10-02).
-**Bloquants ouverts :** aucun.
+**Goal:** produce, from a list of orders, a CSV text that Excel opens correctly.
+**Product authority:** scope decided by the user (2026-10-02).
+**Open blockers:** none.
 
 <!-- kaizen:product -->
-## Contrat produit
+## Product contract
 
-### Résumé
-Une fonction \`ordersToCsv(orders)\` renvoie le CSV des commandes données.
+### Summary
+A function \`ordersToCsv(orders)\` returns the CSV of the given orders.
 
-### Exigences
-- R1. Une ligne d'en-tête puis une ligne par commande : id, date, client, statut, total TTC en euros.
-- R2. Les accents s'affichent correctement dans Excel (BOM UTF-8, séparateur \`;\`).
-- R3. Au-delà de 10 000 commandes, la fonction lève une erreur « Trop de commandes (N) : max 10 000 ».
+### Requirements
+- R1. A header line then one line per order: id, date, customer, status, total including tax in euros.
+- R2. Accents display correctly in Excel (UTF-8 BOM, \`;\` separator).
+- R3. Beyond 10,000 orders, the function throws an error "Too many orders (N): max 10,000".
 
-### Exemples d'acceptation
-- AE1. (couvre R1) Étant donné une commande de 2 articles à 10,00 €, quand j'exporte, alors la ligne contient \`24,00\`.
-- AE2. (couvre R2) Étant donné le client « Hélène Müller », quand j'exporte, alors le texte commence par le BOM et contient « Hélène Müller ».
-- AE3. (couvre R3) Étant donné 10 001 commandes, quand j'exporte, alors une erreur mentionne « 10 001 ».
+### Acceptance examples
+- AE1. (covers R1) Given an order of 2 items at 10.00 €, when I export, then the line contains \`24,00\`.
+- AE2. (covers R2) Given the customer "Hélène Müller", when I export, then the text starts with the BOM and contains "Hélène Müller".
+- AE3. (covers R3) Given 10,001 orders, when I export, then an error mentions "10,001" or "10001".
 
-### Hors périmètre
-- Endpoint HTTP, bouton, choix des colonnes.
+### Out of scope
+- HTTP endpoint, button, column selection.
 
 <!-- kaizen:planning -->
-## Contrat de planification
+## Planning contract
 
-### Décisions techniques clés
-- KTD1. Fonction pure dans \`src/csv.js\`, sans dépendance ; réutilise \`totalCents\`. Couvre R1.
+### Key technical decisions
+- KTD1. Pure function in \`src/csv.js\`, no dependency; reuses \`totalCents\`. Covers R1.
 
-### Contexte et motifs à suivre
-- \`src/orders.js\` — \`totalCents\` donne le total TTC en centimes.
+### Context and patterns to follow
+- \`src/orders.js\` — \`totalCents\` gives the total including tax in cents.
 
-### Risques
-- Champs contenant \`;\` ou des guillemets → échappement CSV standard (guillemets doublés).
+### Risks
+- Fields containing \`;\` or quotes → standard CSV escaping (doubled quotes).
 
 <!-- kaizen:constitution -->
-## Contrôle constitutionnel
+## Constitution check
 
-| Article | Verdict | Justification / preuve |
+| Article | Verdict | Justification / evidence |
 |---|---|---|
-| I. Preuve d'abord | ✅ | U1–U2 en test d'abord |
-| II. Simplicité | ✅ | fonction pure, aucune dépendance |
-| III. Petits lots | ✅ | ~80 lignes |
-| IV. Autonomie des agents | ✅ | rien de réservé |
+| I. Evidence first | ✅ | U1–U2 test first |
+| II. Simplicity | ✅ | pure function, no dependency |
+| III. Small batches | ✅ | ~80 lines |
+| IV. Agent autonomy | ✅ | nothing reserved |
 
 <!-- kaizen:threats -->
-## Menaces
+## Threats
 
-- **Injection de formule** · fichier ouvert dans Excel · un nom commençant par \`=\` → préfixer d'une apostrophe (U1).
+- **Formula injection** · file opened in Excel · a name starting with \`=\` → prefix with an apostrophe (U1).
 
 <!-- kaizen:rollout -->
-## Déploiement et retour arrière
+## Rollout and rollback
 
-- **Exposition** : bibliothèque interne, aucun appelant encore.
-- **Retour arrière** : revert du commit.
+- **Exposure**: internal library, no caller yet.
+- **Rollback**: revert the commit.
 
 <!-- kaizen:units -->
-## Unités d'implémentation
+## Implementation units
 
-### U1. Sérialiseur CSV
-- **Objectif :** transformer des commandes en CSV (R1, R2).
-- **Couvre :** R1, R2, AE1, AE2
-- **Dépend de :** —
-- **Fichiers :** \`src/csv.js\` (nouveau), \`src/csv.test.js\` (nouveau)
-- **Approche :** BOM, séparateur \`;\`, montant avec virgule décimale, échappement.
-- **Preuve :** test d'abord.
-- **Scénarios de test :** en-tête ; total \`24,00\` (AE1) ; BOM et accents (AE2) ; champ avec \`;\`.
-- **Vérification :** \`node --test src/csv.test.js\`
-- **Tranche :** T1
+### U1. CSV serializer
+- **Goal:** turn orders into CSV (R1, R2).
+- **Covers:** R1, R2, AE1, AE2
+- **Depends on:** —
+- **Files:** \`src/csv.js\` (new), \`src/csv.test.js\` (new)
+- **Approach:** BOM, \`;\` separator, amount with a decimal comma, escaping.
+- **Evidence:** test first.
+- **Test scenarios:** header; total \`24,00\` (AE1); BOM and accents (AE2); field with \`;\`.
+- **Verification:** \`node --test src/csv.test.js\`
+- **Slice:** S1
 
-### U2. Plafond de volume
-- **Objectif :** refuser les exports trop gros (R3).
-- **Couvre :** R3, AE3
-- **Dépend de :** U1
-- **Fichiers :** \`src/csv.js\`, \`src/csv.test.js\`
-- **Approche :** vérifier la longueur avant de sérialiser.
-- **Preuve :** test d'abord.
-- **Scénarios de test :** 10 000 passe ; 10 001 lève l'erreur (AE3).
-- **Vérification :** \`node --test src/csv.test.js\`
-- **Tranche :** T1
+### U2. Volume cap
+- **Goal:** refuse exports that are too big (R3).
+- **Covers:** R3, AE3
+- **Depends on:** U1
+- **Files:** \`src/csv.js\`, \`src/csv.test.js\`
+- **Approach:** check the length before serializing.
+- **Evidence:** test first.
+- **Test scenarios:** 10,000 passes; 10,001 throws the error (AE3).
+- **Verification:** \`node --test src/csv.test.js\`
+- **Slice:** S1
 
 <!-- kaizen:verification -->
-## Contrat de vérification
+## Verification contract
 - \`npm test\`
 
 <!-- kaizen:done -->
-## Définition de terminé
-- U1–U2 livrées, chacune avec sa preuve ; R1–R3 et AE1–AE3 couverts par des tests verts.
+## Definition of done
+- U1–U2 shipped, each with its evidence; R1–R3 and AE1–AE3 covered by green tests.
 `;
 
-// Pas de mainteneur pour répondre : les skills interactives doivent avancer sur leurs recommandations.
-export const HEADLESS = "Personne n'est disponible pour répondre à tes questions pendant cette session : quand tu devrais demander, prends ta recommandation et consigne-la comme hypothèse dans le livrable.";
+// No maintainer to answer: interactive skills must move forward on their recommendations.
+export const HEADLESS = 'Nobody is available to answer your questions during this session: whenever you would ask, take your recommendation and record it as an assumption in the deliverable.';

@@ -1,18 +1,18 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>motion-studio — sketch intro</title>
 <!--
-  Sketch de démonstration : 8 s, 1920×1080, 60 fps.
-  Mélange volontairement les 4 techniques gérées par le renderer :
-    - Canvas 2D   → champ de particules (rAF + performance.now, Math.random seedé)
-    - SVG         → tracé du logo (stroke-dashoffset en CSS) + pulsation SMIL <animate>
-    - CSS         → keyframes avec delays (timeline déclarative), easing ressort via linear()
-    - WAAPI + JS  → cartes déclenchées par setTimeout puis element.animate()
-  Son synchronisé, dans les deux sens :
-    - le son suit l'image : data-sfx="…" sur les éléments animés + window.__sfx() (riser)
-    - l'image suit le son : window.__audio (beats → timing des cartes, basses → halo et logo)
+  Demo sketch: 8 s, 1920×1080, 60 fps.
+  Deliberately mixes the 4 techniques handled by the renderer:
+    - Canvas 2D   → particle field (rAF + performance.now, seeded Math.random)
+    - SVG         → logo stroke (stroke-dashoffset in CSS) + SMIL <animate> pulse
+    - CSS         → keyframes with delays (declarative timeline), spring easing through linear()
+    - WAAPI + JS  → cards triggered by setTimeout, then element.animate()
+  Synced sound, both ways:
+    - sound follows picture: data-sfx="…" on the animated elements + window.__sfx() (riser)
+    - picture follows sound: window.__audio (beats → card timing, bass → halo and logo)
   Rendu :
     node ../scripts/sfx.mjs bed --bpm 120 --duration 8 --start 2.1 -o bed.wav > bed.json
     node ../scripts/render.mjs sketch-intro.html --audio bed.wav --beats bed.json --motion-blur 4
@@ -26,7 +26,7 @@
     --sky: #7aa2f7;
     --mint: #7dcfb6;
     --sun: #e0af68;
-    /* ressort amorti (overshoot léger) exprimé en CSS linear() */
+    /* damped spring (light overshoot) expressed in CSS linear() */
     --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
     --out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -39,7 +39,7 @@
   .vignette { position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(ellipse at 50% 45%, transparent 40%, rgba(0,0,0,.55) 100%); }
 
-  /* ---------- Scène 1-2 : logo + titre ---------- */
+  /* ---------- Scene 1-2: logo + title ---------- */
   .stage { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     display: flex; flex-direction: column; align-items: center; gap: 36px;
     animation: stage-up 1.1s var(--out-expo) 3.3s both; }
@@ -64,7 +64,7 @@
     opacity: 0; animation: fade .9s ease-out 2.9s forwards; }
   @keyframes fade { to { opacity: 1; } }
 
-  /* ---------- Scène 3 : cartes techniques (WAAPI) ---------- */
+  /* ---------- Scene 3: technique cards (WAAPI) ---------- */
   .cards { position: absolute; left: 50%; top: 610px; transform: translateX(-50%);
     display: grid; grid-template-columns: repeat(4, 340px); gap: 28px; }
   .card { height: 250px; border-radius: 28px; padding: 34px; opacity: 0;
@@ -76,7 +76,7 @@
   .card small { display: block; min-height: 2.7em; margin-top: 8px; font-size: 24px; color: var(--muted); line-height: 1.35; }
   .card i { width: 56px; height: 8px; border-radius: 4px; display: block; }
 
-  /* ---------- Scène 4 : tagline ---------- */
+  /* ---------- Scene 4: tagline ---------- */
   .tagline { position: absolute; left: 0; right: 0; bottom: 92px; text-align: center;
     font-size: 44px; font-weight: 600; letter-spacing: -0.01em; opacity: 0;
     animation: fade .8s ease-out 6.1s forwards; }
@@ -107,31 +107,31 @@
 
   <div class="cards" id="cards"></div>
 
-  <p class="tagline" data-sfx="chime" data-sfx-gain=".6">HTML, CSS, SVG, Canvas <em>→</em> <code>render.mjs</code> <em>→</em> MP4 image par image.</p>
+  <p class="tagline" data-sfx="chime" data-sfx-gain=".6">HTML, CSS, SVG, Canvas <em>→</em> <code>render.mjs</code> <em>→</em> MP4 frame by frame.</p>
   <div class="curtain"></div>
 
 <script>
-  // ---- titre : une <span> par lettre, décalage via --i
+  // ---- title: one <span> per letter, offset through --i
   const title = document.getElementById('title');
-  // chaque lettre fait « tic », de plus en plus aigu, spatialisé selon sa position (pan auto)
+  // each letter goes "tick", higher and higher, spatialized by its position (pan auto)
   const letter = (ch, i, cls = '') => `<span class="${cls}" style="--i:${i}" data-sfx="tick?pitch=${(0.8 + i * 0.05).toFixed(2)}" data-sfx-gain=".35" data-sfx-pan="auto">${ch}</span>`;
   [...'Motion'].forEach((ch, i) => title.insertAdjacentHTML('beforeend', letter(ch, i)));
   [...'Studio'].forEach((ch, i) => title.insertAdjacentHTML('beforeend', letter(ch, i + 7, 'accent')));
   title.children[5].style.marginRight = '0.28em';
 
-  // ---- cartes : déclenchées par un timer, animées en WAAPI
+  // ---- cards: triggered by a timer, animated with WAAPI
   const techs = [
     ['CSS', 'keyframes, transitions, linear() springs', 'var(--clay)'],
-    ['SVG', 'tracés, SMIL, morphing', 'var(--sky)'],
-    ['Canvas', '2D / WebGL piloté par le temps', 'var(--mint)'],
+    ['SVG', 'strokes, SMIL, morphing', 'var(--sky)'],
+    ['Canvas', '2D / WebGL driven by time', 'var(--mint)'],
     ['WAAPI', 'element.animate(), GSAP…', 'var(--sun)'],
   ];
   const cards = document.getElementById('cards');
   for (const [name, desc, color] of techs)
     cards.insertAdjacentHTML('beforeend', `<div class="card" data-sfx="pop?pitch=${(0.9 + cards.children.length * 0.12).toFixed(2)}" data-sfx-gain=".7" data-sfx-pan="auto"><i style="background:${color}"></i><div><b>${name}</b><small>${desc}</small></div></div>`);
 
-  // l'image suit la musique : première carte sur le beat qui suit 3.6 s, puis une par croche
-  const audio = window.__audio;                          // injecté par render.mjs --audio
+  // picture follows music: first card on the beat after 3.6 s, then one per eighth note
+  const audio = window.__audio;                          // injected by render.mjs --audio
   const beat = audio ? 60 / audio.bpm : 0.5;
   const cardsAt = audio ? audio.nextBeat(3.6) : 3.7;
   setTimeout(() => {
@@ -140,11 +140,11 @@
       { duration: 900, delay: i * beat * 500, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' }));
   }, cardsAt * 1000);
 
-  // riser qui *se termine* pile sur l'impact du logo (2.1 s)
+  // riser that *ends* right on the logo impact (2.1 s)
   window.__sfx?.('riser?dur=2', { at: 2.1, align: 'end', gain: 0.5 });
 
-  // ---- canvas : particules qui convergent vers le centre puis orbitent.
-  // Tout est fonction du temps t (pas d'état accumulé) → n'importe quelle frame est reproductible.
+  // ---- canvas: particles converging to the center, then orbiting.
+  // Everything is a function of time t (no accumulated state) → any frame is reproducible.
   const cv = document.getElementById('fx'), ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height, CX = W / 2, CY = H / 2 - 40;
   const N = 900;
@@ -165,7 +165,7 @@
     ctx.fillStyle = '#0b0d12';
     ctx.fillRect(0, 0, W, H);
 
-    // halo central qui respire
+    // breathing central halo
     const bass = audio ? audio.bass(t) : 0, pulse = audio ? audio.beat(t).pulse : 0;
     document.querySelector('.logo').style.setProperty('--pulse', pulse.toFixed(3));
     const glow = clamp((t - .6) / 1.2) * (1 - clamp((t - 6.6) / 1)) * (1 + 0.9 * bass);

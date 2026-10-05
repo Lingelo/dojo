@@ -1,77 +1,76 @@
 ---
 name: decide
-description: Prend une décision technique difficile ou irréversible sur preuves — cadre la question, explore le code, les leçons, la constitution et la doc externe, compare 2 à 4 options réelles (dont « ne rien faire »), donne un verdict argumenté avec son niveau de confiance et le signal qui ferait changer d'avis, puis l'enregistre en ADR (docs/adr/) quand elle est coûteuse à défaire — une décision qui se défait d'un revert reçoit une réponse simple, sans ADR. Utiliser pour « faut-il adopter X ? », « A ou B ? », « on migre vers… ? », « documente cette décision », /kaizen:decide. Lecture seule jusqu'à l'ADR.
+description: Makes a hard or irreversible technical decision on evidence — frames the question, explores the code, the learnings, the constitution and external docs, compares 2 to 4 real options (including "do nothing"), gives an argued verdict with its confidence level and the signal that would change its mind, then records it as an ADR (docs/adr/) when it is costly to undo — a decision undone by a revert gets a simple answer, without an ADR. Use when the user asks "should we adopt X?", "A or B?", "do we migrate to…?", "document this decision", /kaizen:decide. Read-only until the ADR.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Glob, Grep, Agent, AskUserQuestion, WebSearch, WebFetch
-argument-hint: "[question ou choix à trancher] [adr-only]"
+argument-hint: "[question or choice to settle] [adr-only]"
 ---
 
-# Decide — un verdict fondé, puis un ADR
+# Decide — a grounded verdict, then an ADR
 
-Rendre une **position tranchée et ancrée dans le projet** sur une question qui engage : adopter une
-technologie, choisir entre des approches, migrer, accepter une dette. Puis l'écrire en **ADR** pour
-que la raison survive à la conversation.
+Give a **clear-cut position grounded in the project** on a committing question: adopting a technology,
+choosing between approaches, migrating, accepting debt. Then write it down as an **ADR** so the reason
+outlives the conversation.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Gabarit : `${CLAUDE_PLUGIN_ROOT}/templates/adr.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Template: `${CLAUDE_PLUGIN_ROOT}/templates/adr.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**Jamais de verdict non mérité.** Une affirmation de la conversation est une piste à vérifier, pas une
-preuve. Si une information qui changerait la recommandation manque et reste introuvable : rends
-**« Bloqué — contexte manquant »** (ce qui manque, pourquoi ça compte, comment l'obtenir).
+**Never an unearned verdict.** A claim from the conversation is a lead to check, not evidence. If a
+piece of information that would change the recommendation is missing and cannot be found: return
+**"Blocked — missing context"** (what is missing, why it matters, how to get it).
 
-**`adr-only`** : la décision est déjà prise (dans la conversation ou un plan) → saute à l'étape 5.
+**`adr-only`**: the decision is already made (in the conversation or a plan) → skip to step 5.
 
-## 1. Cadrer
+## 1. Frame
 
-- Reformule la question en une phrase **décidable** (« Adopter Temporal pour les workflows de
-  facturation, ou garder les jobs Sidekiq ? »).
-- **Réversibilité** : facile (un revert), coûteuse (migration, refonte), irréversible (format de
-  données publié, contrat externe, fournisseur). Plus c'est irréversible, plus la barre de preuve
-  monte. Une décision facile à défaire ne mérite pas d'ADR : dis-le et réponds simplement.
-- Critères : ce qui compte **ici** (constitution, contraintes du plan, volumes, compétences de
-  l'équipe, coût), pondérés. Ne pose une question à l'utilisateur que si un critère décisif est
-  introuvable.
+- Restate the question as one **decidable** sentence ("Adopt Temporal for billing workflows, or keep
+  the Sidekiq jobs?").
+- **Reversibility**: easy (a revert), costly (migration, rework), irreversible (published data format,
+  external contract, vendor). The more irreversible, the higher the evidence bar. An easily undone
+  decision does not deserve an ADR: say so and answer simply.
+- Criteria: what matters **here** (constitution, plan constraints, volumes, team skills, cost),
+  weighted. Only ask the user if a decisive criterion cannot be found.
 
-## 2. Ancrer (parallèle)
+## 2. Anchor (parallel)
 
-- **Décisions antérieures** (obligatoire) : `node "$K" adr list`, `node "$K" learnings search <sujet>`,
-  plans liés, `CONSTITUTION.md`. Une décision passée sur le même sujet se cite et se respecte, ou se
-  remplace explicitement (`supersedes`).
-- **Code** : `kaizen:repo-researcher` sur la zone (usage actuel, points d'intégration, coût d'un
-  changement) ; `kaizen:git-historian` si la zone a une histoire.
-- **Externe** (adoption, migration, comparaison) : `kaizen:docs-researcher` avec des questions
-  précises — maturité, maintenance (dernières versions, activité), licence, limites connues,
-  compatibilité avec les versions du lockfile, coût. Sources primaires, datées.
+- **Prior decisions** (mandatory): `node "$K" adr list`, `node "$K" learnings search <topic>`, related
+  plans, `CONSTITUTION.md`. A past decision on the same topic is cited and respected, or explicitly
+  replaced (`supersedes`).
+- **Code**: `kaizen:repo-researcher` on the area (current usage, integration points, cost of a
+  change); `kaizen:git-historian` if the area has a history.
+- **External** (adoption, migration, comparison): `kaizen:docs-researcher` with precise questions —
+  maturity, maintenance (latest releases, activity), license, known limits, compatibility with the
+  lockfile's versions, cost. Primary, dated sources.
 
-## 3. Comparer
+## 3. Compare
 
-2 à 4 options **réellement différentes**, toujours avec « ne rien faire / garder l'existant ». Pour
-chacune : ce qu'elle optimise, coût d'adoption (estimation grossière en jours, fichiers touchés),
-risques, réversibilité, ce que disent les leçons et la constitution. Un tableau critères × options,
-puis la prose qui explique ce que le tableau ne dit pas.
+2 to 4 **truly different** options, always including "do nothing / keep what exists". For each: what
+it optimizes, adoption cost (rough estimate in days, files touched), risks, reversibility, what the
+learnings and the constitution say. A criteria × options table, then prose explaining what the table
+does not say.
 
-Avant de conclure, attaque ta recommandation : « dans un an cette décision s'est révélée mauvaise —
-pourquoi ? » Si l'histoire est plausible et non couverte, ajuste ou baisse la confiance.
+Before concluding, attack your recommendation: "in a year this decision turned out wrong — why?" If the
+story is plausible and not covered, adjust or lower the confidence.
 
 ## 4. Verdict
 
 ```markdown
-**Recommandation : <option>** — confiance <haute | moyenne | basse>
-Pourquoi : <les 2 ou 3 raisons décisives, avec preuves citées>
-À quelles conditions : <ce qui doit rester vrai>
-Ce qui me ferait changer d'avis : <signal observable>
-Coût / prochain pas : <premier pas concret, réversible si possible (spike, flag, pilote)>
+**Recommendation: <option>** — confidence <high | medium | low>
+Why: <the 2 or 3 decisive reasons, with quoted evidence>
+Under which conditions: <what must remain true>
+What would change my mind: <observable signal>
+Cost / next step: <concrete first step, reversible if possible (spike, flag, pilot)>
 ```
 
-En interactif, demande la décision (options + « autre »), recommandée en premier. L'utilisateur
-tranche ; sa décision fait foi même si elle diffère de la recommandation (l'ADR consigne les deux).
+Interactively, ask for the decision (options + "other"), the recommended one first. The user decides;
+their decision stands even if it differs from the recommendation (the ADR records both).
 
 ## 5. ADR
 
-`node "$K" adr new --title "<décision>"` réserve `docs/adr/NNNN-<slug>.md`. Remplis le gabarit :
-contexte avec preuves, options, décision et raison décisive, conséquences (y compris les dettes
-acceptées), **signal de révision**, `status: accepted` si l'utilisateur a tranché (sinon `proposed`),
-`reversibility`, `deciders`. Si elle remplace un ADR, mets à jour l'ancien (`status: superseded`,
-`superseded_by`). Puis :
-- si un plan est en cours, cite l'ADR dans sa KTD concernée ;
-- si la décision crée une règle durable pour l'équipe (« toute nouvelle file passe par… »), propose
-  une règle de pack ou un amendement de constitution — sans l'écrire d'office.
+`node "$K" adr new --title "<decision>"` reserves `docs/adr/NNNN-<slug>.md`. Fill in the template, in
+the configured language: context with evidence, options, decision and decisive reason, consequences
+(including accepted debt), **review signal**, `status: accepted` if the user decided (otherwise
+`proposed`), `reversibility`, `deciders`. If it replaces an ADR, update the old one (`status:
+superseded`, `superseded_by`). Then:
+- if a plan is in progress, cite the ADR in its relevant KTD;
+- if the decision creates a durable rule for the team ("every new queue goes through…"), propose a
+  pack rule or a constitution amendment — without writing it on your own.

@@ -1,9 +1,12 @@
-// Kaizen — lecture et validation de CONSTITUTION.md (contrat kaizen-constitution/v1).
+// Kaizen — reading and validating CONSTITUTION.md (kaizen-constitution/v1 contract).
 //
-// Un article :   ### I. Test d'abord — NON NÉGOCIABLE
-//                <règle en 1 à 3 phrases>
-//                **Contrôle :** <question vérifiable au plan et en revue>
-//                **Exceptions :** <optionnel>
+// An article:    ### I. Test first — NON-NEGOTIABLE
+//                <rule in 1 to 3 sentences>
+//                **Check:** <question verifiable in the plan and in review>
+//                **Exceptions:** <optional>
+//
+// French constitutions written before Kaizen 3.0 (« NON NÉGOCIABLE », « **Contrôle :** »,
+// « ## Amendements », « Approuvé par ») are still accepted.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,10 +16,10 @@ export const CONSTITUTION_FILE = 'CONSTITUTION.md';
 
 const ARTICLE_RE = /^###\s+([IVXLC]+)\.\s+(.+?)\s*$/;
 const NON_NEGOTIABLE_RE = /\s*[—–-]+\s*(NON[ -]N[ÉE]GOCIABLE|NON[ -]NEGOTIABLE)\s*$/i;
-// Journal : « - v1.2.0 (2026-11-03) — Article IV élargi. Raison : … Approuvé par : @alice, @bob »
+// Log: "- v1.2.0 (2026-11-03) — Article IV widened. Reason: … Approved by: @alice, @bob"
 const AMENDMENT_RE = /^\s*[-*]\s+v?(\d+\.\d+\.\d+)\s*\((\d{4}-\d{2}-\d{2})\)\s*[—–-]+\s*(.+)$/;
 const handles = (v) => [].concat(v || []).flatMap((x) => String(x).split(/[,\s]+/)).map((x) => x.trim().replace(/^@/, '').toLowerCase()).filter(Boolean);
-const FIELD_RE = /^\*\*(Contrôle|Control|Exceptions?)\s*:\*\*\s*(.*)$/i;
+const FIELD_RE = /^\*\*(Check|Control|Contrôle|Exceptions?)\s*:\*\*\s*(.*)$/i;
 
 export function constitutionPath(root) {
   return join(root, CONSTITUTION_FILE);
@@ -61,7 +64,7 @@ export function parseConstitution(text) {
     if (!current) continue;
     const f = FIELD_RE.exec(line.trim());
     if (f) {
-      const key = /^contr/i.test(f[1]) ? 'control' : 'exceptions';
+      const key = /^(contr|check)/i.test(f[1]) ? 'control' : 'exceptions';
       current[key] = f[2].trim();
       current._last = key;
     } else if (line.trim()) {
@@ -85,43 +88,43 @@ export function validateConstitution(c) {
   const errors = [];
   const warnings = [];
   const m = c.meta;
-  if (m.artifact !== 'kaizen-constitution/v1') warnings.push('frontmatter : artifact: kaizen-constitution/v1 attendu');
-  if (!/^\d+\.\d+\.\d+$/.test(String(m.version || ''))) errors.push(`version au format MAJEUR.MINEUR.CORRECTIF attendue : "${m.version ?? ''}"`);
+  if (m.artifact !== 'kaizen-constitution/v1') warnings.push('frontmatter: artifact: kaizen-constitution/v1 expected');
+  if (!/^\d+\.\d+\.\d+$/.test(String(m.version || ''))) errors.push(`version in MAJOR.MINOR.PATCH format expected: "${m.version ?? ''}"`);
   for (const k of ['ratified', 'last_amended']) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(m[k] || ''))) errors.push(`${k} au format YYYY-MM-DD attendu : "${m[k] ?? ''}"`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(m[k] || ''))) errors.push(`${k} in YYYY-MM-DD format expected: "${m[k] ?? ''}"`);
   }
-  if (m.ratified && m.last_amended && String(m.last_amended) < String(m.ratified)) errors.push('last_amended antérieure à ratified');
-  if (!c.articles.length) errors.push('aucun article (### I. Titre)');
-  if (c.articles.length > 12) warnings.push(`${c.articles.length} articles : au-delà de 12, plus personne ne les applique tous`);
+  if (m.ratified && m.last_amended && String(m.last_amended) < String(m.ratified)) errors.push('last_amended is earlier than ratified');
+  if (!c.articles.length) errors.push('no article (### I. Title)');
+  if (c.articles.length > 12) warnings.push(`${c.articles.length} articles: beyond 12, nobody applies them all anymore`);
   c.articles.forEach((a, i) => {
-    if (a.id !== ROMAN[i]) errors.push(`article ${a.id} : numérotation attendue ${ROMAN[i]} (continue, sans trou)`);
-    if (!a.rule) errors.push(`article ${a.id} (${a.title}) : règle vide`);
-    if (!a.control) errors.push(`article ${a.id} (${a.title}) : **Contrôle :** manquant — un principe sans contrôle vérifiable n'est pas appliqué`);
+    if (a.id !== ROMAN[i]) errors.push(`article ${a.id}: expected numbering ${ROMAN[i]} (continuous, no gaps)`);
+    if (!a.rule) errors.push(`article ${a.id} (${a.title}): empty rule`);
+    if (!a.control) errors.push(`article ${a.id} (${a.title}): **Check:** missing — a principle without a verifiable check is not applied`);
   });
   const titles = c.articles.map((a) => a.title.toLowerCase());
   titles.forEach((t, i) => {
-    if (titles.indexOf(t) !== i) errors.push(`titre d'article en double : "${c.articles[i].title}"`);
+    if (titles.indexOf(t) !== i) errors.push(`duplicate article title: "${c.articles[i].title}"`);
   });
-  // Gouvernance d'équipe (optionnelle) : dès que `approvers` est déclaré, chaque version au-delà de la
-  // ratification doit porter dans le journal un amendement approuvé par l'un d'eux — un agent ne
-  // s'approuve pas lui-même un changement des règles qu'il doit respecter.
+  // Team governance (optional): as soon as `approvers` is declared, every version past ratification
+  // must have an amendment in the log approved by one of them — an agent does not approve a change to
+  // the rules it must follow.
   const approvers = handles(m.approvers);
   if (approvers.length) {
-    if (!handles(m.ratified_by).length) warnings.push('ratified_by absent : qui a ratifié la constitution ?');
+    if (!handles(m.ratified_by).length) warnings.push('ratified_by missing: who ratified the constitution?');
     const amendments = c.amendments || [];
     const current = amendments.filter((a) => a.version === String(m.version));
     if (String(m.version) !== '1.0.0' || amendments.length) {
-      if (!current.length) errors.push(`gouvernance : aucun amendement v${m.version} dans « ## Amendements »`);
+      if (!current.length) errors.push(`governance: no v${m.version} amendment in "## Amendments"`);
       else if (!current.some((a) => a.approved_by.some((h) => approvers.includes(h)))) {
-        errors.push(`gouvernance : l'amendement v${m.version} n'est approuvé par aucun approbateur déclaré (${approvers.map((h) => `@${h}`).join(', ')})`);
+        errors.push(`governance: amendment v${m.version} is not approved by any declared approver (${approvers.map((h) => `@${h}`).join(', ')})`);
       }
     }
     for (const a of amendments) {
-      if (a.approved_by.some((h) => /^(claude|agent|bot|ai|ia)$/.test(h))) errors.push(`gouvernance : amendement v${a.version} approuvé par un agent`);
+      if (a.approved_by.some((h) => /^(claude|agent|bot|ai|ia)$/.test(h))) errors.push(`governance: amendment v${a.version} approved by an agent`);
     }
   }
   if (!c.articles.some((a) => /\bia\b|\bai\b|agent/i.test(`${a.title} ${a.section}`))) {
-    warnings.push("aucun article sur la politique IA (ce que l'agent peut faire seul) — recommandé par DORA 2025");
+    warnings.push('no article on AI policy (what the agent may do on its own) — recommended by DORA 2025');
   }
   return { errors, warnings };
 }

@@ -1,6 +1,6 @@
-# Plugin Playwright
+# Playwright plugin
 
-MCP Playwright integre + agents IA pour les tests end-to-end : planification, generation et reparation.
+Bundled Playwright MCP server + AI agents for end-to-end tests: planning, generation and repair.
 
 ## Installation
 
@@ -8,57 +8,69 @@ MCP Playwright integre + agents IA pour les tests end-to-end : planification, ge
 /plugin install playwright@angelo-plugins
 ```
 
-Ce plugin installe automatiquement :
-- Le serveur MCP Playwright (`@playwright/mcp`)
-- Les agents specialises (planner, generator, healer)
+Prerequisite: Node.js with `npx` (the MCP server is downloaded on first use).
+
+The plugin installs automatically:
+- the Playwright MCP server (`@playwright/mcp`), which gives Claude a real browser (navigate, click,
+  type, snapshot, screenshot, console, network);
+- three specialized agents (planner, generator, healer).
 
 ## Agents
 
-### Planner (Vert)
+### Planner (green) — `playwright-test-planner`
 
-Crée des plans de tests complets en explorant les applications web.
+Creates complete test plans by exploring web applications.
 
-**Utiliser quand :** Vous avez besoin de scénarios de test pour une page ou application web.
+**Use when:** you need test scenarios for a web page or application.
 
 ```
-"J'ai besoin de scénarios de test pour notre checkout sur https://mystore.com/checkout"
+"I need test scenarios for our checkout at https://mystore.com/checkout"
 ```
 
-**Capacités :**
-- Naviguer et explorer les interfaces web
-- Cartographier les parcours utilisateur et chemins critiques
-- Concevoir des scénarios de test (happy path, edge cases, gestion d'erreurs)
-- Générer une documentation de plan de test structurée
+**Capabilities:**
+- navigate and explore web interfaces;
+- map user journeys and critical paths;
+- design test scenarios (happy path, edge cases, error handling);
+- produce a structured test plan document.
 
-### Generator (Bleu)
+### Generator (blue) — `playwright-test-generator`
 
-Crée du code de test Playwright robuste et fiable.
+Creates robust, reliable Playwright test code.
 
-**Utiliser quand :** Vous avez un plan de test et avez besoin de l'implémentation.
+**Use when:** you have a test plan and need the implementation.
 
-**Capacités :**
-- Générer des fichiers de test Playwright
-- Simuler des interactions utilisateur réelles
-- Ajouter des assertions et validations appropriées
-- Suivre les bonnes pratiques de test
+```
+"Write a test that logs into localhost:3000 as admin@test.com and checks the dashboard loads"
+```
 
-### Healer (Rouge)
+**Capabilities:**
+- generate Playwright test files;
+- simulate real user interactions, step by step in the browser;
+- add the right assertions and validations;
+- follow testing best practices.
 
-Débogue et corrige les tests Playwright en échec.
+### Healer (red) — `playwright-test-healer`
 
-**Utiliser quand :** Des tests échouent et nécessitent un diagnostic/réparation.
+Debugs and fixes failing Playwright tests.
 
-**Capacités :**
-- Analyser les échecs de tests
-- Identifier les causes racines (sélecteurs, timing, logique)
-- Appliquer des corrections systématiquement
-- Vérifier que les réparations fonctionnent
+**Use when:** tests fail and need a diagnosis and a repair.
 
-## Serveur MCP inclus
+```
+"user-registration.spec.ts is broken since the last changes"
+```
 
-Le serveur MCP Playwright est automatiquement configure lors de l'installation du plugin.
+**Capabilities:**
+- run the tests and analyze the failures;
+- identify root causes (selectors, timing, logic, data);
+- apply fixes systematically;
+- check that the repairs work.
 
-Configuration incluse (`.mcp.json`) :
+All three agents run on the `sonnet` model.
+
+## Bundled MCP server
+
+The Playwright MCP server is configured automatically when the plugin is installed (`.mcp.json`):
+
 ```json
 {
   "mcpServers": {
@@ -70,13 +82,23 @@ Configuration incluse (`.mcp.json`) :
 }
 ```
 
+The agents' test tools (`generator_setup_page`, `generator_write_test`, `test_run`, `test_debug`,
+`test_list`…) come from Playwright Test's own MCP server (`playwright-test`), set up in a project by
+`npx playwright init-agents --loop=claude`. Without it, the agents fall back to the browser tools of the
+bundled server and to the project's test command.
+
+## Used by
+
+The [Kaizen](../kaizen/README.md) plugin uses Playwright in `/kaizen:polish`, `/kaizen:work` and
+`/kaizen:autopilot` to see and verify the UI.
+
 ## Structure
 
 ```
 playwright/
 ├── .claude-plugin/
 │   └── plugin.json
-├── .mcp.json              # Configuration MCP Playwright
+├── .mcp.json              # Playwright MCP configuration
 ├── agents/
 │   ├── playwright-test-planner.md
 │   ├── playwright-test-generator.md

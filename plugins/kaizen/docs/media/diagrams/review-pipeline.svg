@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="640" viewBox="0 0 1100 640" role="img" aria-labelledby="t d">
+<title id="t">The multi-agent review (/kaizen:review)</title>
+<desc id="d">Reviewers chosen from what the diff touches, run in parallel, merged, filtered by confidence, and every blocking finding re-verified.</desc>
+<style>
+  .bg { fill: #fbfaf7; stroke: #e4e0d8; }
+  text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
+  .title { font-size: 18px; font-weight: 700; }
+  .desc { font-size: 12.5px; fill: #5c6370; }
+  .label { font-size: 13.5px; font-weight: 600; }
+  .t12 { font-size: 12px; }
+  .sub { font-size: 11.5px; fill: #5c6370; }
+  .small { font-size: 11px; fill: #5c6370; }
+  .edge { font-size: 11px; fill: #5c6370; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .skill { fill: #fdf1ea; stroke: #d97757; }
+  .artifact { fill: #edf2fb; stroke: #5b7fbf; }
+  .gate { fill: #fdeeee; stroke: #c94a4a; }
+  .agent { fill: #ecf6ef; stroke: #3f8f5a; }
+  .outside { fill: #f3f0fa; stroke: #7a5fc0; }
+  .state { fill: #fff8e1; stroke: #b8901c; }
+  .plain { fill: #ffffff; stroke: #c9c4ba; }
+  .region { fill: none; stroke: #b9b3a6; stroke-dasharray: 5 4; }
+  .regionlabel { font-size: 11.5px; font-weight: 600; fill: #7d776b; letter-spacing: .04em; }
+  .band { fill: #fff4dd; stroke: #d6a645; }
+  .line { fill: none; stroke: #6e7681; stroke-width: 1.6; }
+  .line.accent { stroke: #d97757; }
+  .line.bad { stroke: #c94a4a; }
+  .line.ok { stroke: #3f8f5a; }
+  .line.blue { stroke: #5b7fbf; }
+  .dashed { stroke-dasharray: 6 4; }
+  .head { fill: #6e7681; }
+  .head.accent { fill: #d97757; }
+  .head.bad { fill: #c94a4a; }
+  .head.ok { fill: #3f8f5a; }
+  .head.blue { fill: #5b7fbf; }
+  .pill { fill: #ffffff; stroke: none; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #161b22; stroke: #30363d; }
+    text { fill: #e6edf3; }
+    .desc, .sub, .small, .edge { fill: #9aa4b0; }
+    .skill { fill: #3a2419; stroke: #e08b6c; }
+    .artifact { fill: #1b2638; stroke: #7c9fd8; }
+    .gate { fill: #3a1d1f; stroke: #e06c6c; }
+    .agent { fill: #18301f; stroke: #5fb07a; }
+    .outside { fill: #271f3d; stroke: #a08ae0; }
+    .state { fill: #33290f; stroke: #d6b043; }
+    .plain { fill: #1f2630; stroke: #4a525d; }
+    .region { stroke: #5a6270; }
+    .regionlabel { fill: #a39d90; }
+    .band { fill: #33290f; stroke: #c99a3b; }
+    .line { stroke: #9aa4b0; }
+    .line.accent { stroke: #e08b6c; }
+    .line.bad { stroke: #e06c6c; }
+    .line.ok { stroke: #5fb07a; }
+    .line.blue { stroke: #7c9fd8; }
+    .head { fill: #9aa4b0; }
+    .head.accent { fill: #e08b6c; }
+    .head.bad { fill: #e06c6c; }
+    .head.ok { fill: #5fb07a; }
+    .head.blue { fill: #7c9fd8; }
+    .pill { fill: #161b22; }
+  }
+</style>
+<defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="1099" height="639" rx="14"/>
+<text class="title" x="28" y="38">The multi-agent review (/kaizen:review)</text>
+<text class="desc" x="28" y="58">Reviewers chosen from what the diff touches, run in parallel, merged, filtered by confidence, and every blocking finding re-verified.</text>
+<rect class="skill" x="36" y="84" width="236" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="154" y="109" text-anchor="middle">1. Scope</text>
+<text class="sub" x="154" y="124" text-anchor="middle">branch diff vs merge-base</text>
+<text class="sub" x="154" y="138" text-anchor="middle">(uncommitted included) or a PR</text>
+<rect class="skill" x="298" y="84" width="236" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="416" y="109" text-anchor="middle">2. Depth</text>
+<text class="sub" x="416" y="124" text-anchor="middle">light ≤ 20 lines · targeted &lt; 100,</text>
+<text class="sub" x="416" y="138" text-anchor="middle">one area · full otherwise</text>
+<rect class="skill" x="560" y="84" width="236" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="678" y="109" text-anchor="middle">3. Intent and plan</text>
+<text class="sub" x="678" y="124" text-anchor="middle">intent summary · R / AE / KTD</text>
+<text class="sub" x="678" y="138" text-anchor="middle">from the plan of the branch</text>
+<rect class="skill" x="822" y="84" width="236" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="940" y="109" text-anchor="middle">4. Selection</text>
+<text class="sub" x="940" y="124" text-anchor="middle">correctness always + what the</text>
+<text class="sub" x="940" y="138" text-anchor="middle">diff touches · profile adjusts</text>
+<path class="line accent" d="M272,119 L298,119" marker-end="url(#h-accent)"/>
+<path class="line accent" d="M534,119 L560,119" marker-end="url(#h-accent)"/>
+<path class="line accent" d="M796,119 L822,119" marker-end="url(#h-accent)"/>
+<rect class="region" x="36" y="178" width="1028" height="156" rx="12"/>
+<text class="regionlabel" x="48" y="195">LAUNCHED IN PARALLEL, ONE AGENT CALL EACH, MODEL FROM THE PROFILE</text>
+<rect class="agent" x="48" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="143" y="226" text-anchor="middle">correctness</text>
+<text class="sub" x="143" y="241" text-anchor="middle">always</text>
+<rect class="agent" x="250" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="345" y="226" text-anchor="middle">standards</text>
+<text class="sub" x="345" y="241" text-anchor="middle">constitution, packs</text>
+<rect class="agent" x="452" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="547" y="226" text-anchor="middle">security</text>
+<text class="sub" x="547" y="241" text-anchor="middle">auth, input, secrets</text>
+<rect class="agent" x="654" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="749" y="226" text-anchor="middle">testing</text>
+<text class="sub" x="749" y="241" text-anchor="middle">behavior changed</text>
+<rect class="agent" x="856" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="951" y="226" text-anchor="middle">performance</text>
+<text class="sub" x="951" y="241" text-anchor="middle">queries, complexity</text>
+<rect class="agent" x="48" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="143" y="288" text-anchor="middle">reliability</text>
+<text class="sub" x="143" y="303" text-anchor="middle">errors, retries, jobs</text>
+<rect class="agent" x="250" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="345" y="288" text-anchor="middle">api-contract</text>
+<text class="sub" x="345" y="303" text-anchor="middle">external boundary</text>
+<rect class="agent" x="452" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="547" y="288" text-anchor="middle">data-migration</text>
+<text class="sub" x="547" y="303" text-anchor="middle">migrations, backfills</text>
+<rect class="agent" x="654" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="749" y="288" text-anchor="middle">maintainability</text>
+<text class="sub" x="749" y="303" text-anchor="middle">refactor, ≥ 200 lines</text>
+<rect class="agent" x="856" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="951" y="288" text-anchor="middle">adversarial</text>
+<text class="sub" x="951" y="303" text-anchor="middle">≥ 50 lines, risky paths</text>
+<path class="line accent" d="M940,154 L940,178" marker-end="url(#h-accent)"/>
+<text class="small" x="36" y="352" text-anchor="start">Each returns the contract JSON: severity P0–P3 · confidence 50 | 75 | 100 · evidence quoting file:line · suggested_fix · autofix_class · pre_existing</text>
+<rect class="gate" x="36" y="384" width="236" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="154" y="409" text-anchor="middle">Normalize</text>
+<text class="sub" x="154" y="424" text-anchor="middle">no evidence → rejected</text>
+<text class="sub" x="154" y="438" text-anchor="middle">unquoted 75/100 → 50</text>
+<rect class="gate" x="298" y="384" width="236" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="416" y="409" text-anchor="middle">Deduplicate</text>
+<text class="sub" x="416" y="424" text-anchor="middle">same file, ±3 lines, same</text>
+<text class="sub" x="416" y="438" text-anchor="middle">failure mode · agreement +1</text>
+<rect class="gate" x="560" y="384" width="236" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="678" y="409" text-anchor="middle">Confidence gate</text>
+<text class="sub" x="678" y="424" text-anchor="middle">100/75 kept · 50 only as P0</text>
+<text class="sub" x="678" y="438" text-anchor="middle">pre-existing listed apart</text>
+<rect class="gate" x="822" y="384" width="236" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="940" y="409" text-anchor="middle">Validate P0 / P1</text>
+<text class="sub" x="940" y="424" text-anchor="middle">quoted lines re-read:</text>
+<text class="sub" x="940" y="438" text-anchor="middle">confirmed · refuted · unresolved</text>
+<path class="line accent" d="M550,334 L550,366 L154,366 L154,384" marker-end="url(#h-accent)"/>
+<path class="line accent" d="M272,419 L298,419" marker-end="url(#h-accent)"/>
+<path class="line accent" d="M534,419 L560,419" marker-end="url(#h-accent)"/>
+<path class="line accent" d="M796,419 L822,419" marker-end="url(#h-accent)"/>
+<rect class="plain" x="36" y="492" width="360" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="216" y="517" text-anchor="middle">Verdict</text>
+<text class="sub" x="216" y="532" text-anchor="middle">⛔ a P0, or a confirmed P1 · ⚠️ other P1/P2 or gaps</text>
+<text class="sub" x="216" y="546" text-anchor="middle">✅ otherwise · plan conformance per R/AE</text>
+<rect class="gate" x="430" y="492" width="300" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="580" y="517" text-anchor="middle">review record --verdict</text>
+<text class="sub" x="580" y="532" text-anchor="middle">ready | concerns | blocked</text>
+<text class="sub" x="580" y="546" text-anchor="middle">unlocks git push for this tree</text>
+<rect class="skill" x="764" y="492" width="300" height="70" rx="8" stroke-width="1.5"/>
+<text class="label" x="914" y="517" text-anchor="middle">apply (only on request)</text>
+<text class="sub" x="914" y="532" text-anchor="middle">gated_auto fixes, verify after each,</text>
+<text class="sub" x="914" y="546" text-anchor="middle">commit, record again</text>
+<path class="line accent" d="M940,454 L940,474 L216,474 L216,492" marker-end="url(#h-accent)"/>
+<path class="line accent" d="M396,527 L430,527" marker-end="url(#h-accent)"/>
+<path class="line dashed" d="M730,527 L764,527" marker-end="url(#h-default)"/>
+<text class="small" x="36" y="590" text-anchor="start">Report: findings table (number, severity, confidence, file:line, fix, reviewer) · constitution · plan conformance · test gaps · residual risks · pre-existing · to capture.</text>
+<text class="small" x="36" y="605" text-anchor="start">mode:agent returns the merged JSON to work / autopilot instead of prose; the tree is never changed in that mode.</text>
+<rect class="skill" x="36" y="616" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="60" y="626">skill step</text>
+<rect class="agent" x="144" y="616" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="168" y="626">reviewer subagent</text>
+<rect class="gate" x="295.4" y="616" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="319.4" y="626">deterministic or verified step</text>
+</svg>

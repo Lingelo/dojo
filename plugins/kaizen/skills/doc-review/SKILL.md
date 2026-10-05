@@ -1,82 +1,81 @@
 ---
 name: doc-review
-description: Relit un plan ou des exigences Kaizen avant qu'on les construise — contrôle déterministe (plan check), puis relecteurs spécialisés en parallèle (cohérence et faisabilité toujours ; périmètre, sécurité, adversarial, design selon le document), vérification des constats, corrections mécaniques appliquées, décisions soumises à l'auteur. Appelée automatiquement par /kaizen:plan ; utilisable seule : « relis ce plan », « challenge cette spec », /kaizen:doc-review [chemin].
+description: Reviews a Kaizen plan or requirements before they get built — deterministic check (plan check), then specialized reviewers in parallel (coherence and feasibility always; scope, security, adversarial, design depending on the document), verification of the findings, mechanical fixes applied, decisions put to the author. Called automatically by /kaizen:plan; usable on its own. Use when the user says "review this plan", "challenge this spec", /kaizen:doc-review [path].
 allowed-tools: Bash(node:*), Bash(git:*), Read, Edit, Glob, Grep, Agent, AskUserQuestion
-argument-hint: "[chemin du plan | vide = dernier plan] [mode:auto]"
+argument-hint: "[plan path | empty = latest plan] [mode:auto]"
 ---
 
-# Doc review — relire le plan avant de construire
+# Doc review — reviewing the plan before building
 
-Un défaut corrigé dans un plan coûte une phrase ; dans du code, une PR de plus. Aider l'auteur à
-finir un document **sûr** qu'il peut exécuter : trouver ce qui changerait le résultat ou gênerait
-vraiment l'exécution, corriger ce qui est mécanique, soumettre le reste. Un document adéquat n'a
-besoin d'aucun changement.
+A defect fixed in a plan costs a sentence; in code, one more PR. Help the author finish a **safe**
+document they can execute: find what would change the outcome or really hinder execution, fix what is
+mechanical, put the rest to them. An adequate document needs no change.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` et `${CLAUDE_PLUGIN_ROOT}/references/plan-contract.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` and `${CLAUDE_PLUGIN_ROOT}/references/plan-contract.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:auto`** (posé par `/kaizen:plan` et `/kaizen:autopilot`) : aucune question. Applique `safe_auto` et
-les `gated_auto` qui précisent sans changer de décision ; rends
+**`mode:auto`** (set by `/kaizen:plan` and `/kaizen:autopilot`): no questions. Apply `safe_auto` and
+the `gated_auto` that clarify without changing a decision; return
 `{ verdict: ready|ready-with-notes|blocked, applied: [...], decisions_needed: [...], coverage }`.
 
 ## 1. Document
 
-Chemin donné, sinon `node "$K" plan latest`. Vérifie qu'il est lisible sur disque. Classe-le :
-**exigences** (pas de `<!-- kaizen:units -->`) ou **plan prêt**.
+Given path, otherwise `node "$K" plan latest`. Check it is readable on disk. Classify it:
+**requirements** (no `<!-- kaizen:units -->`) or **ready plan**.
 
-## 2. Contrôle déterministe
+## 2. Deterministic check
 
-`node "$K" plan check <chemin>`. Ses erreurs sont des constats certains (confiance 100) : corrige
-directement celles qui sont mécaniques (numérotation, champ manquant que le plan permet de remplir,
-article de constitution oublié dans le tableau quand le verdict est évident) ; les autres deviennent
-des décisions.
+`node "$K" plan check <path>`. Its errors are certain findings (confidence 100): fix directly those
+that are mechanical (numbering, missing field the plan allows filling in, constitution article missing
+from the table when the verdict is obvious); the others become decisions.
 
-## 3. Relecteurs
+## 3. Reviewers
 
-Selon le **profil** (`node "$K" config` → `profile`) : `lean` → `plan check` + cohérence seulement ;
-`full` → ajoute toujours `kaizen:plan-adversarial-reviewer`. En `standard` (défaut) :
-toujours `kaizen:plan-coherence-reviewer` et `kaizen:plan-feasibility-reviewer`, plus :
+Depending on the **profile** (`node "$K" config` → `profile`): `lean` → `plan check` + coherence only;
+`full` → always add `kaizen:plan-adversarial-reviewer`. In `standard` (default): always
+`kaizen:plan-coherence-reviewer` and `kaizen:plan-feasibility-reviewer`, plus:
 
-| Relecteur | Quand |
+| Reviewer | When |
 |---|---|
-| `kaizen:plan-scope-reviewer` | tout plan prêt ; des exigences avec > 8 éléments, plusieurs priorités ou des « plus tard » |
-| `kaizen:plan-security-reviewer` | auth, sessions, endpoints exposés, données sensibles (personnelles, paiement, jetons), intégrations tierces |
-| `kaizen:plan-adversarial-reviewer` | domaine à enjeu (auth, paiement, migration, données personnelles, intégrations), nouvelle abstraction ou motif d'architecture, plan sans brainstorm préalable (`source: plan`), périmètre élargi, alternatives non tranchées |
-| `kaizen:plan-design-reviewer` | écrans, composants, parcours, formulaires, accessibilité |
+| `kaizen:plan-scope-reviewer` | every ready plan; requirements with > 8 items, several priorities or "later" items |
+| `kaizen:plan-security-reviewer` | auth, sessions, exposed endpoints, sensitive data (personal, payment, tokens), third-party integrations |
+| `kaizen:plan-adversarial-reviewer` | high-stakes area (auth, payment, migration, personal data, integrations), new abstraction or architecture pattern, plan without a prior brainstorm (`source: plan`), widened scope, unsettled alternatives |
+| `kaizen:plan-design-reviewer` | screens, components, journeys, forms, accessibility |
 
-Annonce l'équipe (une ligne par relecteur conditionnel et sa raison). Lis
-`${CLAUDE_PLUGIN_ROOT}/references/doc-review-contract.md` et lance **tous** les relecteurs **dans un
-seul message** (`model` de chaque relecteur lu dans `node "$K" models --json`), chacun avec : le contrat, le chemin du plan (à lire en entier), la constitution
-(`node "$K" constitution --json`) et les règles de packs applicables, les décisions acquises (Key
-Decisions annotées, KTD « décidé en session »), et sa lentille.
+Announce the team (one line per conditional reviewer and its reason). Read
+`${CLAUDE_PLUGIN_ROOT}/references/doc-review-contract.md` and launch **all** the reviewers **in a single
+message** (each reviewer's `model` read from `node "$K" models --json`), each with: the contract, the
+plan path (to read in full), the constitution (`node "$K" constitution --json`) and the applicable pack
+rules, the settled decisions (annotated Key Decisions, "decided in session" KTDs), and its lens.
 
-## 4. Synthèse
+## 4. Synthesis
 
-- Normalise et dédoublonne (même ancre, même problème) ; deux relecteurs concordants renforcent la
-  confiance.
-- Porte : 75–100 retenus ; 50 seulement si P0 ; `quote` non retrouvé verbatim dans le plan → rejeté.
-- **Vérifie toi-même** chaque P0/P1 : relis le passage et le code cité. Réfuté → retiré (noté dans la
-  couverture).
-- Un constat qui rejuge une décision acquise sans preuve qu'elle ne peut pas marcher → retiré.
+- Normalize and deduplicate (same anchor, same problem); two concurring reviewers raise confidence.
+- Gate: 75–100 kept; 50 only if P0; `quote` not found verbatim in the plan → rejected.
+- **Check yourself** each P0/P1: reread the passage and the quoted code. Refuted → removed (noted in
+  the coverage).
+- A finding that re-judges a settled decision without evidence it cannot work → removed.
 
-## 5. Appliquer et décider
+## 5. Apply and decide
 
-- **Applique** les `safe_auto` (références, comptes, terminologie) et les `gated_auto` qui précisent
-  sans changer de décision — **sur place**, dans le format du document, sans empiler de section
-  « corrections ». Relance `plan check`.
-- **Décisions** (`manual`, ou `gated_auto` qui change le comportement) : en interactif, une question
-  par décision via `AskUserQuestion`, avec le passage cité, la conséquence, et ta recommandation en
-  premier ; applique la réponse. En `mode:auto` : laisse-les dans le retour.
+- **Apply** the `safe_auto` (references, counts, terminology) and the `gated_auto` that clarify without
+  changing a decision — **in place**, in the document's format, without stacking a "corrections"
+  section. Rerun `plan check`.
+- **Decisions** (`manual`, or `gated_auto` changing the behavior): interactively, one question per
+  decision through `AskUserQuestion`, with the quoted passage, the consequence, and your
+  recommendation first; apply the answer. In `mode:auto`: leave them in the return.
 
-## 6. Rapport
+## 6. Report
+
+In the user's language:
 
 ```markdown
-## Relecture du plan — <titre>
-**Verdict : ✅ prêt | ⚠️ prêt avec réserves | ⛔ bloqué** — <une phrase>
-**Équipe :** coherence, feasibility, security (endpoint d'export), …
-**Appliqué :** 4 corrections (2 références, 1 terme, 1 exemple d'acceptation ajouté)
-**Décisions prises :** …
-**Restant :** <constats non résolus, avec ancre>
+## Plan review — <title>
+**Verdict: ✅ ready | ⚠️ ready with notes | ⛔ blocked** — <one sentence>
+**Team:** coherence, feasibility, security (export endpoint), …
+**Applied:** 4 fixes (2 references, 1 term, 1 acceptance example added)
+**Decisions made:** …
+**Remaining:** <unresolved findings, with anchor>
 ```
 
-⛔ si un P0 reste ou si `plan check` échoue encore ; ⚠️ s'il reste des P1/P2 non résolus.
+⛔ if a P0 remains or `plan check` still fails; ⚠️ if unresolved P1/P2 remain.

@@ -1,152 +1,166 @@
 ---
 name: motion-video
-description: Crée des vidéos motion design sonorisées (intro, teaser produit, explainer, animation de logo, data-viz animée, réseaux sociaux) en écrivant une composition HTML/CSS/SVG/Canvas puis en la rendant image par image en MP4/WebM/GIF/MOV via Playwright + ffmpeg, de façon déterministe, avec bruitages synthétisés, musique, voix off (synthèse vocale locale ou enregistrement) et sous-titres incrustés/exportés (SRT/VTT) synchronisés à l'image. Utiliser quand l'utilisateur demande /motion-video, veut « générer une vidéo », « faire une animation », « exporter une animation CSS en MP4 », un teaser, une intro, un GIF animé, une voix off, « lire » un texte ou des sous-titres.
+description: Creates motion design videos with sound (intro, product teaser, explainer, logo animation, animated data viz, social media) by writing an HTML/CSS/SVG/Canvas composition and rendering it frame by frame to MP4/WebM/GIF/MOV through Playwright + ffmpeg, deterministically, with synthesized sound effects, music, voice-over (local text-to-speech or a recording) and burned-in/exported subtitles (SRT/VTT) synced to the picture. Use when the user says /motion-video, wants to "generate a video", "make an animation", "export a CSS animation to MP4", a teaser, an intro, an animated GIF, a voice-over, to have a text "read aloud", or subtitles.
 allowed-tools: Bash(node:*), Bash(mkdir:*), Bash(ls:*), Read, Write, Edit, Glob, AskUserQuestion
-argument-hint: "[brief de la vidéo]"
+argument-hint: "[video brief]"
 ---
 
-# Motion Video — HTML → vidéo image par image
+# Motion Video — HTML → video, frame by frame
 
-Tu es motion designer **et** développeur front. Tu écris la vidéo comme une page web, puis le renderer
-`${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs` la filme **image par image** avec une horloge virtuelle :
-aucune frame perdue, aucune saccade, rendu identique à chaque exécution.
+You are a motion designer **and** a front-end developer. You write the video as a web page, then the
+renderer `${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs` films it **frame by frame** with a virtual clock: no
+dropped frame, no stutter, the same render on every run.
 
-Références à charger au besoin :
-- `references/composition-contract.md` — ce que le renderer virtualise, attributs `data-*`, hook `__seek`, GSAP/Lottie/Three.js, pièges.
-- `references/motion-design.md` — timing, easings, ressorts, typographie, formats, rythme narratif.
-- `references/sound-design.md` — son synchronisé : `data-sfx`, `__sfx()`, `window.__audio` (beats/énergie), sons synthétisés, grammaire sonore.
-- `references/voice-and-subtitles.md` — voix off (`voice.mjs`), sous-titres incrustés/SRT/VTT/karaoké, `window.__captions`, ducking de la musique.
-- `assets/starter.html` — squelette de composition à copier.
-- `${CLAUDE_PLUGIN_ROOT}/examples/sketch-intro.html` — exemple complet (Canvas + SVG + CSS + WAAPI + son synchronisé).
-- `${CLAUDE_PLUGIN_ROOT}/examples/sketch-3d.html` — exemple 3D (Three.js via CDN servi en local, bloom, égaliseur piloté par la musique, titres HTML superposés).
+Talk to the user in their language. Texts in the video (titles, narration, subtitles) are in the
+language the user asks for (by default, the language of the conversation).
 
-## 0. Dépendances — automatique (seul prérequis : Node ≥ 18 + npm)
+References to load when needed:
+- `references/composition-contract.md` — what the renderer virtualizes, `data-*` attributes, the `__seek` hook, GSAP/Lottie/Three.js, pitfalls.
+- `references/motion-design.md` — timing, easings, springs, typography, formats, narrative rhythm.
+- `references/sound-design.md` — synced sound: `data-sfx`, `__sfx()`, `window.__audio` (beats/energy), synthesized sounds, sound grammar.
+- `references/voice-and-subtitles.md` — voice-over (`voice.mjs`), burned-in/SRT/VTT/karaoke subtitles, `window.__captions`, music ducking.
+- `assets/starter.html` — composition skeleton to copy.
+- `${CLAUDE_PLUGIN_ROOT}/examples/sketch-intro.html` — full example (Canvas + SVG + CSS + WAAPI + synced sound).
+- `${CLAUDE_PLUGIN_ROOT}/examples/sketch-3d.html` — 3D example (Three.js through a CDN served locally, bloom, music-driven equalizer, HTML titles on top).
 
-Toujours lancer en premier (idempotent, < 1 s quand tout est prêt) :
+## 0. Dependencies — automatic (only prerequisite: Node ≥ 18 + npm)
+
+Always run first (idempotent, < 1 s when everything is ready):
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/setup.mjs" --home "${CLAUDE_PLUGIN_DATA}"
 ```
-Il **réutilise** ce qui existe (Playwright local/global, Chromium de Playwright ou Chrome/Edge installés,
-ffmpeg du système) et **installe seulement ce qui manque** dans `${CLAUDE_PLUGIN_DATA}` :
-`playwright-core` (~10 Mo), `ffmpeg-static` (binaire ffmpeg avec libx264, ~70 Mo),
-Chrome Headless Shell (~100 Mo, cache partagé `~/.cache/ms-playwright`). Première fois : ~20 s.
-Prévenir l'utilisateur avant ce premier téléchargement. Si le setup échoue, relayer son message (il donne
-la commande exacte : `sudo npx playwright install-deps chromium` sur Linux sans bibliothèques, etc.).
+It **reuses** what exists (local/global Playwright, Playwright's Chromium or installed Chrome/Edge,
+system ffmpeg) and **installs only what is missing** into `${CLAUDE_PLUGIN_DATA}`:
+`playwright-core` (~10 MB), `ffmpeg-static` (ffmpeg binary with libx264, ~70 MB),
+Chrome Headless Shell (~100 MB, shared cache `~/.cache/ms-playwright`). First time: ~20 s.
+Warn the user before this first download. If setup fails, relay its message (it gives the exact
+command: `sudo npx playwright install-deps chromium` on Linux without the libraries, etc.).
 
-**Toutes les commandes ci-dessous prennent `--home "${CLAUDE_PLUGIN_DATA}"`** (les variables du plugin
-ne sont pas exportées au Bash). `render.mjs` relance le setup de lui-même si l'environnement a changé.
-Aucun `ffmpeg`/`ffprobe` système n'est nécessaire : utiliser `inspect.mjs`.
+**Every command below takes `--home "${CLAUDE_PLUGIN_DATA}"`** (the plugin variables are not exported
+to Bash). `render.mjs` reruns the setup by itself if the environment changed. No system
+`ffmpeg`/`ffprobe` is needed: use `inspect.mjs`.
 
-## Guider l'utilisateur (priorité)
+## Guiding the user (priority)
 
-L'utilisateur peut découvrir l'outil : à chaque étape, dire en une phrase **ce qui va se passer et ce qui suit**
-(brief → storyboard → stills à valider → rendu → livraison). Poser les questions de brief avec `AskUserQuestion`
-(format, durée, son, voix off, sous-titres) plutôt qu'en texte libre, en proposant un choix recommandé.
-**Prérequis : ne jamais laisser un échec technique sans issue** — annoncer ce qui manque (nom, taille, local ou en ligne),
-l'installer avec le script prévu dès que l'utilisateur est d'accord, vérifier, puis continuer. Ce qui ne peut pas
-être installé sans droits administrateur (ex. `sudo apt install …`, Python absent) : donner la commande exacte à copier.
-Fin de livraison : chemin des fichiers + comment modifier (« changer le texte », « autre voix », « sans sous-titres »).
+The user may be discovering the tool: at each step, say in one sentence **what is about to happen and
+what comes next** (brief → storyboard → stills to approve → render → delivery). Ask the brief questions
+with `AskUserQuestion` (format, duration, sound, voice-over, subtitles) rather than in free text,
+proposing a recommended choice.
+**Prerequisites: never leave a technical failure without a way out** — say what is missing (name, size,
+local or online), install it with the provided script as soon as the user agrees, check, then go on.
+What cannot be installed without administrator rights (e.g. `sudo apt install …`, missing Python): give
+the exact command to copy.
+End of delivery: file paths + how to change things ("change the text", "another voice", "no subtitles").
 
 ## Workflow
 
-### 1. Brief (court)
-Déduire du message, ne demander que ce qui manque vraiment :
-objectif & public · durée (défaut 6–10 s) · format (16:9 1920×1080, 9:16 1080×1920, 1:1 1080×1080) ·
-textes exacts · identité visuelle (couleurs, police, logo) · **son** : musique fournie, musique générée (`sfx.mjs bed`) ou bruitages seuls (défaut : bruitages + bed généré) · **voix off** (texte à lire ? langue ? voix fournie ?) · **sous-titres** (oui/non, style, langue).
-Voix off ou sous-titres demandés → lire `references/voice-and-subtitles.md` ; la narration se rédige et se génère **avant** le storyboard.
+### 1. Brief (short)
+Infer from the message, only ask what is really missing:
+goal & audience · duration (default 6–10 s) · format (16:9 1920×1080, 9:16 1080×1920, 1:1 1080×1080) ·
+exact texts · visual identity (colors, font, logo) · **sound**: provided music, generated music
+(`sfx.mjs bed`) or sound effects only (default: sound effects + generated bed) · **voice-over** (text to
+read? language? provided voice?) · **subtitles** (yes/no, style, language).
+Voice-over or subtitles requested → read `references/voice-and-subtitles.md`; the narration is written
+and generated **before** the storyboard.
 
-### 1 bis. Voix off (si demandée) — préparation guidée
-1. **Diagnostic** : `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" --lang fr --home "${CLAUDE_PLUGIN_DATA}"` (✔/✖ par moteur + recommandation).
-2. **Moteur** — si `piper`, `say` ou `sapi` est ✔, l'utiliser sans rien demander. Sinon (ou seulement `espeak`, robotique),
-   proposer avec `AskUserQuestion` :
-   - **Piper** (recommandé) : voix neuronale locale gratuite, texte qui reste sur la machine. Prérequis : Python ≥ 3.8 ; télécharge ~60 Mo.
-   - **Edge TTS** : voix neuronale en ligne gratuite sans clé ; le texte est envoyé à Microsoft ; service non officiel.
-   - **Mon propre enregistrement** : l'utilisateur fournit un audio par phrase (`"file"`).
-   Après accord : `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install piper --lang fr --home "${CLAUDE_PLUGIN_DATA}"` (ou `edge`).
-   Python absent ou `venv` manquant → le script le dit : relayer la commande exacte. Piper se choisit tout seul ensuite ;
-   Edge **jamais en automatique** (texte hors machine) : passer `--engine edge`.
-3. **Narration** : écrire `video/narration.json` (voir `references/voice-and-subtitles.md`), puis
+### 1b. Voice-over (if requested) — guided preparation
+1. **Diagnosis**: `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" --lang en --home "${CLAUDE_PLUGIN_DATA}"` (✔/✖ per engine + recommendation; `--lang` = the narration language).
+2. **Engine** — if `piper`, `say` or `sapi` is ✔, use it without asking. Otherwise (or only `espeak`,
+   robotic), propose with `AskUserQuestion`:
+   - **Piper** (recommended): free local neural voice, the text stays on the machine. Prerequisite: Python ≥ 3.8; downloads ~60 MB.
+   - **Edge TTS**: free online neural voice, no key; the text is sent to Microsoft; unofficial service.
+   - **My own recording**: the user provides one audio file per sentence (`"file"`).
+   After approval: `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install piper --lang en --home "${CLAUDE_PLUGIN_DATA}"` (or `edge`).
+   Missing Python or `venv` → the script says so: relay the exact command. Piper is then picked
+   automatically; Edge **never automatically** (text leaves the machine): pass `--engine edge`.
+3. **Narration**: write `video/narration.json` (see `references/voice-and-subtitles.md`), then
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/voice.mjs" video/narration.json -o video/voice --home "${CLAUDE_PLUGIN_DATA}"
 ```
-Une phrase par ligne ; le script affiche le début/fin **réels** de chaque phrase → c'est la base des temps du storyboard.
-Faire écouter/valider la voix (fichier `video/voice/narration.wav`) avant de construire l'image : changer de voix après coup oblige à recaler.
+One sentence per line; the script prints the **real** start/end of each sentence → this is the time base
+of the storyboard. Have the user listen to and approve the voice (`video/voice/narration.wav`) before
+building the picture: changing the voice afterwards forces a re-timing.
 
 ### 2. Storyboard
-Écrire un tableau de beats **avant** le code, avec des temps absolus (si voix : caler les scènes sur les phrases) :
+Write a table of beats **before** the code, with absolute times (with a voice: align the scenes on the
+sentences):
 
-| t (s) | Scène | Ce qui bouge | Technique | Son |
-|-------|-------|--------------|-----------|-----|
-| 0.0–2.1 | Ouverture | particules convergent | Canvas | pad + `riser` (fin à 2.1) |
-| 2.1–2.8 | Logo | pop du logo, lettres | SVG + CSS | `impact`, `tick` ×n, drums entrent |
+| t (s) | Scene | What moves | Technique | Sound |
+|---|---|---|---|---|
+| 0.0–2.1 | Opening | particles converge | Canvas | pad + `riser` (ends at 2.1) |
+| 2.1–2.8 | Logo | logo pop, letters | SVG + CSS | `impact`, `tick` ×n, drums come in |
 
-Si musique : caler les temps forts visuels sur `beats` (tempo 100–128 BPM → beat = 0.47–0.6 s).
-Règles : un message par scène, texte tenu ≥ temps de lecture (~3 mots/s + 0.5 s), 0.3–0.6 s d'ouverture
-et de respiration finale, transitions qui se chevauchent (pas de trou noir).
+With music: align the visual accents on `beats` (tempo 100–128 BPM → beat = 0.47–0.6 s).
+Rules: one message per scene, text held ≥ reading time (~3 words/s + 0.5 s), 0.3–0.6 s of opening and of
+final breathing room, overlapping transitions (no black gap).
 
 ### 3. Composition
-Créer `video/<nom>.html` (ou dossier demandé) à partir de `assets/starter.html` :
-- `<body data-width data-height data-fps data-duration>` renseignés.
-- **Tout est fonction du temps.** CSS : `animation` + `animation-delay` absolus. JS : lire `performance.now()`
-  ou implémenter `window.__seek = (t) => {…}`. Canvas : `draw(t)` sans état accumulé.
-- Aléatoire : `Math.random()` est seedé → reproductible.
-- **Bibliothèques** (Three.js, GSAP, p5, pixi, lottie…) : import depuis jsDelivr/unpkg/esm.sh **avec version épinglée** —
-  le renderer les sert depuis un cache npm local (rendu hors ligne). 3D : voir `references/composition-contract.md` (perf ~2–3 img/s).
-- Pas de réseau pendant le rendu si possible (polices locales/système ou Google Fonts préchargées).
-- **Son** : `data-sfx="whoosh"` sur chaque élément animé qui mérite un bruitage (il part au démarrage
-  de son animation), `window.__sfx?.('riser', { at: 2.1, align: 'end' })` pour les cues libres,
-  `window.__audio` pour caler l'image sur la musique (voir `references/sound-design.md`).
+Create `video/<name>.html` (or the requested folder) from `assets/starter.html`:
+- `<body data-width data-height data-fps data-duration>` filled in.
+- **Everything is a function of time.** CSS: `animation` + absolute `animation-delay`. JS: read
+  `performance.now()` or implement `window.__seek = (t) => {…}`. Canvas: `draw(t)` with no accumulated state.
+- Randomness: `Math.random()` is seeded → reproducible.
+- **Libraries** (Three.js, GSAP, p5, pixi, lottie…): import from jsDelivr/unpkg/esm.sh **with a pinned
+  version** — the renderer serves them from a local npm cache (offline render). 3D: see
+  `references/composition-contract.md` (perf ~2–3 frames/s).
+- No network during the render if possible (local/system fonts or preloaded Google Fonts).
+- **Sound**: `data-sfx="whoosh"` on each animated element that deserves a sound effect (it fires when its
+  animation starts), `window.__sfx?.('riser', { at: 2.1, align: 'end' })` for free cues, `window.__audio`
+  to align the picture on the music (see `references/sound-design.md`).
 
-### 4. Preview par stills (boucle rapide)
+### 4. Preview with stills (fast loop)
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.html --stills 0.5,1.8,3.2,5.5 -o video/stills
 ```
-**Lire chaque PNG** (outil Read) et critiquer comme un directeur artistique : lisibilité, alignements,
-hiérarchie, contraste, collisions, éléments hors cadre, états intermédiaires moches. Corriger, recommencer.
-Montrer les stills clés à l'utilisateur avant un rendu long.
+**Read each PNG** (Read tool) and critique like an art director: legibility, alignment, hierarchy,
+contrast, collisions, elements out of frame, ugly intermediate states. Fix, start again. Show the key
+stills to the user before a long render.
 
-### 5. Rendu
+### 5. Render
 ```bash
-# (optionnel) musique générée sur grille de tempo — beats exacts dans bed.json
+# (optional) music generated on a tempo grid — exact beats in bed.json
 node "${CLAUDE_PLUGIN_ROOT}/scripts/sfx.mjs" bed --bpm 120 --duration 8 --start 2.1 -o video/bed.wav > video/bed.json
-# brouillon rapide d'une scène
+# quick draft of one scene
 node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.html --from 2 --to 5 --fps 30 --jpeg -o video/draft.mp4
 # final
 node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.html --audio video/bed.wav --beats video/bed.json --motion-blur 4 -o video/intro.mp4 --cues video/cues.json
 ```
-Les bruitages (`data-sfx`, `__sfx`, `<audio data-start>`) sont toujours mixés ; `--no-sfx` pour les couper.
-| Option | Usage |
-|--------|-------|
-| `--motion-blur 4..8` | Flou de mouvement cinéma (sous-frames fusionnées, coût ×N) |
-| `--scale 2` | Supersampling (texte fin, traits SVG), coût ×4 pixels |
-| `--format webm\|gif\|mov` / extension de `-o` | VP9, GIF palette optimisée, ProRes 4444 |
-| `--transparent` | Fond alpha (webm/mov) pour incrustation |
-| `--audio music.mp3` | Musique mixée **et** analysée → `window.__audio` (beats, basses) |
-| `--beats beats.json` | Grille de beats exacte (sinon détectée, ±10 ms) |
-| `--lufs -14` / `off` | Loudness finale (standard streaming) |
-| `--cues cues.json` | Exporter la liste horodatée des sons (contrôle) |
-| `--voice voice/voice.json` | Voix off mixée, musique baissée dessous (`--duck -9`), sous-titres incrustés + `.srt/.vtt` à côté de la vidéo |
-| `--subs f.srt` · `--captions bottom\|karaoke\|center\|off` · `--embed-subs` | Sous-titres externes · style · piste souple (mp4/webm) |
-| `--crf 12..23` | Qualité H.264 (défaut 16) |
-| `--quality draft\|standard\|high` | Niveau exposé en `window.__quality` : la composition choisit ombres, polygones, occlusion ambiante (`references/composition-contract.md`) |
+Sound effects (`data-sfx`, `__sfx`, `<audio data-start>`) are always mixed; `--no-sfx` turns them off.
 
-Ordre de grandeur : ~9 captures/s en 1080p PNG, ~13 en `--jpeg` → 8 s @60 fps sans blur ≈ 50 s, avec `--motion-blur 4` ≈ 3–4 min.
-Lancer les rendus longs en arrière-plan.
+| Option | Use |
+|---|---|
+| `--motion-blur 4..8` | Cinematic motion blur (merged sub-frames, cost ×N) |
+| `--scale 2` | Supersampling (thin text, SVG strokes), cost ×4 pixels |
+| `--format webm\|gif\|mov` / `-o` extension | VP9, optimized palette GIF, ProRes 4444 |
+| `--transparent` | Alpha background (webm/mov) for compositing |
+| `--audio music.mp3` | Music mixed **and** analyzed → `window.__audio` (beats, bass) |
+| `--beats beats.json` | Exact beat grid (otherwise detected, ±10 ms) |
+| `--lufs -14` / `off` | Final loudness (streaming standard) |
+| `--cues cues.json` | Export the timed list of sounds (check) |
+| `--voice voice/voice.json` | Voice-over mixed, music ducked under it (`--duck -9`), burned-in subtitles + `.srt/.vtt` next to the video |
+| `--subs f.srt` · `--captions bottom\|karaoke\|center\|off` · `--embed-subs` | External subtitles · style · soft track (mp4/webm) |
+| `--crf 12..23` | H.264 quality (default 16) |
+| `--quality draft\|standard\|high` | Level exposed as `window.__quality`: the composition picks shadows, polygons, ambient occlusion (`references/composition-contract.md`) |
 
-### 6. Vérification
+Order of magnitude: ~9 captures/s in 1080p PNG, ~13 with `--jpeg` → 8 s @60 fps without blur ≈ 50 s,
+with `--motion-blur 4` ≈ 3–4 min. Run long renders in the background.
+
+### 6. Verification
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/inspect.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.mp4            # durée, fps, bt709, LUFS
-node "${CLAUDE_PLUGIN_ROOT}/scripts/inspect.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.mp4 --frames 2.1,3.6 -o video/check   # puis Read
+node "${CLAUDE_PLUGIN_ROOT}/scripts/inspect.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.mp4            # duration, fps, bt709, LUFS
+node "${CLAUDE_PLUGIN_ROOT}/scripts/inspect.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.mp4 --frames 2.1,3.6 -o video/check   # then Read
 ```
-Contrôler 2–3 frames en plein mouvement (avec sous-titres : au moins une frame au milieu d'une phrase). Relire `cues.json` : chaque son doit tomber sur l'événement
-visuel voulu (et, avec musique, sur un beat). Vérifier la synchro réelle dans le fichier :
-`node "${CLAUDE_PLUGIN_ROOT}/scripts/audio.mjs" analyze video/intro.mp4 --home "${CLAUDE_PLUGIN_DATA}"` (onsets). Livrer le chemin du fichier + le storyboard final.
+Check 2–3 frames in full motion (with subtitles: at least one frame in the middle of a sentence). Read
+`cues.json` again: each sound must land on the intended visual event (and, with music, on a beat). Check
+the real sync in the file:
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/audio.mjs" analyze video/intro.mp4 --home "${CLAUDE_PLUGIN_DATA}"` (onsets).
+Deliver the file path + the final storyboard.
 
-## Règles d'or
-1. **Déterminisme** : jamais de `Date` réel, d'`fetch` tardif, de `:hover`, d'`autoplay` ; tout piloté par le temps.
-2. **Stills avant rendu** : un rendu complet ne sert qu'à valider le mouvement, pas la mise en page.
-3. **Easing partout** : aucun `linear` sauf rotations continues / défilements. Préférer out-expo et ressorts.
-4. **Stagger** 30–80 ms entre éléments d'un même groupe ; 1 seul point focal à la fois.
-5. **Le son fait 50 % de la perception** : chaque mouvement important a son bruitage, les entrées tombent sur les beats.
-6. **Voix** : narration d'abord, storyboard sur ses durées réelles ; sous-titres ≤ 42 caractères (24–28 en 9:16), zone du bas libre.
-7. **Safe area** : garder texte et logo à ≥ 5 % des bords (≥ 10 % en 9:16 pour l'UI des réseaux).
+## Golden rules
+1. **Determinism**: never a real `Date`, a late `fetch`, `:hover`, `autoplay`; everything driven by time.
+2. **Stills before rendering**: a full render only validates motion, not layout.
+3. **Easing everywhere**: no `linear` except continuous rotations / scrolls. Prefer out-expo and springs.
+4. **Stagger** 30–80 ms between elements of the same group; a single focal point at a time.
+5. **Sound is 50 % of perception**: each important movement has its sound effect, entrances land on the beats.
+6. **Voice**: narration first, storyboard on its real durations; subtitles ≤ 42 characters (24–28 in 9:16), bottom area kept free.
+7. **Safe area**: keep text and logo ≥ 5 % from the edges (≥ 10 % in 9:16 for social media UI).

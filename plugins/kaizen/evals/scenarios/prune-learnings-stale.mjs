@@ -1,4 +1,4 @@
-// /kaizen:prune-learnings détecte une leçon périmée et un doublon, sans toucher au code produit.
+// /kaizen:prune-learnings detects a stale learning and a duplicate, without touching product code.
 import { SHOP } from '../fixtures.mjs';
 
 const lesson = (title, body, extra = '') => `---
@@ -9,7 +9,7 @@ module: orders
 problem_type: logic_error
 component: tooling
 severity: medium
-tags: [arrondi, tva]
+tags: [rounding, vat]
 ${extra}---
 
 # ${title}
@@ -21,14 +21,14 @@ export default {
   timeoutMinutes: 20,
   files: {
     ...SHOP,
-    'docs/learnings/logic-errors/arrondi-tva.md': lesson('Arrondir le TTC une seule fois', "Le total TTC doit être arrondi une seule fois, à la fin, dans `totalCents` (`src/orders.js`). Arrondir chaque ligne fait dériver le total.\n"),
-    'docs/learnings/logic-errors/arrondi-tva-bis.md': lesson('Arrondi du total TTC', "Même constat : n'arrondir qu'une fois, sur le total, dans `totalCents`.\n"),
-    'docs/learnings/logic-errors/remise-fidelite.md': lesson('Remise fidélité appliquée avant la TVA', "La remise se calcule dans `applyLoyaltyDiscount` de `src/discounts.js`, avant la TVA.\n"),
+    'docs/learnings/logic-errors/vat-rounding.md': lesson('Round the total including tax only once', 'The total including tax must be rounded only once, at the end, in `totalCents` (`src/orders.js`). Rounding each line makes the total drift.\n'),
+    'docs/learnings/logic-errors/vat-rounding-bis.md': lesson('Rounding of the total including tax', 'Same finding: round only once, on the total, in `totalCents`.\n'),
+    'docs/learnings/logic-errors/loyalty-discount.md': lesson('Loyalty discount applied before VAT', 'The discount is computed in `applyLoyaltyDiscount` in `src/discounts.js`, before VAT.\n'),
   },
   prompt: '/kaizen:prune-learnings mode:auto',
   checks: [
-    ['la leçon sur un fichier disparu est traitée', (out, c) => { const t = c.read('docs/learnings/logic-errors/remise-fidelite.md'); return t === '' || /stale|périm|obsol|supprim/i.test(t) || /remise-fidelite/.test(out) && /périm|introuvable|n'existe|absent/i.test(out); }],
-    ['le doublon est signalé ou fusionné', (out, c) => c.read('docs/learnings/logic-errors/arrondi-tva-bis.md') === '' || /doublon|fusion|chevauch/i.test(out)],
-    ['code produit intact', (_, c) => c.git('status', '--porcelain', 'src', 'package.json').trim() === ''],
+    ['the learning about a vanished file is handled', (out, c) => { const t = c.read('docs/learnings/logic-errors/loyalty-discount.md'); return t === '' || /stale|obsolete|deleted/i.test(t) || /loyalty-discount/.test(out) && /stale|not found|does not exist|doesn't exist|missing/i.test(out); }],
+    ['the duplicate is reported or merged', (out, c) => c.read('docs/learnings/logic-errors/vat-rounding-bis.md') === '' || /duplicate|merge|overlap/i.test(out)],
+    ['product code untouched', (_, c) => c.git('status', '--porcelain', 'src', 'package.json').trim() === ''],
   ],
 };

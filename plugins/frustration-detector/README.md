@@ -1,6 +1,7 @@
-# Plugin Frustration Detector
+# Frustration Detector plugin
 
-Détecte la frustration du développeur dans ses prompts et injecte du contexte pour que Claude adapte automatiquement son style de réponse : moins de blabla, plus d'action.
+Detects developer frustration in prompts and injects context so that Claude adapts its response style
+automatically: less talk, more action.
 
 ## Installation
 
@@ -8,49 +9,79 @@ Détecte la frustration du développeur dans ses prompts et injecte du contexte 
 /plugin install frustration-detector@angelo-plugins
 ```
 
-## Fonctionnalités
+Prerequisite: Node.js. No npm dependency.
 
-Un hook `UserPromptSubmit` analyse chaque message avant qu'il soit traité et injecte du contexte adapté quand de la frustration est détectée.
+## Features
 
-### 4 types de frustration détectés
+A `UserPromptSubmit` hook analyzes each message before it is processed and injects adapted context when
+frustration is detected. Detection works on **French and English** prompts.
 
-| Type | Déclencheurs | Réaction de Claude |
-|------|-------------|-------------------|
-| **Colère** | Jurons (FR/EN), insultes, blâme (`putain`, `fuck`, `wtf`, `tu as tout cassé`...) | Mode action silencieuse : zéro préambule, code uniquement |
-| **Impatience** | Anti-verbosité (`finis`, `just do it`, `arrête d'expliquer`, `code only`...) | Zéro explication, choix autonomes, tâche complète en 1 réponse |
-| **Confusion** | Blocage (`ça marche pas`, `I'm stuck`, `je comprends rien`, `same error`...) | Diagnostic bref + fix immédiat, exemples concrets |
-| **Sarcasme** | Résignation (`merci pour rien`, `I'll use Cursor`, `laisse tomber`...) | Action immédiate, pas d'excuses, solution concrète |
+### 4 detected types of frustration
 
-### Signaux amplificateurs
+| Type | Triggers | Claude's reaction |
+|---|---|---|
+| **Anger** | Swear words (FR/EN), insults, blame (`putain`, `fuck`, `wtf`, `tu as tout cassé`, `you broke everything`…) | Silent action mode: zero preamble, code only |
+| **Impatience** | Anti-verbosity (`finis`, `just do it`, `arrête d'expliquer`, `code only`…) | Zero explanation, autonomous choices, whole task in 1 response |
+| **Confusion** | Being stuck (`ça marche pas`, `I'm stuck`, `je comprends rien`, `same error`…) | Brief diagnosis + immediate fix, concrete examples |
+| **Sarcasm** | Resignation (`merci pour rien`, `I'll use Cursor`, `laisse tomber`, `never mind`…) | Immediate action, no apologies, concrete solution |
 
-- Messages en MAJUSCULES
-- Ponctuation excessive (`???`, `!!!`, `?!?!`)
-- Messages très courts contenant des termes de frustration
+When several types match, the priority is anger > sarcasm > confusion > impatience; anger and confusion
+together combine both instructions (brief diagnosis, zero fluff).
 
-### Mitigation des faux positifs
+### Amplifying signals
 
-- Les termes d'impatience courants (`continue`, `go on`, `allez`) ne déclenchent l'injection que dans les messages courts (< 20 mots)
-- Le script ne bloque jamais les prompts (exit 0 toujours) — il ajoute uniquement du contexte
+- Messages in CAPITALS (at least 3 words)
+- Excessive punctuation (`???`, `!!!`, `?!?!`)
 
-### Couverture linguistique
+An amplified message adds a "strong signal" note requiring an ultra-concise answer.
 
-- **Français** : ~100 termes/expressions (jurons, argot, SMS)
-- **Anglais** : ~100 termes/expressions (swear words, slang, abbreviations)
-- **Onomatopées** : `argh`, `ugh`, `grr`, `pfff`, `raaah`...
-- **Abréviations** : `wtf`, `ffs`, `omfg`, `jfc`, `fml`, `stfu`
-- **Passif-agressif** : `comme je t'ai dit`, `I already told you`, `wrong again`...
+### False-positive mitigation
 
-## Fonctionnement
+- Common impatience terms (`continue`, `go on`, `keep going`, `come on`, `allez`) only trigger the
+  injection in short messages (< 20 words)
+- The script never blocks prompts (always exit 0) — it only adds context
+- French terms starting or ending with an accented letter (`ça`, `cassé`, `écoute`) are matched on
+  letter boundaries, not on `\b` (which ignores accented letters)
+
+### Language coverage
+
+- **French**: ~100 terms/expressions (swear words, slang, texting)
+- **English**: ~100 terms/expressions (swear words, slang, abbreviations)
+- **Onomatopoeia**: `argh`, `ugh`, `grr`, `pfff`, `raaah`…
+- **Abbreviations**: `wtf`, `ffs`, `omfg`, `jfc`, `fml`, `stfu`
+- **Passive-aggressive**: `comme je t'ai dit`, `I already told you`, `wrong again`, `ça fait 3 fois`…
+
+The detection lists stay bilingual on purpose: they match what developers actually type. The context
+injected for Claude is in English.
+
+## How it works
 
 ```
-Utilisateur tape "putain ça marche pas"
-  → Hook UserPromptSubmit déclenché
-  → Script détecte : colère + confusion
-  → Injection contexte : "Mode action maximale + diagnostic bref"
-  → Claude répond avec un fix direct, sans blabla
+The user types "putain ça marche pas"
+  → UserPromptSubmit hook triggered
+  → the script detects: anger + confusion
+  → context injected: "Maximum action mode + brief diagnosis"
+  → Claude answers with a direct fix, no fluff
 ```
 
-Le script ne bloque jamais le prompt (exit code 0). Il injecte du contexte via `stdout` JSON avec `additionalContext` pour guider la réponse de Claude.
+The script never blocks the prompt (exit code 0). It injects context through JSON on `stdout`
+(`hookSpecificOutput.additionalContext`) to guide Claude's response:
+
+```json
+{
+  "continue": true,
+  "hookSpecificOutput": {
+    "hookEventName": "UserPromptSubmit",
+    "additionalContext": "The user is frustrated. Maximum action mode: - ZERO preamble, …"
+  }
+}
+```
+
+Test it by hand:
+
+```bash
+echo '{"prompt":"wtf it still does not work???"}' | node scripts/detect-frustration.js
+```
 
 ## Structure
 

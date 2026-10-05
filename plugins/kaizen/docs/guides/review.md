@@ -1,84 +1,88 @@
 # `/kaizen:review`
 
-> Une revue de code par des relecteurs spécialisés, choisis selon ce que le diff touche, dont chaque
-> constat bloquant est vérifié avant d'être rapporté.
+> A code review by specialized reviewers, chosen by what the diff touches, whose every blocking finding
+> is verified before being reported.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Périmètre → intention et plan → sélection des relecteurs → lancement en parallèle → fusion, filtrage par confiance, vérification des P0/P1 → rapport avec verdict |
-| **Quand l'utiliser** | Avant de livrer (obligatoire dans `work`) ; sur une PR à relire ; après un correctif non trivial |
-| **Quand ne pas l'utiliser** | Relire un **plan** (→ [doc-review](doc-review.md)) ; traiter des commentaires déjà postés sur une PR (→ [address-feedback](address-feedback.md)) |
-| **Ce qu'elle produit** | Un rapport : verdict ✅ prêt / ⚠️ réserves / ⛔ pas prêt, constats numérotés, respect de la constitution, conformité au plan, trous de tests, risques, problèmes préexistants, ce qui mérite une leçon |
-| **Et ensuite** | `apply` pour appliquer les correctifs, ou « applique 1, 3 et 4 » |
+| **What it does** | Scope → intent and plan → reviewer selection → parallel launch → merge, confidence filtering, P0/P1 verification → report with a verdict |
+| **When to use it** | Before shipping (mandatory in `work`); on a PR to review; after a non-trivial fix |
+| **When not to use it** | Reviewing a **plan** (→ [doc-review](doc-review.md)); handling comments already posted on a PR (→ [address-feedback](address-feedback.md)) |
+| **What it produces** | A report: verdict ✅ ready / ⚠️ concerns / ⛔ not ready, numbered findings, constitution compliance, plan conformance, test gaps, risks, pre-existing problems, what deserves a learning |
+| **What next** | `apply` to apply the fixes, or "apply 1, 3 and 4" |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:review                              # branche courante vs sa base (non commité inclus)
-/kaizen:review 42                           # la PR #42 (sans changer de branche)
+/kaizen:review                              # current branch vs its base (uncommitted included)
+/kaizen:review 42                           # PR #42 (without switching branches)
 /kaizen:review base:release/2.3
-/kaizen:review plan:docs/plans/…-plan.md    # vérifier la conformité à ce plan
-/kaizen:review apply                        # revue puis application des correctifs
+/kaizen:review plan:docs/plans/…-plan.md    # check conformance to this plan
+/kaizen:review apply                        # review then apply the fixes
 ```
 
-## Les relecteurs
+![The multi-agent review pipeline from scope to recorded verdict](../media/diagrams/review-pipeline.svg)
 
-| Relecteur | Quand |
+In depth: [review](../concepts/review.md).
+
+## The reviewers
+
+| Reviewer | When |
 |---|---|
-| `correctness-reviewer` | toujours. Exécute mentalement le code : bornes, null, états, erreurs avalées, intention non tenue |
-| `standards-reviewer` | dès qu'il existe une constitution, des standards, une règle de pack ou une leçon pertinente. Applique chaque **Contrôle** de la constitution et cite la règle violée |
-| `testing-reviewer` | tests touchés, ou comportement modifié |
-| `security-reviewer` | auth, entrées utilisateur, endpoints, secrets, crypto… (OWASP et CWE dans le titre) |
-| `performance-reviewer` | requêtes, boucles lourdes, fan-out, cache |
-| `reliability-reviewer` | erreurs, retries, timeouts, jobs, appels externes |
-| `api-contract-reviewer` | interface consommée à l'extérieur |
-| `data-migration-reviewer` | migrations, backfills, schémas |
-| `maintainability-reviewer` | refactors, nouvelles abstractions, ≥ 200 lignes |
-| `adversarial-reviewer` | ≥ 50 lignes, ou risque (auth, paiement, concurrence, CI…) : construit des scénarios d'échec |
+| `correctness-reviewer` | always. Mentally executes the code: boundaries, null, state, swallowed errors, unmet intent |
+| `standards-reviewer` | as soon as there is a constitution, standards, a pack rule or a relevant learning. Applies each constitution **Check** and quotes the violated rule |
+| `testing-reviewer` | tests touched, or behavior changed |
+| `security-reviewer` | auth, user input, endpoints, secrets, crypto… (OWASP and CWE in the title) |
+| `performance-reviewer` | queries, heavy loops, fan-out, cache |
+| `reliability-reviewer` | errors, retries, timeouts, jobs, external calls |
+| `api-contract-reviewer` | externally consumed interface |
+| `data-migration-reviewer` | migrations, backfills, schemas |
+| `maintainability-reviewer` | refactors, new abstractions, ≥ 200 lines |
+| `adversarial-reviewer` | ≥ 50 lines, or risk (auth, payment, concurrency, CI…): builds failure scenarios |
 
-La sélection se fait **par jugement sur le diff réel**, et chaque relecteur retenu est justifié en
-une ligne. Pour un diff de 20 lignes ou moins, sans risque : relecture directe, sans sous-agents.
+Selection is made **by judgment on the real diff**, and each chosen reviewer is justified in one line.
+For a diff of 20 lines or fewer, without risk: direct review, without subagents. Each reviewer runs
+with the model of its role ([`models`](../configuration.md#models--the-right-model-for-each-task));
+the model actually requested is recorded.
 
-## Ce qui rend les constats fiables
+## What makes the findings reliable
 
-- **Contrat commun** ([`references/review-contract.md`](../../references/review-contract.md)) :
-  - sévérité P0 à P3 ;
-  - confiance ancrée à 50, 75 ou 100 ;
-  - un correctif concret proposé, avec ses hypothèses nommées ;
-  - une liste de non-constats à taire (style, ce que le linter attrape, code intentionnel…).
-- **Règle « cite la ligne »** : pas de confiance 75 ou plus sans la ligne verbatim avec
-  `fichier:ligne`.
-- **Validation** : l'orchestrateur relit lui-même les lignes de chaque P0 et P1. Un constat réfuté
-  est retiré. Un sujet protégé (perte de données, accès, injection, secrets) ne peut être écarté que
-  sur preuve.
+- **Shared contract** ([`references/review-contract.md`](../../references/review-contract.md)):
+  - severity P0 to P3;
+  - confidence anchored at 50, 75 or 100;
+  - a concrete fix proposed, with its assumptions named;
+  - a list of non-findings to keep quiet (style, what the linter catches, intentional code…).
+- **"Quote the line" rule**: no confidence of 75 or more without the verbatim line with `file:line`.
+- **Validation**: the orchestrator rereads the lines of each P0 and P1 itself. A refuted finding is
+  removed. A protected topic (data loss, access, injection, secrets) can only be dismissed on evidence.
 
-Exemple réel, tiré d'une évaluation : un diff avec `execSync(\`grep "${customer}" …\`)` et
-`Math.floor(total / size)` donne le verdict ⛔. L'injection de commande ressort en **P0** (100) et la
-dernière page perdue en **P1**. L'orchestrateur a aussi corrigé les numéros de ligne erronés de deux
-relecteurs.
+Real example, from an evaluation: a diff with `execSync(\`grep "${customer}" …\`)` and
+`Math.floor(total / size)` gives the ⛔ verdict. The command injection comes out as **P0** (100) and the
+lost last page as **P1**. The orchestrator also corrected two reviewers' wrong line numbers.
 
 ## Options
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `apply` | applique les correctifs `gated_auto`, un par un, en revérifiant après chacun ; les `manual` restent listés |
-| `mode:agent` | retour JSON sans prose ni modification (utilisé par `work` et `autopilot`) |
-| `plan:<chemin>` | plan de référence pour la conformité |
-| `base:<ref>` | base de comparaison |
+| `apply` | applies the `gated_auto` fixes, one by one, verifying again after each; the `manual` ones stay listed |
+| `mode:agent` | JSON return without prose or changes (used by `work` and `autopilot`) |
+| `plan:<path>` | reference plan for conformance |
+| `base:<ref>` | comparison base |
 
-## Bon à savoir
+## Good to know
 
-- La revue s'**enregistre** pour la branche courante (`node $K review record`) : c'est ce que le hook
-  de push exige avant tout `git push`. Après plus de `review.max_unreviewed_lines` lignes modifiées
-  (80 par défaut), il faut une nouvelle revue. L'enregistrement exige que des relecteurs aient
-  réellement tourné (consignés par un hook), sauf pour une revue légère de 20 lignes au plus.
-- Le profil (`lean`, `standard`, `full`) ajuste le nombre de relecteurs, jamais l'obligation de revue.
-- **Rapport seul par défaut**, jamais de push. Une PR passée en argument fixe le **périmètre**, pas
-  l'autorisation de changer de branche.
-- Les retours bruts des relecteurs sont gardés dans `.kaizen/state/reviews/<horodatage>/`.
+- The review is **recorded** for the current branch (`node $K review record`): that is what the push
+  hook requires before any `git push`. After more than `review.max_unreviewed_lines` changed lines (80
+  by default), a new review is needed. Recording requires that reviewers actually ran (logged by a
+  hook), except for a light review of 20 lines at most.
+- The profile (`lean`, `standard`, `full`) adjusts the number of reviewers, never the review
+  obligation.
+- **Report only by default**, never a push. A PR passed as argument sets the **scope**, not the
+  permission to switch branches.
+- The reviewers' raw returns are kept in `.kaizen/state/reviews/<timestamp>/`.
 
-## Voir aussi
+## See also
 
 [doc-review](doc-review.md) · [work](work.md) · [constitution](constitution.md) · [ship](ship.md)

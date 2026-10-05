@@ -1,19 +1,19 @@
 # `/kaizen:release`
 
-> Des notes de version que les utilisateurs lisent, une version SemVer qui dit la vérité, et une
-> checklist de mise en production. Sans jamais taguer ni publier sans votre accord.
+> Release notes users read, a SemVer version that tells the truth, and a production checklist. Without
+> ever tagging or publishing without your approval.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Collecte les commits conventionnels depuis le dernier tag, vérifie le niveau SemVer (cherche les changements cassants cachés), rédige les notes, met à jour le CHANGELOG et la version dans l'arbre de travail (sans commiter), établit la checklist de mise en production |
-| **Quand l'utiliser** | « Prépare la release », « notes de version », « quelle version ? », « changelog » |
-| **Quand ne pas l'utiliser** | Livrer une PR (→ [ship](ship.md)) |
-| **Ce qu'elle produit** | Notes de version, version proposée, entrée de `CHANGELOG.md` (format Keep a Changelog), checklist |
-| **Et ensuite** | `publish` pour taguer et créer la release GitHub, après confirmation |
+| **What it does** | Collects the conventional commits since the last tag, checks the SemVer level (looks for hidden breaking changes), drafts the notes, updates the CHANGELOG and the version in the working tree (without committing), builds the production checklist |
+| **When to use it** | "Prepare the release", "release notes", "which version?", "changelog" |
+| **When not to use it** | Shipping a PR (→ [ship](ship.md)) |
+| **What it produces** | Release notes, proposed version, `CHANGELOG.md` entry (Keep a Changelog format), checklist |
+| **What next** | `publish` to tag and create the GitHub release, after confirmation; then [deploy](deploy.md) |
 
-## Exemples
+## Examples
 
 ```text
 /kaizen:release
@@ -21,38 +21,43 @@
 /kaizen:release publish
 ```
 
-## Comment ça se passe
+## How it goes
 
-1. `node $K release notes` : commits regroupés, changements cassants (`!` ou `BREAKING CHANGE:`),
-   version proposée. En 0.x, un changement cassant fait monter le mineur.
-2. **Vérification** : les diffs des interfaces publiques (routes, schémas, exports de package) sont
-   lus, pour qu'un changement cassant ne se cache pas dans un `fix`. Les fichiers de version du
-   projet (`package.json`, `pyproject.toml`, `plugin.json`…) sont comparés à la version proposée.
-3. **Rédaction pour les utilisateurs** : une phrase par changement, regroupée (Nouveautés,
-   Corrections, Performances, Changements cassants **avec migration**), sans le bruit (chore, ci,
-   tests).
-4. **Checklist de mise en production**, tirée des plans livrés (section `kaizen:rollout`) :
-   - vérifications et CI vertes ;
-   - migrations et leur ordre ;
-   - feature flags ;
-   - retour arrière et ce qui est irréversible ;
-   - signaux à surveiller, avec leur seuil (un plan livré sans signal ni retour arrière est signalé
-     comme bloquant) ;
+1. `node $K release notes` (`--from <tag>`, `--to <ref>`): grouped commits (Features, Fixes,
+   Performance, Refactoring, Documentation, Reverts, Other), breaking changes (`!` or
+   `BREAKING CHANGE:`), proposed version. In 0.x, a breaking change bumps the minor. `deploy/…`,
+   `rollback/…` tags are never taken as the previous version.
+2. **Verification**: the diffs of public interfaces (routes, schemas, package exports) are read, so
+   that a breaking change does not hide in a `fix`. The project's version files (`package.json`,
+   `pyproject.toml`, `plugin.json`…) are compared to the proposed version.
+3. **Writing for users**: one sentence per change, grouped (Features, Fixes, Performance, Breaking
+   changes **with migration**), without the noise (chore, ci, tests).
+4. **Production checklist**, from the shipped plans (`kaizen:rollout` section, extracted in the
+   `rollout` field):
+   - green checks and CI;
+   - migrations and their order;
+   - feature flags;
+   - rollback and what is irreversible;
+   - signals to watch, with their threshold (a shipped plan without a signal or rollback is reported as
+     blocking);
    - communication.
-5. **Publication** (avec `publish` et confirmation) :
-   1. fichiers de version mis à jour ;
-   2. `chore(release): vX.Y.Z` ;
-   3. tag annoté ;
-   4. push ;
+5. **Publication** (with `publish` and confirmation):
+   1. version files updated;
+   2. `chore(release): vX.Y.Z`;
+   3. annotated tag;
+   4. push;
    5. `gh release create`.
-6. **Mise en production** : `release` ne déploie pas ; il propose `/kaizen:deploy <env> vX.Y.Z`
-   ([deploy](deploy.md)) quand des environnements sont configurés.
+6. **Deployment**: `release` does not deploy; it proposes `/kaizen:deploy <env> vX.Y.Z`
+   ([deploy](deploy.md)) when environments are configured.
 
-## Bon à savoir
+## Good to know
 
-- La politique IA de la constitution peut interdire la publication par un agent : elle prime.
-- Les commits non conventionnels sont comptés et classés à la main par Claude, en lisant leur diff.
+- The constitution's AI policy may forbid publication by an agent: it wins.
+- Non-conventional commits are counted and classified by hand by Claude, reading their diff.
 
-## Voir aussi
+## See also
 
-[ship](ship.md) · [metrics](metrics.md)
+In depth: [production](../concepts/production.md#release).
+
+
+[ship](ship.md) · [deploy](deploy.md) · [metrics](metrics.md)

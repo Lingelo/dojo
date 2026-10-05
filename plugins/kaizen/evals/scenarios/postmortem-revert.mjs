@@ -1,19 +1,21 @@
-// /kaizen:postmortem reconstitue un incident depuis git, sans coupable, avec actions et leçon.
+// /kaizen:postmortem rebuilds an incident from git, blameless, with actions and a learning.
 import { SHOP, HEADLESS } from '../fixtures.mjs';
+
+const doc = (c) => c.read(`docs/postmortems/${c.ls('docs/postmortems').find((f) => f.endsWith('.md'))}`);
 
 export default {
   name: 'postmortem-revert',
   timeoutMinutes: 20,
   files: SHOP,
   steps: [
-    { files: { 'src/orders.js': SHOP['src/orders.js'].replace('Math.round(ht * 1.2)', 'Math.round(ht * 1.02)') }, commit: 'perf: simplifie le calcul de TVA' },
-    { files: { 'src/orders.js': SHOP['src/orders.js'] }, commit: 'fix: rétablit la TVA à 20 % (revert du calcul simplifié)' },
+    { files: { 'src/orders.js': SHOP['src/orders.js'].replace('Math.round(net * 1.2)', 'Math.round(net * 1.02)') }, commit: 'perf: simplify the VAT computation' },
+    { files: { 'src/orders.js': SHOP['src/orders.js'] }, commit: 'fix: restore 20 % VAT (revert of the simplified computation)' },
   ],
-  prompt: `/kaizen:postmortem Hier, pendant 3 h, les totaux TTC affichés étaient faux (TVA à 2 % au lieu de 20 %) ; environ 40 commandes concernées, corrigé par un revert. ${HEADLESS}`,
+  prompt: `/kaizen:postmortem Yesterday, for 3 hours, the displayed totals including tax were wrong (2 % VAT instead of 20 %); about 40 orders affected, fixed by a revert. ${HEADLESS}`,
   checks: [
-    ['un post-mortem a été écrit', (_, c) => c.ls('docs/postmortems').some((f) => f.endsWith('.md'))],
-    ['chronologie ancrée sur les commits', (_, c) => { const t = c.read(`docs/postmortems/${c.ls('docs/postmortems').find((f) => f.endsWith('.md'))}`); const shas = c.git('log', '--format=%h').trim().split('\n'); return shas.some((s) => t.includes(s)) || /simplifie le calcul de TVA/.test(t); }],
-    ['sans coupable : pas de personne mise en cause', (_, c) => !/\bEval\b|eval@example/.test(c.read(`docs/postmortems/${c.ls('docs/postmortems').find((f) => f.endsWith('.md'))}`))],
-    ['actions avec porteur', (_, c) => /porteur|responsable|owner/i.test(c.read(`docs/postmortems/${c.ls('docs/postmortems').find((f) => f.endsWith('.md'))}`))],
+    ['a postmortem was written', (_, c) => c.ls('docs/postmortems').some((f) => f.endsWith('.md'))],
+    ['timeline anchored on the commits', (_, c) => { const t = doc(c); const shas = c.git('log', '--format=%h').trim().split('\n'); return shas.some((s) => t.includes(s)) || /simplify the VAT computation/.test(t); }],
+    ['blameless: no person blamed', (_, c) => !/\bEval\b|eval@example/.test(doc(c))],
+    ['actions with owners', (_, c) => /owner|responsible/i.test(doc(c))],
   ],
 };

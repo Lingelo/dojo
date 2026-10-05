@@ -1,116 +1,124 @@
-# Statusline Plugin v2.1.0
+# Statusline plugin v2.1.0
 
-Une statusline avancee pour Claude Code basee sur [hell0github/claude-statusline](https://github.com/hell0github/claude-statusline).
+An advanced statusline for Claude Code, based on [hell0github/claude-statusline](https://github.com/hell0github/claude-statusline).
 
-## Apercu
+## Overview
 
 ```
 marketplace | 140k/168k [████████░░] | $19/$140 [███░░░│░░░] 13% | 16:46/18:00 (2h 13m) | 235/min | ×1
 ```
 
-**Sections :**
-- **Projet** : Nom du repertoire (orange)
-- **Context** : `140k/168k [bar]` - Tokens utilises/limite
-- **5h Window** : `$19/$140 [bar│] 13%` - Cout/limite avec projection (│)
-- **Timer** : `16:46/18:00 (2h 13m)` - Heure actuelle/reset (countdown, format 24h)
-- **Burn rate** : `235/min` - Tokens/minute
-- **Sessions** : `×1` - Sessions Claude Code actives
+**Sections:**
+- **Project**: folder name (orange)
+- **Context**: `140k/168k [bar]` - tokens used/limit
+- **5h window**: `$19/$140 [bar│] 13%` - cost/limit with projection (│)
+- **Timer**: `16:46/18:00 (2h 13m)` - current time/reset (countdown, 24h format)
+- **Burn rate**: `235/min` - tokens/minute
+- **Sessions**: `×1` - active Claude Code sessions
 
-## Modes supportes
+## Supported modes
 
-| Mode | Description | Sections affichees |
-|------|-------------|-------------------|
-| `api` | Pay-as-you-go / API Usage | Contexte, burn rate, sessions |
-| `pro` | Claude Pro ($20/mois) | Toutes sections configurables |
-| `max5x` | Claude Max 5x ($100/mois) | Toutes sections configurables |
-| `max20x` | Claude Max 20x ($200/mois) | Toutes sections configurables |
+| Mode | Description | Sections shown |
+|---|---|---|
+| `api` | Pay-as-you-go / API usage | Context, burn rate, sessions |
+| `pro` | Claude Pro ($20/month) | All configurable sections |
+| `max5x` | Claude Max 5x ($100/month) | All configurable sections |
+| `max20x` | Claude Max 20x ($200/month) | All configurable sections |
 
-## Fonctionnalites
+## Features
 
-- **Support API Usage** : Mode sans limites de couts pour les utilisateurs pay-as-you-go
-- **Nettoyage automatique** : Suppression de l'ancienne installation avant setup
-- **Tracking multi-periodes** : Context, 5h window, daily, weekly, monthly
-- **Barres multi-couches** : 3 niveaux (vert/orange/rouge) avec seuils configurables
-- **Projection intelligente** : Separateur `│` montrant la projection burn-rate
-- **Timer** : Countdown vers le reset du bloc 5h
-- **Token burn rate** : Tokens/minute en temps reel
-- **Sessions actives** : Nombre de projets Claude Code ouverts
-- **Caching intelligent** : Evite les appels excessifs a ccusage
+- **API usage support**: a mode without cost limits for pay-as-you-go users
+- **Automatic cleanup**: the previous installation is removed before setup
+- **Multi-period tracking**: context, 5h window, daily, weekly, monthly
+- **Multi-layer bars**: 3 levels (green/orange/red) with configurable thresholds
+- **Smart projection**: a `│` separator showing the burn-rate projection
+- **Timer**: countdown to the reset of the 5-hour block
+- **Token burn rate**: tokens/minute in real time
+- **Active sessions**: number of open Claude Code projects
+- **Smart caching**: avoids excessive calls to ccusage
+- **macOS fix**: `date -d` patched to `gdate -d` automatically
+- **Time format**: 24h (recommended) or 12h, chosen during setup
 
-## Compatibilite
+## Compatibility
 
-- **macOS** (Intel & Apple Silicon)
+- **macOS** (Intel and Apple Silicon)
 - **Linux** (Ubuntu, Debian, etc.)
 - **Windows WSL** (Windows Subsystem for Linux)
 
-## Prerequis
+## Prerequisites
 
-### Obligatoire
+### Required
 
-- **jq** : `brew install jq` (macOS) | `apt install jq` (Linux/WSL)
-- **git** : Pour cloner le repo
+- **jq**: `brew install jq` (macOS) | `apt install jq` (Linux/WSL)
+- **git**: to clone the repo
+- **coreutils** on macOS (`gdate`): `brew install coreutils` — installed by the skill if missing
 
-### Recommande
+### Recommended
 
-- **ccusage** : `npm install -g ccusage` - Pour le tracking des couts
-- **bash 4+** : `brew install bash` sur macOS
+- **ccusage**: `npm install -g ccusage` - for cost tracking
+- **bash 4+**: `brew install bash` on macOS
 
 ## Installation
 
-### Via le skill (recommande)
+### Through the skill (recommended)
 
 ```
 /statusline-setup
 ```
 
-Le skill va :
-1. **Nettoyer** l'installation existante (shim, repo, config)
-2. **Verifier** les prerequis (jq, ccusage, git)
-3. **Demander** le mode (API usage ou subscription)
-4. **Cloner** le repo dans `~/Projects/cc-statusline`
-5. **Configurer** selon vos preferences
-6. **Creer** le shim dans `~/.claude/statusline.sh`
-7. **Configurer** `~/.claude/settings.json`
-8. **Tester** l'installation
+The skill runs 11 phases:
+1. **Cleans up** the existing installation (shim, repo, `statusLine` in settings)
+2. **Checks and installs** the prerequisites (jq, ccusage, git, gdate on macOS)
+3. **Asks** for the billing mode (API usage or subscription)
+4. **Clones** the repo into `~/Projects/cc-statusline`
+5. **Patches** macOS (`date -d` → `gdate -d`)
+6. **Asks** for the time format (24h / 12h)
+7. **Configures** the sections, the weekly mode and monthly tracking for your plan
+8. **Creates** the shim in `~/.claude/statusline.sh`
+9. **Configures** `~/.claude/settings.json`
+10. **Tests** the installation
+11. **Confirms** and explains how to read the statusline
 
-### Installation manuelle
+### Manual installation
 
 ```bash
-# 1. Nettoyer (si existant)
+# 1. Clean up (if it exists)
 rm -f ~/.claude/statusline.sh
 rm -rf ~/Projects/cc-statusline
 
-# 2. Cloner le repo
+# 2. Clone the repo
 git clone https://github.com/hell0github/claude-statusline.git ~/Projects/cc-statusline
 
-# 3. Copier et configurer
+# 3. Copy and configure
 cp ~/Projects/cc-statusline/config/config.example.json ~/Projects/cc-statusline/config/config.json
-# Editer config.json (plan, sections, etc.)
+# Edit config.json (plan, sections, etc.)
 
-# 4. Creer le dossier data
+# 4. Create the data folder
 mkdir -p ~/Projects/cc-statusline/data
 
-# 5. Creer le shim
+# 5. Create the shim
 cat > ~/.claude/statusline.sh << 'EOF'
 #!/bin/bash
 exec "$HOME/Projects/cc-statusline/src/statusline.sh" "$@"
 EOF
 chmod +x ~/.claude/statusline.sh
 
-# 6. Configurer settings.json
-# Ajouter dans ~/.claude/settings.json :
+# 6. Configure settings.json
+# Add to ~/.claude/settings.json:
 # "statusLine": {
 #   "type": "command",
 #   "command": "~/.claude/statusline.sh",
 #   "padding": 0
 # }
 
-# 7. Redemarrer Claude Code
+# 7. Restart Claude Code
 ```
+
+On macOS, also apply the `gdate` patch (see [Troubleshooting](#error-in-statuslinesh-on-macos)).
 
 ## Configuration
 
-Le fichier de config est `~/Projects/cc-statusline/config/config.json`.
+The config file is `~/Projects/cc-statusline/config/config.json`.
 
 ### Plan
 
@@ -122,9 +130,9 @@ Le fichier de config est `~/Projects/cc-statusline/config/config.json`.
 }
 ```
 
-Options : `pro`, `max5x`, `max20x`
+Options: `pro`, `max5x`, `max20x`
 
-**Note** : Pour le mode API usage, utilisez `max20x` mais desactivez les sections de couts.
+**Note**: for the API usage mode, use `max20x` but turn the cost sections off.
 
 ### Sections
 
@@ -145,9 +153,9 @@ Options : `pro`, `max5x`, `max20x`
 }
 ```
 
-### Configuration mode API (pay-as-you-go)
+### API mode configuration (pay-as-you-go)
 
-Pour les utilisateurs API Usage sans limites :
+For API usage users without limits:
 
 ```json
 {
@@ -168,15 +176,15 @@ Pour les utilisateurs API Usage sans limites :
 }
 ```
 
-### Weekly Display Modes
+### Weekly display modes
 
-- `usage` : Affiche le % d'utilisation hebdo
-- `avail` : Affiche le % restant disponible
-- `recommend` : Affiche le % journalier recommande
+- `usage`: shows the weekly usage %
+- `avail`: shows the remaining available %
+- `recommend`: shows the recommended daily %
 
-### Tracking (pour daily/weekly precis)
+### Tracking (for accurate daily/weekly)
 
-Pour synchroniser avec le reset officiel Anthropic :
+To sync with Anthropic's official reset:
 
 ```json
 {
@@ -187,9 +195,9 @@ Pour synchroniser avec le reset officiel Anthropic :
 }
 ```
 
-Trouver la date de reset : [console.anthropic.com](https://console.anthropic.com) > Usage > "Resets [date/time]"
+Find the reset date: [console.anthropic.com](https://console.anthropic.com) > Usage > "Resets [date/time]"
 
-### Monthly (optionnel)
+### Monthly (optional)
 
 ```json
 {
@@ -202,107 +210,132 @@ Trouver la date de reset : [console.anthropic.com](https://console.anthropic.com
 }
 ```
 
+### Weekly limits used for the percentages
+
+| Plan | Weekly limit | Tokens/5h |
+|---|---|---|
+| `pro` | $300/week | 19K |
+| `max5x` | $500/week | 88K |
+| `max20x` | $850/week | 220K |
+| `api` | none | pay-as-you-go |
+
+The statusline estimates cost locally with ccusage from the transcripts (`~/.claude/projects/`), Claude
+Code only; `/status` shows the official server-side usage, which may include web/mobile. A gap between
+the two is normal.
+
 ## Architecture
 
-### Pattern Shim
+### Shim pattern
 
 ```
-Claude Code → ~/.claude/statusline.sh (shim 2 lignes)
+Claude Code → ~/.claude/statusline.sh (2-line shim)
                         ↓
               ~/Projects/cc-statusline/src/statusline.sh (implementation)
 ```
 
-**Avantages :**
-- Interface stable (Claude Code appelle toujours le meme chemin)
-- Mise a jour facile (`git pull` dans le repo)
-- Code reutilisable entre projets
+**Benefits:**
+- stable interface (Claude Code always calls the same path);
+- easy update (`git pull` in the repo);
+- code reusable across projects.
 
-### Structure du repo
+### Repo structure
 
 ```
 ~/Projects/cc-statusline/
 ├── src/
-│   ├── statusline.sh         # Script principal (3-stage pipeline)
-│   ├── statusline-utils.sh   # Calculs de periodes
-│   ├── statusline-layers.sh  # Calculs multi-couches
-│   └── statusline-cache.sh   # Gestion du cache
+│   ├── statusline.sh         # Main script (3-stage pipeline)
+│   ├── statusline-utils.sh   # Period calculations
+│   ├── statusline-layers.sh  # Multi-layer calculations
+│   └── statusline-cache.sh   # Cache management
 ├── config/
-│   ├── config.json           # Votre config (gitignored)
+│   ├── config.json           # Your config (gitignored)
 │   └── config.example.json   # Template
 ├── data/                     # Cache (gitignored)
 └── tools/
     └── calibrate_weekly_usage.sh
 ```
 
-## Mise a jour
+## Updating
 
 ```bash
 cd ~/Projects/cc-statusline
 git pull
 ```
 
-## Comportement
+A `git pull` overwrites the macOS and 24h patches: apply them again, or run `/statusline-setup` again.
 
-### Rafraichissement
+## Behavior
 
-La statusline **ne s'affiche pas en temps reel**. Elle se met a jour uniquement lors d'evenements :
-- Soumission d'un message
-- Reception d'une reponse
-- Autres interactions avec Claude Code
+### Refresh
 
-**Comportements normaux :**
-- Pas de statusline visible immediatement au demarrage — elle apparait apres la premiere interaction
-- Pas de mise a jour pendant la saisie — elle se rafraichit a la soumission
+The statusline **is not shown in real time**. It only updates on events:
+- submitting a message;
+- receiving a response;
+- other interactions with Claude Code.
 
-C'est le comportement standard de Claude Code, pas un bug.
+**Normal behaviors:**
+- no statusline right at startup — it appears after the first interaction;
+- no update while typing — it refreshes on submission.
 
-## Depannage
+This is Claude Code's standard behavior, not a bug.
 
-### La statusline ne s'affiche pas
+## Troubleshooting
+
+### The statusline does not show
 
 ```bash
-# Verifier le shim
+# Check the shim
 ls -la ~/.claude/statusline.sh
 
-# Tester manuellement
+# Test manually
 echo '{"workspace":{"current_dir":"~"},"transcript_path":""}' | ~/.claude/statusline.sh
 ```
 
-### Erreur de validation config
+### "ERROR in statusline.sh" on macOS
 
-Verifier que :
-- `user.plan` est defini (`pro`, `max5x`, `max20x`)
-- Si `show_monthly: true`, `payment_cycle_start_date` est requis
-- Si `weekly_scheme: ccusage_r`, `official_reset_date` est requis
+The source repo uses `date -d` (GNU). Install coreutils and patch:
 
-### Decalage avec la console Anthropic
+```bash
+brew install coreutils
+sed -i '' 's/date -d/gdate -d/g' ~/Projects/cc-statusline/src/statusline-utils.sh
+sed -i '' 's/date -d/gdate -d/g' ~/Projects/cc-statusline/src/statusline.sh
+```
 
-Utiliser l'outil de calibration :
+### Config validation error
+
+Check that:
+- `user.plan` is set (`pro`, `max5x`, `max20x`);
+- if `show_monthly: true`, `payment_cycle_start_date` is set;
+- if `weekly_scheme: ccusage_r`, `official_reset_date` is set.
+
+### Gap with the Anthropic console
+
+Use the calibration tool:
 ```bash
 ~/Projects/cc-statusline/tools/calibrate_weekly_usage.sh 18.5
 ```
 
-Ou configurer `tracking.weekly_baseline_percent` dans config.json.
+Or set `tracking.weekly_baseline_percent` in config.json.
 
-### Reinstaller completement
+### Full reinstall
 
-Lancer `/statusline-setup` - le nettoyage automatique supprimera l'ancienne installation.
+Run `/statusline-setup` - the automatic cleanup removes the previous installation.
 
 ## Changelog
 
 ### v2.1.0
-- **Nouveau** : Support mode API Usage (pay-as-you-go)
-- **Nouveau** : Nettoyage automatique de l'installation existante
-- **Nouveau** : Conversion de commande vers skill pour meilleur guidage
-- **Amelioration** : Detection et configuration simplifiees
+- **New**: API usage mode (pay-as-you-go)
+- **New**: automatic cleanup of the existing installation
+- **New**: command converted to a skill for better guidance
+- **Improved**: simpler detection and configuration
 
 ### v2.0.0
-- Migration vers [hell0github/claude-statusline](https://github.com/hell0github/claude-statusline)
-- Pattern shim pour mises a jour faciles
-- Support multi-periodes (daily, weekly, monthly)
+- Moved to [hell0github/claude-statusline](https://github.com/hell0github/claude-statusline)
+- Shim pattern for easy updates
+- Multi-period support (daily, weekly, monthly)
 
 ## Sources
 
 - [hell0github/claude-statusline](https://github.com/hell0github/claude-statusline)
 - [ccusage - npm](https://www.npmjs.com/package/ccusage)
-- [Claude Code Status Line Docs](https://claude.com/claude-code)
+- [Claude Code statusline docs](https://code.claude.com/docs/en/statusline)

@@ -1,36 +1,36 @@
-# Catalogue des relecteurs
+# Reviewer catalog
 
-Sélectionne par **jugement sur le diff réel** (lis-le), pas par mots-clés. Un relecteur sans surface à
-relire coûte du temps et ajoute du bruit.
+Select by **judgment on the real diff** (read it), not by keywords. A reviewer with no surface to review
+costs time and adds noise.
 
-## Socle
+## Core
 
-| Relecteur | Agent | Quand |
+| Reviewer | Agent | When |
 |---|---|---|
-| `correctness` | `kaizen:correctness-reviewer` | toujours (revue ciblée ou complète) |
-| `standards` | `kaizen:standards-reviewer` | dès qu'existe `CONSTITUTION.md`, au moins un fichier de standards applicable (`CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `.claude/rules/`), une règle de pack dont `applies_when` correspond, ou une leçon pertinente de `docs/learnings/` |
+| `correctness` | `kaizen:correctness-reviewer` | always (targeted or full review) |
+| `standards` | `kaizen:standards-reviewer` | as soon as there is a `CONSTITUTION.md`, at least one applicable standards file (`CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `.claude/rules/`), a pack rule whose `applies_when` matches, or a relevant learning in `docs/learnings/` |
 
-## Conditionnels génériques
+## Generic conditionals
 
-| Relecteur | Agent | Quand le diff touche… |
+| Reviewer | Agent | When the diff touches… |
 |---|---|---|
-| `testing` | `kaizen:testing-reviewer` | des fichiers de test ou leur infrastructure ; **ou** un comportement modifié (nouvelles branches, mutation d'état, API, flux de contrôle, gestion d'erreur) avec ou sans tests. Pas pour des changements non comportementaux. |
-| `maintainability` | `kaizen:maintainability-reviewer` | refactor substantiel, nouvelles abstractions, déplacements de fichiers, couplage, ou ≥ 200 lignes exécutables modifiées |
+| `testing` | `kaizen:testing-reviewer` | test files or their infrastructure; **or** changed behavior (new branches, state mutation, API, control flow, error handling) with or without tests. Not for non-behavioral changes. |
+| `maintainability` | `kaizen:maintainability-reviewer` | substantial refactor, new abstractions, file moves, coupling, or ≥ 200 executable lines changed |
 
-## Conditionnels par domaine
+## Area conditionals
 
-| Relecteur | Agent | Quand le diff touche… |
+| Reviewer | Agent | When the diff touches… |
 |---|---|---|
-| `security` | `kaizen:security-reviewer` | middleware d'auth, endpoints publics, entrées utilisateur, contrôles de permission (y compris feature flags qui gardent l'accès), secrets, crypto, upload, désérialisation, URL appelées côté serveur |
-| `performance` | `kaizen:performance-reviewer` | forme des requêtes base/ORM, complexité algorithmique, transformations lourdes en boucle, fan-out, politique de cache à impact réel |
-| `reliability` | `kaizen:reliability-reviewer` | gestion d'erreur, retries, timeouts, jobs en arrière-plan, handlers asynchrones, webhooks, appels à des services externes |
-| `api-contract` | `kaizen:api-contract-reviewer` | une frontière **consommée à l'extérieur** : routes et formes de requête/réponse, sérialiseurs, schémas d'événements publiés, versionnage, signature publique d'un package avec appelants avérés |
-| `data-migration` | `kaizen:data-migration-reviewer` | fichiers de migration, dumps de schéma, backfills, transformations de données — pas un simple changement de modèle ou de requête sans migration |
-| `adversarial` | `kaizen:adversarial-reviewer` | ≥ 50 lignes de code modifiées ; ou auth/paiement ; écritures persistantes ou publication d'événements ; retries, échecs partiels, concurrence ou ordre ; API externes ; ou un mécanisme de vérification qui pourrait passer au vert à tort (CI, gate, mocks d'infra) |
+| `security` | `kaizen:security-reviewer` | auth middleware, public endpoints, user input, permission checks (including feature flags guarding access), secrets, crypto, upload, deserialization, server-side called URLs |
+| `performance` | `kaizen:performance-reviewer` | database/ORM query shape, algorithmic complexity, heavy transformations in loops, fan-out, caching policy with real impact |
+| `reliability` | `kaizen:reliability-reviewer` | error handling, retries, timeouts, background jobs, async handlers, webhooks, calls to external services |
+| `api-contract` | `kaizen:api-contract-reviewer` | an **externally consumed** boundary: routes and request/response shapes, serializers, published event schemas, versioning, a package's public signature with proven callers |
+| `data-migration` | `kaizen:data-migration-reviewer` | migration files, schema dumps, backfills, data transformations — not a mere model or query change without a migration |
+| `adversarial` | `kaizen:adversarial-reviewer` | ≥ 50 lines of changed code; or auth/payment; persistent writes or event publishing; retries, partial failures, concurrency or ordering; external APIs; or a verification mechanism that could wrongly go green (CI, gate, infra mocks) |
 
-## Bornes
+## Bounds
 
-- Revue ciblée : 1 à 3 relecteurs. Revue complète : en général 3 à 7.
-- Au-delà de 7, regroupe ou priorise par risque ; dis lesquels ont été laissés de côté et pourquoi.
-- Diff purement documentaire : `standards` (et `correctness` si la doc décrit un comportement
-  exécutable, des commandes ou une config).
+- Targeted review: 1 to 3 reviewers. Full review: usually 3 to 7.
+- Beyond 7, group or prioritize by risk; say which were left aside and why.
+- Purely documentation diff: `standards` (and `correctness` if the docs describe executable behavior,
+  commands or config).

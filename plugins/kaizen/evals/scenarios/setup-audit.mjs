@@ -1,5 +1,5 @@
-// /kaizen:setup audit sur un projet incomplet : diagnostic par priorité, corrections guidées (gabarits
-// depuis la stack, plateforme de déploiement reconnue), rien d'existant écrasé.
+// /kaizen:setup audit on an incomplete project: diagnosis by priority, guided fixes (scaffolds from
+// the stack, recognized deployment platform), nothing existing overwritten.
 import { HEADLESS, SHOP } from '../fixtures.mjs';
 
 export default {
@@ -8,23 +8,23 @@ export default {
   files: {
     ...SHOP,
     '.gitignore': 'node_modules\n',
-    'fly.toml': 'app = "boutique"\n\n[[http_service.checks]]\n  path = "/health"\n',
-    'CLAUDE.md': '# Boutique\n\nRègles maison : ne pas toucher à src/legacy/.\n',
+    'fly.toml': 'app = "shop"\n\n[[http_service.checks]]\n  path = "/health"\n',
+    'CLAUDE.md': '# Shop\n\nHouse rules: do not touch src/legacy/.\n',
   },
   prompt: `${HEADLESS} /kaizen:setup audit`,
   checks: [
-    ['diagnostic par priorité présenté', (out) => /P1|priorit/i.test(out) && /CI|intégration continue/i.test(out)],
-    ['CI générée depuis la stack (installation, puis la commande de test détectée)', (_, c) => { const ci = c.read('.github/workflows/ci.yml'); return { ok: /run: npm (ci|install)\n/.test(ci) && /run: npm test/.test(ci), note: ci.split('\n').filter((l) => /run:/.test(l)).join(' | ') }; }],
-    ['.env ignoré, contenu existant conservé', (_, c) => /^node_modules\n/.test(c.read('.gitignore')) && /\n\.env\n/.test(c.read('.gitignore'))],
-    ['Fly.io reconnu et configuré avec retour arrière et health-check', (_, c) => {
+    ['diagnosis by priority shown', (out) => /P1|priorit/i.test(out) && /CI|continuous integration/i.test(out)],
+    ['CI generated from the stack (install, then the detected test command)', (_, c) => { const ci = c.read('.github/workflows/ci.yml'); return { ok: /run: npm (ci|install)\n/.test(ci) && /run: npm test/.test(ci), note: ci.split('\n').filter((l) => /run:/.test(l)).join(' | ') }; }],
+    ['.env ignored, existing content kept', (_, c) => /^node_modules\n/.test(c.read('.gitignore')) && /\n\.env\n/.test(c.read('.gitignore'))],
+    ['Fly.io recognized and configured with rollback and health-check', (_, c) => {
       let cfg = {};
       try {
         cfg = JSON.parse(c.read('.kaizen/config.json'));
       } catch {}
       const p = cfg.deploy?.environments?.production;
-      return { ok: p?.command === 'fly deploy' && Boolean(p.rollback) && /boutique\.fly\.dev\/health/.test(cfg.monitor?.signals?.health?.url || ''), note: JSON.stringify(p || null) };
+      return { ok: p?.command === 'fly deploy' && Boolean(p.rollback) && /shop\.fly\.dev\/health/.test(cfg.monitor?.signals?.health?.url || ''), note: JSON.stringify(p || null) };
     }],
-    ['CLAUDE.md existant conservé', (_, c) => c.read('CLAUDE.md').includes('ne pas toucher à src/legacy/')],
-    ['réglage d’administration laissé à l’humain', (out) => /protection|protég/i.test(out)],
+    ['existing CLAUDE.md kept', (_, c) => c.read('CLAUDE.md').includes('do not touch src/legacy/')],
+    ['administration setting left to the human', (out) => /protection|protect/i.test(out)],
   ],
 };

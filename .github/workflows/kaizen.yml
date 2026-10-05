@@ -31,12 +31,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: Identité git pour les dépôts de test
+      - name: Git identity for the test repos
         run: |
           git config --global user.email "ci@example.com"
           git config --global user.name "CI"
           git config --global init.defaultBranch main
-      - name: Syntaxe des scripts
+      - name: Script syntax
         run: for f in plugins/kaizen/scripts/*.mjs plugins/kaizen/evals/*.mjs; do node --check "$f"; done
-      - name: Tests unitaires, CLI, garde-fou, PR et contrats
+      - name: Unit, CLI, gate, PR and contract tests
         run: node --test plugins/kaizen/tests/*.test.mjs

@@ -1,5 +1,5 @@
-// Kaizen — bibliothèque partagée (Node ≥ 18, zéro dépendance).
-// Racine du repo, configuration, frontmatter YAML (sous-ensemble), détection de stack.
+// Kaizen — shared library (Node ≥ 18, zero dependencies).
+// Repo root, configuration, YAML frontmatter (subset), stack detection.
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
@@ -11,8 +11,8 @@ import { fileURLToPath } from 'node:url';
 // Repo & configuration
 // ---------------------------------------------------------------------------
 
-// Commande gh à lancer : KAIZEN_GH peut pointer vers un script Node (faux gh des tests) ; on le
-// passe alors à node, car Windows n'exécute pas un .mjs directement.
+// gh command to run: KAIZEN_GH may point to a Node script (the tests' fake gh); it is then
+// passed to node, because Windows does not execute a .mjs directly.
 export function ghCommand(args) {
   const gh = process.env.KAIZEN_GH || 'gh';
   return /\.(mjs|cjs|js)$/i.test(gh) ? [process.execPath, [gh, ...args]] : [gh, args];
@@ -30,7 +30,7 @@ export function repoRoot(cwd = process.cwd()) {
   }
 }
 
-// Profils d'adoption : la cérémonie s'ajuste, les garde-fous déterministes restent.
+// Adoption profiles: ceremony scales, deterministic gates stay.
 export const PROFILES = ['lean', 'standard', 'full'];
 
 export const DEFAULT_CONFIG = {
@@ -41,10 +41,10 @@ export const DEFAULT_CONFIG = {
   profile: 'standard',
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
   review: { require_before_push: true, max_unreviewed_lines: 80 },
-  // Déploiement et monitoring : commandes de l'équipe, Kaizen ne connaît aucune plateforme.
+  // Deployment and monitoring: the team's commands, Kaizen knows no platform.
   deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, timeout_seconds: 1800, flags: {} },
   monitor: { signals: {}, interval_seconds: 60, consecutive: 2 },
-  // Modèle par rôle d'agent : défauts du profil (scripts/models.mjs), ajustables par rôle ou par agent.
+  // Model per agent role: profile defaults (scripts/models.mjs), adjustable per role or per agent.
   models: { roles: {}, agents: {} },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
   packs: [],
@@ -55,12 +55,12 @@ function readJson(file) {
     return JSON.parse(readFileSync(file, 'utf8'));
   } catch (err) {
     if (err.code === 'ENOENT') return null;
-    throw new Error(`${file} : JSON invalide (${err.message})`);
+    throw new Error(`${file}: invalid JSON (${err.message})`);
   }
 }
 
-// config.local.json (non versionné) l'emporte sur config.json, clé par clé.
-// docs_root n'est lu que dans config.json : l'emplacement des livrables est une décision d'équipe.
+// config.local.json (not versioned) wins over config.json, key by key.
+// docs_root is only read from config.json: where deliverables live is a team decision.
 export function loadConfig(root) {
   const base = root ? readJson(join(root, '.kaizen', 'config.json')) || {} : {};
   const local = root ? readJson(join(root, '.kaizen', 'config.local.json')) || {} : {};
@@ -76,9 +76,9 @@ export function loadConfig(root) {
     roles: { ...(base.models?.roles || {}), ...(local.models?.roles || {}) },
     agents: { ...(base.models?.agents || {}), ...(local.models?.agents || {}) },
   };
-  // Un profil mal saisi ne doit pas casser les hooks : repli sur « standard », signalé par `config`.
+  // A mistyped profile must not break the hooks: fall back to "standard", reported by `config`.
   if (!PROFILES.includes(merged.profile)) {
-    merged.profile_warning = `profile inconnu : "${merged.profile}" (attendu : ${PROFILES.join(', ')}) — « standard » appliqué`;
+    merged.profile_warning = `unknown profile: "${merged.profile}" (expected: ${PROFILES.join(', ')}) — "standard" applied`;
     merged.profile = 'standard';
   }
   if (base.docs_root) merged.docs_root = base.docs_root;
@@ -87,11 +87,11 @@ export function loadConfig(root) {
 
 export function docsRoot(root, config = loadConfig(root)) {
   const value = config.docs_root || 'docs';
-  if (isAbsolute(value)) throw new Error(`docs_root doit être relatif au repo : "${value}"`);
+  if (isAbsolute(value)) throw new Error(`docs_root must be relative to the repo: "${value}"`);
   const abs = resolve(root, value);
   const rel = relative(root, abs);
   if (!rel || rel.startsWith('..') || rel.split(sep)[0] === '.git') {
-    throw new Error(`docs_root invalide : "${value}" (doit rester dans le repo, hors racine et hors .git)`);
+    throw new Error(`invalid docs_root: "${value}" (must stay inside the repo, not the root itself and not .git)`);
   }
   return abs;
 }
@@ -101,8 +101,8 @@ export function expandHome(p) {
 }
 
 // ---------------------------------------------------------------------------
-// Frontmatter YAML — sous-ensemble suffisant pour les leçons et les packs :
-// scalaires, chaînes entre guillemets, listes en ligne [a, b] et listes en tirets.
+// YAML frontmatter — a subset sufficient for learnings and packs:
+// scalars, quoted strings, inline lists [a, b] and dash lists.
 // ---------------------------------------------------------------------------
 
 function unquote(v) {
@@ -135,7 +135,7 @@ function splitInline(list) {
 
 function scalar(v) {
   let s = v.trim();
-  // Commentaire YAML en fin de ligne (« # » précédé d'un blanc), hors chaînes entre guillemets.
+  // Trailing YAML comment ("#" preceded by whitespace), outside quoted strings.
   if (!/^["']/.test(s)) s = s.replace(/\s+#.*$/, '');
   if (s === '') return '';
   if (s.startsWith('[') && s.endsWith(']')) return splitInline(s.slice(1, -1));
@@ -147,7 +147,7 @@ function scalar(v) {
 
 export function parseFrontmatter(text) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(text);
-  if (!m) return { data: null, body: text, error: 'frontmatter absent' };
+  if (!m) return { data: null, body: text, error: 'missing frontmatter' };
   const data = {};
   let key = null;
   const lines = m[1].split(/\r?\n/);
@@ -175,13 +175,13 @@ export function parseFrontmatter(text) {
       }
       continue;
     }
-    return { data, body: text.slice(m[0].length), error: `ligne illisible : "${line.trim()}"` };
+    return { data, body: text.slice(m[0].length), error: `unreadable line: "${line.trim()}"` };
   }
   return { data, body: text.slice(m[0].length), error: null };
 }
 
 // ---------------------------------------------------------------------------
-// Fichiers
+// Files
 // ---------------------------------------------------------------------------
 
 export function walkMarkdown(dir, { skipDirs = ['_archived', 'node_modules', '.git'] } = {}) {
@@ -207,7 +207,7 @@ export function isFile(p) {
 }
 
 // ---------------------------------------------------------------------------
-// Détection de stack → commandes de vérification (test, lint, typecheck)
+// Stack detection → verification commands (test, lint, typecheck)
 // ---------------------------------------------------------------------------
 
 function onPath(bin) {
@@ -308,7 +308,7 @@ export function detectStack(root) {
   return { stacks, verify };
 }
 
-// Commandes effectives : la config du repo l'emporte, la détection complète.
+// Effective commands: the repo config wins, detection fills the gaps.
 export function verifyCommands(root, config = loadConfig(root)) {
   const detected = detectStack(root);
   const cmds = { ...detected.verify, ...config.verify };
@@ -317,7 +317,7 @@ export function verifyCommands(root, config = loadConfig(root)) {
 }
 
 // ---------------------------------------------------------------------------
-// Exécution des vérifications (partagée par le CLI et le hook Stop)
+// Running the checks (shared by the CLI and the Stop hook)
 // ---------------------------------------------------------------------------
 
 function tail(text, n = 40) {
@@ -325,14 +325,14 @@ function tail(text, n = 40) {
   return lines.slice(-n).join('\n');
 }
 
-// Remplace {files} par la liste des fichiers, chacun entre guillemets pour le shell.
+// Replaces {files} with the file list, each one quoted for the shell.
 export function withFiles(command, files) {
   const quoted = files.map((f) => (process.platform === 'win32' ? `"${f.replace(/"/g, '\\"')}"` : `'${f.replace(/'/g, "'\\''")}'`)).join(' ');
   return command.replaceAll('{files}', quoted);
 }
 
-// Lance une commande shell avec un délai, de façon synchrone, et tue tout son arbre de processus s'il
-// est dépassé (run-bounded.mjs) : une vérification coupée ne survit pas en arrière-plan.
+// Runs a shell command synchronously with a timeout, and kills its whole process tree when the
+// timeout is exceeded (run-bounded.mjs): an interrupted check never survives in the background.
 // → { status, timedOut, stdout, stderr }
 const BOUNDED = fileURLToPath(new URL('./run-bounded.mjs', import.meta.url));
 
@@ -344,7 +344,7 @@ export function runBounded(command, { cwd, env, timeoutMs }) {
     stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
     maxBuffer: 64 * 1024 * 1024,
     windowsHide: true,
-    // Filet si le lanceur lui-même ne rendait pas la main.
+    // Safety net in case the launcher itself never returns.
     timeout: timeoutMs + 15000,
     killSignal: 'SIGKILL',
   });
@@ -360,11 +360,11 @@ export function runVerify(root, { only, timeoutSeconds, budgetSeconds, overrides
   const config = loadConfig(root);
   const { commands: detected } = verifyCommands(root, config);
   const commands = { ...detected, ...overrides };
-  // L'audit des dépendances (réseau, lent) ne tourne que sur demande explicite (--only audit).
+  // The dependency audit (network, slow) only runs when explicitly requested (--only audit).
   const wanted = only ? only.split(',').map((s) => s.trim()) : Object.keys(commands).filter((k) => k !== 'audit');
   const perCommand = (timeoutSeconds || config.gate.timeout_seconds || 600) * 1000;
-  // Budget global (hook Stop) : une commande ne démarre que s'il reste du temps, et ne dépasse jamais
-  // ce qui reste — sinon le hook serait tué par son propre délai et ne protégerait rien.
+  // Global budget (Stop hook): a command only starts if time remains, and never exceeds what is
+  // left — otherwise the hook would be killed by its own timeout and protect nothing.
   const deadline = budgetSeconds ? Date.now() + budgetSeconds * 1000 : Infinity;
   const results = [];
   for (const name of wanted) {
@@ -391,7 +391,7 @@ export function runVerify(root, { only, timeoutSeconds, budgetSeconds, overrides
 
 
 // ---------------------------------------------------------------------------
-// Git : branche par défaut, base de comparaison, taille d'un diff
+// Git: default branch, comparison base, diff size
 // ---------------------------------------------------------------------------
 
 export function git(root, args, { allowFail = false } = {}) {
@@ -441,7 +441,7 @@ function globToRegex(glob) {
 
 export function diffSize(root, { base, ignore = [] } = {}) {
   const from = diffBase(root, base);
-  if (!from) throw new Error('base introuvable : passe --base <ref>');
+  if (!from) throw new Error('base not found: pass --base <ref>');
   const out = git(root, ['diff', '--numstat', from]);
   const res = ignore.map(globToRegex);
   const files = [];
@@ -462,16 +462,16 @@ export function diffSize(root, { base, ignore = [] } = {}) {
   return { base: from, files: files.length, added, removed, total: added + removed, ignored, largest: files.sort((x, y) => y.added + y.removed - (x.added + x.removed)).slice(0, 5) };
 }
 
-// Arbre git de l'état courant (commité + non commité, .gitignore respecté), sans toucher à l'index de
-// l'utilisateur : c'est ce qu'une revue a réellement lu. Comparer cet arbre à HEAD au moment du push
-// dit exactement ce qui a changé depuis la revue.
+// Git tree of the current state (committed + uncommitted, .gitignore honored), without touching the
+// user's index: this is what a review actually read. Comparing this tree to HEAD at push time tells
+// exactly what changed since the review.
 export function worktreeTree(root) {
   const dir = mkdtempSync(join(tmpdir(), 'kaizen-index-'));
   const env = { ...process.env, GIT_INDEX_FILE: join(dir, 'index') };
   try {
     const run = (args) => execFileSync('git', args, { cwd: root, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-    // Partir d'une copie de l'index réel réutilise son cache de stat : seuls les fichiers modifiés
-    // sont rehachés, même sur un gros dépôt. Sans index (dépôt neuf), on repart de HEAD.
+    // Starting from a copy of the real index reuses its stat cache: only modified files are
+    // rehashed, even in a large repo. Without an index (fresh repo), start from HEAD.
     const real = git(root, ['rev-parse', '--path-format=absolute', '--git-path', 'index'], { allowFail: true });
     if (real && existsSync(real)) copyFileSync(real, env.GIT_INDEX_FILE);
     else run(['read-tree', 'HEAD']);
@@ -482,7 +482,7 @@ export function worktreeTree(root) {
   }
 }
 
-// Lignes modifiées entre deux arbres ou commits, hors fichiers ignorés par pr.ignore.
+// Lines changed between two trees or commits, excluding files ignored by pr.ignore.
 export function changedLines(root, from, to, ignore = []) {
   const out = git(root, ['diff', '--numstat', from, to], { allowFail: true });
   if (out === null) return null;
@@ -496,8 +496,8 @@ export function changedLines(root, from, to, ignore = []) {
   return total;
 }
 
-// Fichiers touchés par la branche : diff vs la base (non commité compris) et nouveaux fichiers non
-// ignorés. Les fichiers supprimés sont exclus : un linter ou un runner de tests échouerait dessus.
+// Files touched by the branch: diff vs the base (uncommitted included) and new non-ignored files.
+// Deleted files are excluded: a linter or test runner would fail on them.
 export function changedFiles(root, base = diffBase(root)) {
   const listed = [
     ...(base ? (git(root, ['diff', '--name-only', base], { allowFail: true }) || '').split('\n') : []),
@@ -506,10 +506,9 @@ export function changedFiles(root, base = diffBase(root)) {
   return [...new Set(listed.filter(Boolean))].filter((f) => existsSync(join(root, f))).sort();
 }
 
-// Consommation de tokens d'une session depuis son transcript (JSONL de Claude Code), à partir d'une
-// date. Un même message peut apparaître plusieurs fois (streaming) : dédoublonné par identifiant.
-// Seule la session principale est comptée ici : les sous-agents ont leurs propres transcripts
-// (voir subagentUsage).
+// Token usage of a session from its transcript (Claude Code JSONL), from a given date on. The same
+// message may appear several times (streaming): deduplicated by id.
+// Only the main session is counted here: subagents have their own transcripts (see subagentUsage).
 const USAGE_KEYS = ['input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens'];
 
 export function emptyUsage() {
@@ -555,8 +554,8 @@ export function transcriptUsage(file, since) {
   return readUsage(text, since ? Date.parse(since) : 0, new Set());
 }
 
-// Transcripts des sous-agents d'une session : Claude Code les range à côté du transcript principal,
-// `<projet>/<session>.jsonl` → `<projet>/<session>/subagents/[…/]agent-<id>.jsonl`.
+// Subagent transcripts of a session: Claude Code stores them next to the main transcript,
+// `<project>/<session>.jsonl` → `<project>/<session>/subagents/[…/]agent-<id>.jsonl`.
 function subagentTranscripts(file) {
   const dir = join(file.replace(/\.jsonl$/, ''), 'subagents');
   const found = [];
@@ -576,7 +575,7 @@ function subagentTranscripts(file) {
   return found.sort();
 }
 
-// Début du premier message utilisateur d'un transcript de sous-agent : le prompt qui l'a lancé.
+// Start of the first user message of a subagent transcript: the prompt that launched it.
 export function promptKey(text) {
   return String(text || '').replace(/\s+/g, ' ').trim().slice(0, 200);
 }
@@ -594,10 +593,10 @@ function firstPrompt(text) {
   return '';
 }
 
-// Tokens des sous-agents d'une session depuis une date, ventilés par rôle. Chaque transcript est
-// rattaché au lancement consigné par le hook Agent (`launches` : { agent_id, prompt, role }), par
-// identifiant d'agent, sinon par début de prompt ; sans correspondance, le rôle est `inconnu`.
-// → { agents, usage, by_role: { rôle: usage } } ; null si le transcript principal est illisible.
+// Subagent tokens of a session since a date, broken down by role. Each transcript is matched to the
+// launch logged by the Agent hook (`launches`: { agent_id, prompt, role }), by agent id, otherwise by
+// the start of the prompt; without a match, the role is `unknown`.
+// → { agents, usage, by_role: { role: usage } }; null if the main transcript is unreadable.
 export function subagentUsage(file, since, launches = []) {
   if (!file || !existsSync(file)) return null;
   const from = since ? Date.parse(since) : 0;
@@ -615,7 +614,7 @@ export function subagentUsage(file, since, launches = []) {
     const id = /agent-(.+)\.jsonl$/.exec(path)[1];
     const prompt = firstPrompt(text);
     const launch = launches.find((l) => l.agent_id && l.agent_id === id) || launches.find((l) => prompt && l.prompt && l.prompt === prompt);
-    const role = launch?.role || 'inconnu';
+    const role = launch?.role || 'unknown';
     result.agents++;
     addUsage(result.usage, usage);
     result.by_role[role] = addUsage(result.by_role[role] || emptyUsage(), usage);

@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="t d">
+<title id="t">How the constitution is enforced</title>
+<desc id="d">A principle without a verifiable Check is not applied: every article is checked at plan time, at review time, and in the PR.</desc>
+<style>
+  .bg { fill: #fbfaf7; stroke: #e4e0d8; }
+  text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
+  .title { font-size: 18px; font-weight: 700; }
+  .desc { font-size: 12.5px; fill: #5c6370; }
+  .label { font-size: 13.5px; font-weight: 600; }
+  .t12 { font-size: 12px; }
+  .sub { font-size: 11.5px; fill: #5c6370; }
+  .small { font-size: 11px; fill: #5c6370; }
+  .edge { font-size: 11px; fill: #5c6370; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .skill { fill: #fdf1ea; stroke: #d97757; }
+  .artifact { fill: #edf2fb; stroke: #5b7fbf; }
+  .gate { fill: #fdeeee; stroke: #c94a4a; }
+  .agent { fill: #ecf6ef; stroke: #3f8f5a; }
+  .outside { fill: #f3f0fa; stroke: #7a5fc0; }
+  .state { fill: #fff8e1; stroke: #b8901c; }
+  .plain { fill: #ffffff; stroke: #c9c4ba; }
+  .region { fill: none; stroke: #b9b3a6; stroke-dasharray: 5 4; }
+  .regionlabel { font-size: 11.5px; font-weight: 600; fill: #7d776b; letter-spacing: .04em; }
+  .band { fill: #fff4dd; stroke: #d6a645; }
+  .line { fill: none; stroke: #6e7681; stroke-width: 1.6; }
+  .line.accent { stroke: #d97757; }
+  .line.bad { stroke: #c94a4a; }
+  .line.ok { stroke: #3f8f5a; }
+  .line.blue { stroke: #5b7fbf; }
+  .dashed { stroke-dasharray: 6 4; }
+  .head { fill: #6e7681; }
+  .head.accent { fill: #d97757; }
+  .head.bad { fill: #c94a4a; }
+  .head.ok { fill: #3f8f5a; }
+  .head.blue { fill: #5b7fbf; }
+  .pill { fill: #ffffff; stroke: none; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #161b22; stroke: #30363d; }
+    text { fill: #e6edf3; }
+    .desc, .sub, .small, .edge { fill: #9aa4b0; }
+    .skill { fill: #3a2419; stroke: #e08b6c; }
+    .artifact { fill: #1b2638; stroke: #7c9fd8; }
+    .gate { fill: #3a1d1f; stroke: #e06c6c; }
+    .agent { fill: #18301f; stroke: #5fb07a; }
+    .outside { fill: #271f3d; stroke: #a08ae0; }
+    .state { fill: #33290f; stroke: #d6b043; }
+    .plain { fill: #1f2630; stroke: #4a525d; }
+    .region { stroke: #5a6270; }
+    .regionlabel { fill: #a39d90; }
+    .band { fill: #33290f; stroke: #c99a3b; }
+    .line { stroke: #9aa4b0; }
+    .line.accent { stroke: #e08b6c; }
+    .line.bad { stroke: #e06c6c; }
+    .line.ok { stroke: #5fb07a; }
+    .line.blue { stroke: #7c9fd8; }
+    .head { fill: #9aa4b0; }
+    .head.accent { fill: #e08b6c; }
+    .head.bad { fill: #e06c6c; }
+    .head.ok { fill: #5fb07a; }
+    .head.blue { fill: #7c9fd8; }
+    .pill { fill: #161b22; }
+  }
+</style>
+<defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="1099" height="559" rx="14"/>
+<text class="title" x="28" y="38">How the constitution is enforced</text>
+<text class="desc" x="28" y="58">A principle without a verifiable Check is not applied: every article is checked at plan time, at review time, and in the PR.</text>
+<rect class="artifact" x="36" y="90" width="300" height="300" rx="8" stroke-width="1.5"/>
+<text class="label" x="48" y="244" text-anchor="start"></text>
+<text class="label" x="52" y="116" text-anchor="start">CONSTITUTION.md</text>
+<text class="small mono" x="52" y="146" text-anchor="start">---</text>
+<text class="small mono" x="52" y="161" text-anchor="start">artifact: kaizen-constitution/v1</text>
+<text class="small mono" x="52" y="176" text-anchor="start">version: 1.2.0 · ratified · last_amended</text>
+<text class="small mono" x="52" y="191" text-anchor="start">approvers: [@alice]</text>
+<text class="small mono" x="52" y="206" text-anchor="start">---</text>
+<text class="small mono" x="52" y="221" text-anchor="start">## Articles</text>
+<text class="small mono" x="52" y="236" text-anchor="start">### I. Test first — NON-NEGOTIABLE</text>
+<text class="small mono" x="52" y="251" text-anchor="start">&lt;rule&gt;  **Check:** &lt;question&gt;</text>
+<text class="small mono" x="52" y="266" text-anchor="start">### II. Small batches</text>
+<text class="small mono" x="52" y="281" text-anchor="start">## AI policy · ## Governance</text>
+<text class="small mono" x="52" y="296" text-anchor="start">## Amendments</text>
+<text class="small mono" x="52" y="311" text-anchor="start">- v1.2.0 (date) — … Approved by: @alice</text>
+<rect class="gate" x="410" y="86" width="290" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="555" y="108" text-anchor="middle">plan check</text>
+<text class="sub" x="555" y="123" text-anchor="middle">every article assessed in the plan</text>
+<rect class="skill" x="410" y="150" width="290" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="555" y="172" text-anchor="middle">doc-review</text>
+<text class="sub" x="555" y="187" text-anchor="middle">plan reviewers read the articles</text>
+<rect class="skill" x="410" y="214" width="290" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="555" y="236" text-anchor="middle">standards-reviewer</text>
+<text class="sub" x="555" y="251" text-anchor="middle">diff vs articles, packs, learnings</text>
+<rect class="skill" x="410" y="278" width="290" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="555" y="300" text-anchor="middle">ship</text>
+<text class="sub" x="555" y="315" text-anchor="middle">exceptions restated in the PR</text>
+<rect class="gate" x="410" y="342" width="290" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="555" y="364" text-anchor="middle">constitution check</text>
+<text class="sub" x="555" y="379" text-anchor="middle">format, numbering, governance</text>
+<path class="line blue" d="M336,110 L410,111" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M336,174 L410,175" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M336,238 L410,239" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M336,302 L410,303" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M336,366 L410,367" marker-end="url(#h-blue)"/>
+<rect class="plain" x="780" y="86" width="284" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="922" y="108" text-anchor="middle">✅ respected</text>
+<text class="sub" x="922" y="123" text-anchor="middle">evidence written next to the article</text>
+<rect class="state" x="780" y="150" width="284" height="62" rx="31" stroke-width="1.5"/>
+<text class="label" x="922" y="171" text-anchor="middle">⚠️ exception</text>
+<text class="sub" x="922" y="186" text-anchor="middle" style="font-size:11.4px">justified in the plan, restated in the PR,</text>
+<text class="sub" x="922" y="200" text-anchor="middle">counted by metrics</text>
+<rect class="gate" x="780" y="226" width="284" height="62" rx="8" stroke-width="1.5"/>
+<text class="label" x="922" y="247" text-anchor="middle">NON-NEGOTIABLE</text>
+<text class="sub" x="922" y="262" text-anchor="middle">no exception: the plan is blocked,</text>
+<text class="sub" x="922" y="276" text-anchor="middle">or the constitution is amended</text>
+<rect class="skill" x="780" y="302" width="284" height="76" rx="8" stroke-width="1.5"/>
+<text class="label" x="922" y="323" text-anchor="middle">/kaizen:constitution amend</text>
+<text class="sub" x="922" y="338" text-anchor="middle">new SemVer version + Amendments line</text>
+<text class="sub" x="922" y="352" text-anchor="middle">Approved by: a declared human approver</text>
+<text class="sub" x="922" y="366" text-anchor="middle">(an agent never approves)</text>
+<path class="line" d="M700,111 L780,111" marker-end="url(#h-default)"/>
+<path class="line accent" d="M700,111 L780,181" marker-end="url(#h-accent)"/>
+<path class="line bad" d="M700,111 L780,257" marker-end="url(#h-bad)"/>
+<path class="line bad dashed" d="M922,288 L922,302" marker-end="url(#h-bad)"/>
+<path class="line accent dashed" d="M700,367 L780,366.6" marker-end="url(#h-accent)"/>
+<rect class="pill" x="704.5" y="347.8" width="71" height="17" rx="4"/>
+<text class="edge" x="740" y="358.8" text-anchor="middle">governance</text>
+<rect class="band" x="36" y="430" width="1028" height="40" rx="8" stroke-width="1.5"/>
+<text class="label" x="550" y="454" text-anchor="middle">Rule hierarchy:  constitution  &gt;  Kaizen Pack rules  &gt;  learnings  &gt;  preferences</text>
+<text class="small" x="36" y="500" text-anchor="start">Checked deterministically: plan check (every article cited as "IV." in the section) and constitution check (MAJOR.MINOR.PATCH version, dates, continuous Roman numbering,</text>
+<text class="small" x="36" y="515" text-anchor="start">non-empty rule and Check, unique titles, ≤ 12 articles advised, AI-policy article advised, approved amendment per version when approvers are declared).</text>
+<rect class="skill" x="36" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="60" y="540">skill (/kaizen:…)</text>
+<rect class="artifact" x="187.4" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="211.4" y="540">file in your repo</text>
+<rect class="gate" x="338.8" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="362.8" y="540">deterministic gate</text>
+</svg>

@@ -1,13 +1,13 @@
-// Kaizen — reconnaît comment ce projet se déploie et propose deploy.environments / monitor.signals.
+// Kaizen — recognizes how this project deploys and proposes deploy.environments / monitor.signals.
 //
-// Rien n'est deviné en silence : chaque candidat dit sa source (le fichier qui l'a révélé), sa
-// confiance et ses limites (`notes`). `/kaizen:setup` les montre, l'utilisateur choisit, puis
-// `deploy configure <id>` les écrit dans .kaizen/config.json sans écraser un environnement existant.
+// Nothing is guessed silently: each candidate states its source (the file that revealed it), its
+// confidence and its limits (`notes`). `/kaizen:setup` shows them, the user picks one, then
+// `deploy configure <id>` writes it to .kaizen/config.json without overwriting an existing environment.
 //
-// Retour arrière : la commande native de la plateforme quand elle existe (vercel rollback, heroku
-// rollback, helm rollback, kamal rollback, cap deploy:rollback, kubectl rollout undo). Sinon, un
-// « redéploiement du commit précédent » : la même commande lancée depuis un worktree git du commit
-// cible ($KAIZEN_SHA, fourni par `deploy rollback`). Shell POSIX (Linux, macOS, Git Bash).
+// Rollback: the platform's native command when there is one (vercel rollback, heroku rollback, helm
+// rollback, kamal rollback, cap deploy:rollback, kubectl rollout undo). Otherwise, a "redeploy of the
+// previous commit": the same command run from a git worktree of the target commit ($KAIZEN_SHA,
+// provided by `deploy rollback`). POSIX shell (Linux, macOS, Git Bash).
 
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
@@ -31,7 +31,7 @@ function listDir(root, p) {
   }
 }
 
-// Fichiers jusqu'à `depth` niveaux, hors dépendances : assez pour charts/, k8s/overlays/, infra/.
+// Files up to `depth` levels, excluding dependencies: enough for charts/, k8s/overlays/, infra/.
 function walk(root, dir = '', depth = 3, out = []) {
   if (depth < 0) return out;
   for (const name of listDir(root, dir)) {
@@ -49,8 +49,8 @@ function walk(root, dir = '', depth = 3, out = []) {
   return out;
 }
 
-// Redéploie le commit cible depuis un worktree jetable : retour arrière générique, sans toucher à la
-// copie de travail.
+// Redeploys the target commit from a throwaway worktree: generic rollback, without touching the working
+// copy.
 export function redeployPrevious(command) {
   const wt = '.kaizen/state/rollback-worktree';
   return `git worktree add --force --detach ${wt} "$KAIZEN_SHA" && (cd ${wt} && ${command}); s=$?; git worktree remove --force ${wt}; exit $s`;
@@ -65,22 +65,22 @@ function candidate(id, platform, source, confidence, environments, extra = {}) {
 
 const health = (url) => (url ? { health: { type: 'http', url, expect: 200 } } : {});
 
-// --- Plateformes ---------------------------------------------------------------------------------------
+// --- Platforms -----------------------------------------------------------------------------------------
 
 function vercel(root) {
   if (!has(root, 'vercel.json') && !has(root, '.vercel/project.json')) return null;
-  return candidate('vercel', 'Vercel', has(root, 'vercel.json') ? 'vercel.json' : '.vercel/project.json', 'haute', {
-    staging: { command: 'npx vercel deploy --yes', rollback: null, note: 'déploiement de preview' },
+  return candidate('vercel', 'Vercel', has(root, 'vercel.json') ? 'vercel.json' : '.vercel/project.json', 'high', {
+    staging: { command: 'npx vercel deploy --yes', rollback: null, note: 'preview deployment' },
     production: { command: 'npx vercel deploy --prod --yes', rollback: 'npx vercel rollback' },
-  }, { notes: ['VERCEL_TOKEN requis hors poste authentifié', 'url de production : à renseigner (domaine du projet)'] });
+  }, { notes: ['VERCEL_TOKEN required outside an authenticated machine', 'production url: to fill in (project domain)'] });
 }
 
 function netlify(root) {
   if (!has(root, 'netlify.toml')) return null;
-  return candidate('netlify', 'Netlify', 'netlify.toml', 'haute', {
-    staging: { command: 'npx netlify deploy', rollback: null, note: 'déploiement de brouillon' },
+  return candidate('netlify', 'Netlify', 'netlify.toml', 'high', {
+    staging: { command: 'npx netlify deploy', rollback: null, note: 'draft deployment' },
     production: { command: 'npx netlify deploy --prod', rollback: redeployPrevious('npx netlify deploy --prod') },
-  }, { notes: ['NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID requis en CI', 'retour arrière par redéploiement du commit précédent (la CLI n’a pas de rollback direct)'] });
+  }, { notes: ['NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID required in CI', 'rollback by redeploying the previous commit (the CLI has no direct rollback)'] });
 }
 
 function fly(root) {
@@ -89,9 +89,9 @@ function fly(root) {
   const app = tomlString(t, 'app');
   const path = /\[\[(?:http_service\.checks|services\.http_checks)\]\][^[]*?path\s*=\s*["']([^"']+)["']/s.exec(t)?.[1] || null;
   const url = app ? `https://${app}.fly.dev${path || '/'}` : null;
-  return candidate('fly', 'Fly.io', 'fly.toml', 'haute', {
+  return candidate('fly', 'Fly.io', 'fly.toml', 'high', {
     production: { command: 'fly deploy', rollback: redeployPrevious('fly deploy'), url: app ? `https://${app}.fly.dev` : null },
-  }, { signals: health(url), notes: [path ? `health-check ${path} lu dans fly.toml` : 'aucun check HTTP dans fly.toml : health-check sur la racine', 'retour arrière par redéploiement du commit précédent'] });
+  }, { signals: health(url), notes: [path ? `health-check ${path} read from fly.toml` : 'no HTTP check in fly.toml: health-check on the root', 'rollback by redeploying the previous commit'] });
 }
 
 function heroku(root) {
@@ -100,9 +100,9 @@ function heroku(root) {
   const appJson = read(root, 'app.json');
   if (!viaRemote && !(appJson && /heroku/i.test(appJson))) return null;
   const branch = defaultBranch(root) || 'main';
-  return candidate('heroku', 'Heroku', viaRemote ? 'remote git heroku' : 'app.json', viaRemote ? 'haute' : 'moyenne', {
+  return candidate('heroku', 'Heroku', viaRemote ? 'remote git heroku' : 'app.json', viaRemote ? 'high' : 'medium', {
     production: { command: `git push heroku HEAD:${branch}`, rollback: 'heroku rollback' },
-  }, { notes: ['CLI heroku authentifiée requise pour le retour arrière'] });
+  }, { notes: ['authenticated heroku CLI required for rollback'] });
 }
 
 function kamal(root) {
@@ -114,7 +114,7 @@ function kamal(root) {
   const mk = (d) => ({ command: `kamal deploy${d ? ` -d ${d}` : ''}`, rollback: `kamal rollback "$KAIZEN_SHA"${d ? ` -d ${d}` : ''}` });
   if (dests.includes('staging')) envs.staging = mk('staging');
   envs.production = mk(dests.includes('production') ? 'production' : null);
-  return candidate('kamal', 'Kamal', 'config/deploy.yml', 'haute', envs, { notes: [`health-check Kamal : ${path} (url de l’hôte à renseigner)`, 'kamal versionne par SHA git : le retour arrière vise le commit du déploiement précédent'] });
+  return candidate('kamal', 'Kamal', 'config/deploy.yml', 'high', envs, { notes: [`Kamal health-check: ${path} (host url to fill in)`, 'kamal versions by git SHA: rollback targets the previous deployment\'s commit'] });
 }
 
 function capistrano(root) {
@@ -125,7 +125,7 @@ function capistrano(root) {
     const env = s === 'prod' ? 'production' : s;
     envs[env] = { command: `bundle exec cap ${s} deploy`, rollback: `bundle exec cap ${s} deploy:rollback` };
   }
-  return candidate('capistrano', 'Capistrano', 'config/deploy.rb', 'haute', envs);
+  return candidate('capistrano', 'Capistrano', 'config/deploy.rb', 'high', envs);
 }
 
 function helm(root, files) {
@@ -144,7 +144,7 @@ function helm(root, files) {
       rollback: `helm rollback ${name} --wait`,
     };
   }
-  return candidate('helm', 'Kubernetes (Helm)', chart, 'haute', envs, { notes: ['suppose une image taguée par SHA (image.tag) : à ajuster à votre chart', 'kubectl/helm configurés sur le bon contexte de cluster'] });
+  return candidate('helm', 'Kubernetes (Helm)', chart, 'high', envs, { notes: ['assumes an image tagged by SHA (image.tag): adjust to your chart', 'kubectl/helm configured on the right cluster context'] });
 }
 
 function k8sDeploymentName(root, files) {
@@ -170,7 +170,7 @@ function kustomize(root, files) {
     envs[env] = { command: `kubectl apply -k ${dirOf(k)} && ${dep ? `kubectl rollout status deployment/${dep}` : 'true'}`, rollback: dep ? `kubectl rollout undo deployment/${dep}` : redeployPrevious(`kubectl apply -k ${dirOf(k)}`) };
   }
   if (!Object.keys(envs).length) return null;
-  return candidate('kustomize', 'Kubernetes (Kustomize)', kfiles[0], 'moyenne', envs, { notes: [dep ? `Deployment « ${dep} » : retour arrière par kubectl rollout undo` : 'aucun Deployment trouvé : retour arrière par réapplication du commit précédent', 'kubectl configuré sur le bon contexte de cluster'] });
+  return candidate('kustomize', 'Kubernetes (Kustomize)', kfiles[0], 'medium', envs, { notes: [dep ? `Deployment "${dep}": rollback with kubectl rollout undo` : 'no Deployment found: rollback by re-applying the previous commit', 'kubectl configured on the right cluster context'] });
 }
 
 function compose(root) {
@@ -178,9 +178,9 @@ function compose(root) {
   if (!f) return null;
   const prod = ['compose.prod.yaml', 'compose.prod.yml', 'docker-compose.prod.yml', 'docker-compose.production.yml'].find((x) => has(root, x));
   const cmd = `docker compose -f ${f}${prod ? ` -f ${prod}` : ''} up -d --build --wait`;
-  return candidate('compose', 'Docker Compose', prod || f, prod ? 'moyenne' : 'faible', {
+  return candidate('compose', 'Docker Compose', prod || f, prod ? 'medium' : 'low', {
     production: { command: cmd, rollback: redeployPrevious(cmd) },
-  }, { notes: [prod ? `surcharge de production ${prod}` : 'souvent un environnement de développement : à confirmer avant de l’utiliser pour la production', 'DOCKER_HOST ou contexte docker vers l’hôte de production'] });
+  }, { notes: [prod ? `production override ${prod}` : 'often a development environment: confirm before using it for production', 'DOCKER_HOST or docker context pointing to the production host'] });
 }
 
 function terraform(root, files) {
@@ -189,15 +189,15 @@ function terraform(root, files) {
   const dir = dirname(tf);
   const chdir = dir === '.' ? '' : ` -chdir=${dir}`;
   const cmd = `terraform${chdir} init -input=false && terraform${chdir} apply -input=false -auto-approve`;
-  return candidate('terraform', 'Terraform', tf, 'faible', {
+  return candidate('terraform', 'Terraform', tf, 'low', {
     production: { command: cmd, rollback: redeployPrevious(cmd) },
-  }, { notes: ['infrastructure : relisez le plan (terraform plan) avant toute mise en production', 'retour arrière par réapplication de la configuration du commit précédent ; une ressource détruite ne revient pas'] });
+  }, { notes: ['infrastructure: review the plan (terraform plan) before any production release', 'rollback by re-applying the previous commit\'s configuration; a destroyed resource does not come back'] });
 }
 
 function serverless(root) {
   if (!has(root, 'serverless.yml') && !has(root, 'serverless.ts')) return null;
   const mk = (stage) => ({ command: `npx serverless deploy --stage ${stage}`, rollback: redeployPrevious(`npx serverless deploy --stage ${stage}`) });
-  return candidate('serverless', 'Serverless Framework', has(root, 'serverless.yml') ? 'serverless.yml' : 'serverless.ts', 'haute', { staging: mk('staging'), production: mk('production') });
+  return candidate('serverless', 'Serverless Framework', has(root, 'serverless.yml') ? 'serverless.yml' : 'serverless.ts', 'high', { staging: mk('staging'), production: mk('production') });
 }
 
 function sam(root) {
@@ -210,7 +210,7 @@ function sam(root) {
   };
   const envs = { production: mk('production') };
   if (/^\[staging/m.test(conf)) envs.staging = mk('staging');
-  return candidate('sam', 'AWS SAM', f, 'haute', envs, { notes: ['identifiants AWS du bon compte requis'] });
+  return candidate('sam', 'AWS SAM', f, 'high', envs, { notes: ['AWS credentials for the right account required'] });
 }
 
 function firebase(root) {
@@ -225,12 +225,12 @@ function firebase(root) {
   };
   const envs = { production: mk(projects.production ? 'production' : projects.prod ? 'prod' : null) };
   if (projects.staging) envs.staging = mk('staging');
-  return candidate('firebase', 'Firebase', 'firebase.json', 'haute', envs, { notes: ['FIREBASE_TOKEN ou compte de service requis en CI'] });
+  return candidate('firebase', 'Firebase', 'firebase.json', 'high', envs, { notes: ['FIREBASE_TOKEN or service account required in CI'] });
 }
 
-// --- CI : un workflow de déploiement existe déjà ----------------------------------------------------
+// --- CI: a deployment workflow already exists -------------------------------------------------------
 
-// Noms des inputs de `workflow_dispatch`, lus par indentation (sans dépendance YAML).
+// Names of `workflow_dispatch` inputs, read by indentation (no YAML dependency).
 export function dispatchInputs(text) {
   const lines = text.split(/\r?\n/);
   const indent = (l) => l.length - l.trimStart().length;
@@ -275,25 +275,25 @@ function githubWorkflows(root) {
       const mk = (env, sha) => `gh workflow run ${f}${envInput ? ` -f ${envInput}=${env}` : ''}${refInput ? ` -f ${refInput}="${sha}"` : ''} && ${watch}`;
       const envs = { production: { command: mk('production', '$KAIZEN_SHA'), rollback: refInput ? mk('production', '$KAIZEN_SHA') : null } };
       if (envInput) envs.staging = { command: mk('staging', '$KAIZEN_SHA'), rollback: refInput ? mk('staging', '$KAIZEN_SHA') : null };
-      out.push(candidate(`gha:${f}`, `GitHub Actions (${name})`, path, 'haute', envs, {
+      out.push(candidate(`gha:${f}`, `GitHub Actions (${name})`, path, 'high', envs, {
         notes: [
-          `workflow_dispatch${inputs.length ? ` avec ${inputs.join(', ')}` : ' sans input'}`,
-          refInput ? `retour arrière : le même workflow sur le commit cible (${refInput})` : 'pas d’input de commit : le workflow déploie la tête de branche, retour arrière à prévoir (revert ou input ref)',
-          'gh authentifié requis ; Kaizen attend la fin du run (gh run watch)',
+          `workflow_dispatch${inputs.length ? ` with ${inputs.join(', ')}` : ' without inputs'}`,
+          refInput ? `rollback: the same workflow on the target commit (${refInput})` : 'no commit input: the workflow deploys the branch head, rollback to plan (revert or a ref input)',
+          'authenticated gh required; Kaizen waits for the run to finish (gh run watch)',
         ],
       }));
     } else if (/on\s*:[\s\S]*?push\s*:/m.test(t)) {
-      // Déploiement continu : le merge déclenche déjà la mise en production. Kaizen suit le run du commit.
+      // Continuous deployment: the merge already triggers the release. Kaizen follows the commit's run.
       const cmd = `gh run watch "$(gh run list --workflow ${f} --commit "$KAIZEN_SHA" --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status`;
-      out.push(candidate(`gha-continuous:${f}`, `Déploiement continu (${name})`, path, 'moyenne', {
+      out.push(candidate(`gha-continuous:${f}`, `Continuous deployment (${name})`, path, 'medium', {
         production: { command: cmd, rollback: null },
-      }, { notes: ['le déploiement part déjà à chaque push : Kaizen attend le run du commit, pose le tag et surveille', 'retour arrière : revert sur la branche par défaut (pas de commande automatique)'] }));
+      }, { notes: ['deployment already runs on every push: Kaizen waits for the commit\'s run, tags it and watches', 'rollback: revert on the default branch (no automatic command)'] }));
     }
   }
   return out;
 }
 
-// --- Scripts du repo : Makefile, package.json ----------------------------------------------------------
+// --- Repo scripts: Makefile, package.json -------------------------------------------------------------
 
 function scripts(root) {
   const out = [];
@@ -308,7 +308,7 @@ function scripts(root) {
     const rbStag = pick(/^rollback[-_]?(staging|stage)$/) || pick(/^rollback$/);
     if (prodT) envs.production = { command: `make ${prodT}`, rollback: rbProd ? `make ${rbProd}` : redeployPrevious(`make ${prodT}`) };
     if (stagT) envs.staging = { command: `make ${stagT}`, rollback: rbStag ? `make ${rbStag}` : redeployPrevious(`make ${stagT}`) };
-    if (Object.keys(envs).length) out.push(candidate('make', 'Makefile', 'Makefile', 'moyenne', envs, { notes: ['cibles du repo : vérifiez qu’elles ne demandent pas de variable (ENV=…)'] }));
+    if (Object.keys(envs).length) out.push(candidate('make', 'Makefile', 'Makefile', 'medium', envs, { notes: ['repo targets: check they do not require a variable (ENV=…)'] }));
   }
   let pkg = null;
   try {
@@ -325,12 +325,12 @@ function scripts(root) {
     const envs = {};
     if (prod) envs.production = { command: run(prod), rollback: rb('(prod|production)') ? run(rb('(prod|production)')) : redeployPrevious(run(prod)) };
     if (stag) envs.staging = { command: run(stag), rollback: rb('(staging|stage|preview)') ? run(rb('(staging|stage|preview)')) : redeployPrevious(run(stag)) };
-    out.push(candidate('npm', 'Scripts npm', 'package.json', 'moyenne', envs));
+    out.push(candidate('npm', 'npm scripts', 'package.json', 'medium', envs));
   }
   return out;
 }
 
-// --- Point d'entrée ---------------------------------------------------------------------------------
+// --- Entry point -----------------------------------------------------------------------------------
 
 export function detectDeploy(root) {
   const files = walk(root);
@@ -339,15 +339,15 @@ export function detectDeploy(root) {
     helm(root, files), kustomize(root, files), serverless(root), sam(root), firebase(root),
     ...githubWorkflows(root), ...scripts(root), compose(root), terraform(root, files),
   ].filter(Boolean);
-  const order = { haute: 0, moyenne: 1, faible: 2 };
+  const order = { high: 0, medium: 1, low: 2 };
   return found.sort((a, b) => order[a.confidence] - order[b.confidence]);
 }
 
-// Écrit le candidat choisi dans .kaizen/config.json : un environnement déjà déclaré n'est remplacé
-// qu'avec `force` ; le health-check proposé est ajouté s'il n'existe pas déjà.
+// Writes the chosen candidate to .kaizen/config.json: an already declared environment is only replaced
+// with `force`; the proposed health-check is added if it does not exist yet.
 export function configureDeploy(root, id, { force = false } = {}) {
   const c = detectDeploy(root).find((x) => x.id === id);
-  if (!c) throw new Error(`candidat inconnu : "${id}" (voir \`deploy detect\`)`);
+  if (!c) throw new Error(`unknown candidate: "${id}" (see \`deploy detect\`)`);
   const file = join(root, '.kaizen', 'config.json');
   mkdirSync(dirname(file), { recursive: true });
   const cfg = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};

@@ -1,94 +1,91 @@
 ---
 name: polish
-description: Peaufine l'expérience d'une fonctionnalité qui marche déjà, guidé par l'utilisateur sur la page vivante — détecte et démarre le serveur de dev (Next, Vite, Nuxt, SvelteKit, Astro, Angular, Rails, Django, Phoenix, Laravel, .claude/launch.json), ouvre la page dans le navigateur (Playwright), applique à chaud chaque retour (espacements, textes, états, responsive, accessibilité), vérifie par capture, et commite en local. Utiliser pour « peaufinons l'UI », « polish », « ajustons le rendu avant de livrer », /kaizen:polish. Ne pousse jamais, ne fait pas de QA autonome.
+description: Polishes the experience of a feature that already works, guided by the user on the live page — detects and starts the dev server (Next, Vite, Nuxt, SvelteKit, Astro, Angular, Rails, Django, Phoenix, Laravel, .claude/launch.json), opens the page in the browser (Playwright), applies each piece of feedback live (spacing, copy, states, responsiveness, accessibility), checks by screenshot, and commits locally. Use when the user says "let's polish the UI", "polish", "let's tune the rendering before shipping", /kaizen:polish. Never pushes, does no autonomous QA.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion
-argument-hint: "[n° de PR, branche, ou vide = branche courante] [url ou route à ouvrir]"
+argument-hint: "[PR number, branch, or empty = current branch] [url or route to open]"
 ---
 
-# Polish — l'utilisateur regarde, Claude ajuste
+# Polish — the user looks, Claude adjusts
 
-Mettre une fonctionnalité **qui marche** devant l'utilisateur et transformer ses observations en
-retouches ciblées sur la page en cours d'exécution. **C'est l'utilisateur qui dirige** ce qu'on
-regarde et ce qu'on change : pas de checklist autonome, pas de QA générale.
+Put a feature **that works** in front of the user and turn their observations into targeted touch-ups
+on the running page. **The user directs** what is looked at and what changes: no autonomous checklist,
+no general QA. Talk to the user in their language.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**Terminé quand :** l'utilisateur dit qu'il a fini, chaque retouche demandée est visible sur la page
-ou rapportée comme bloquée, et les changements sont commités **en local**. Un blocage serveur ou de
-copie de travail termine aussi la session, rapporté avec ce qu'il faut pour reprendre.
+**Done when:** the user says they are done, each requested touch-up is visible on the page or reported
+as blocked, and the changes are committed **locally**. A server or working-copy blocker also ends the
+session, reported with what is needed to resume.
 
-**Limites** : jamais sur la branche par défaut ; jamais de push ni de PR (c'est `/kaizen:ship`) ;
-on ne touche qu'à la surface concernée par les retours.
+**Limits**: never on the default branch; never a push or a PR (that is `/kaizen:ship`); only touch the
+surface concerned by the feedback.
 
-## 1. Espace de travail
+## 1. Workspace
 
-- PR ou branche nommée : si elle est déjà extraite dans un autre worktree (`git worktree list`),
-  travaille là-bas ; sinon `gh pr checkout <n>` / `git switch <branche>` **seulement** si l'arbre
-  courant est propre. Sans argument : la branche courante.
-- Branche par défaut avec un arbre propre → crée une branche locale `polish/<sujet-court>` et dis-le
-  (sans risque : rien n'est poussé). Arbre sale sur la branche par défaut, ou HEAD détaché : dis-le et
-  arrête.
+- Named PR or branch: if it is already checked out in another worktree (`git worktree list`), work
+  there; otherwise `gh pr checkout <n>` / `git switch <branch>` **only** if the current tree is clean.
+  Without an argument: the current branch.
+- Default branch with a clean tree → create a local branch `polish/<short-topic>` and say so (safe:
+  nothing is pushed). Dirty tree on the default branch, or detached HEAD: say so and stop.
 
-## 2. Serveur de dev
+## 2. Dev server
 
-**Toujours**, même si l'utilisateur annonce qu'il ne regardera pas ou que la retouche paraît triviale :
-la page servie est la seule preuve que la retouche rend ce qui était demandé, et le rapport final
-donne son URL et la commande d'arrêt par PID (`kill <pid>`, jamais `pkill`). Seul un blocage
-(aucun candidat, port pris par un autre projet, serveur injoignable) en dispense, et il est rapporté.
+**Always**, even if the user says they will not look or the touch-up seems trivial: the served page is
+the only evidence that the touch-up renders what was asked, and the final report gives its URL and the
+stop command by PID (`kill <pid>`, never `pkill`). Only a blocker (no candidate, port taken by another
+project, unreachable server) exempts from it, and it is reported.
 
-1. `node "$K" dev detect` → candidats (commande, dossier, port, URL, source). `.claude/launch.json`
-   fait foi s'il existe. Plusieurs candidats (monorepo) → demande lequel ; aucun → demande la commande
-   et le port, sans deviner.
-2. **Port déjà occupé** (`node "$K" dev probe --url <url> --timeout-seconds 2` répond) : réutilise-le
-   seulement si c'est bien ce projet (page attendue, process visible dans `lsof -i :<port>` ou `ss`) ;
-   sinon demande : arrêter ce process, autre port, ou abandonner. Ne tue jamais un process d'office.
-3. Sinon démarre-le **en arrière-plan** (outil Bash, `run_in_background: true`) dans son dossier,
-   avec son environnement, sortie redirigée vers un fichier temporaire
+1. `node "$K" dev detect` → candidates (command, folder, port, URL, source). `.claude/launch.json` wins
+   if it exists. Several candidates (monorepo) → ask which one; none → ask for the command and the
+   port, without guessing.
+2. **Port already in use** (`node "$K" dev probe --url <url> --timeout-seconds 2` answers): reuse it
+   only if it really is this project (expected page, process visible in `lsof -i :<port>` or `ss`);
+   otherwise ask: stop that process, another port, or give up. Never kill a process on your own.
+3. Otherwise start it **in the background** (Bash tool, `run_in_background: true`) in its folder, with
+   its environment, output redirected to a temporary file
    (`mktemp -d "${TMPDIR:-/tmp}/kaizen-polish-XXXXXX"`).
-4. `node "$K" dev probe --url <url> --timeout-seconds 60`. Injoignable → montre les 20 dernières lignes
-   du log du serveur lancé et demande : corriger l'URL/la commande, ou arrêter.
-5. Après une détection automatique réussie, propose **une fois** d'enregistrer le tuple dans
-   `.claude/launch.json` (`{"configurations":[{"name","runtimeExecutable","runtimeArgs","cwd","port","env"}]}`).
+4. `node "$K" dev probe --url <url> --timeout-seconds 60`. Unreachable → show the last 20 lines of the
+   started server's log and ask: fix the URL/the command, or stop.
+5. After a successful automatic detection, offer **once** to save the tuple in `.claude/launch.json`
+   (`{"configurations":[{"name","runtimeExecutable","runtimeArgs","cwd","port","env"}]}`).
 
-## 3. Ouvrir et attendre
+## 3. Open and wait
 
-Ouvre la page (route passée en argument, sinon celle que la branche touche — `git diff --name-only`
-vers les fichiers de pages/routes) avec l'outil navigateur disponible : MCP Playwright du plugin
-`playwright` (`browser_navigate`, `browser_take_screenshot`, `browser_resize`), sinon donne l'URL.
-Puis dis :
+Open the page (route passed as argument, otherwise the one the branch touches — `git diff --name-only`
+towards page/route files) with the available browser tool: the `playwright` plugin's Playwright MCP
+(`browser_navigate`, `browser_take_screenshot`, `browser_resize`), otherwise give the URL. Then say (in
+the user's language):
 
 ```text
-Serveur de dev : <url>
-Parcours la fonctionnalité et dis-moi ce qui pourrait être mieux.
+Dev server: <url>
+Walk through the feature and tell me what could be better.
 ```
 
-**N'entame pas de revue pendant qu'il navigue.** Attends ses retours.
+**Do not start a review while they browse.** Wait for their feedback.
 
-## 4. Boucle
+## 4. Loop
 
-Pour chaque retour :
-1. Reformule en une ligne ce que tu vas changer si c'est ambigu (sinon, fais-le).
-2. Inspecte le minimum (composant, styles, textes) ; édite **la surface concernée** en suivant le design
-   system et les composants existants (pas de nouvelle couleur ou d'espacement magique si des jetons
-   existent) ; le rechargement à chaud met la page à jour.
-3. Si l'utilisateur demande à voir, ou si le retour est visuel : capture après changement (et à
-   375 px de large si le retour concerne le mobile). Sans outil navigateur, demande-lui ce qu'il voit.
-4. Garde une liste courante : retour → changement → fichier.
+For each piece of feedback:
+1. Restate in one line what you will change if it is ambiguous (otherwise, do it).
+2. Inspect the minimum (component, styles, copy); edit **the surface concerned** following the design
+   system and existing components (no new color or magic spacing if tokens exist); hot reload updates
+   the page.
+3. If the user asks to see, or if the feedback is visual: screenshot after the change (and at 375 px
+   wide if the feedback concerns mobile). Without a browser tool, ask them what they see.
+4. Keep a running list: feedback → change → file.
 
-Retours récurrents qui valent la peine d'être anticipés quand ils touchent la zone : états vide /
-chargement / erreur, focus clavier visible, contrastes, textes tronqués, petits écrans, double
-soumission. Propose-les **une fois**, en une ligne, sans les imposer.
+Recurring feedback worth anticipating when it touches the area: empty / loading / error states,
+visible keyboard focus, contrast, truncated text, small screens, double submit. Suggest them **once**,
+in one line, without imposing them.
 
-## 5. Clore
+## 5. Close
 
-Quand l'utilisateur dit qu'il a fini :
-1. `node "$K" verify` (les retouches ne doivent rien casser) ; rouge → corrige ou annule la retouche
-   fautive.
-2. Commit local conventionnel (`style(<JIRA>): …` ou `fix(<JIRA>): …` selon la nature), fichiers
-   nommés explicitement — les modifications antérieures de l'utilisateur hors polish restent hors du
-   commit.
-3. Rapport : retouches appliquées, bloquées (et pourquoi), commit(s), URL du serveur **toujours en
-   marche** et comment l'arrêter : son PID exact (`kill <pid>`), jamais un `pkill` par motif qui
-   toucherait les serveurs d'autres projets. Suggère `/kaizen:ship` pour livrer, et `/kaizen:learn` si une
-   retouche a révélé une règle d'UI à retenir (ou une règle de pack « design »).
+When the user says they are done:
+1. `node "$K" verify` (touch-ups must break nothing); red → fix or revert the faulty touch-up.
+2. Local conventional commit (`style(<JIRA>): …` or `fix(<JIRA>): …` depending on the nature), files
+   named explicitly — the user's earlier changes outside polish stay out of the commit.
+3. Report: touch-ups applied, blocked (and why), commit(s), URL of the server **still running** and how
+   to stop it: its exact PID (`kill <pid>`), never a pattern `pkill` that would hit other projects'
+   servers. Suggest `/kaizen:ship` to ship, and `/kaizen:learn` if a touch-up revealed a UI rule worth
+   keeping (or a "design" pack rule).

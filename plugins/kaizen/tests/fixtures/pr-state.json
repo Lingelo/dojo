@@ -11,12 +11,12 @@
     ]}}}}]},
     "reviewThreadPages": [
       [{"id": "T1", "isResolved": false, "isOutdated": false, "path": "app/export.rb", "line": 12, "originalLine": 12,
-        "comments": {"nodes": [{"id": "C1", "databaseId": 1, "author": {"login": "bob"}, "body": "Il manque le BOM UTF-8 ici", "createdAt": "2026-10-02T08:10:00Z", "url": "https://x/c1"}]}}],
+        "comments": {"nodes": [{"id": "C1", "databaseId": 1, "author": {"login": "bob"}, "body": "The UTF-8 BOM is missing here", "createdAt": "2026-10-02T08:10:00Z", "url": "https://x/c1"}]}}],
       [{"id": "T2", "isResolved": true, "isOutdated": false, "path": "a.rb", "line": 1, "originalLine": 1, "comments": {"nodes": [{"id": "C2", "author": {"login": "bob"}, "body": "ok", "createdAt": "2026-10-02T08:11:00Z", "url": "https://x/c2"}]}}]
     ],
     "comments": {"nodes": [
-      {"id": "IC1", "databaseId": 10, "author": {"login": "carol"}, "body": "Peux-tu ajouter une capture ?", "createdAt": "2026-10-02T08:12:00Z", "updatedAt": "2026-10-02T08:12:00Z", "url": "https://x/ic1"},
-      {"id": "IC2", "databaseId": 11, "author": {"login": "angelo"}, "body": "Statut : en cours\n\n<!-- kaizen -->", "createdAt": "2026-10-02T08:13:00Z", "updatedAt": "2026-10-02T08:13:00Z", "url": "https://x/ic2"}
+      {"id": "IC1", "databaseId": 10, "author": {"login": "carol"}, "body": "Could you add a screenshot?", "createdAt": "2026-10-02T08:12:00Z", "updatedAt": "2026-10-02T08:12:00Z", "url": "https://x/ic1"},
+      {"id": "IC2", "databaseId": 11, "author": {"login": "angelo"}, "body": "Status: in progress\n\n<!-- kaizen -->", "createdAt": "2026-10-02T08:13:00Z", "updatedAt": "2026-10-02T08:13:00Z", "url": "https://x/ic2"}
     ]},
     "reviews": {"nodes": [{"id": "R1", "databaseId": 20, "author": {"login": "bob"}, "body": "", "state": "COMMENTED", "submittedAt": "2026-10-02T08:10:00Z", "updatedAt": "2026-10-02T08:10:00Z", "url": "https://x/r1"}]}
   }

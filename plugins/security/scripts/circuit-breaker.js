@@ -2,7 +2,7 @@
 
 /**
  * Circuit Breaker — Reusable utility module
- * Pattern Netflix Hystrix simplifié pour contexte CLI.
+ * Simplified Netflix Hystrix pattern for a CLI context.
  *
  * Usage:
  *   const { CircuitBreaker } = require('./circuit-breaker');

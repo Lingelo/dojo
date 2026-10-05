@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Composition</title>
@@ -13,7 +13,7 @@
   html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
   body { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; color: var(--ink); position: relative; }
 
-  /* Une scène = un calque plein cadre ; la timeline se lit dans les animation-delay */
+  /* One scene = one full-frame layer; the timeline reads in the animation-delay values */
   .scene { position: absolute; inset: 0; display: grid; place-items: center; }
 
   .s1 h1 { font-size: 140px; letter-spacing: -0.04em; opacity: 0;
@@ -26,11 +26,11 @@
 </style>
 </head>
 <body data-width="1920" data-height="1080" data-fps="60" data-duration="5">
-  <section class="scene s1"><h1>Titre</h1></section>
-  <section class="scene s2"><p>Sous-titre</p></section>
+  <section class="scene s1"><h1>Title</h1></section>
+  <section class="scene s2"><p>Subtitle</p></section>
 
 <script>
-  // Optionnel : animation calculée depuis le temps (secondes). Appelé à chaque frame par le renderer.
+  // Optional: animation computed from time (seconds). Called on every frame by the renderer.
   // window.__seek = (t) => { … };
 </script>
 </body>

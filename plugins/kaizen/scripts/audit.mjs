@@ -1,11 +1,11 @@
-// Kaizen — diagnostic de maturité du projet : ce qu'un SDLC solide suppose, ce qui est en place,
-// ce qui manque, et comment le corriger, par ordre de priorité.
+// Kaizen — project maturity diagnosis: what a solid SDLC assumes, what is in place, what is missing,
+// and how to fix it, in priority order.
 //
-// Cinq domaines, du socle à la boucle : Fondations (CI, tests, secrets), Flux (revue, ownership,
-// dépendances), Livraison (déploiement, retour arrière), Exploitation (signaux, santé), Boucle Kaizen.
-// Chaque contrôle rend { id, area, title, status: ok|warn|missing|unknown, evidence, fix, priority }.
-// Lecture seule. Les corrections simples et sans ambiguïté ont un **gabarit** (`audit fix <id>`), qui
-// n'écrase jamais un fichier existant ; les autres renvoient vers la skill qui s'en charge.
+// Five areas, from the base to the loop: Foundations (CI, tests, secrets), Flow (review, ownership,
+// dependencies), Delivery (deployment, rollback), Operations (signals, health), Kaizen loop.
+// Each check returns { id, area, title, status: ok|warn|missing|unknown, evidence, fix, priority }.
+// Read-only. Simple, unambiguous fixes have a **scaffold** (`audit fix <id>`), which never overwrites an
+// existing file; the others point to the skill that handles them.
 
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -60,19 +60,19 @@ function githubRepo(root) {
 
 function branchProtection(root, branch) {
   const gh = githubRepo(root);
-  if (!gh || !branch) return { status: 'unknown', evidence: 'dépôt non hébergé sur GitHub, ou branche par défaut inconnue' };
+  if (!gh || !branch) return { status: 'unknown', evidence: 'repository not hosted on GitHub, or default branch unknown' };
   try {
     const [cmd, argv] = ghCommand(['api', `repos/${gh.owner}/${gh.repo}/branches/${branch}/protection`, '--jq', '{reviews: .required_pull_request_reviews.required_approving_review_count, checks: (.required_status_checks.contexts | length)}']);
     const r = spawnSync(cmd, argv, { encoding: 'utf8', timeout: 20000 });
     if (r.status === 0) {
       const p = JSON.parse(r.stdout || '{}');
       const ok = (p.reviews || 0) >= 1 && (p.checks || 0) >= 1;
-      return { status: ok ? 'ok' : 'warn', evidence: `${p.reviews || 0} approbation(s) requise(s), ${p.checks || 0} check(s) requis` };
+      return { status: ok ? 'ok' : 'warn', evidence: `${p.reviews || 0} required approval(s), ${p.checks || 0} required check(s)` };
     }
-    if (/Branch not protected|404/.test(`${r.stderr}${r.stdout}`)) return { status: 'missing', evidence: `${branch} n'est pas protégée` };
-    return { status: 'unknown', evidence: 'gh n’a pas pu lire la protection (droits admin requis ?)' };
+    if (/Branch not protected|404/.test(`${r.stderr}${r.stdout}`)) return { status: 'missing', evidence: `${branch} is not protected` };
+    return { status: 'unknown', evidence: 'gh could not read the protection (admin rights required?)' };
   } catch {
-    return { status: 'unknown', evidence: 'gh indisponible' };
+    return { status: 'unknown', evidence: 'gh unavailable' };
   }
 }
 
@@ -83,88 +83,88 @@ export function audit(root, { github = true } = {}) {
   const checks = [];
   const add = (id, area, title, status, evidence, fix, priority) => checks.push({ id, area, title, status, evidence, fix, priority });
 
-  // --- Fondations -------------------------------------------------------------------------------------
+  // --- Foundations -----------------------------------------------------------------------------------
   const remote = git(root, ['remote'], { allowFail: true });
-  add('remote', 'Fondations', 'Dépôt distant', remote ? 'ok' : 'missing', remote ? `remote : ${remote.split('\n').join(', ')}` : 'aucun remote', { how: 'ajouter un remote (git remote add origin …) : sans lui, ni PR, ni CI, ni partage des leçons' }, 1);
+  add('remote', 'Foundations', 'Remote repository', remote ? 'ok' : 'missing', remote ? `remote: ${remote.split('\n').join(', ')}` : 'no remote', { how: 'add a remote (git remote add origin …): without it, no PR, no CI, no shared learnings' }, 1);
 
   const workflows = ls(root, '.github/workflows').filter((f) => /\.ya?ml$/.test(f));
   const otherCi = CI_FILES.filter((f) => has(root, f));
   const ciText = [...workflows.map((f) => read(root, `.github/workflows/${f}`)), ...otherCi.map((f) => read(root, f))].join('\n');
   const ciRunsTests = /\btest\b|pytest|rspec|go test|cargo test|phpunit|mvn|gradle/.test(ciText);
   const ciFound = workflows.length || otherCi.length;
-  add('ci', 'Fondations', 'Intégration continue qui lance les tests', !ciFound ? 'missing' : ciRunsTests ? 'ok' : 'warn',
-    !ciFound ? 'aucune configuration de CI' : `${[...workflows.map((f) => `.github/workflows/${f}`), ...otherCi].join(', ')}${ciRunsTests ? '' : ' — aucune étape de test reconnue'}`,
-    { how: 'une CI qui lance test, lint et typage à chaque PR', scaffold: commands.test ? 'ci' : null }, 1);
+  add('ci', 'Foundations', 'Continuous integration running the tests', !ciFound ? 'missing' : ciRunsTests ? 'ok' : 'warn',
+    !ciFound ? 'no CI configuration' : `${[...workflows.map((f) => `.github/workflows/${f}`), ...otherCi].join(', ')}${ciRunsTests ? '' : ' — no recognized test step'}`,
+    { how: 'a CI that runs tests, lint and type checks on every PR', scaffold: commands.test ? 'ci' : null }, 1);
 
   const files = sourceFiles(root);
   const testFiles = files.filter((f) => TEST_FILE.test(f));
-  add('tests', 'Fondations', 'Tests automatisés', commands.test && testFiles.length ? 'ok' : commands.test || testFiles.length ? 'warn' : 'missing',
-    `${commands.test ? `commande : ${commands.test}` : 'aucune commande de test'} · ${testFiles.length} fichier(s) de test sur ${files.length} source(s)`,
-    { how: commands.test ? 'écrire des tests (le garde-fou et la revue les exigent)' : 'déclarer la commande de test (.kaizen/config.json → verify.test) et écrire les premiers tests' }, 1);
+  add('tests', 'Foundations', 'Automated tests', commands.test && testFiles.length ? 'ok' : commands.test || testFiles.length ? 'warn' : 'missing',
+    `${commands.test ? `command: ${commands.test}` : 'no test command'} · ${testFiles.length} test file(s) out of ${files.length} source(s)`,
+    { how: commands.test ? 'write tests (the quality gate and the review require them)' : 'declare the test command (.kaizen/config.json → verify.test) and write the first tests' }, 1);
 
-  add('lint', 'Fondations', 'Lint', commands.lint ? 'ok' : 'warn', commands.lint || 'aucun linter détecté', { how: 'ajouter un linter de la stack et le déclarer dans verify.lint' }, 3);
+  add('lint', 'Foundations', 'Lint', commands.lint ? 'ok' : 'warn', commands.lint || 'no linter detected', { how: 'add a linter for the stack and declare it in verify.lint' }, 3);
   const typed = has(root, 'tsconfig.json') || /mypy|pyright/.test(read(root, 'pyproject.toml') || '');
-  if (typed || commands.typecheck) add('typecheck', 'Fondations', 'Typage vérifié', commands.typecheck ? 'ok' : 'warn', commands.typecheck || 'projet typé sans commande de vérification', { how: 'déclarer verify.typecheck (ex. tsc --noEmit)' }, 2);
+  if (typed || commands.typecheck) add('typecheck', 'Foundations', 'Type checking', commands.typecheck ? 'ok' : 'warn', commands.typecheck || 'typed project without a check command', { how: 'declare verify.typecheck (e.g. tsc --noEmit)' }, 2);
 
   const gi = read(root, '.gitignore') || '';
   const envIgnored = /(^|\n)\s*\/?\.env(\*|\b)/.test(gi);
-  add('gitignore_env', 'Fondations', 'Fichiers de secrets ignorés par git', envIgnored ? 'ok' : 'missing', envIgnored ? '.env ignoré' : '.env absent de .gitignore', { how: 'ignorer .env et ses variantes', scaffold: 'gitignore_env' }, 1);
+  add('gitignore_env', 'Foundations', 'Secret files ignored by git', envIgnored ? 'ok' : 'missing', envIgnored ? '.env ignored' : '.env missing from .gitignore', { how: 'ignore .env and its variants', scaffold: 'gitignore_env' }, 1);
 
   const settings = `${read(root, '.claude/settings.json') || ''}${read(root, '.claude/settings.local.json') || ''}`;
-  const scanning = /security@angelo-plugins/.test(settings) ? 'plugin security' : firstOf(root, ['.gitleaks.toml', '.secrets.baseline', '.trufflehog.yml']) || (/gitleaks|detect-secrets|trufflehog/.test(`${read(root, '.pre-commit-config.yaml') || ''}${ciText}`) ? 'scanner dans pre-commit ou la CI' : null);
-  add('secret_scanning', 'Fondations', 'Détection de secrets', scanning ? 'ok' : 'missing', scanning || 'aucun scanner de secrets', { how: 'activer le plugin security du marketplace (enabledPlugins → security@angelo-plugins) ou gitleaks en CI' }, 2);
+  const scanning = /security@angelo-plugins/.test(settings) ? 'security plugin' : firstOf(root, ['.gitleaks.toml', '.secrets.baseline', '.trufflehog.yml']) || (/gitleaks|detect-secrets|trufflehog/.test(`${read(root, '.pre-commit-config.yaml') || ''}${ciText}`) ? 'scanner in pre-commit or CI' : null);
+  add('secret_scanning', 'Foundations', 'Secret scanning', scanning ? 'ok' : 'missing', scanning || 'no secret scanner', { how: 'enable the marketplace security plugin (enabledPlugins → security@angelo-plugins) or gitleaks in CI' }, 2);
 
-  // --- Flux ---------------------------------------------------------------------------------------------
-  const prot = github ? branchProtection(root, branch) : { status: 'unknown', evidence: 'non vérifié (--no-github)' };
-  add('branch_protection', 'Flux', `Branche ${branch || 'par défaut'} protégée (revue + checks requis)`, prot.status, prot.evidence, { how: 'GitHub → Settings → Branches : exiger une PR, une approbation et la CI verte' }, 1);
+  // --- Flow ---------------------------------------------------------------------------------------------
+  const prot = github ? branchProtection(root, branch) : { status: 'unknown', evidence: 'not checked (--no-github)' };
+  add('branch_protection', 'Flow', `${branch ? `Branch ${branch}` : 'Default branch'} protected (review + checks required)`, prot.status, prot.evidence, { how: 'GitHub → Settings → Branches: require a PR, an approval and green CI' }, 1);
   const owners = firstOf(root, ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']);
-  add('codeowners', 'Flux', 'Propriétaires du code (CODEOWNERS)', owners ? 'ok' : 'missing', owners || 'aucun CODEOWNERS', { how: 'désigner qui relit quoi, dont CONSTITUTION.md et kaizen-packs/', scaffold: 'codeowners' }, 2);
+  add('codeowners', 'Flow', 'Code owners (CODEOWNERS)', owners ? 'ok' : 'missing', owners || 'no CODEOWNERS', { how: 'state who reviews what, including CONSTITUTION.md and kaizen-packs/', scaffold: 'codeowners' }, 2);
   const tpl = firstOf(root, ['.github/pull_request_template.md', '.github/PULL_REQUEST_TEMPLATE.md', 'PULL_REQUEST_TEMPLATE.md', 'docs/pull_request_template.md']) || (ls(root, '.github/PULL_REQUEST_TEMPLATE').length ? '.github/PULL_REQUEST_TEMPLATE/' : null);
-  add('pr_template', 'Flux', 'Modèle de PR', tpl ? 'ok' : 'missing', tpl || 'aucun modèle de PR', { how: 'un modèle qui demande pourquoi, preuves, retour arrière', scaffold: 'pr_template' }, 3);
+  add('pr_template', 'Flow', 'PR template', tpl ? 'ok' : 'missing', tpl || 'no PR template', { how: 'a template asking for why, evidence, rollback', scaffold: 'pr_template' }, 3);
   const deps = firstOf(root, ['.github/dependabot.yml', '.github/dependabot.yaml', 'renovate.json', '.github/renovate.json', 'renovate.json5', '.renovaterc']);
-  add('dependency_updates', 'Flux', 'Mises à jour de dépendances automatisées', deps ? 'ok' : 'missing', deps || 'ni Dependabot ni Renovate', { how: 'petites PR de mise à jour régulières plutôt qu’un grand saut annuel', scaffold: stacks.length ? 'dependabot' : null }, 3);
-  add('claude_md', 'Flux', 'Instructions projet pour les agents (CLAUDE.md)', has(root, 'CLAUDE.md') ? 'ok' : 'missing', has(root, 'CLAUDE.md') ? 'CLAUDE.md' : 'aucun CLAUDE.md', { how: '/init, puis /kaizen:setup ajoute la section Kaizen' }, 2);
+  add('dependency_updates', 'Flow', 'Automated dependency updates', deps ? 'ok' : 'missing', deps || 'neither Dependabot nor Renovate', { how: 'small regular update PRs rather than one big yearly jump', scaffold: stacks.length ? 'dependabot' : null }, 3);
+  add('claude_md', 'Flow', 'Project instructions for agents (CLAUDE.md)', has(root, 'CLAUDE.md') ? 'ok' : 'missing', has(root, 'CLAUDE.md') ? 'CLAUDE.md' : 'no CLAUDE.md', { how: '/init, then /kaizen:setup adds the Kaizen section' }, 2);
 
-  // --- Livraison --------------------------------------------------------------------------------------
+  // --- Delivery ---------------------------------------------------------------------------------------
   const envs = config.deploy.environments || {};
   const envNames = Object.keys(envs);
   const candidates = envNames.length ? [] : detectDeploy(root);
-  add('deploy', 'Livraison', 'Déploiement outillé', envNames.length ? 'ok' : candidates.length ? 'warn' : 'missing',
-    envNames.length ? `environnements : ${envNames.join(', ')}` : candidates.length ? `reconnu, non configuré : ${candidates.map((c) => c.id).join(', ')}` : 'aucun mécanisme de déploiement reconnu',
-    { how: candidates.length ? `node kaizen.mjs deploy configure ${candidates[0].id} (après revue des commandes : deploy detect)` : 'déclarer deploy.environments (commande de déploiement par environnement)', skill: '/kaizen:setup' }, 1);
+  add('deploy', 'Delivery', 'Tooled deployment', envNames.length ? 'ok' : candidates.length ? 'warn' : 'missing',
+    envNames.length ? `environments: ${envNames.join(', ')}` : candidates.length ? `recognized, not configured: ${candidates.map((c) => c.id).join(', ')}` : 'no recognized deployment mechanism',
+    { how: candidates.length ? `node kaizen.mjs deploy configure ${candidates[0].id} (after reviewing the commands: deploy detect)` : 'declare deploy.environments (a deploy command per environment)', skill: '/kaizen:setup' }, 1);
   if (envNames.length) {
     const noRb = envNames.filter((e) => !envs[e].rollback);
-    add('rollback', 'Livraison', 'Retour arrière déclaré', noRb.length ? 'missing' : 'ok', noRb.length ? `sans retour arrière : ${noRb.join(', ')}` : 'chaque environnement a son retour arrière', { how: 'deploy.environments.<env>.rollback (deploy detect propose la commande native de la plateforme)' }, 1);
+    add('rollback', 'Delivery', 'Declared rollback', noRb.length ? 'missing' : 'ok', noRb.length ? `no rollback: ${noRb.join(', ')}` : 'every environment has its rollback', { how: 'deploy.environments.<env>.rollback (deploy detect proposes the platform\'s native command)' }, 1);
     const prod = envs.production;
-    if (prod) add('protected', 'Livraison', 'Production protégée', prod.protected === false ? 'warn' : 'ok', prod.protected === false ? 'production déclarée non protégée' : 'approbation humaine exigée', { how: 'retirer "protected": false de production' }, 2);
+    if (prod) add('protected', 'Delivery', 'Protected production', prod.protected === false ? 'warn' : 'ok', prod.protected === false ? 'production declared unprotected' : 'human approval required', { how: 'remove "protected": false from production' }, 2);
   }
 
-  // --- Exploitation -----------------------------------------------------------------------------------
+  // --- Operations -------------------------------------------------------------------------------------
   const signals = config.monitor.signals || {};
   const names = Object.keys(signals);
   const httpSignals = names.filter((n) => signals[n].type === 'http');
-  // Une vraie déclaration de route, pas une chaîne qui traîne : app.get('/health'…), @app.route("/up"),
+  // A real route declaration, not a stray string: app.get('/health'…), @app.route("/up"),
   // HandleFunc("/healthz"…), @GetMapping("/health"), get "/up" (Rails)…
   const ROUTE = /(\.(get|route|all|handle|HandleFunc|Get|GET)\s*\(|@(app|router|bp|api)\.(get|route)\s*\(|@(Get|Request)Mapping\s*\(\s*(value\s*=\s*)?|\bpath\s*\(|^\s*get\s+)\s*['"`]\/(health|healthz|healthcheck|up|ready|readyz|livez)['"`]/m;
   const healthRoute = files.filter((f) => !TEST_FILE.test(f)).slice(0, 1500).find((f) => ROUTE.test(read(root, f) || ''));
-  add('monitoring', 'Exploitation', 'Signaux de production surveillés', names.length ? 'ok' : 'missing', names.length ? `signaux : ${names.join(', ')}` : 'aucun signal (monitor.signals)', { how: 'déclarer au moins un health-check HTTP, puis taux d’erreur et latence (commande qui affiche un nombre)' }, envNames.length ? 1 : 2);
+  add('monitoring', 'Operations', 'Watched production signals', names.length ? 'ok' : 'missing', names.length ? `signals: ${names.join(', ')}` : 'no signal (monitor.signals)', { how: 'declare at least one HTTP health-check, then error rate and latency (a command that prints a number)' }, envNames.length ? 1 : 2);
   if (envNames.length && names.length) {
     const wf = ls(root, '.github/workflows').map((f) => read(root, `.github/workflows/${f}`) || '').join('\n');
     const continuous = /monitor\s+(patrol|alert)\b/.test(wf);
-    add('continuous_monitoring', 'Exploitation', 'Détection continue des incidents', continuous ? 'ok' : 'warn',
-      continuous ? 'workflow monitor patrol/alert présent' : 'signaux surveillés seulement pendant la fenêtre après déploiement (ou par une routine hors du dépôt)',
-      { how: 'contrôle planifié (patrol) comme filet, alertes de l’équipe (alert) comme voie principale', scaffold: 'monitor_patrol' }, 3);
+    add('continuous_monitoring', 'Operations', 'Continuous incident detection', continuous ? 'ok' : 'warn',
+      continuous ? 'monitor patrol/alert workflow present' : 'signals only watched during the post-deployment window (or by a routine outside the repo)',
+      { how: 'scheduled check (patrol) as a safety net, the team\'s alerts (alert) as the main path', scaffold: 'monitor_patrol' }, 3);
   }
-  add('health', 'Exploitation', 'Endpoint de santé', httpSignals.length ? 'ok' : healthRoute ? 'warn' : 'missing', httpSignals.length ? `health-check : ${httpSignals.join(', ')}` : healthRoute ? `route de santé trouvée dans ${healthRoute}, non surveillée` : 'aucune route de santé trouvée', { how: 'exposer /health (dépendances critiques comprises) et le déclarer dans monitor.signals' }, 2);
+  add('health', 'Operations', 'Health endpoint', httpSignals.length ? 'ok' : healthRoute ? 'warn' : 'missing', httpSignals.length ? `health-check: ${httpSignals.join(', ')}` : healthRoute ? `health route found in ${healthRoute}, not watched` : 'no health route found', { how: 'expose /health (critical dependencies included) and declare it in monitor.signals' }, 2);
 
-  // --- Boucle Kaizen ----------------------------------------------------------------------------------
+  // --- Kaizen loop -----------------------------------------------------------------------------------
   const initialized = has(root, '.kaizen/config.json');
-  add('kaizen', 'Boucle Kaizen', 'Kaizen initialisé', initialized ? 'ok' : 'missing', initialized ? `profil ${config.profile}` : 'pas de .kaizen/config.json', { how: '/kaizen:setup', skill: '/kaizen:setup' }, 1);
+  add('kaizen', 'Kaizen loop', 'Kaizen initialized', initialized ? 'ok' : 'missing', initialized ? `profile ${config.profile}` : 'no .kaizen/config.json', { how: '/kaizen:setup', skill: '/kaizen:setup' }, 1);
   const c = loadConstitution(root);
   const valid = c ? validateConstitution(c).errors.length === 0 : false;
-  add('constitution', 'Boucle Kaizen', 'Constitution d’ingénierie', c ? (valid ? 'ok' : 'warn') : 'missing', c ? `v${c.meta.version} — ${c.articles.length} article(s)${valid ? '' : ', invalide'}` : 'pas de CONSTITUTION.md', { how: '/kaizen:constitution', skill: '/kaizen:constitution' }, 2);
+  add('constitution', 'Kaizen loop', 'Engineering constitution', c ? (valid ? 'ok' : 'warn') : 'missing', c ? `v${c.meta.version} — ${c.articles.length} article(s)${valid ? '' : ', invalid'}` : 'no CONSTITUTION.md', { how: '/kaizen:constitution', skill: '/kaizen:constitution' }, 2);
   const findable = /learnings/.test(read(root, 'CLAUDE.md') || '');
-  add('learnings', 'Boucle Kaizen', 'Leçons trouvables par les agents', findable ? 'ok' : 'warn', findable ? 'CLAUDE.md cite docs/learnings/' : 'CLAUDE.md ne mentionne pas les leçons', { how: '/kaizen:setup (étape trouvabilité)', skill: '/kaizen:setup' }, 3);
+  add('learnings', 'Kaizen loop', 'Learnings findable by agents', findable ? 'ok' : 'warn', findable ? 'CLAUDE.md cites docs/learnings/' : 'CLAUDE.md does not mention learnings', { how: '/kaizen:setup (findability step)', skill: '/kaizen:setup' }, 3);
 
   const weight = { missing: 0, warn: 0.5, unknown: null, ok: 1 };
   const areas = {};
@@ -179,7 +179,7 @@ export function audit(root, { github = true } = {}) {
   return { stacks, default_branch: branch, areas, checks, next: todo.map((ch) => ({ id: ch.id, priority: ch.priority, title: ch.title, how: ch.fix.how, scaffold: ch.fix.scaffold || null, skill: ch.fix.skill || null })) };
 }
 
-// --- Gabarits : corrections simples, jamais d'écrasement -------------------------------------------------
+// --- Scaffolds: simple fixes, never overwriting ----------------------------------------------------------
 
 function ciWorkflow(root) {
   const { stacks, commands } = verifyCommands(root);
@@ -187,9 +187,9 @@ function ciWorkflow(root) {
   const s = stacks.join(' ');
   if (/node/.test(s)) {
     const pm = /pnpm/.test(s) ? 'pnpm' : /yarn/.test(s) ? 'yarn' : /bun/.test(s) ? 'bun' : 'npm';
-    // pnpm/action-setup lit packageManager dans package.json ; sinon il lui faut une version explicite.
+    // pnpm/action-setup reads packageManager from package.json; otherwise it needs an explicit version.
     if (pm === 'pnpm') steps.push(/"packageManager"\s*:\s*"pnpm@/.test(read(root, 'package.json') || '') ? '      - uses: pnpm/action-setup@v4' : '      - uses: pnpm/action-setup@v4\n        with:\n          version: 9');
-    // npm ci et le cache de setup-node exigent un lockfile : sans lui, la CI échouerait dès le premier run.
+    // npm ci and the setup-node cache require a lockfile: without one, CI would fail on its first run.
     const npmLock = pm !== 'npm' || has(root, 'package-lock.json') || has(root, 'npm-shrinkwrap.json');
     if (pm === 'bun') steps.push('      - uses: oven-sh/setup-bun@v2');
     else steps.push(`      - uses: actions/setup-node@v4\n        with:\n          node-version: 22${npmLock ? `\n          cache: ${pm}` : ''}`);
@@ -205,7 +205,7 @@ function ciWorkflow(root) {
   else if (/maven|gradle/.test(s)) steps.push("      - uses: actions/setup-java@v4\n        with:\n          distribution: temurin\n          java-version: '21'");
   else if (/php/.test(s)) steps.push('      - uses: shivammathur/setup-php@v2', '      - run: composer install --no-interaction');
   for (const k of ['lint', 'typecheck', 'test']) if (commands[k]) steps.push(`      - name: ${k}\n        run: ${commands[k]}`);
-  return `# CI générée par Kaizen (audit fix ci) depuis les commandes de vérification détectées : à relire.
+  return `# CI generated by Kaizen (audit fix ci) from the detected verification commands: review it.
 name: CI
 
 on:
@@ -224,20 +224,20 @@ ${steps.join('\n')}
 `;
 }
 
-const PR_TEMPLATE = `## Pourquoi
-<!-- le problème ou le besoin ; lien vers le ticket et le plan -->
+const PR_TEMPLATE = `## Why
+<!-- the problem or need; link to the ticket and the plan -->
 
-## Ce qui change
-<!-- l'essentiel, pour un relecteur pressé ; ce qui n'est volontairement pas fait -->
+## What changes
+<!-- the essentials, for a busy reviewer; what is deliberately not done -->
 
-## Comment vérifier
-<!-- commandes lancées, tests ajoutés, captures pour une interface -->
+## How to verify
+<!-- commands run, tests added, screenshots for a UI -->
 
-## Déploiement et retour arrière
-<!-- exposition (flag ?), migrations, comment revenir en arrière, signal à surveiller et son seuil -->
+## Rollout and rollback
+<!-- exposure (flag?), migrations, how to roll back, signal to watch and its threshold -->
 
-## Points ouverts
-<!-- décisions laissées au relecteur, réserves ; supprimer si vide -->
+## Open points
+<!-- decisions left to the reviewer, concerns; delete if empty -->
 `;
 
 function dependabot(root) {
@@ -254,23 +254,23 @@ function dependabot(root) {
   if (/php/.test(s)) eco.push('composer');
   if (ls(root, '.github/workflows').length) eco.push('github-actions');
   if (has(root, 'Dockerfile')) eco.push('docker');
-  return `# Mises à jour de dépendances (générées par Kaizen, audit fix dependabot) : petites PR régulières.
+  return `# Dependency updates (generated by Kaizen, audit fix dependabot): small regular PRs.
 version: 2
 updates:
 ${eco.map((e) => `  - package-ecosystem: ${e}\n    directory: /\n    schedule:\n      interval: weekly\n    open-pull-requests-limit: 5`).join('\n')}
 `;
 }
 
-// Workflows de détection continue (docs/guides/monitor.md, « Surveillance continue »). Le CLI Kaizen,
-// sans dépendance, vient du dépôt de la marketplace : épinglez `ref` sur un commit (sha) plutôt qu'une
-// branche. Les tags d'incident sont poussés par le CLI : il faut l'écriture et une identité git.
+// Continuous detection workflows (docs/guides/monitor.md, "Continuous monitoring"). The Kaizen CLI,
+// dependency-free, comes from the marketplace repository: pin `ref` to a commit (sha) rather than a
+// branch. Incident tags are pushed by the CLI: it needs write access and a git identity.
 const KAIZEN_SOURCE = 'Lingelo/marketplace-claude-code';
 
 function monitorWorkflow(kind, { env, ref }) {
   const header =
     kind === 'patrol'
-      ? `# Contrôle planifié des signaux de ${env} (généré par Kaizen, audit fix monitor_patrol) : à relire.
-# Une violation confirmée ouvre un incident (tag incident/${env}/…) et fait échouer le job.
+      ? `# Scheduled check of ${env} signals (generated by Kaizen, audit fix monitor_patrol): review it.
+# A confirmed breach opens an incident (incident/${env}/… tag) and fails the job.
 name: kaizen-patrol
 
 on:
@@ -278,9 +278,9 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch:
 `
-      : `# Alertes de l'équipe → incidents Kaizen (généré par Kaizen, audit fix monitor_alert) : à relire.
-# L'outil d'alerte (ou un relais) appelle POST /repos/<owner>/<repo>/dispatches
-#   {"event_type": "alert", "client_payload": <charge utile Alertmanager, PagerDuty, Datadog ou JSON simple>}
+      : `# Team alerts → Kaizen incidents (generated by Kaizen, audit fix monitor_alert): review it.
+# The alerting tool (or a relay) calls POST /repos/<owner>/<repo>/dispatches
+#   {"event_type": "alert", "client_payload": <Alertmanager, PagerDuty, Datadog or plain JSON payload>}
 name: kaizen-alert
 
 on:
@@ -290,13 +290,13 @@ on:
   const run =
     kind === 'patrol'
       ? `      - run: node .kaizen-cli/plugins/kaizen/scripts/kaizen.mjs monitor patrol --env ${env}`
-      : `      # Charge utile passée par l'environnement, jamais interpolée dans le script : pas d'injection.
+      : `      # Payload passed through the environment, never interpolated into the script: no injection.
       - env:
           PAYLOAD: \${{ toJson(github.event.client_payload) }}
         run: printf '%s' "$PAYLOAD" | node .kaizen-cli/plugins/kaizen/scripts/kaizen.mjs monitor alert --env ${env} --file -`;
   return `${header}
 permissions:
-  contents: write   # pousser les tags incident/… et resolve/…
+  contents: write   # push incident/… and resolve/… tags
 
 concurrency:
   group: kaizen-incidents-${env}
@@ -308,11 +308,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # tags deploy/… et incident/… compris
+          fetch-depth: 0   # deploy/… and incident/… tags included
       - uses: actions/checkout@v4
         with:
           repository: ${KAIZEN_SOURCE}
-          ref: ${ref}   # épinglez un sha
+          ref: ${ref}   # pin a sha
           path: .kaizen-cli
       - run: |
           git config user.name "kaizen[bot]"
@@ -323,41 +323,41 @@ ${run}
 
 export function scaffold(root, id, { owner, env, ref } = {}) {
   const write = (path, content) => {
-    if (has(root, path)) throw new Error(`${path} existe déjà : rien n'est écrasé`);
+    if (has(root, path)) throw new Error(`${path} already exists: nothing is overwritten`);
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), content);
     return { written: path };
   };
   switch (id) {
     case 'ci':
-      if (!verifyCommands(root).commands.test) throw new Error('aucune commande de test détectée ni configurée : impossible de générer une CI utile');
+      if (!verifyCommands(root).commands.test) throw new Error('no test command detected or configured: cannot generate a useful CI');
       return write('.github/workflows/ci.yml', ciWorkflow(root));
     case 'pr_template':
       return write('.github/pull_request_template.md', PR_TEMPLATE);
     case 'dependabot':
       return write('.github/dependabot.yml', dependabot(root));
     case 'codeowners': {
-      if (!owner || !/^@[\w./-]+$/.test(owner)) throw new Error('--owner @utilisateur ou @org/equipe requis (qui relit par défaut)');
+      if (!owner || !/^@[\w./-]+$/.test(owner)) throw new Error('--owner @user or @org/team required (who reviews by default)');
       const rules = ['/CONSTITUTION.md', '/kaizen-packs/', '/.kaizen/config.json'].map((p) => `${p} ${owner}`).join('\n');
-      return write('.github/CODEOWNERS', `# Propriétaires par défaut (généré par Kaizen, audit fix codeowners) : affinez par dossier.\n* ${owner}\n\n# Règles d'ingénierie : leur changement est relu par les approbateurs.\n${rules}\n`);
+      return write('.github/CODEOWNERS', `# Default owners (generated by Kaizen, audit fix codeowners): refine per folder.\n* ${owner}\n\n# Engineering rules: changes to them are reviewed by the approvers.\n${rules}\n`);
     }
     case 'monitor_patrol':
     case 'monitor_alert': {
       const envs = Object.keys(loadConfig(root).deploy.environments || {});
       const target = env || (envs.includes('production') ? 'production' : envs[0]);
-      if (!target) throw new Error('aucun environnement dans deploy.environments : configurez le déploiement d’abord (deploy detect)');
-      if (!/^[\w.-]+$/.test(target)) throw new Error(`environnement invalide : ${target}`);
-      if (ref !== undefined && !/^[\w./-]+$/.test(ref)) throw new Error(`--ref invalide : ${ref}`);
+      if (!target) throw new Error('no environment in deploy.environments: configure deployment first (deploy detect)');
+      if (!/^[\w.-]+$/.test(target)) throw new Error(`invalid environment: ${target}`);
+      if (ref !== undefined && !/^[\w./-]+$/.test(ref)) throw new Error(`invalid --ref: ${ref}`);
       const kind = id === 'monitor_patrol' ? 'patrol' : 'alert';
       return write(`.github/workflows/kaizen-${kind}.yml`, monitorWorkflow(kind, { env: target, ref: ref || 'main' }));
     }
     case 'gitignore_env': {
       const gi = read(root, '.gitignore') || '';
-      if (/(^|\n)\s*\/?\.env(\*|\b)/.test(gi)) throw new Error('.env est déjà ignoré');
-      appendFileSync(join(root, '.gitignore'), `${gi && !gi.endsWith('\n') ? '\n' : ''}# Secrets locaux (ajouté par Kaizen, audit fix gitignore_env)\n.env\n.env.*\n!.env.example\n`);
+      if (/(^|\n)\s*\/?\.env(\*|\b)/.test(gi)) throw new Error('.env is already ignored');
+      appendFileSync(join(root, '.gitignore'), `${gi && !gi.endsWith('\n') ? '\n' : ''}# Local secrets (added by Kaizen, audit fix gitignore_env)\n.env\n.env.*\n!.env.example\n`);
       return { written: '.gitignore' };
     }
     default:
-      throw new Error(`pas de gabarit pour "${id}" (gabarits : ci, pr_template, dependabot, codeowners, gitignore_env, monitor_patrol, monitor_alert)`);
+      throw new Error(`no scaffold for "${id}" (scaffolds: ci, pr_template, dependabot, codeowners, gitignore_env, monitor_patrol, monitor_alert)`);
   }
 }

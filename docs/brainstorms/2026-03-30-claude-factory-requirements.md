@@ -3,128 +3,130 @@ date: 2026-03-30
 topic: claude-factory
 ---
 
-# Claude Factory — Meta-plugin de creation d'outils Claude Code
+# Claude Factory — Meta-plugin for creating Claude Code tools
+
+> Historical document: the `claude-factory` plugin is no longer in this marketplace.
 
 ## Problem Frame
 
-Creer des outils Claude Code (skills, hooks, agents, rules, commandes) demande de connaitre les schemas de frontmatter, les conventions de nommage, les events hooks, les exit codes, et la structure de fichiers attendue. Cette connaissance est dispersee dans la doc officielle Anthropic et evolue avec chaque version. Un dev qui veut creer un skill ou un hook doit naviguer entre plusieurs pages de docs, copier des exemples, et adapter manuellement.
+Creating Claude Code tools (skills, hooks, agents, rules, commands) requires knowing the frontmatter schemas, naming conventions, hook events, exit codes and the expected file structure. This knowledge is scattered across Anthropic's official docs and changes with every version. A developer who wants to create a skill or a hook has to navigate several doc pages, copy examples and adapt them by hand.
 
-**Qui est affecte :** Tout utilisateur de Claude Code qui veut etendre ses capacites (plugins marketplace ou configuration projet locale).
+**Who is affected:** every Claude Code user who wants to extend its capabilities (marketplace plugins or local project configuration).
 
-**Pourquoi ca compte :** Reduire la friction entre "j'ai une idee d'outil" et "l'outil fonctionne" — tout en garantissant la conformite avec les specs officielles.
+**Why it matters:** reduce the friction between "I have an idea for a tool" and "the tool works" — while guaranteeing compliance with the official specs.
 
 ## Requirements
 
-### R0. Interaction hybride (transversal a tous les skills R1-R6)
-- Chaque skill accepte une description en langage naturel comme point de depart
-- Apres analyse de la description, le skill pose des questions ciblees via `AskUserQuestion` UNIQUEMENT pour les decisions non resolues par la description
-- Si la description est suffisamment precise, aucune question n'est posee
-- Chaque skill supporte la **mise a jour** : si l'artefact cible existe deja, le skill lit l'existant, montre les differences, et propose des modifications interactives via `AskUserQuestion`
+### R0. Hybrid interaction (across all skills R1-R6)
+- Each skill accepts a natural-language description as a starting point
+- After analyzing the description, the skill asks targeted questions through `AskUserQuestion` ONLY for decisions the description does not settle
+- If the description is precise enough, no question is asked
+- Each skill supports **updates**: if the target artifact already exists, the skill reads it, shows the differences and proposes interactive changes through `AskUserQuestion`
 
-### R1. Scaffold de skills (`/factory:skill`)
-- Accepte une description en langage naturel de ce que le skill doit faire
-- Genere la structure complete : repertoire, SKILL.md avec frontmatter valide, fichiers support si necessaire
-- Determine automatiquement les champs frontmatter pertinents (`allowed-tools`, `model`, `effort`, `context`, `paths`, `shell`, `hooks` inline, etc.) a partir de la description
-- Pose des questions interactives si des decisions cles restent ambigues (ex: "Quel model ? sonnet/opus/haiku", "Faut-il un context: fork ?")
-- Genere le corps du SKILL.md avec des instructions actionables, pas du placeholder
-- **Mode update** : si le skill existe, lit le SKILL.md existant et propose des modifications (ajout de champs, mise a jour du body, etc.)
+### R1. Skill scaffolding (`/factory:skill`)
+- Accepts a natural-language description of what the skill must do
+- Generates the full structure: folder, SKILL.md with valid frontmatter, support files if needed
+- Automatically determines the relevant frontmatter fields (`allowed-tools`, `model`, `effort`, `context`, `paths`, `shell`, inline `hooks`, etc.) from the description
+- Asks interactive questions if key decisions remain ambiguous (e.g. "Which model? sonnet/opus/haiku", "Is a context: fork needed?")
+- Generates the SKILL.md body with actionable instructions, not placeholders
+- **Update mode**: if the skill exists, reads the existing SKILL.md and proposes changes (adding fields, updating the body, etc.)
 
-### R2. Scaffold de hooks (`/factory:hook`)
-- Accepte une description du comportement souhaite (ex: "bloquer les rm -rf", "notifier sur Slack quand un test fail")
-- Genere le `hooks.json` avec le bon event, matcher, type de hook (`command`/`http`/`prompt`/`agent`)
-- Pose des questions interactives si l'event ou le type de hook est ambigu
-- Genere le script d'implementation si type `command` (Node.js ou Bash)
-- Respecte les conventions : exit code 0/2, JSON stdin/stdout, timeout raisonnable
-- **Mode update** : si `hooks.json` existe, lit l'existant et propose d'ajouter/modifier un hook
+### R2. Hook scaffolding (`/factory:hook`)
+- Accepts a description of the desired behavior (e.g. "block rm -rf", "notify Slack when a test fails")
+- Generates `hooks.json` with the right event, matcher and hook type (`command`/`http`/`prompt`/`agent`)
+- Asks interactive questions if the event or the hook type is ambiguous
+- Generates the implementation script for the `command` type (Node.js or Bash)
+- Follows the conventions: exit code 0/2, JSON stdin/stdout, reasonable timeout
+- **Update mode**: if `hooks.json` exists, reads it and proposes to add/modify a hook
 
-### R3. Scaffold d'agents (`/factory:agent`)
-- Accepte une description du role de l'agent
-- Genere le fichier `.md` avec frontmatter complet (`name`, `description`, `tools`/`disallowedTools`, `model`, `maxTurns`, `effort`, `isolation`, `skills`, `hooks` inline)
-- Pose des questions interactives sur le model, les tools, et les contraintes si ambigu
-- Genere un system prompt de qualite adapte au role decrit
-- **Mode update** : si l'agent existe, lit et propose des modifications (system prompt, frontmatter)
+### R3. Agent scaffolding (`/factory:agent`)
+- Accepts a description of the agent's role
+- Generates the `.md` file with complete frontmatter (`name`, `description`, `tools`/`disallowedTools`, `model`, `maxTurns`, `effort`, `isolation`, `skills`, inline `hooks`)
+- Asks interactive questions about the model, the tools and the constraints if ambiguous
+- Generates a quality system prompt suited to the described role
+- **Update mode**: if the agent exists, reads it and proposes changes (system prompt, frontmatter)
 
-### R4. Scaffold de commandes (`/factory:command`)
-- Accepte une description de la commande
-- Genere le fichier `.md` avec frontmatter et contenu
-- Detecte si une commande serait mieux servie en tant que skill (structure plus riche) et le suggere via question interactive
-- **Mode update** : si la commande existe, lit et propose des modifications
+### R4. Command scaffolding (`/factory:command`)
+- Accepts a description of the command
+- Generates the `.md` file with frontmatter and content
+- Detects whether a command would be better served as a skill (richer structure) and suggests it through an interactive question
+- **Update mode**: if the command exists, reads it and proposes changes
 
-### R5. Scaffold de rules (`/factory:rule`)
-- Accepte une description de la regle
-- Genere le fichier `.md` dans `.claude/rules/` avec frontmatter `paths` si pertinent
-- Pose une question interactive pour determiner si la regle doit etre unconditional ou path-scoped, avec suggestion basee sur l'analyse
-- **Mode update** : si la rule existe, lit et propose des modifications
+### R5. Rule scaffolding (`/factory:rule`)
+- Accepts a description of the rule
+- Generates the `.md` file in `.claude/rules/` with `paths` frontmatter if relevant
+- Asks an interactive question to decide whether the rule is unconditional or path-scoped, with a suggestion based on the analysis
+- **Update mode**: if the rule exists, reads it and proposes changes
 
-### R6. Scaffold de plugin complet (`/factory:plugin`)
-- Accepte une description du plugin
-- Pose des questions interactives sur les composants a inclure (skills, hooks, agents, MCP, templates)
-- Genere la structure complete : `plugin.json`, README.md, et les sous-composants identifies
-- Propose l'enregistrement dans le `marketplace.json` si dans le contexte du marketplace
-- **Mode update** : si le plugin existe, lit la structure et propose d'ajouter des composants
+### R6. Full plugin scaffolding (`/factory:plugin`)
+- Accepts a description of the plugin
+- Asks interactive questions about the components to include (skills, hooks, agents, MCP, templates)
+- Generates the full structure: `plugin.json`, README.md and the identified sub-components
+- Proposes registration in `marketplace.json` when in the marketplace context
+- **Update mode**: if the plugin exists, reads its structure and proposes to add components
 
-### R7. Maintenance CLAUDE.md (`/factory:claude-md`)
-- Analyse un CLAUDE.md existant
-- Identifie : sections manquantes, redondances, instructions trop longues (>200 lignes), contradictions, imports manquants
-- Propose une restructuration selon les best practices officielles (headers, bullets, specifique et verifiable)
-- Peut generer un CLAUDE.md from scratch si inexistant (mieux que `/init`)
+### R7. CLAUDE.md maintenance (`/factory:claude-md`)
+- Analyzes an existing CLAUDE.md
+- Identifies: missing sections, redundancies, overly long instructions (>200 lines), contradictions, missing imports
+- Proposes a restructuring following the official best practices (headers, bullets, specific and verifiable)
+- Can generate a CLAUDE.md from scratch if none exists (better than `/init`)
 
-### R8. Audit et validation (`/factory:audit`)
-- Prend un chemin vers un plugin, skill, hook, ou agent existant
-- Verifie la conformite vs les schemas officiels (frontmatter obligatoire, events valides, exit codes, etc.)
-- Identifie les champs deprecies ou les patterns obsoletes
-- Genere un rapport avec corrections suggerees
+### R8. Audit and validation (`/factory:audit`)
+- Takes a path to an existing plugin, skill, hook or agent
+- Checks compliance against the official schemas (required frontmatter, valid events, exit codes, etc.)
+- Identifies deprecated fields or obsolete patterns
+- Generates a report with suggested fixes
 
-### R9. Documentation de reference integree (`/factory:docs`)
-- Donne acces rapide aux references officielles sans quitter le terminal
-- Couvre : frontmatter fields (skills, agents), hook events complets, exit codes, permission rules syntax, settings schema, string substitutions
-- Accepte des queries en langage naturel (ex: `/factory:docs hook events qui peuvent bloquer`)
+### R9. Built-in reference documentation (`/factory:docs`)
+- Gives quick access to the official references without leaving the terminal
+- Covers: frontmatter fields (skills, agents), complete hook events, exit codes, permission rule syntax, settings schema, string substitutions
+- Accepts natural-language queries (e.g. `/factory:docs hook events that can block`)
 
-### R10. Documentation statique embarquee
-- Toute la reference officielle est compilee dans des fichiers `.md` inclus dans le plugin
-- Fonctionne offline, sans dependance reseau
-- Organisee par domaine (skills, hooks, agents, rules, settings, CLAUDE.md)
+### R10. Embedded static documentation
+- The whole official reference is compiled into `.md` files included in the plugin
+- Works offline, with no network dependency
+- Organized by domain (skills, hooks, agents, rules, settings, CLAUDE.md)
 
 ## Success Criteria
 
-- Un utilisateur peut creer un skill fonctionnel en une seule commande `/factory:skill` + description, avec des questions interactives si des decisions restent ambigues
-- Un utilisateur peut mettre a jour un artefact existant via le meme skill (detection automatique du mode create/update)
-- Les artefacts generes passent un audit `/factory:audit` sans erreur
-- La reference docs couvre 100% des champs frontmatter et events hooks officiels (mars 2026)
-- Le plugin fonctionne entierement offline (pas de dependance MCP/reseau)
+- A user can create a working skill with a single `/factory:skill` command + description, with interactive questions if decisions remain ambiguous
+- A user can update an existing artifact through the same skill (automatic create/update mode detection)
+- Generated artifacts pass a `/factory:audit` without error
+- The reference docs cover 100% of the official frontmatter fields and hook events (March 2026)
+- The plugin works entirely offline (no MCP/network dependency)
 
 ## Scope Boundaries
 
-- **Non-goal :** Generation de code metier (logique applicative) — le plugin genere de la structure et des instructions, pas du code fonctionnel
-- **Non-goal :** Gestion de versions ou migration de plugins existants vers de nouveaux schemas
-- **Non-goal :** Integration avec des registres externes de plugins (npm, GitHub marketplace)
-- **Non-goal :** UI graphique ou web — tout est CLI/terminal via Claude Code
-- **Non-goal :** Fetch dynamique de documentation (context7, web) — tout est embarque statique
+- **Non-goal:** business code generation (application logic) — the plugin generates structure and instructions, not functional code
+- **Non-goal:** versioning or migrating existing plugins to new schemas
+- **Non-goal:** integration with external plugin registries (npm, GitHub marketplace)
+- **Non-goal:** graphical or web UI — everything is CLI/terminal through Claude Code
+- **Non-goal:** dynamic documentation fetching (context7, web) — everything is embedded and static
 
 ## Key Decisions
 
-- **Standalone** : Aucune dependance a `compound-engineering` ou autre plugin du marketplace. Peut coexister avec `create-agent-skills`.
-- **Hybride interactif** : L'utilisateur donne une description libre, puis le skill pose des questions ciblees via `AskUserQuestion` uniquement pour les decisions non resolues. Pas de wizard complet, mais un accompagnement intelligent.
-- **Creation + update** : Chaque skill detecte si l'artefact existe. Si oui, mode update interactif (lecture de l'existant, proposition de modifications). Si non, mode creation.
-- **Doc embarquee statique** : La reference officielle est compilee dans le plugin. Avantage : offline, predictible. Trade-off : necessite des mises a jour manuelles quand Anthropic change les specs.
-- **Nom : `claude-factory`** : Invocation via `/factory:skill`, `/factory:hook`, etc.
+- **Standalone**: no dependency on `compound-engineering` or any other marketplace plugin. Can coexist with `create-agent-skills`.
+- **Hybrid interactive**: the user gives a free description, then the skill asks targeted questions through `AskUserQuestion` only for unsettled decisions. Not a full wizard, but smart guidance.
+- **Create + update**: each skill detects whether the artifact exists. If so, interactive update mode (reading the existing one, proposing changes). Otherwise, create mode.
+- **Embedded static docs**: the official reference is compiled into the plugin. Benefit: offline, predictable. Trade-off: requires manual updates when Anthropic changes the specs.
+- **Name: `claude-factory`**: invoked through `/factory:skill`, `/factory:hook`, etc.
 
 ## Dependencies / Assumptions
 
-- Les schemas officiels Claude Code (frontmatter, hooks, settings) sont stables a la date de mars 2026. Le plugin devra etre mis a jour si Anthropic fait des breaking changes.
-- Le plugin cible le marketplace existant (`marketplace-claude-code`) mais les outils generes fonctionnent aussi en standalone (`.claude/skills/`, `.claude/rules/`, etc.)
+- The official Claude Code schemas (frontmatter, hooks, settings) are stable as of March 2026. The plugin will need updates if Anthropic makes breaking changes.
+- The plugin targets the existing marketplace (`marketplace-claude-code`) but the generated tools also work standalone (`.claude/skills/`, `.claude/rules/`, etc.)
 
 ## Outstanding Questions
 
 ### Resolve Before Planning
-_(aucune — toutes les decisions produit sont resolues)_
+_(none — every product decision is settled)_
 
 ### Deferred to Planning
-- [Affects R10][Needs research] Quelle granularite pour les fichiers de reference embarques ? Un fichier par domaine ou un fichier par concept (ex: `hook-events.md`, `skill-frontmatter.md`) ?
-- [Affects R1-R6][Technical] Faut-il un agent dedie (`context: fork`) pour chaque sous-skill ou un seul skill principal qui dispatch ?
-- [Affects R8][Technical] Comment structurer les regles de validation pour l'audit ? Schema JSON, checks programmatiques (script), ou instructions LLM ?
-- [Affects R1-R6][Technical] Structure du plugin : un skill par sous-commande (`skills/factory-skill/`, `skills/factory-hook/`, etc.) ou un skill unique avec dispatch interne ?
+- [Affects R10][Needs research] What granularity for the embedded reference files? One file per domain or one file per concept (e.g. `hook-events.md`, `skill-frontmatter.md`)?
+- [Affects R1-R6][Technical] A dedicated agent (`context: fork`) for each sub-skill, or a single main skill that dispatches?
+- [Affects R8][Technical] How to structure the validation rules for the audit? JSON schema, programmatic checks (script), or LLM instructions?
+- [Affects R1-R6][Technical] Plugin structure: one skill per sub-command (`skills/factory-skill/`, `skills/factory-hook/`, etc.) or a single skill with internal dispatch?
 
 ## Next Steps
 
--> `/ce:plan` pour la planification structuree de l'implementation
+-> `/ce:plan` for structured implementation planning

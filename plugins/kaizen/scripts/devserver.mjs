@@ -1,10 +1,10 @@
-// Kaizen — détection et sonde du serveur de développement (pour /kaizen:polish).
+// Kaizen — dev server detection and probe (for /kaizen:polish).
 //
-//   detect [--dir d]   → candidats { name, framework, command, cwd, port, url, source }
-//   probe --url U [--timeout-seconds 30]  → joignable ? (attend jusqu'au délai)
+//   detect [--dir d]   → candidates { name, framework, command, cwd, port, url, source }
+//   probe --url U [--timeout-seconds 30]  → reachable? (waits up to the timeout)
 //
-// Le lancement lui-même est fait par l'agent (Bash en arrière-plan) : la session garde la main sur le
-// processus et ses logs.
+// The launch itself is done by the agent (Bash in the background): the session keeps control of the
+// process and its logs.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative as nodeRelative, sep } from 'node:path';
@@ -47,8 +47,8 @@ function portFromScript(script) {
   return m ? Number(m[1]) : null;
 }
 
-// Serveur Node maison (`node server.js`) : le port par défaut se lit dans le point d'entrée
-// (`process.env.PORT || 5173`, `.listen(8080)`), sinon la détection annoncerait 3000 à tort.
+// Hand-written Node server (`node server.js`): the default port is read from the entry point
+// (`process.env.PORT || 5173`, `.listen(8080)`), otherwise detection would wrongly announce 3000.
 function portFromEntry(dir, script) {
   const entry = /\bnode\s+(?:--\S+\s+)*([\w./-]+\.[cm]?js)\b/.exec(script || '')?.[1];
   if (!entry) return null;
@@ -130,7 +130,7 @@ export function detectDevServers(root) {
   }
   const out = [];
   for (const d of dirs) out.push(...nodeCandidates(d, root), ...otherCandidates(d, root));
-  // Un monorepo dont la racine ne fait que déléguer (turbo/nx) garde aussi ses apps.
+  // A monorepo whose root only delegates (turbo/nx) also keeps its apps.
   return out;
 }
 

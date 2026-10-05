@@ -1,86 +1,89 @@
 # `/kaizen:watch-pr`
 
-> Mener une PR ouverte jusqu'à « semble prête à merger » : retours traités, CI réparée, branche à
-> jour quand GitHub le demande. Puis s'arrêter et vous laisser merger.
+> Drive an open PR to "looks ready to merge": feedback handled, CI repaired, branch up to date when
+> GitHub asks for it. Then stop and let you merge.
 
-## En bref
+## At a glance
 
 | | |
 |---|---|
-| **Ce qu'elle fait** | Cycles successifs : retours de revue **avant** la CI, réparation de la CI du commit de tête, mise à jour de la branche sur signal, attente sans tokens entre deux cycles |
-| **Quand l'utiliser** | Après `/kaizen:ship` ; « surveille ma PR » ; « mène-la jusqu'au merge » |
-| **Quand ne pas l'utiliser** | Un seul commentaire (→ [address-feedback](address-feedback.md)) ; un seul échec de CI (→ [debug](debug.md)) |
-| **Ce qu'elle produit** | Des commits et réponses sur la PR, et un état final **vrai** : ✅ semble prête · 🟡 réserve · ⛔ bloquée · ⏱️ budget · 🎉 mergée · 🚫 fermée · ⏸️ en pause |
-| **Et ensuite** | **Vous mergez.** Kaizen ne merge jamais. |
+| **What it does** | Successive cycles: review feedback **before** CI, repair of the head commit's CI, branch update on signal, waiting without tokens between two cycles |
+| **When to use it** | After `/kaizen:ship`; "watch my PR"; "drive it to the merge" |
+| **When not to use it** | A single comment (→ [address-feedback](address-feedback.md)); a single CI failure (→ [debug](debug.md)) |
+| **What it produces** | Commits and replies on the PR, and a **true** final state: ✅ looks ready · 🟡 reservation · ⛔ blocked · ⏱️ budget · 🎉 merged · 🚫 closed · ⏸️ paused |
+| **What next** | **You merge.** Kaizen never merges. |
 
-## Exemples
+## Examples
 
 ```text
-/kaizen:watch-pr                 # PR de la branche courante, veille jusqu'à 8 h
-/kaizen:watch-pr 42 4h           # budget de 4 h
-/kaizen:watch-pr 42 checkpoint   # un seul cycle, puis la commande de reprise
+/kaizen:watch-pr                 # PR of the current branch, watching up to 8 h
+/kaizen:watch-pr 42 4h           # 4-hour budget
+/kaizen:watch-pr 42 checkpoint   # a single cycle, then the resume command
 ```
 
-## Un cycle (ordre imposé)
+![The watch-pr cycle, watcher verdicts and looks-ready conditions](../media/diagrams/pr-watch.svg)
 
-1. **Instantané** `node $K pr snapshot` : la seule source de vérité. Les fils sont lus en entier
-   (paginés), avec les commentaires, les revues, les checks du commit de tête, l'état de fusion et
-   le temps écoulé depuis la dernière activité.
-2. **PR terminée** (mergée ou fermée) → arrêt.
-3. **Retours avant CI** → `address-feedback` une fois, puis chaque élément est **marqué**
-   (`pr mark`), pour ne jamais être retraité tant que personne ne répond.
-4. **Commit de tête périmé** : si un push vient d'avoir lieu, la CI observée est caduque.
-5. **CI** :
-   - échec d'infrastructure : **une** relance ;
-   - vrai échec : logs, puis `debug`, `verify` et push.
+In depth: [pull requests](../concepts/pull-requests.md#driving-the-pr-to-looks-ready).
 
-   Jamais de test désactivé, jamais de commit vide pour relancer.
-6. **Mise à jour depuis la base** : seulement si GitHub dit `BEHIND` (mise à jour par l'API, avec le
-   commit de tête attendu) ou `DIRTY` (merge local de la base, jamais de rebase).
-7. **Convergence** : même check rouge après 2 correctifs, ou fils qui remontent → arrêt des
-   corrections à l'aveugle.
+## A cycle (imposed order)
 
-## Attendre sans dépenser
+1. **Snapshot** `node $K pr snapshot`: the only source of truth. Threads are read in full (paginated),
+   with comments, reviews, the head commit's checks, the merge state and the time since the last
+   activity.
+2. **PR finished** (merged or closed) → stop.
+3. **Feedback before CI** → `address-feedback` once, then each item is **marked** (`pr mark`), so it is
+   never handled again as long as nobody answers.
+4. **Stale head commit**: if a push just happened, the observed CI is obsolete.
+5. **CI**:
+   - infrastructure failure: **one** rerun;
+   - real failure: logs, then `debug`, `verify` and push.
 
-Entre deux cycles, Claude lance en arrière-plan :
+   Never a disabled test, never an empty commit to rerun.
+6. **Update from the base**: only if GitHub says `BEHIND` (update through the API, with the expected
+   head commit) or `DIRTY` (local merge of the base, never a rebase).
+7. **Convergence**: same check red after 2 fixes, or threads going up → stop fixing blindly.
+
+## Waiting without spending
+
+Between two cycles, Claude starts in the background:
 
 ```bash
 node $K pr watch --pr 42 --interval 150
 ```
 
-Ce veilleur interroge GitHub toutes les 150 s **sans consommer de tokens**. Il s'arrête en écrivant
-une ligne `KAIZEN_WAKE {"reason": …}` quand il y a quelque chose à faire : `actionable`, `behind`,
-`conflict`, `looks-ready`, `blocked-failing`, `blocked-external`, `needs-human`, `terminal`,
-`budget`. Son arrêt réveille Claude, qui reprend au cycle.
+This watcher polls GitHub every 150 s **without consuming tokens**. It stops by writing a
+`KAIZEN_WAKE {"reason": …}` line when there is something to do: `actionable`, `behind`, `conflict`,
+`looks-ready`, `blocked-failing`, `blocked-external`, `needs-human`, `terminal`, `budget`. Its stop
+wakes Claude, which resumes the cycle.
 
-## Quand dit-il « semble prête » ?
+## When does it say "looks ready"?
 
-Toutes ces conditions doivent être réunies :
-- GitHub dit `MERGEABLE` et `CLEAN` ;
-- les checks sont terminés et verts ;
-- aucun fil ni commentaire n'est en attente ;
-- aucune décision humaine n'est en suspens ;
-- la branche est à jour ;
-- **la PR est restée silencieuse au moins 5 minutes**.
+All these conditions must be met:
+- GitHub says `MERGEABLE` and `CLEAN`;
+- checks are finished and green;
+- no thread or comment is pending;
+- no human decision is outstanding;
+- the branch is up to date;
+- **the PR stayed quiet for at least 5 minutes**.
 
-Avant de l'annoncer, il vérifie deux choses :
-- **une revue est-elle encore en route ?** (réaction 👀, « reviewing… », relecteur qui a relu un
-  commit précédent mais pas celui-ci). Si oui, il attend jusqu'à 15 puis 30 minutes au plus ;
-- **la description est-elle encore vraie ?** Sinon, `ship refresh-description`.
+Before announcing it, it checks two things:
+- **is a review still on its way?** (👀 reaction, "reviewing…", a reviewer who reviewed a previous
+  commit but not this one). If so, it waits up to 15 then 30 minutes at most;
+- **is the description still true?** Otherwise, `ship refresh-description`.
 
-Il ne dit **jamais** « sûr à merger ».
+It **never** says "safe to merge".
 
-## Bon à savoir
+## Good to know
 
-- `needs-human` et `blocked-failing` ne terminent pas la veille : ils empêchent seulement le verdict
-  « prête ». La veille continue pour les autres retours.
-- `blocked-external` (CI d'une PR de fork en attente d'approbation) : Kaizen n'approuve jamais.
-- Budget : 8 h de veille active par défaut, filet de sécurité de 3 jours.
-- État local : `.kaizen/state/pr/<owner>-<repo>-<n>.json`. Le supprimer fait repartir de zéro.
-- Un correctif de CI de plus de `review.max_unreviewed_lines` lignes (80) depuis la dernière revue
-  est refusé au push : `watch-pr` relance alors `/kaizen:review` avant de pousser.
-- Prérequis : `gh` authentifié. Les réponses portent le marqueur `<!-- kaizen -->`.
+- `needs-human` and `blocked-failing` do not end the watch: they only prevent the "ready" verdict. The
+  watch goes on for the other feedback.
+- `blocked-external` (a fork PR's CI waiting for approval): Kaizen never approves.
+- Budget: 8 h of active watching by default, 3-day safety net.
+- Local state: `.kaizen/state/pr/<owner>-<repo>-<n>.json`. Deleting it starts over.
+- A CI fix of more than `review.max_unreviewed_lines` lines (80) since the last review is refused at
+  push time: `watch-pr` then reruns `/kaizen:review` before pushing.
+- Prerequisite: an authenticated `gh`. Replies carry the `<!-- kaizen -->` marker.
 
-## Voir aussi
+## See also
 
-[ship](ship.md) · [address-feedback](address-feedback.md) · [debug](debug.md) · [Dépannage](../depannage.md#watch-pr-tourne-en-rond-ou-ne-dit-jamais--prête-)
+[ship](ship.md) · [address-feedback](address-feedback.md) · [debug](debug.md) · [Troubleshooting](../troubleshooting.md#watch-pr-goes-round-in-circles-or-never-says-ready)

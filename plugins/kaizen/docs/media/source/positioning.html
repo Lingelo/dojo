@@ -1,0 +1,39 @@
+<!-- Source of docs/media/positioning.png. Render: headless_shell --hide-scrollbars --window-size=1344,898 --screenshot=positioning.png positioning.html -->
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#fff;font-family:"DejaVu Sans",Helvetica,Arial,sans-serif;color:#1d1c1a}
+.wrap{width:1344px;height:898px;position:relative}
+h1{position:absolute;left:42px;top:22px;margin:0;font-size:25px;font-weight:700;letter-spacing:-.2px}
+.sub{position:absolute;left:42px;top:68px;font-size:19px;color:#555}
+.plot{position:absolute;left:212px;top:142px;width:1046px;height:634px;border:2px solid #c9c6bd;box-sizing:border-box}
+.vline{position:absolute;left:522px;top:0;bottom:0;border-left:2px dashed #e6e3dc}
+.hline{position:absolute;top:316px;left:0;right:0;border-top:2px dashed #e6e3dc}
+.q{position:absolute;font-size:19px;color:#555}
+.dot{position:absolute;width:24px;height:24px;border-radius:50%;border:2px solid #c9c6bd;background:#fff;transform:translate(-50%,-50%)}
+.dot.k{width:32px;height:32px;border:3px solid #2a6fd6;background:#b9d1f3}
+.lab{position:absolute;font-size:23px;transform:translateY(-50%)}
+.lab.k{font-weight:700}
+.ax{position:absolute;font-size:19px;color:#555}
+.axt{position:absolute;font-size:23px;font-weight:700}
+.rot{transform:rotate(-90deg);transform-origin:left top;white-space:nowrap}
+</style></head><body><div class="wrap">
+<h1>Only Kaizen covers the cycle up to production with guardrails in code</h1>
+<div class="sub">Qualitative positions, taken from the tables in the document</div>
+<div class="plot">
+ <div class="vline"></div><div class="hline"></div>
+ <div class="q" style="left:28px;top:24px">Guardrails, short scope</div>
+ <div class="q" style="right:28px;top:24px">Complete, guaranteed cycle</div>
+ <div class="q" style="left:28px;bottom:22px">Specify, then code</div>
+ <div class="q" style="right:28px;bottom:22px">Complete loop, through instructions</div>
+</div>
+<div class="dot k" style="left:1146px;top:266px"></div><div class="lab k" style="right:230px;top:266px">Kaizen</div>
+<div class="dot" style="left:506px;top:540px"></div><div class="lab" style="left:534px;top:540px">Kiro</div>
+<div class="dot" style="left:1018px;top:622px"></div><div class="lab" style="right:354px;top:622px">Compound Engineering</div>
+<div class="dot" style="left:346px;top:657px"></div><div class="lab" style="left:374px;top:657px">Spec Kit</div>
+<div class="dot" style="left:672px;top:692px"></div><div class="lab" style="left:700px;top:692px">BMAD</div>
+<div class="ax" style="left:212px;top:798px">from spec to code</div>
+<div class="ax" style="right:86px;top:798px">up to production</div>
+<div class="axt" style="left:0;width:1470px;text-align:center;top:838px">Cycle coverage</div>
+<div class="ax rot" style="left:152px;top:300px">blocking hooks</div>
+<div class="ax rot" style="left:152px;top:778px">instructions</div>
+<div class="axt rot" style="left:86px;top:640px">Guarantees enforced by code</div>
+</div></body></html>

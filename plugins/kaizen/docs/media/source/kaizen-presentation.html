@@ -1,40 +1,41 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Kaizen — présentation</title>
+<title>Kaizen — presentation</title>
 <!--
-  Vidéo de présentation du plugin Kaizen (79,6 s, 1920×1080, 30 fps), rendue avec le plugin motion-studio.
+  Presentation video of the Kaizen plugin (79.6 s, 1920×1080, 30 fps), rendered with the motion-studio plugin.
 
-  Métaphore : une spirale qui monte au-dessus d'un jardin sec. Chaque tour est un cycle
-  (brainstorm → plan → work → review → ship → learn) et monte plus haut que le précédent
-  (amélioration continue). Une grue en origami vermillon, l'unité de travail, suit le chemin de pierres
-  (les « mille grues » : beaucoup de petits pas qui s'accumulent) ;
-  les quatre pierres posées dans le gravier sont les articles de la constitution ; le garde-fou est
-  un torii fermé par une barre tant que les tests sont rouges ; chaque leçon capitalisée ajoute une
-  pierre à la pile du centre. L'ensō (cercle tracé d'un seul geste) ouvre et ferme la boucle.
+  Metaphor: a spiral rising above a dry garden. Each turn is a cycle
+  (brainstorm → plan → work → review → ship → learn) and rises higher than the previous one
+  (continuous improvement). A vermilion origami crane, the unit of work, follows the stone path
+  (the "thousand cranes": many small steps that add up);
+  the four stones set in the gravel are the articles of the constitution; the quality gate is
+  a torii closed by a bar while tests are red; each captured learning adds a
+  stone to the pile in the center. The ensō (a circle drawn in a single stroke) opens and closes the loop.
 
-  Direction artistique d'inspiration japonaise : papier washi, encre sumi, vermillon shu, beaucoup de vide (ma).
-  Texte japonais : le sceau 改善 (kaizen) au titre et à la fin, et un kanji par étape sur le chemin
-  (想 imaginer · 計 planifier · 作 fabriquer · 検 examiner · 出 expédier · 積 accumuler). Étapes numérotées 01 à 06.
-  Matières procédurales (aucune image) : chemin en corde tressée, granit moucheté, mousse, cèdre brûlé, laque.
+  Japanese-inspired art direction: washi paper, sumi ink, shu vermilion, a lot of empty space (ma).
+  Japanese text: the 改善 (kaizen) seal on the title and at the end, and one kanji per step on the path
+  (想 imagine · 計 plan · 作 make · 検 examine · 出 ship · 積 accumulate). Steps numbered 01 to 06.
+  Procedural materials (no image): braided rope path, speckled granite, moss, charred cedar, lacquer.
 
-  Temps : la composition est écrite en temps du récit (0–61 s) ; storyAt()/realAt() le ralentissent pendant que
-  les cartes sont lisibles. narration.json porte des "at" en temps réel, calculés avec la même table.
-  Aucun chiffre inventé : seules sources citées, DORA « State of AI-assisted Software Development » 2025 et
-  « ROI of AI-assisted Software Development » (2026.01, mai 2026), pour leur constat qualitatif commun (l'IA amplifie ;
-  débit en hausse, instabilité aussi : « instability tax »). Les chiffres du ROI 2026 sont un modèle d'exemple, non repris ; les cartes
-  d'exemple reprennent l'exemple de la documentation (SHOP-412, export CSV) et sont marquées « exemple ».
-  Polices : Shippori Mincho et Zen Kaku Gothic New (SIL OFL 1.1, voir fonts/), sous-ensembles embarqués.
+  Time: the composition is written in story time (0–61 s); storyAt()/realAt() slow it down while
+  the cards are readable. narration.json carries "at" values in real time, computed with the same table.
+  No invented figure: the only cited sources are DORA "State of AI-assisted Software Development" 2025 and
+  "ROI of AI-assisted Software Development" (2026.01, May 2026), for their shared qualitative finding (AI amplifies;
+  throughput up, instability too: the "instability tax"). The 2026 ROI figures are an example model, not reused; the example
+  cards reuse the documentation's example (SHOP-412, CSV export) and are marked "example".
+  Fonts: Shippori Mincho and Zen Kaku Gothic New (SIL OFL 1.1, see fonts/), embedded subsets.
 
-  Rendu (depuis ce dossier, <work> = dossier de travail) :
+  Render (from this folder, <work> = working folder):
+    node ../../../../motion-studio/scripts/voice-setup.mjs install piper --lang en    # once
     node ../../../../motion-studio/scripts/voice.mjs narration.json -o <work>/voice
     node bed-ma.mjs --duration 79.6 --bpm 84 --start 11.05 -o <work>/bed.wav > <work>/bed.json
     node ../../../../motion-studio/scripts/render.mjs kaizen-presentation.html --quality high --voice <work>/voice/voice.json \
          --audio <work>/bed.wav --beats <work>/bed.json -o <work>/kaizen-presentation.mp4
     ffmpeg -i <work>/kaizen-presentation.mp4 -c:v libx264 -preset slow -crf 24 -tune animation -pix_fmt yuv420p \
-         -movflags +faststart -c:a aac -b:a 160k ../kaizen-presentation.mp4   # ~20 Mo au lieu de ~66, SSIM 0,983
-    aperçu (sans sous-titres) : render.mjs … --quality high --stills 12.6, puis réduit à 1280 px en JPEG
+         -movflags +faststart -c:a aac -b:a 160k ../kaizen-presentation.mp4   # ~20 MB instead of ~66, SSIM 0.983
+    preview (no subtitles): render.mjs … --quality high --stills 12.6, then scaled down to 1280 px as JPEG
     cp <work>/kaizen-presentation.srt <work>/kaizen-presentation.vtt ..
 -->
 <script type="importmap">
@@ -46,7 +47,7 @@
 <style>
   @font-face { font-family: "Shippori Mincho"; font-weight: 500; font-display: block; src: url(fonts/shippori-mincho-500-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
   @font-face { font-family: "Shippori Mincho"; font-weight: 700; font-display: block; src: url(fonts/shippori-mincho-700-latin.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
-  /* les kanji de la vidéo (sceau 改善 + un par étape), sous-ensemble de quelques Ko : identique sur toute machine */
+  /* the video's kanji (改善 seal + one per step), a subset of a few KB: identical on every machine */
   @font-face { font-family: "Kaizen Seal"; font-weight: 700; font-display: block; src: url(fonts/shippori-mincho-700-kaizen.woff2) format("woff2"); }
   @font-face { font-family: "Zen Kaku Gothic New"; font-weight: 400; font-display: block; src: url(fonts/zen-kaku-gothic-new-400-latin.woff2) format("woff2"); }
   @font-face { font-family: "Zen Kaku Gothic New"; font-weight: 700; font-display: block; src: url(fonts/zen-kaku-gothic-new-700-latin.woff2) format("woff2"); }
@@ -63,7 +64,7 @@
   .mincho { font-family: "Shippori Mincho", "Liberation Serif", serif; }
   .mono { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; }
   .ov { position: absolute; left: 130px; top: 150px; width: 640px; opacity: 0; transform-origin: 0 50%; }
-  /* plaques de papier montées sur la spirale (rendu CSS3D : le texte reste net) */
+  /* paper plates mounted on the spiral (CSS3D rendering: the text stays sharp) */
   .ov.plate { left: 0; top: 0; transform-origin: 50% 50%; width: 780px; padding: 50px 56px 54px 118px;
     background: var(--grain), var(--washi2); box-shadow: 0 40px 60px -40px rgba(70,52,28,.45), 0 0 0 1px rgba(120,100,70,.12); }
   .num { position: absolute; left: 38px; top: 44px; font-size: 40px; font-weight: 500; color: var(--shu); line-height: 1; font-family: "Shippori Mincho", serif; }
@@ -86,14 +87,14 @@
     text-shadow: 0 0 4px var(--washi), 0 0 10px var(--washi), 0 0 18px rgba(239,232,217,.9); }
   .lbl i { font-style: normal; font-family: "Kaizen Seal", serif; font-size: 40px; color: var(--shu); margin-right: 12px; vertical-align: -5px; }
   .lbl b { font-family: "Shippori Mincho", serif; font-weight: 700; color: var(--shu); margin-right: 10px; }
-  /* titre : le mot est centré dans l'ensō, avec de l'air tout autour */
+  /* title: the word is centered in the ensō, with air all around */
   #title { left: 200px; top: 404px; width: 720px; text-align: center; transform-origin: 50% 50%; }
   #title .k, #outro .k { font-size: 150px; line-height: 1; letter-spacing: -0.01em; font-weight: 500; }
-  /* fin : l'ensō devient une marque posée à gauche du mot */
+  /* end: the ensō becomes a mark set to the left of the word */
   #outro { left: 400px; top: 335px; width: 600px; }
   #outro .t { font-size: 38px; margin-top: 34px; line-height: 1.35; font-family: "Shippori Mincho", serif; }
   #outro .i { font-size: 27px; margin-top: 30px; white-space: nowrap; color: var(--usu); }
-  /* hanko : sceau vermillon apposé, kanji en réserve (papier) ; l'encre ne couvre pas tout, comme un vrai tampon */
+  /* hanko: a vermilion seal stamped, kanji in reserve (paper); the ink does not cover everything, like a real stamp */
   .hanko { position: absolute; display: grid; place-items: center; width: 92px; height: 176px; background: var(--shu); color: var(--washi2);
     font-family: "Kaizen Seal", serif; font-weight: 700; font-size: 64px; line-height: 1.12; writing-mode: vertical-rl; border-radius: 7px;
     box-shadow: inset 0 0 0 5px var(--shu), inset 0 0 0 7px var(--washi2); mix-blend-mode: multiply; opacity: 0;
@@ -108,7 +109,7 @@
     background: radial-gradient(ellipse at 58% 50%, rgba(80,60,30,0) 58%, rgba(80,60,30,.17) 100%); }
   #grain { position: absolute; inset: 0; pointer-events: none; background: var(--grain); mix-blend-mode: multiply; }
   #css3d { position: absolute; inset: 0; pointer-events: none; }
-  /* sous-titres du renderer : encre sur papier plutôt que blanc cerclé de noir */
+  /* renderer subtitles: ink on paper rather than white outlined in black */
   #__captions { color: #1d1c1a !important; -webkit-text-stroke: 0 !important; font-family: "Zen Kaku Gothic New", sans-serif !important;
     text-shadow: 0 0 5px #efe8d9, 0 0 12px #efe8d9, 0 0 22px rgba(239,232,217,.95), 0 0 34px rgba(239,232,217,.8) !important; }
 </style>
@@ -123,47 +124,47 @@
 <div class="ov" id="o-dora">
   <div class="kicker">DORA · State of AI-assisted Software Development 2025<br>DORA · ROI of AI-assisted Software Development 2026</div>
   <div class="rule"></div>
-  <div class="h mincho">L'IA amplifie.</div>
+  <div class="h mincho">AI amplifies.</div>
   <div class="panel" style="margin-top:36px">
-    <div class="rowx"><span>Livraison</span><span>↑</span></div>
-    <div class="rowx" style="color:var(--shu)"><span>Instabilité</span><span>↑</span></div>
+    <div class="rowx"><span>Delivery</span><span>↑</span></div>
+    <div class="rowx" style="color:var(--shu)"><span>Instability</span><span>↑</span></div>
   </div>
 </div>
 
-<!-- 9.1–12.6 · titre -->
+<!-- 9.1–12.6 · title -->
 <div class="ov" id="title">
   <div class="k mincho">Kaizen</div>
-  <div class="b m" style="margin-top:20px">amélioration continue · pour Claude Code</div>
+  <div class="b m" style="margin-top:20px">continuous improvement · for Claude Code</div>
   <div class="hanko" id="hk1">改善</div>
 </div>
 
 <!-- 13.0–17.8 · constitution -->
 <div class="ov" id="o-const">
-  <div class="kicker">Le socle</div>
+  <div class="kicker">The foundation</div>
   <div class="rule"></div>
   <div class="mono" style="font-size:38px">CONSTITUTION.md</div>
   <div class="panel" style="margin-top:26px">
-    <span class="ex">exemple</span>
-    <div class="rowx" id="ar1"><span>I. Preuve d'abord</span><span class="ctl">contrôle ✓</span></div>
-    <div class="rowx" id="ar2"><span>II. Petits lots</span><span class="ctl">contrôle ✓</span></div>
-    <div class="rowx" id="ar3"><span>III. Sécurité par défaut</span><span class="ctl">contrôle ✓</span></div>
-    <div class="rowx" id="ar4"><span>IV. Autonomie des agents</span><span class="ctl">contrôle ✓</span></div>
+    <span class="ex">example</span>
+    <div class="rowx" id="ar1"><span>I. Evidence first</span><span class="ctl">check ✓</span></div>
+    <div class="rowx" id="ar2"><span>II. Small batches</span><span class="ctl">check ✓</span></div>
+    <div class="rowx" id="ar3"><span>III. Secure by default</span><span class="ctl">check ✓</span></div>
+    <div class="rowx" id="ar4"><span>IV. Agent autonomy</span><span class="ctl">check ✓</span></div>
   </div>
 </div>
 
-<!-- 18.0–22.1 · quoi / comment (plaque, station brainstorm) -->
+<!-- 18.0–22.1 · what / how (plate, brainstorm station) -->
 <div class="ov" id="o-qc">
   <div class="num">01</div>
-  <div class="kicker">Avant le code</div>
+  <div class="kicker">Before the code</div>
   <div class="rule"></div>
-  <div id="qc1"><div class="mono m" style="font-size:25px">/kaizen:brainstorm</div><div class="h mincho">quoi</div></div>
-  <div id="qc2" style="margin-top:30px"><div class="mono m" style="font-size:25px">/kaizen:plan</div><div class="h mincho">comment</div></div>
+  <div id="qc1"><div class="mono m" style="font-size:25px">/kaizen:brainstorm</div><div class="h mincho">what</div></div>
+  <div id="qc2" style="margin-top:30px"><div class="mono m" style="font-size:25px">/kaizen:plan</div><div class="h mincho">how</div></div>
 </div>
 
-<!-- 22.2–28.2 · traçabilité (plaque, station plan) -->
+<!-- 22.2–28.2 · traceability (plate, plan station) -->
 <div class="ov" id="o-trace">
   <div class="num">02</div>
-  <div class="kicker">Le plan</div>
+  <div class="kicker">The plan</div>
   <div class="rule"></div>
   <svg width="600" height="290" viewBox="0 0 640 300">
     <g font-size="26" fill="#1d1c1a" font-family="DejaVu Sans Mono">
@@ -173,61 +174,61 @@
     <g id="tlinks" stroke="#1d1c1a" stroke-width="2" fill="none"></g>
   </svg>
   <div class="b" style="margin-top:6px"><span id="pchk" style="color:var(--koke)">plan check ✓</span></div>
-  <div class="b m" id="drv" style="font-size:25px;margin-top:8px">relu par 2 à 6 agents (doc-review)</div>
+  <div class="b m" id="drv" style="font-size:25px;margin-top:8px">reviewed by 2 to 6 agents (doc-review)</div>
 </div>
 
-<!-- 28.4–33.1 · garde-fou (plaque, station work) -->
+<!-- 28.4–33.1 · quality gate (plate, work station) -->
 <div class="ov" id="o-gate">
   <div class="num">03</div>
-  <div class="kicker">Hook Stop · garde-fou</div>
+  <div class="kicker">Stop hook · quality gate</div>
   <div class="rule"></div>
   <pre class="mono" id="term" style="font-size:25px;line-height:1.6"></pre>
   <div class="b" id="gmsg" style="margin-top:16px"></div>
 </div>
 
-<!-- 33.2–38.4 · revue (plaque, station review) -->
+<!-- 33.2–38.4 · review (plate, review station) -->
 <div class="ov" id="o-rev">
   <div class="num">04</div>
-  <div class="kicker">Revue · relecteurs choisis selon le diff</div>
+  <div class="kicker">Review · reviewers chosen from the diff</div>
   <div class="rule"></div>
-  <span class="ex">exemple</span>
+  <span class="ex">example</span>
   <div class="mono" style="font-size:23px;line-height:1.6;color:var(--usu)">execSync(`grep "${customer}" …`)</div>
-  <div class="b" style="margin-top:18px"><span style="color:var(--shu);font-weight:700">P0</span> · injection de commande (CWE-78)</div>
-  <div style="margin-top:30px"><span class="seal" id="seal">VÉRIFIÉ</span></div>
-  <div class="b m" style="margin-top:22px">sans revue enregistrée, rien n'est poussé</div>
+  <div class="b" style="margin-top:18px"><span style="color:var(--shu);font-weight:700">P0</span> · command injection (CWE-78)</div>
+  <div style="margin-top:30px"><span class="seal" id="seal">VERIFIED</span></div>
+  <div class="b m" style="margin-top:22px">no recorded review, nothing is pushed</div>
 </div>
 
-<!-- 38.6–47.3 · PR (plaque, station ship) -->
+<!-- 38.6–47.3 · PR (plate, ship station) -->
 <div class="ov" id="o-pr">
   <div class="num">05</div>
   <div class="kicker">Ship · watch-pr</div>
   <div class="rule"></div>
-  <span class="ex">exemple</span>
-  <div class="b" style="font-weight:700">feat(SHOP-412): export CSV des commandes</div>
-  <div class="mono m" style="font-size:21px;margin-top:20px">taille : <span id="lns">0</span> / 400 lignes</div>
+  <span class="ex">example</span>
+  <div class="b" style="font-weight:700">feat(SHOP-412): orders CSV export</div>
+  <div class="mono m" style="font-size:21px;margin-top:20px">size: <span id="lns">0</span> / 400 lines</div>
   <div class="bar"><i id="sz"></i><b style="left:100%"></b></div>
-  <div class="b" id="pk1" style="margin-top:22px">✓ description et guide du relecteur</div>
-  <div class="b" id="pk2">✓ retours de revue traités</div>
-  <div class="b" id="pk3">✓ CI verte</div>
-  <div class="b" id="prd" style="margin-top:18px;color:var(--koke)">semble prête à merger</div>
-  <div style="margin-top:30px"><span class="btn" id="mbtn">Merge</span> <span class="b m" id="yours" style="margin-left:20px">à vous</span></div>
+  <div class="b" id="pk1" style="margin-top:22px">✓ description and reviewer guide</div>
+  <div class="b" id="pk2">✓ review feedback handled</div>
+  <div class="b" id="pk3">✓ CI green</div>
+  <div class="b" id="prd" style="margin-top:18px;color:var(--koke)">looks ready to merge</div>
+  <div style="margin-top:30px"><span class="btn" id="mbtn">Merge</span> <span class="b m" id="yours" style="margin-left:20px">yours</span></div>
 </div>
 
-<!-- 47.5–56.3 · boucle -->
+<!-- 47.5–56.3 · loop -->
 <div class="ov" id="o-loop">
   <div class="kicker"><span class="mincho" style="color:var(--shu);font-weight:700;letter-spacing:0;margin-right:14px">06</span>Learn</div>
   <div class="rule"></div>
   <div class="mono" style="font-size:30px">docs/learnings/</div>
-  <div class="b m" style="margin-top:16px">leçons durables, relues par le cycle suivant</div>
+  <div class="b m" style="margin-top:16px">durable lessons, read back by the next cycle</div>
 </div>
 
-<!-- 56.8–61 · fin -->
+<!-- 56.8–61 · end -->
 <div class="ov" id="outro">
   <div class="k mincho">Kaizen</div>
   <div class="hanko" id="hk2">改善</div>
-  <div class="t">Que chaque unité de travail rende la suivante plus facile.</div>
+  <div class="t">Every unit of work makes the next one easier.</div>
   <div class="i mono">/plugin install kaizen@angelo-plugins</div>
-  <div class="i mono" style="margin-top:14px">/kaizen:help — par où commencer</div>
+  <div class="i mono" style="margin-top:14px">/kaizen:help — where to start</div>
 </div>
 
 <svg id="cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#1d1c1a" stroke="#f6f1e6" stroke-width="1.2"/></svg>
@@ -254,10 +255,10 @@ const lerp = (a, b, k) => a + (b - a) * k;
 const hn = (a, b) => { const h = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return h - Math.floor(h); };
 const sfx = (src, at, gain = 0.35, extra = {}) => window.__sfx?.(src, { at: realAt(at), gain, ...extra });
 
-// ---------------------------------------------------------------- temps du récit / temps réel
-// Toute la composition est écrite en temps du récit (0 → 61 s). Le temps réel le parcourt plus lentement
-// quand une carte est lisible (SLOW), à vitesse normale pendant les transitions : on gagne du temps de
-// lecture sans toucher aux mouvements. Les sons et la voix (narration.json, "at") suivent la même table.
+// ---------------------------------------------------------------- story time / real time
+// The whole composition is written in story time (0 → 61 s). Real time plays through it more slowly
+// while a card is readable (SLOW), at normal speed during transitions: reading time is gained
+// without touching the movements. Sounds and voice (narration.json, "at") follow the same table.
 const STORY = 61, SLOW = 0.68, RAMP = 0.5;
 const READ = [[3.6, 8.3], [13.5, 17.5], [18.5, 21.7], [22.7, 27.8], [28.9, 32.7], [33.7, 38.0], [39.1, 46.9], [48.0, 56.0], [57.4, 61]];
 const speedAt = (s) => 1 - (1 - SLOW) * Math.max(0, ...READ.map(([a, b]) => sstep(clamp((s - a) / RAMP)) * sstep(clamp((b - s) / RAMP))));
@@ -271,9 +272,9 @@ function storyAt(t) {
   while (hi - lo > 1) { const m = (lo + hi) >> 1; if (REAL[m] <= t) lo = m; else hi = m; }
   return (lo + (t - REAL[lo]) / (REAL[hi] - REAL[lo])) * STEP;
 }
-window.__timeline = { realAt, storyAt, DUR }; // pour caler narration.json et la musique (voir l'en-tête)
+window.__timeline = { realAt, storyAt, DUR }; // to align narration.json and the music (see the header)
 
-// ---------------------------------------------------------------- scène
+// ---------------------------------------------------------------- scene
 const WASHI = 0xefe8d9, SHU = 0xc4401f, STONE = 0x5a564f, GRANITE = 0xb4ab9b;
 const renderer = new THREE.WebGLRenderer({ canvas: $('#gl'), antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(devicePixelRatio);
@@ -283,7 +284,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(WASHI);
-scene.fog = new THREE.Fog(WASHI, 26, 64); // brume : la profondeur se lit comme dans un lavis
+scene.fog = new THREE.Fog(WASHI, 26, 64); // mist: depth reads like an ink wash
 const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 200);
 
 scene.add(new THREE.HemisphereLight(0xfffaf0, 0xb3a790, 1.25));
@@ -295,15 +296,15 @@ Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, n
 sun.shadow.radius = 4;
 sun.shadow.bias = -0.0006;
 scene.add(sun);
-// niveau de rendu (render.mjs --quality) : même scène partout, seule la finesse change
-// draft = sans ombres (itérer vite) · standard = vidéo publiée · high = plus de polygones, ombres fines, occlusion ambiante
+// render level (render.mjs --quality): same scene everywhere, only the finesse changes
+// draft = no shadows (iterate fast) · standard = published video · high = more polygons, fine shadows, ambient occlusion
 const QUALITY = window.__quality ?? 'standard';
 if (QUALITY === 'draft') renderer.shadowMap.enabled = false;
 const HQ = QUALITY === 'high';
 if (HQ) sun.shadow.mapSize.set(4096, 4096);
 const shadowy = (m, cast = true, receive = false) => { m.castShadow = cast; m.receiveShadow = receive; return m; };
 
-// textures procédurales (aucun fichier image, déterministes) : f(u, v) → [r, g, b] en 0–255
+// procedural textures (no image file, deterministic): f(u, v) → [r, g, b] in 0–255
 function canvasTex(w, h, f, { repeat = [1, 1], color = true } = {}) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const ctx = c.getContext('2d'), img = ctx.createImageData(w, h), d = img.data;
@@ -316,18 +317,18 @@ function canvasTex(w, h, f, { repeat = [1, 1], color = true } = {}) {
   t.anisotropy = 8;
   return t;
 }
-// granit : fond grisé, mouchetures sombres et claires (pierres de gué, pile, rochers)
+// granite: grayish base, dark and light speckles (stepping stones, pile, rocks)
 const speckle = (base, dark = 0.55, light = 1.18) => canvasTex(512, 512, (u, v, x, y) => {
   const n = hn(x * 0.71, y * 1.13), m = hn(Math.floor(x / 3) * 3.1, Math.floor(y / 3) * 5.7), k = m > 0.93 ? dark : m < 0.05 ? light : 0.9 + 0.2 * n;
   return base.map((c) => Math.min(255, c * k));
 });
 const graniteTex = speckle([214, 206, 190]), slabTex = speckle([196, 188, 174]), rockTex = speckle([150, 144, 134], 0.6, 1.3);
 
-// spirale : 6 stations par tour, chaque tour monte de PITCH
+// spiral: 6 stations per turn, each turn rises by PITCH
 const R = 5.2, PITCH = 2.3, TURNS = 4.2;
 const helix = (s) => { const a = (s / 6) * Math.PI * 2 - Math.PI / 2; return new THREE.Vector3(R * Math.cos(a), 0.9 + (s / 6) * PITCH, R * Math.sin(a)); };
 class HelixCurve extends THREE.Curve { getPoint(u, v = new THREE.Vector3()) { return v.copy(helix(u * 6 * TURNS)); } }
-// le chemin est une corde tressée (shimenawa) : trois torons en diagonale, ~4 torsions par unité de longueur
+// the path is a braided rope (shimenawa): three diagonal strands, ~4 twists per unit of length
 const tubeGeo = new THREE.TubeGeometry(new HelixCurve(), HQ ? 2400 : 900, 0.055, HQ ? 20 : 10, false);
 const ropeTex = canvasTex(128, 96, (u, v) => { const k = 0.5 + 0.5 * Math.cos(Math.PI * 2 * (u + 3 * v)); const c = 0.55 + 0.45 * Math.pow(k, 0.6); return [62 * c, 57 * c, 50 * c]; }, { repeat: [560, 1] });
 const ropeBump = canvasTex(128, 96, (u, v) => { const k = 255 * Math.pow(0.5 + 0.5 * Math.cos(Math.PI * 2 * (u + 3 * v)), 0.6); return [k, k, k]; }, { repeat: [560, 1], color: false });
@@ -335,14 +336,14 @@ const tube = shadowy(new THREE.Mesh(tubeGeo, new THREE.MeshStandardMaterial({ ma
 scene.add(tube);
 const tubeIndexCount = tubeGeo.index.count;
 
-// pierre irrégulière, déterministe ; high : plus de facettes et une octave fine (le grain de la roche)
+// irregular, deterministic stone; high: more facets and a fine octave (the grain of the rock)
 function stoneGeo(seed, detail = HQ ? 6 : 3) {
   const g = new THREE.IcosahedronGeometry(1, detail), p = g.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) {
     v.fromBufferAttribute(p, i);
     let n = 1 + 0.16 * Math.sin(v.x * 3.1 + seed) * Math.cos(v.z * 2.7 - seed * 0.7) + 0.08 * Math.sin(v.y * 5.3 + seed * 2);
     n += 0.025 * Math.sin(v.x * 13.7 + seed * 3) * Math.sin(v.y * 11.3 - seed) * Math.sin(v.z * 12.9 + seed * 1.3);
-    if (v.y < -0.35) n *= 0.92; // base aplatie : la pierre repose dans le gravier
+    if (v.y < -0.35) n *= 0.92; // flattened base: the stone rests in the gravel
     v.multiplyScalar(n);
     p.setXYZ(i, v.x, v.y, v.z);
   }
@@ -350,9 +351,9 @@ function stoneGeo(seed, detail = HQ ? 6 : 3) {
   return g;
 }
 
-// jardin sec : gravier ratissé en cercles autour du centre et de chaque pierre, en lignes droites ailleurs
+// dry garden: gravel raked in circles around the center and each stone, in straight lines elsewhere
 const G = 15;
-const ROCKS = [[-2.7, 6.0, 0.62], [-0.85, 6.5, 0.44], [1.05, 6.2, 0.7], [2.9, 5.7, 0.4]]; // x, z, taille : les 4 articles
+const ROCKS = [[-2.7, 6.0, 0.62], [-0.85, 6.5, 0.44], [1.05, 6.2, 0.7], [2.9, 5.7, 0.4]]; // x, z, size: the 4 articles
 function gravelTexture() {
   const N = HQ ? 3072 : 2048, c = document.createElement('canvas');
   c.width = c.height = N;
@@ -367,7 +368,7 @@ function gravelTexture() {
       const groove = dist !== null ? Math.cos((dist / spacing) * Math.PI * 2)
         : rc < 6.6 ? Math.cos((rc / spacing) * Math.PI * 2) : Math.cos((z / spacing) * Math.PI * 2);
       const n = hn(px * 0.37, py * 0.53) - 0.5;
-      const grain = hn(Math.floor(px / 2) * 1.7, Math.floor(py / 2) * 2.3) > 0.97 ? -38 : 0; // petits graviers sombres
+      const grain = hn(Math.floor(px / 2) * 1.7, Math.floor(py / 2) * 2.3) > 0.97 ? -38 : 0; // small dark pebbles
       const v = 222 + 13 * groove + 26 * n + grain;
       const i = (py * N + px) * 4;
       d[i] = v + 6; d[i + 1] = v; d[i + 2] = v - 16; d[i + 3] = 255;
@@ -380,14 +381,14 @@ function gravelTexture() {
   return tex;
 }
 const gravel = gravelTexture();
-// flancs : terre tassée, plus sombre en bas
+// sides: packed earth, darker at the bottom
 const sideMat = new THREE.MeshStandardMaterial({ map: canvasTex(256, 64, (u, v, x, y) => { const k = (0.92 + 0.12 * hn(x, y)) * (1 - 0.25 * v); return [207 * k, 196 * k, 173 * k]; }), roughness: 1 });
 const garden = new THREE.Mesh(new THREE.BoxGeometry(G, 0.5, G), [sideMat, sideMat,
   new THREE.MeshStandardMaterial({ map: gravel, bumpMap: gravel, bumpScale: 1.4, roughness: 1 }), sideMat, sideMat, sideMat]);
 garden.position.y = -0.25;
 garden.receiveShadow = true;
 scene.add(garden);
-// bordure : poutres de cèdre brûlé (yakisugi), arêtes adoucies, veinage dans la longueur
+// border: charred cedar beams (yakisugi), softened edges, grain along the length
 const woodTex = canvasTex(1024, 64, (u, v, x, y) => {
   const ring = 0.5 + 0.5 * Math.sin(v * 40 + 3 * Math.sin(u * 9 + v * 4) + 1.5 * Math.sin(u * 37));
   const k = 0.75 + 0.3 * ring + 0.08 * (hn(x, y) - 0.5);
@@ -401,7 +402,7 @@ const curbs = [[0, G / 2, 0], [0, -G / 2, 0], [G / 2, 0, Math.PI / 2], [-G / 2, 
   scene.add(m);
   return m;
 });
-// les quatre pierres : les articles de la constitution, chacune avec un liseré de mousse à sa base
+// the four stones: the articles of the constitution, each with a moss rim at its base
 const mossMat = new THREE.MeshStandardMaterial({ map: canvasTex(256, 256, (u, v, x, y) => { const k = 0.7 + 0.5 * hn(x * 0.9, y * 1.3); return [96 * k, 106 * k, 66 * k]; }), roughness: 1 });
 const rocks = ROCKS.map(([x, z, s], i) => {
   const m = shadowy(new THREE.Mesh(stoneGeo(i * 3.7 + 1), new THREE.MeshStandardMaterial({ map: rockTex, bumpMap: rockTex, bumpScale: 2, roughness: 0.92 })), true, true);
@@ -418,16 +419,16 @@ const rocks = ROCKS.map(([x, z, s], i) => {
   return m;
 });
 
-// pierres de gué : les stations du chemin
+// stepping stones: the stations of the path
 const NAMES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'learn'];
 const NUMS = ['01', '02', '03', '04', '05', '06'];
-const KANJI = ['想', '計', '作', '検', '出', '積']; // imaginer · planifier · fabriquer · examiner · expédier · accumuler
+const KANJI = ['想', '計', '作', '検', '出', '積']; // imagine · plan · make · examine · ship · accumulate
 const stations = [];
 for (let s = 0; s < 6 * 4; s++) {
   const g = new THREE.CylinderGeometry(0.44, 0.48, 0.13, HQ ? 44 : 22, HQ ? 3 : 2);
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), k = 1 + 0.1 * Math.sin(Math.atan2(z, x) * 3 + s); p.setX(i, x * k); p.setZ(i, z * k);
-    p.setY(i, p.getY(i) + 0.012 * Math.sin(x * 17 + s) * Math.sin(z * 15 - s)); } // surface taillée, pas lisse
+    p.setY(i, p.getY(i) + 0.012 * Math.sin(x * 17 + s) * Math.sin(z * 15 - s)); } // cut surface, not smooth
   g.computeVertexNormals();
   const m = shadowy(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: graniteTex, roughness: 1 })), true, true);
   m.position.copy(helix(s)).add(new THREE.Vector3(0, -0.13, 0));
@@ -436,7 +437,7 @@ for (let s = 0; s < 6 * 4; s++) {
 }
 $('#labels').innerHTML = NAMES.map((n, i) => `<div class="lbl" id="lb${i}"><i>${KANJI[i]}</i><b>${NUMS[i]}</b>${n}</div>`).join('');
 
-// pile du centre : une pierre plate par leçon
+// pile in the center: one flat stone per learning
 const slabs = [0, 1, 2, 3].map((i) => {
   const g = new THREE.CylinderGeometry(1.0 - i * 0.13, 1.06 - i * 0.13, 0.3, HQ ? 48 : 24, HQ ? 4 : 2);
   const p = g.attributes.position;
@@ -450,11 +451,11 @@ const slabs = [0, 1, 2, 3].map((i) => {
   return m;
 });
 
-// grue en origami (orizuru) : l'unité de travail. Papier vermillon plié : facettes nettes, lignes de pli,
-// fibres du washi. Repère local : avant = +z, haut = +y. Chaque aile = panneau intérieur + panneau extérieur
-// articulé (l'extrémité suit le battement avec un temps de retard). À l'entrée, une feuille plate se plie.
+// origami crane (orizuru): the unit of work. Folded vermilion paper: sharp facets, crease lines,
+// washi fibers. Local frame: front = +z, up = +y. Each wing = inner panel + outer panel
+// hinged (the tip follows the beat with a delay). On entry, a flat sheet folds itself.
 const paperTex = canvasTex(256, 256, (u, v, x, y) => {
-  const fiber = Math.pow(hn(Math.floor(x / 2), Math.floor(y * 0.15 + 3 * Math.sin(x * 0.05))), 6) * 0.18; // fibres longues
+  const fiber = Math.pow(hn(Math.floor(x / 2), Math.floor(y * 0.15 + 3 * Math.sin(x * 0.05))), 6) * 0.18; // long fibers
   const k = 0.93 + 0.07 * hn(x * 1.3, y * 0.7) + fiber;
   return [196 * k, 64 * k, 31 * k];
 }, { repeat: [3, 3] });
@@ -467,12 +468,12 @@ const tris = (...pts) => {
   g.computeVertexNormals();
   return g;
 };
-const craneParts = []; // { mesh, base, flat } : la feuille plate (flat) se plie vers la forme finale (base)
+const craneParts = []; // { mesh, base, flat }: the flat sheet (flat) folds into the final shape (base)
 const part = (geo, parent) => {
   const mesh = shadowy(new THREE.Mesh(geo, paperMat));
   const base = Float32Array.from(geo.attributes.position.array);
-  const flat = base.map((v, i) => (i % 3 === 1 ? 0 : v * 1.15)); // tout à plat, un peu plus grand : la feuille dépliée
-  mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 1), creaseMat)); // lignes de pli
+  const flat = base.map((v, i) => (i % 3 === 1 ? 0 : v * 1.15)); // all flat, slightly larger: the unfolded sheet
+  mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 1), creaseMat)); // crease lines
   parent.add(mesh);
   craneParts.push({ mesh, base, flat });
   return mesh;
@@ -480,10 +481,10 @@ const part = (geo, parent) => {
 const crane = new THREE.Group();
 const wings = [];
 {
-  // corps : losange à huit facettes, dos en arête
+  // body: eight-facet diamond, ridged back
   const F = [0, 0.03, 0.17], Bk = [0, 0.03, -0.17], D = [0, -0.06, 0], L = [-0.05, 0.035, 0], Rr = [0.05, 0.035, 0], T = [0, 0.075, 0];
   part(tris(F, L, D, F, D, Rr, Bk, D, L, Bk, Rr, D, F, T, L, F, Rr, T, Bk, L, T, Bk, T, Rr), crane);
-  // cou et queue : pointes fines pliées en V (deux couches)
+  // neck and tail: thin points folded in a V (two layers)
   const neck = (dir) => {
     const A = [-0.022, 0.015, 0.12 * dir], B = [0.022, 0.015, 0.12 * dir], C = [0, 0.07, 0.15 * dir], K = [0, 0.04, 0.2 * dir];
     const P = dir > 0 ? [0, 0.33, 0.35] : [0, 0.36, -0.4];
@@ -491,10 +492,10 @@ const wings = [];
   };
   part(neck(1), crane);
   part(neck(-1), crane);
-  // tête : pli inversé vers le bas, terminé par un bec
+  // head: inside reverse fold downwards, ending in a beak
   const h0 = [-0.016, 0.33, 0.345], h1 = [0.016, 0.33, 0.345], hT = [0, 0.345, 0.37], beak = [0, 0.255, 0.47];
   part(tris(h0, beak, hT, hT, beak, h1, h0, h1, beak), crane);
-  // ailes : panneau intérieur (pli central en vallée) + panneau extérieur articulé sur la ligne MF–MB
+  // wings: inner panel (central valley fold) + outer panel hinged on the MF–MB line
   for (const side of [-1, 1]) {
     const root = new THREE.Group();
     root.position.set(0.02 * side, 0.05, 0);
@@ -513,7 +514,7 @@ const wings = [];
 }
 scene.add(crane);
 let craneFold = -1;
-function foldCrane(k) { // 0 = feuille à plat, 1 = grue pliée
+function foldCrane(k) { // 0 = flat sheet, 1 = folded crane
   if (k === craneFold) return;
   craneFold = k;
   for (const { mesh, base, flat } of craneParts) {
@@ -521,11 +522,11 @@ function foldCrane(k) { // 0 = feuille à plat, 1 = grue pliée
     for (let i = 0; i < a.array.length; i++) a.array[i] = lerp(flat[i], base[i], k);
     a.needsUpdate = true;
     mesh.geometry.computeVertexNormals();
-    mesh.children[0].visible = k >= 1; // les lignes de pli n'existent qu'une fois la grue formée
+    mesh.children[0].visible = k >= 1; // crease lines only exist once the crane is formed
   }
 }
 
-// torii du garde-fou, juste après la station work ; le chemin passe dessous
+// quality gate torii, right after the work station; the path goes under it
 const gp = helix(2.55);
 const torii = new THREE.Group();
 const lacquer = canvasTex(64, 512, (u, v, x, y) => { const k = 0.94 + 0.06 * Math.sin(v * 90 + 2 * Math.sin(u * 7)) + 0.03 * (hn(x, y) - 0.5); return [196 * k, 64 * k, 31 * k]; });
@@ -536,27 +537,27 @@ const TOP = gp.y + 1.9, HALF = 0.78;
 for (const z of [-HALF, HALF]) {
   const pillar = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, TOP, seg), shuMat));
   pillar.position.set(0, TOP / 2, z);
-  const base = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.135, 0.26, seg), kuroMat)); // kamebaku : socle noir
+  const base = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.135, 0.26, seg), kuroMat)); // kamebaku: black base
   base.position.set(0, 0.13, z);
-  const collar = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.03, seg), kuroMat)); // bague du socle
+  const collar = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.03, seg), kuroMat)); // base ring
   collar.position.set(0, 0.27, z);
-  const daiwa = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, seg), kuroMat)); // daiwa : bague sous le linteau
+  const daiwa = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, seg), kuroMat)); // daiwa: ring under the lintel
   daiwa.position.set(0, TOP - 0.11, z);
-  const kusabi = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.045), shuMat)); // cale qui verrouille la traverse
+  const kusabi = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.045), shuMat)); // wedge locking the tie beam
   kusabi.position.set(0, TOP - 0.45, z + Math.sign(z) * 0.13);
   torii.add(pillar, base, collar, daiwa, kusabi);
 }
 const nuki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.13, 2.05), shuMat)); nuki.position.y = TOP - 0.45;
-// gakuzuka : la plaque centrale, cadre vermillon et fond noir
+// gakuzuka: the central plaque, vermilion frame and black background
 const gakuF = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.24), shuMat)); gakuF.position.y = TOP - 0.24;
 const gakuI = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.22, 0.16), kuroMat); gakuI.position.y = TOP - 0.24;
 const shimaki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 2.2), shuMat)); shimaki.position.y = TOP - 0.03;
-// kasagi : linteau noir aux extrémités relevées (sorihashi), plus épais au centre
+// kasagi: black lintel with raised ends (sorihashi), thicker in the center
 const kasaGeo = new THREE.BoxGeometry(0.24, 0.13, 2.8, 2, 2, HQ ? 96 : 48);
 { const p = kasaGeo.attributes.position; for (let i = 0; i < p.count; i++) { const z = p.getZ(i) / 1.4, a = Math.abs(z);
   p.setY(i, p.getY(i) * (1 - 0.25 * a) + 0.22 * Math.pow(a, 2.6)); p.setX(i, p.getX(i) * (1 + 0.15 * a)); } kasaGeo.computeVertexNormals(); }
 const kasagi = shadowy(new THREE.Mesh(kasaGeo, kuroMat)); kasagi.position.y = TOP + 0.09;
-// barre de fermeture (kannuki) : bloque le passage tant que les tests sont rouges
+// closing bar (kannuki): blocks the way while tests are red
 const barMat = new THREE.MeshStandardMaterial({ color: 0x1f1d1b, roughness: 0.6, transparent: true });
 const kannuki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 1.62), barMat));
 torii.add(nuki, gakuF, gakuI, shimaki, kasagi, kannuki);
@@ -564,7 +565,7 @@ torii.position.set(gp.x, 0, gp.z);
 torii.lookAt(new THREE.Vector3(0, 0, 0));
 scene.add(torii);
 
-// relecteurs : pierres de go en orbite autour de la grue pendant la revue
+// reviewers: go stones orbiting the crane during the review
 const orbiters = Array.from({ length: 7 }, (_, i) => {
   const m = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.12, HQ ? 48 : 32, HQ ? 32 : 20), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xf2eee4 : 0x1d1c1a, roughness: 0.25 })));
   m.scale.y = 0.55;
@@ -572,9 +573,9 @@ const orbiters = Array.from({ length: 7 }, (_, i) => {
   return m;
 });
 
-// flux d'introduction : de l'encre qui arrive de plus en plus vite.
-// Graines tirées d'un hachage, pas de Math.random : Three.js consomme Math.random pour l'UUID de chaque
-// objet créé, donc ajouter un objet plus haut décalerait toute la séquence (et chaque mode aurait la sienne).
+// intro stream: ink arriving faster and faster.
+// Seeds drawn from a hash, not Math.random: Three.js consumes Math.random for the UUID of every
+// object created, so adding an object higher up would shift the whole sequence (and each mode would have its own).
 const NP = 2600;
 const pGeo = new THREE.BufferGeometry();
 const pPos = new Float32Array(NP * 3), pCol = new Float32Array(NP * 3), seed = [];
@@ -586,8 +587,8 @@ const dot = document.createElement('canvas'); dot.width = dot.height = 64;
 const points = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.13, vertexColors: true, transparent: true, map: new THREE.CanvasTexture(dot), depthWrite: false }));
 scene.add(points);
 
-// high : rendu en passes avec occlusion ambiante (ombres de contact : pierres posées sur le sable, pieds du torii).
-// La scène est mate : le réalisme se gagne là, pas dans les reflets d'une carte d'environnement.
+// high: multi-pass rendering with ambient occlusion (contact shadows: stones resting on the sand, torii feet).
+// The scene is matte: realism is won there, not in the reflections of an environment map.
 let composer = null;
 if (HQ) {
   composer = new EffectComposer(renderer);
@@ -598,7 +599,7 @@ if (HQ) {
   composer.addPass(new OutputPass());
 }
 
-// ---------------------------------------------------------------- trajet de la grue (s = position sur la spirale)
+// ---------------------------------------------------------------- crane path (s = position on the spiral)
 const PATH = [[0, 0], [21.6, 0], [22.6, 1], [26.6, 1], [28.2, 2], [31.9, 2], [33.0, 3], [37.9, 3], [38.6, 4], [46.9, 4], [47.6, 5],
   [50.8, 5], [53.0, 11], [54.6, 17], [55.8, 23], [61, 23.6]];
 function craneS(t) {
@@ -612,8 +613,8 @@ function craneS(t) {
   return PATH.at(-1)[1];
 }
 
-// ---------------------------------------------------------------- caméra (poses enchaînées)
-// la caméra roule sur un rail parallèle à la spirale, en suivant la grue ; les plaques défilent avec
+// ---------------------------------------------------------------- camera (chained poses)
+// the camera rolls on a rail parallel to the spiral, following the crane; the plates scroll with it
 const RAIL_LEAD = 0.3, RAIL_DIST = 8.5, RAIL_UP = 3.0;
 function railAt(s) {
   const c = helix(s - RAIL_LEAD);
@@ -625,7 +626,7 @@ const POSES = [
   [0, () => [new THREE.Vector3(0, 1.4, 16), new THREE.Vector3(0, 1.4, 0)]],
   [9.0, (t) => { const a = 0.6 + (t - 9) * 0.05; return [new THREE.Vector3(19 * Math.cos(a), 10, 19 * Math.sin(a)), new THREE.Vector3(0, 3.6, 0)]; }],
   [13.0, (t) => { const a = 1.8 + (t - 13) * 0.03; return [new THREE.Vector3(11 * Math.cos(a), 4.6, 11 * Math.sin(a)), new THREE.Vector3(0.4, 0.2, 3.6)]; }],
-  [18.0, railPose, 1.6], // arrivée rapide : la première plaque ne doit pas être vue de dos
+  [18.0, railPose, 1.6], // quick arrival: the first plate must not be seen from behind
   [47.4, (t) => { const top = 0.15 + 0.32 * 1.5; const a = 2.2 + (t - 47.4) * 0.08; return [new THREE.Vector3(12.5 * Math.cos(a), top + 7.5, 12.5 * Math.sin(a)), new THREE.Vector3(0, top + 0.6, 0)]; }],
   [51.0, (t) => { const a = 2.6 + (t - 51) * 0.16; const h = 9 + (t - 51) * 0.9; return [new THREE.Vector3(21 * Math.cos(a), h, 21 * Math.sin(a)), new THREE.Vector3(0, 4 + (t - 51) * 0.4, 0)]; }],
   [56.8, (t) => { const a = 3.5 + (t - 56.8) * 0.05; return [new THREE.Vector3(24 * Math.cos(a), 17, 24 * Math.sin(a)), new THREE.Vector3(0, 6.5, 0)]; }],
@@ -642,7 +643,7 @@ function cameraPose(t) {
   let [p, q] = POSES[i][1](t);
   const bl = POSES[i][2] ?? BLEND;
   if (i > 0 && t < POSES[i][0] + bl) {
-    // fondu en coordonnées cylindriques : la caméra tourne autour de la spirale au lieu de la traverser
+    // fade in cylindrical coordinates: the camera turns around the spiral instead of crossing it
     const k = sstep(clamp((t - POSES[i][0]) / bl));
     const [pp, pq] = POSES[i - 1][1](t);
     const a0 = Math.atan2(pp.z, pp.x);
@@ -652,8 +653,8 @@ function cameraPose(t) {
     p = new THREE.Vector3(r * Math.cos(a), lerp(pp.y, p.y, k) + 2.5 * Math.sin(Math.PI * k) * (bl > 2 ? 1 : 0), r * Math.sin(a));
     q = pq.lerp(q, k);
   }
-  // transitions spatiales : chaque changement de chapitre se fait par un mouvement d'un axe de la caméra
-  // x = travelling latéral, y = grue, z = plongée en profondeur (le long du regard)
+  // spatial transitions: each change of chapter is a move along one camera axis
+  // x = lateral tracking, y = crane, z = dive in depth (along the line of sight)
   for (const [t0, d, axis, amp] of SWOOPS) {
     const k = prog(t, t0, d);
     if (k <= 0 || k >= 1) continue;
@@ -666,11 +667,11 @@ function cameraPose(t) {
   }
   return [p, q];
 }
-// cartes HTML (le sujet 3D est décalé vers la droite quand une carte occupe la gauche)
+// HTML cards (the 3D subject is shifted right when a card occupies the left)
 const OVS = [['#o-dora', 3.0, 8.7], ['#title', 9.1, 12.7], ['#o-const', 13.0, 17.9], ['#o-qc', 18.0, 22.1], ['#o-trace', 22.2, 28.2],
   ['#o-gate', 28.4, 33.1], ['#o-rev', 33.2, 38.4], ['#o-pr', 38.6, 47.3], ['#o-loop', 47.5, 56.4], ['#outro', 56.8, 61]];
 const CARD_AXIS = { '#o-dora': 'z', '#title': 'z', '#o-const': 'x', '#o-loop': 'z', '#outro': 'z' };
-// plaques du rail : chaque étape du cycle est posée juste avant sa station, face à la caméra
+// rail plates: each step of the cycle is set just before its station, facing the camera
 const RAIL = { '#o-qc': 0, '#o-trace': 1, '#o-gate': 2, '#o-rev': 3, '#o-pr': 4 };
 const cssRenderer = new CSS3DRenderer();
 cssRenderer.setSize(W, H);
@@ -690,7 +691,7 @@ for (const [id, st] of Object.entries(RAIL)) {
 }
 function ovVis(t, a, b) { return eo(prog(t, a, 0.5)) * (b >= STORY ? 1 : 1 - sstep(prog(t, b - 0.45, 0.45))); }
 
-// ---------------------------------------------------------------- ensō : un cercle tracé d'un seul geste de pinceau
+// ---------------------------------------------------------------- ensō: a circle drawn in a single brush stroke
 const ectx = $('#enso').getContext('2d');
 function drawEnso(cx, cy, r, p, thick, alpha) {
   if (p <= 0 || alpha <= 0) return;
@@ -715,18 +716,18 @@ function drawEnso(cx, cy, r, p, thick, alpha) {
   }
 }
 
-// ---------------------------------------------------------------- sons
+// ---------------------------------------------------------------- sounds
 function cues() {
   sfx('whoosh?dur=1.4&from=200&to=1800', 0.3, 0.18);
   sfx('glitch', 6.4, 0.15);
-  // souffle discret sur chaque transition spatiale
+  // discreet breath on every spatial transition
   [13.0, 26.6, 38.0, 47.0, 51.0].forEach((at) => sfx('whoosh?dur=1.1&from=300&to=1400', at, 0.12));
-  // titre : coup de pinceau, cloche
+  // title: brush stroke, bell
   sfx('whoosh?dur=1.3&from=500&to=1300', 9.1, 0.16);
   sfx('chime?note=57&dur=5', 9.4, 0.42); sfx('kick?dur=.8', 9.4, 0.25);
-  // sceaux : le tampon frappe le papier
+  // seals: the stamp hits the paper
   for (const at of [10.5, 58.2]) { sfx('kick?dur=.25', at + 0.2, 0.3); sfx('click?pitch=.45', at + 0.2, 0.35); }
-  // pierres de la constitution
+  // constitution stones
   [14.2, 14.8, 15.4, 16.0].forEach((at, i) => sfx(`click?pitch=${0.42 + i * 0.05}`, at, 0.32));
   sfx('click?pitch=.7', 18.1, 0.2); sfx('whoosh?dur=.9', 21.7, 0.16); sfx('click?pitch=.8', 19.7, 0.2);
   [23.0, 23.5, 24.0, 24.5].forEach((at, i) => sfx(`click?pitch=${0.8 + i * 0.06}`, at, 0.14));
@@ -742,14 +743,14 @@ function cues() {
   sfx('whoosh?dur=1.3&from=500&to=1300', 56.9, 0.16);
 }
 
-const TERM_RED = '$ npm test\n  ✗ accents lisibles dans Excel\n  ✗ plafond de 10 000 lignes\n  2 failing';
-const TERM_GREEN = '$ npm test\n  ✓ accents lisibles dans Excel\n  ✓ plafond de 10 000 lignes\n  0 failing';
+const TERM_RED = '$ npm test\n  ✗ accents readable in Excel\n  ✗ 10,000-row ceiling\n  2 failing';
+const TERM_GREEN = '$ npm test\n  ✓ accents readable in Excel\n  ✓ 10,000-row ceiling\n  0 failing';
 const tmp = new THREE.Vector3();
 
-function sceneAt(t) { // t = temps du récit
+function sceneAt(t) { // t = story time
   cues();
 
-  // --- intro : flux d'encre qui accélère ; avec DORA, une part devient vermillon et instable
+  // --- intro: ink stream speeding up; with DORA, part of it turns vermilion and unstable
   const introV = 1 - sstep(prog(t, 8.4, 1.4));
   points.material.opacity = introV;
   points.visible = introV > 0.001;
@@ -764,14 +765,14 @@ function sceneAt(t) { // t = temps du récit
       const jx = red ? Math.sin(t * 23 + i) * 0.25 * instab : 0;
       pPos[i * 3] = x * 9 + jx; pPos[i * 3 + 1] = 1.4 + y * 5; pPos[i * 3 + 2] = z;
       const c = red ? [0.77, 0.25, 0.12] : [0.11, 0.11, 0.1];
-      const f = 0.62 + 0.38 * r2; // les points pâles se fondent dans le papier
+      const f = 0.62 + 0.38 * r2; // pale dots blend into the paper
       pCol[i * 3] = lerp(0.94, c[0], f); pCol[i * 3 + 1] = lerp(0.91, c[1], f); pCol[i * 3 + 2] = lerp(0.85, c[2], f);
     }
     pGeo.attributes.position.needsUpdate = true;
     pGeo.attributes.color.needsUpdate = true;
   }
 
-  // --- jardin : apparaît au titre, la spirale se prolonge pendant la boucle finale
+  // --- garden: appears with the title, the spiral extends during the final loop
   const worldV = sstep(prog(t, 8.8, 2.0));
   const frac = clamp(0.04 + 0.32 * sstep(prog(t, 8.8, 3.0)) + 0.64 * sstep(prog(t, 50.6, 5.5)));
   tube.geometry.setDrawRange(0, Math.floor((tubeIndexCount * frac) / 3) * 3);
@@ -785,7 +786,7 @@ function sceneAt(t) { // t = temps du récit
     const active = Math.abs(craneS(t) - s) < 0.35 && t > 17.8;
     m.material.emissive.setHex(active ? 0x3a1206 : 0x000000);
   });
-  // les pierres sortent du gravier une à une, avec les articles
+  // the stones come out of the gravel one by one, with the articles
   rocks.forEach((m, i) => {
     const k = eo(prog(t, 14.2 + i * 0.6, 0.6));
     m.visible = worldV > 0.01 && k > 0.001;
@@ -794,26 +795,26 @@ function sceneAt(t) { // t = temps du récit
     m.userData.moss.scale.y = 0.05 * k;
   });
 
-  // --- grue : naît d'une feuille qui se plie, puis vole le long du chemin
+  // --- crane: born from a sheet that folds itself, then flies along the path
   const s = craneS(t);
-  const moving = clamp(Math.abs(craneS(t + 0.1) - craneS(t - 0.1)) / 0.2 / 0.6); // 0 = attend à une station, 1 = en route
+  const moving = clamp(Math.abs(craneS(t + 0.1) - craneS(t - 0.1)) / 0.2 / 0.6); // 0 = waiting at a station, 1 = on the way
   const born = prog(t, 17.4, 1.1);
   foldCrane(eo(clamp((born - 0.25) / 0.75)));
   const flapA = (0.07 + 0.3 * moving) * sstep(clamp((born - 0.8) / 0.2)), ph = t * 6.2;
-  const hover = 0.42 + 0.05 * Math.sin(t * 1.7) - 0.035 * flapA * Math.sin(ph); // le corps monte quand les ailes descendent
+  const hover = 0.42 + 0.05 * Math.sin(t * 1.7) - 0.035 * flapA * Math.sin(ph); // the body rises when the wings go down
   crane.visible = t > 17.4;
   crane.position.copy(helix(s)).add(tmp.set(0, hover * sstep(clamp(born * 1.6)) + 0.02, 0));
   crane.lookAt(helix(s + 0.08).add(tmp.set(0, hover, 0)));
   const inward = crane.worldToLocal(tmp.set(0, crane.position.y, 0)).x;
-  crane.rotateZ(-Math.sign(inward) * 0.28 * moving + 0.04 * Math.sin(t * 1.1)); // s'incline dans le virage
-  crane.rotateX(-0.12 * moving); // bec légèrement vers le bas en vol
+  crane.rotateZ(-Math.sign(inward) * 0.28 * moving + 0.04 * Math.sin(t * 1.1)); // banks into the turn
+  crane.rotateX(-0.12 * moving); // beak slightly down in flight
   crane.scale.setScalar(1.45 * Math.max(0.001, eo(clamp(born * 2.5))));
   for (const { root, tip } of wings) {
-    root.rotation.z = root.scale.x * (0.06 + flapA * Math.sin(ph)); // aile en miroir : même battement, angle inversé
-    tip.rotation.z = 0.04 + 0.8 * flapA * Math.sin(ph - 0.9); // l'extrémité suit avec retard : une onde, pas une planche
+    root.rotation.z = root.scale.x * (0.06 + flapA * Math.sin(ph)); // mirrored wing: same beat, inverted angle
+    tip.rotation.z = 0.04 + 0.8 * flapA * Math.sin(ph - 0.9); // the tip follows with a delay: a wave, not a plank
   }
 
-  // --- torii : la barre ferme le passage tant que les tests sont rouges, puis se lève
+  // --- torii: the bar closes the way while tests are red, then rises
   const green = t >= 31.8;
   const barUp = sstep(prog(t, 31.9, 0.8));
   kannuki.position.y = gp.y + 0.45 + barUp * (TOP - 0.9 - gp.y);
@@ -821,7 +822,7 @@ function sceneAt(t) { // t = temps du récit
   barMat.opacity = 1 - barUp;
   kannuki.visible = t > 28.6 && barUp < 0.999;
 
-  // --- relecteurs en orbite pendant la revue
+  // --- reviewers orbiting during the review
   const rv = sstep(prog(t, 33.0, 0.6)) * (1 - sstep(prog(t, 38.2, 0.5)));
   orbiters.forEach((m, i) => {
     m.visible = rv > 0.01;
@@ -831,7 +832,7 @@ function sceneAt(t) { // t = temps du récit
     m.material.color.setHex(hit ? SHU : i % 2 ? 0xf2eee4 : 0x1d1c1a);
   });
 
-  // --- pile du centre : une pierre par passage à learn
+  // --- pile in the center: one stone per pass through learn
   const drops = [49.3, 52.7, 54.3, 55.5];
   slabs.forEach((m, i) => {
     const k = prog(t, drops[i], 0.7);
@@ -841,7 +842,7 @@ function sceneAt(t) { // t = temps du récit
     m.material.emissive.setRGB(0.3 * fresh, 0.06 * fresh, 0.02 * fresh);
   });
 
-  // --- caméra
+  // --- camera
   const [cp, ct] = cameraPose(t);
   camera.position.copy(cp);
   camera.lookAt(ct);
@@ -853,14 +854,14 @@ function sceneAt(t) { // t = temps du récit
   if (composer) composer.render(); else renderer.render(scene, camera);
   cssRenderer.render(cssScene, camera);
 
-  // --- étiquettes des stations du premier tour, projetées depuis la 3D
+  // --- labels of the first turn's stations, projected from 3D
   NAMES.forEach((_, i) => {
     const el = $(`#lb${i}`);
-    const h = helix(i), p = h.clone().setY(0).setLength(R + 1.25).setY(h.y + 0.1).project(camera); // à l'extérieur de la spirale : ni sur la corde, ni sur la grue
+    const h = helix(i), p = h.clone().setY(0).setLength(R + 1.25).setY(h.y + 0.1).project(camera); // outside the spiral: neither on the rope nor on the crane
     el.style.left = `${(p.x * 0.5 + 0.5) * W}px`;
     el.style.top = `${(-p.y * 0.5 + 0.5) * H}px`;
     const near = Math.abs(craneS(t) - i) < 0.6 && t > 17.8 && t < 50.8;
-    const facing = sstep(clamp((h.clone().setY(0).normalize().dot(camera.position.clone().setY(0).normalize()) + 0.25) / 0.6)); // côté caméra seulement
+    const facing = sstep(clamp((h.clone().setY(0).normalize().dot(camera.position.clone().setY(0).normalize()) + 0.25) / 0.6)); // camera side only
     el.style.opacity = facing * (p.z < 1 ? 1 : 0) * worldV * (near ? 1 : 0.75) * (1 - sstep(prog(t, 50.8, 1.0))) * (t > 12.8 ? 1 : 0);
     el.style.color = near ? '#c4401f' : '#1d1c1a';
   });
@@ -869,25 +870,25 @@ function sceneAt(t) { // t = temps du récit
   ectx.clearRect(0, 0, W, H);
   drawEnso(560, 512, 368, sstep(prog(t, 9.1, 1.3)), 66, ovVis(t, 9.1, 12.7));
   drawEnso(250, 412, 96, sstep(prog(t, 56.9, 1.1)), 26, ovVis(t, 56.8, 61));
-  // sceau : posé d'un coup sec quand l'ensō est tracé (grand → taille réelle, léger rebond)
+  // seal: set with a sharp stroke when the ensō is drawn (large → real size, slight bounce)
   for (const [id, at] of [['#hk1', 10.5], ['#hk2', 58.2]]) {
     const k = prog(t, at, 0.22);
     $(id).style.opacity = k > 0 ? 0.92 : 0;
     $(id).style.transform = `rotate(${id === '#hk1' ? 4 : -3}deg) scale(${1.5 - 0.5 * eback(k)})`;
   }
 
-  // --- cartes HTML
+  // --- HTML cards
   for (const [id, a, b] of OVS) {
     const el = $(id);
     if (id in RAIL) {
-      // plaque sur le rail : visible tant que la caméra est à sa hauteur sur la spirale
+      // plate on the rail: visible while the camera is at its height on the spiral
       const d = Math.abs(craneS(t) - RAIL[id]);
       el.style.opacity = (1 - sstep(clamp((d - 0.2) / 0.45))) * sstep(prog(t, 19.0, 0.6)) * (1 - sstep(prog(t, 47.0, 0.6)));
       continue;
     }
     const v = ovVis(t, a, b);
     el.style.opacity = v;
-    // les cartes entrent et sortent dans l'espace, sur l'axe de leur chapitre
+    // cards enter and leave in space, on the axis of their chapter
     const e = 1 - v, inn = t < (a + b) / 2, ax = CARD_AXIS[id];
     el.style.transform = ax === 'z' ? `perspective(1400px) translateZ(${inn ? -520 * e : 260 * e}px)`
       : `perspective(1400px) translateX(${-170 * e}px) rotateY(${(inn ? 38 : -38) * e}deg)`;
@@ -906,8 +907,8 @@ function sceneAt(t) { // t = temps du récit
   $('#term').innerHTML = base.slice(0, shown)
     .replace(/✗[^\n]*|2 failing/g, (m) => `<span style="color:#c4401f">${m}</span>`)
     .replace(/✓[^\n]*|0 failing/g, (m) => `<span style="color:#5d7436">${m}</span>`);
-  $('#gmsg').innerHTML = green ? '<span style="color:#5d7436">vert : l\'étape peut se terminer</span>'
-    : t > 29.4 ? '<span style="color:#c4401f">bloqué : fin de l\'étape refusée</span>' : '';
+  $('#gmsg').innerHTML = green ? '<span style="color:#5d7436">green: the step may finish</span>'
+    : t > 29.4 ? '<span style="color:#c4401f">blocked: the step cannot finish</span>' : '';
   const sk = eback(prog(t, 37.6, 0.35));
   $('#seal').style.opacity = prog(t, 37.6, 0.1);
   $('#seal').style.transform = `rotate(-6deg) scale(${1.6 - 0.6 * sk})`;
@@ -931,7 +932,7 @@ function sceneAt(t) { // t = temps du récit
 }
 window.__seek = (t) => sceneAt(storyAt(t));
 
-// Aperçu dans un navigateur normal : le renderer appelle __seek lui-même
+// Preview in a normal browser: the renderer calls __seek itself
 if (!window.__sfx) {
   const t0 = performance.now();
   const loop = () => { window.__seek(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); };

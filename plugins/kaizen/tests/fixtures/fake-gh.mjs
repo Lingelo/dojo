@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Faux `gh` pour les tests : répond depuis $FAKE_GH_STATE (JSON) et y journalise les mutations.
+// Fake `gh` for the tests: answers from $FAKE_GH_STATE (JSON) and logs mutations there.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const file = process.env.FAKE_GH_STATE;
@@ -43,6 +43,6 @@ if (args[0] === 'repo' && args[1] === 'view') {
   save();
   process.stdout.write('{}');
 } else {
-  process.stderr.write(`fake-gh: commande non simulée ${args.join(' ')}\n`);
+  process.stderr.write(`fake-gh: command not simulated ${args.join(' ')}\n`);
   process.exit(1);
 }

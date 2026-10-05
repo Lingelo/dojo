@@ -1,90 +1,88 @@
 ---
 name: debug
-description: Boucle de diagnostic Kaizen pour bugs, tests rouges, comportements faux ou lents — reproduction, traçage à rebours, leçons passées et historique git, une hypothèse à la fois, chaîne causale complète avec fichier:ligne avant tout correctif, puis correctif test d'abord et capitalisation. Utiliser pour « ça plante », « ce test échoue », « pourquoi X », un ticket de bug, /kaizen:debug.
+description: Kaizen diagnosis loop for bugs, red tests, wrong or slow behavior — reproduction, backward tracing, past learnings and git history, one hypothesis at a time, full causal chain with file:line before any fix, then test-first fix and capture. Use when the user says "it crashes", "this test fails", "why does X…", a bug ticket, /kaizen:debug.
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion, TaskCreate, TaskUpdate
-argument-hint: "[message d'erreur, chemin de test, ticket/issue, ou description du comportement] [mode:return]"
+argument-hint: "[error message, test path, ticket/issue, or behavior description] [mode:return]"
 ---
 
-# Debug — trouver la cause, puis corriger
+# Debug — find the cause, then fix
 
-**Terminé quand :** la chaîne causale du déclencheur au symptôme est énoncée **sans trou**, avec des
-preuves `fichier:ligne`, et soit un correctif vérifié a été livré (commit ou PR, ou l'arrêt choisi par
-l'utilisateur), soit un résumé de diagnostic a été remis.
+**Done when:** the causal chain from trigger to symptom is stated **without gaps**, with `file:line`
+evidence, and either a verified fix was delivered (commit or PR, or the stop the user chose), or a
+diagnosis summary was handed over.
 
-**Escalader plutôt que s'acharner :** 2 à 3 hypothèses épuisées sans confirmation, ou 3 correctifs
-ratés → on diagnostique **pourquoi** on se trompe au lieu de réessayer. **Une hypothèse, un changement
-à la fois** : changer plusieurs choses pour voir ce qui aide, c'est du débogage au fusil de chasse.
+**Escalate rather than grind:** 2 to 3 hypotheses exhausted without confirmation, or 3 failed fixes →
+diagnose **why** you are wrong instead of retrying. **One hypothesis, one change at a time**: changing
+several things to see what helps is shotgun debugging.
 
-Lis `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`, puis
-`${CLAUDE_PLUGIN_ROOT}/skills/debug/references/investigate.md` pour les phases 0 à 2.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`, then
+`${CLAUDE_PLUGIN_ROOT}/skills/debug/references/investigate.md` for phases 0 to 2.
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:return`** (posé par `/kaizen:autopilot`) : pas de question ; correctif appliqué seulement s'il est
-**convergent** (il rétablit le comportement voulu) — un correctif **divergent** (il renverserait une
-décision délibérée, ou un test « rouge » qui affirme le comportement voulu) est différé ; commit sur
-branche dédiée, pas de push. Rends `{ status: fixed|diagnosed-no-fix|needs-human|blocked,
-root_cause, files, tests, commit, deferred }`.
+**`mode:return`** (set by `/kaizen:autopilot`): no questions; fix applied only if it is **convergent**
+(it restores the intended behavior) — a **divergent** fix (it would reverse a deliberate decision, or a
+"red" test asserting the intended behavior) is deferred; commit on a dedicated branch, no push. Return
+`{ status: fixed|diagnosed-no-fix|needs-human|blocked, root_cause, files, tests, commit, deferred }`.
 
-## Secrets dans les preuves
+## Secrets in evidence
 
-Le débogage affiche beaucoup de sorties brutes. Garde les identifiants dans des variables
-d'environnement ; si une sortie peut contenir un secret (traces HTTP, en-têtes, dumps de config),
-capture-la dans un fichier et n'en montre que des extraits assainis (`<REDACTED>`). Aucun secret dans
-ce qui est affiché, écrit ou commité.
+Debugging prints a lot of raw output. Keep credentials in environment variables; if an output may
+contain a secret (HTTP traces, headers, config dumps), capture it into a file and only show sanitized
+excerpts (`<REDACTED>`). No secret in what is displayed, written or committed.
 
 ## Phases
 
-**0 Triage → 1 Enquête → 2 Cause racine → 3 Correctif → 4 Passation.** Pas de raccourci hors du cas
-trivial (cause lisible dans l'entrée, correctif d'une ligne) — et même alors, la porte de la phase 2
-s'applique avant d'éditer.
+**0 Triage → 1 Investigation → 2 Root cause → 3 Fix → 4 Handover.** No shortcut outside the trivial
+case (cause readable in the input, one-line fix) — and even then, the phase 2 gate applies before
+editing.
 
-**Le ticket de référence.** Si l'utilisateur a fourni un ticket ou une issue (GitHub, Jira, Sentry…),
-c'est là que vit le bug : garde son identifiant jusqu'à la phase 4. Sans ticket, il n'y en a pas, et
-c'est normal : n'en crée jamais un pour « faire propre ».
+**The reference ticket.** If the user provided a ticket or an issue (GitHub, Jira, Sentry…), that is
+where the bug lives: keep its id until phase 4. Without a ticket, there is none, and that is fine: never
+create one "to be tidy".
 
-### Porte de la phase 2 — présenter, puis demander
+### Phase 2 gate — present, then ask
 
-Ne passe pas à la phase 3 tant que tu ne peux pas expliquer **toute** la chaîne — déclencheur, chaque
-étape, symptôme observé — sans « d'une façon ou d'une autre ». Seul l'utilisateur peut autoriser à
-avancer sur la meilleure hypothèse disponible quand l'enquête est bloquée.
+Do not move to phase 3 until you can explain the **whole** chain — trigger, each step, observed symptom
+— without "somehow". Only the user can authorize moving on with the best available hypothesis when the
+investigation is stuck.
 
-Écris d'abord, **en entier**, le bloc de constats : chaîne causale avec `fichier:ligne` ; correctif
-proposé et fichiers touchés ; tests à utiliser, ajouter, modifier ou renforcer, et pourquoi les tests
-existants ne l'ont pas attrapé ; ticket ou PR liés (si une PR ouverte corrige déjà, commence par ce
-lien). **Ensuite seulement**, demande (sauf si la demande a déjà tranché) :
-1. **Corriger maintenant** → phase 3 (Recommandé).
-2. **Diagnostic seulement** → phase 4, résumé, fin.
-3. **Repenser la conception** (`/kaizen:brainstorm`) → seulement si le bug ne peut pas se corriger dans
-   la conception actuelle (mauvaise responsabilité ou interface, exigences fausses, tout correctif est
-   un contournement). La taille seule n'est pas un problème de conception.
+First write, **in full**, the findings block: causal chain with `file:line`; proposed fix and files
+touched; tests to use, add, change or strengthen, and why the existing tests did not catch it; related
+ticket or PR (if an open PR already fixes it, start with that link). **Only then**, ask (unless the
+request already decided):
+1. **Fix now** → phase 3 (Recommended).
+2. **Diagnosis only** → phase 4, summary, end.
+3. **Rethink the design** (`/kaizen:brainstorm`) → only if the bug cannot be fixed within the current
+   design (wrong responsibility or interface, wrong requirements, every fix is a workaround). Size alone
+   is not a design problem.
 
-### Phase 3 — Correctif
+### Phase 3 — Fix
 
-Lis `${CLAUDE_PLUGIN_ROOT}/skills/debug/references/fix.md` avant toute édition. Deux règles d'abord :
-- **Branche** — sur la branche par défaut, crée `fix/<sujet>` (préfixée Jira si connue) sans demander,
-  et dis-le. Du travail non indexé de l'utilisateur dans un fichier à modifier → confirme avant.
-- **Périmètre** — note `HEAD`, l'état de `git status --short`, et tiens la liste des **fichiers du
-  correctif**. La phase 4 en dépend.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/debug/references/fix.md` before any edit. Two rules first:
+- **Branch** — on the default branch, create `fix/<topic>` (Jira-prefixed if known) without asking, and
+  say so. Unstaged user work in a file to change → confirm first.
+- **Scope** — note `HEAD`, the `git status --short` state, and keep the list of **fix files**. Phase 4
+  depends on it.
 
-### Phase 4 — Passation
+### Phase 4 — Handover
+
+In the user's language:
 
 ```markdown
-## Résumé de debug
-**Problème :** ce qui était cassé
-**Cause racine :** chaîne causale complète, avec fichier:ligne
-**Tests :** ajoutés/modifiés pour empêcher la récidive (fichier, assertion)
-**Correctif :** ce qui a changé — ou « diagnostic seulement »
-**Prévention :** couverture ajoutée ; correctif structurel ou défense en profondeur, ou laissé en suite
-**Confiance :** haute / moyenne / basse
+## Debug summary
+**Problem:** what was broken
+**Root cause:** full causal chain, with file:line
+**Tests:** added/changed to prevent recurrence (file, assertion)
+**Fix:** what changed — or "diagnosis only"
+**Prevention:** coverage added; structural fix or defense in depth, or left as a follow-up
+**Confidence:** high / medium / low
 ```
 
-Si un correctif a été fait :
-1. Correctif non trivial → `kaizen:review` sur les fichiers du correctif uniquement (pas sur le reste
-   de la branche).
-2. Commit des **seuls** fichiers du correctif, au format `fix(<JIRA>): …`. Un fichier du correctif
-   contenait déjà des modifications de l'utilisateur → demande avant de commiter (avec, sans, ou
-   arrêter).
-3. Push et PR seulement si l'arbre était propre avant, si rien d'autre que le correctif n'est sur la
-   branche, et si un remote permet une PR ; sinon commit local et dis en une ligne pourquoi.
-4. **Capitaliser** : un bug dont la cause était surprenante ou l'enquête longue est exactement ce que
-   `/kaizen:learn` doit retenir — propose-le (en `mode:return`, signale-le dans le retour).
+If a fix was made:
+1. Non-trivial fix → `kaizen:review` on the fix files only (not on the rest of the branch).
+2. Commit **only** the fix files, as `fix(<JIRA>): …`. A fix file already contained user changes → ask
+   before committing (with, without, or stop).
+3. Push and PR only if the tree was clean before, if nothing but the fix is on the branch, and if a
+   remote allows a PR; otherwise a local commit and say in one line why.
+4. **Capture**: a bug whose cause was surprising or whose investigation was long is exactly what
+   `/kaizen:learn` must keep — propose it (in `mode:return`, flag it in the return).

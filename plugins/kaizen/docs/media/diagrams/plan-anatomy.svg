@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="700" viewBox="0 0 1100 700" role="img" aria-labelledby="t d">
+<title id="t">Anatomy of a plan (kaizen-plan/v1)</title>
+<desc id="d">One file per topic: brainstorm writes WHAT, plan adds HOW in place, plan check proves the traceability.</desc>
+<style>
+  .bg { fill: #fbfaf7; stroke: #e4e0d8; }
+  text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
+  .title { font-size: 18px; font-weight: 700; }
+  .desc { font-size: 12.5px; fill: #5c6370; }
+  .label { font-size: 13.5px; font-weight: 600; }
+  .t12 { font-size: 12px; }
+  .sub { font-size: 11.5px; fill: #5c6370; }
+  .small { font-size: 11px; fill: #5c6370; }
+  .edge { font-size: 11px; fill: #5c6370; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .skill { fill: #fdf1ea; stroke: #d97757; }
+  .artifact { fill: #edf2fb; stroke: #5b7fbf; }
+  .gate { fill: #fdeeee; stroke: #c94a4a; }
+  .agent { fill: #ecf6ef; stroke: #3f8f5a; }
+  .outside { fill: #f3f0fa; stroke: #7a5fc0; }
+  .state { fill: #fff8e1; stroke: #b8901c; }
+  .plain { fill: #ffffff; stroke: #c9c4ba; }
+  .region { fill: none; stroke: #b9b3a6; stroke-dasharray: 5 4; }
+  .regionlabel { font-size: 11.5px; font-weight: 600; fill: #7d776b; letter-spacing: .04em; }
+  .band { fill: #fff4dd; stroke: #d6a645; }
+  .line { fill: none; stroke: #6e7681; stroke-width: 1.6; }
+  .line.accent { stroke: #d97757; }
+  .line.bad { stroke: #c94a4a; }
+  .line.ok { stroke: #3f8f5a; }
+  .line.blue { stroke: #5b7fbf; }
+  .dashed { stroke-dasharray: 6 4; }
+  .head { fill: #6e7681; }
+  .head.accent { fill: #d97757; }
+  .head.bad { fill: #c94a4a; }
+  .head.ok { fill: #3f8f5a; }
+  .head.blue { fill: #5b7fbf; }
+  .pill { fill: #ffffff; stroke: none; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #161b22; stroke: #30363d; }
+    text { fill: #e6edf3; }
+    .desc, .sub, .small, .edge { fill: #9aa4b0; }
+    .skill { fill: #3a2419; stroke: #e08b6c; }
+    .artifact { fill: #1b2638; stroke: #7c9fd8; }
+    .gate { fill: #3a1d1f; stroke: #e06c6c; }
+    .agent { fill: #18301f; stroke: #5fb07a; }
+    .outside { fill: #271f3d; stroke: #a08ae0; }
+    .state { fill: #33290f; stroke: #d6b043; }
+    .plain { fill: #1f2630; stroke: #4a525d; }
+    .region { stroke: #5a6270; }
+    .regionlabel { fill: #a39d90; }
+    .band { fill: #33290f; stroke: #c99a3b; }
+    .line { stroke: #9aa4b0; }
+    .line.accent { stroke: #e08b6c; }
+    .line.bad { stroke: #e06c6c; }
+    .line.ok { stroke: #5fb07a; }
+    .line.blue { stroke: #7c9fd8; }
+    .head { fill: #9aa4b0; }
+    .head.accent { fill: #e08b6c; }
+    .head.bad { fill: #e06c6c; }
+    .head.ok { fill: #5fb07a; }
+    .head.blue { fill: #7c9fd8; }
+    .pill { fill: #161b22; }
+  }
+</style>
+<defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="1099" height="699" rx="14"/>
+<text class="title" x="28" y="38">Anatomy of a plan (kaizen-plan/v1)</text>
+<text class="desc" x="28" y="58">One file per topic: brainstorm writes WHAT, plan adds HOW in place, plan check proves the traceability.</text>
+<rect class="plain" x="36" y="80" width="440" height="42" rx="8" stroke-width="1.5"/>
+<text class="label" x="48" y="98" text-anchor="start">frontmatter</text>
+<text class="sub" x="48" y="113" text-anchor="start" style="font-size:10.8px">title · type · date · topic · artifact: kaizen-plan/v1 · source · jira</text>
+<rect class="artifact" x="46" y="160" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="177" text-anchor="start">kaizen:goal</text>
+<text class="sub" x="58" y="192" text-anchor="start">Goal capsule — goal · means · authority · blockers</text>
+<rect class="artifact" x="46" y="206" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="223" text-anchor="start">kaizen:product</text>
+<text class="sub" x="58" y="238" text-anchor="start">Product contract — R1… requirements · AE1… examples</text>
+<rect class="artifact" x="46" y="252" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="269" text-anchor="start">kaizen:relationships</text>
+<text class="sub" x="58" y="284" text-anchor="start">How this work fits together (if split)</text>
+<rect class="artifact" x="46" y="338" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="355" text-anchor="start">kaizen:planning</text>
+<text class="sub" x="58" y="370" text-anchor="start">KTD1… decisions · patterns · learnings &amp; pack rules</text>
+<rect class="artifact" x="46" y="384" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="401" text-anchor="start">kaizen:constitution</text>
+<text class="sub" x="58" y="416" text-anchor="start">every article assessed: ✅ or ⚠️ exception</text>
+<rect class="artifact" x="46" y="430" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="447" text-anchor="start">kaizen:threats</text>
+<text class="sub" x="58" y="462" text-anchor="start">STRIDE, only on a risk surface</text>
+<rect class="artifact" x="46" y="476" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="493" text-anchor="start">kaizen:rollout</text>
+<text class="sub" x="58" y="508" text-anchor="start">Exposure · Order · Rollback · Signal + threshold</text>
+<rect class="artifact" x="46" y="522" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="539" text-anchor="start">kaizen:units</text>
+<text class="sub" x="58" y="554" text-anchor="start">U1… Covers · Files · Evidence · Verification · Slice</text>
+<rect class="artifact" x="46" y="568" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="585" text-anchor="start">kaizen:verification</text>
+<text class="sub" x="58" y="600" text-anchor="start">real commands, what proves each AE</text>
+<rect class="artifact" x="46" y="614" width="420" height="40" rx="8" stroke-width="1.5"/>
+<text class="label mono" x="58" y="631" text-anchor="start">kaizen:done</text>
+<text class="sub" x="58" y="646" text-anchor="start">definition of done, verifiable</text>
+<rect class="region" x="36" y="134" width="440" height="168" rx="12"/>
+<text class="regionlabel" x="48" y="151">WRITTEN BY BRAINSTORM</text>
+<rect class="region" x="36" y="316" width="440" height="362" rx="12"/>
+<text class="regionlabel" x="48" y="333">ADDED IN PLACE BY PLAN</text>
+<rect class="state" x="540" y="110" width="64" height="36" rx="18" stroke-width="1.5"/>
+<text class="label" x="572" y="132" text-anchor="middle">R1</text>
+<rect class="state" x="540" y="164" width="64" height="36" rx="18" stroke-width="1.5"/>
+<text class="label" x="572" y="186" text-anchor="middle">R2</text>
+<rect class="state" x="540" y="218" width="64" height="36" rx="18" stroke-width="1.5"/>
+<text class="label" x="572" y="240" text-anchor="middle">R3</text>
+<rect class="state" x="540" y="272" width="64" height="36" rx="18" stroke-width="1.5"/>
+<text class="label" x="572" y="294" text-anchor="middle">R4</text>
+<rect class="state" x="540" y="340" width="64" height="36" rx="18" stroke-width="1.5"/>
+<text class="label" x="572" y="362" text-anchor="middle">AE1</text>
+<rect class="state" x="540" y="394" width="64" height="36" rx="18" stroke-width="1.5"/>
+<text class="label" x="572" y="416" text-anchor="middle">AE2</text>
+<rect class="plain" x="690" y="130" width="150" height="52" rx="8" stroke-width="1.5"/>
+<text class="label" x="765" y="153" text-anchor="middle">U1</text>
+<text class="sub" x="765" y="168" text-anchor="middle">serializer</text>
+<rect class="plain" x="690" y="240" width="150" height="52" rx="8" stroke-width="1.5"/>
+<text class="label" x="765" y="263" text-anchor="middle">U2</text>
+<text class="sub" x="765" y="278" text-anchor="middle">endpoint</text>
+<rect class="plain" x="690" y="350" width="150" height="52" rx="8" stroke-width="1.5"/>
+<text class="label" x="765" y="373" text-anchor="middle">U3</text>
+<text class="sub" x="765" y="388" text-anchor="middle">export button</text>
+<rect class="state" x="900" y="176" width="70" height="40" rx="20" stroke-width="1.5"/>
+<text class="label" x="935" y="200" text-anchor="middle">S1</text>
+<rect class="state" x="900" y="350" width="70" height="40" rx="20" stroke-width="1.5"/>
+<text class="label" x="935" y="374" text-anchor="middle">S2</text>
+<rect class="outside" x="1000" y="172" width="72" height="48" rx="8" stroke-width="1.5"/>
+<text class="label" x="1036" y="200" text-anchor="middle">PR 1</text>
+<rect class="outside" x="1000" y="346" width="72" height="48" rx="8" stroke-width="1.5"/>
+<text class="label" x="1036" y="374" text-anchor="middle">PR 2</text>
+<path class="line blue" d="M604,128 L690,156" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M604,182 L690,156" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M604,182 L690,266" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M604,236 L690,266" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M604,290 L690,376" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M604,358 L690,156" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M604,412 L690,376" marker-end="url(#h-blue)"/>
+<path class="line" d="M840,156 L900,196" marker-end="url(#h-default)"/>
+<path class="line" d="M840,266 L900,196" marker-end="url(#h-default)"/>
+<path class="line" d="M840,376 L900,370" marker-end="url(#h-default)"/>
+<path class="line accent" d="M970,196 L1000,196" marker-end="url(#h-accent)"/>
+<path class="line accent" d="M970,370 L1000,370" marker-end="url(#h-accent)"/>
+<text class="small" x="616" y="100" text-anchor="start">Covers:</text>
+<text class="small" x="856" y="160" text-anchor="start">Slice:</text>
+<text class="small" x="900" y="420" text-anchor="start">one slice = one PR</text>
+<text class="small" x="900" y="435" text-anchor="start">≤ pr.max_lines (400)</text>
+<rect class="gate" x="540" y="470" width="532" height="120" rx="8" stroke-width="1.5"/>
+<text class="label" x="806" y="506" text-anchor="middle">node $K plan check &lt;plan&gt;</text>
+<text class="sub" x="806" y="521" text-anchor="middle">frontmatter complete, no status field · R and U numbering continuous</text>
+<text class="sub" x="806" y="535" text-anchor="middle">every R and AE covered by a unit · every cited R/AE defined</text>
+<text class="sub" x="806" y="549" text-anchor="middle">unit fields Covers, Files, Evidence, Verification · every article assessed</text>
+<text class="sub" x="806" y="563" text-anchor="middle">no [NEEDS CLARIFICATION], TBD or TODO in a ready plan · rollout warnings</text>
+<rect class="plain" x="540" y="606" width="532" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="806" y="628" text-anchor="middle">Signal: `error_rate` &gt; 1 % → rollback</text>
+<text class="sub" x="806" y="643" text-anchor="middle" style="font-size:11.2px">the threshold is read by deploy and monitor watch; release puts it in the checklist</text>
+</svg>

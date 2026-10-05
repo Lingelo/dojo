@@ -1,4 +1,4 @@
-// Outils communs aux tests : dépôts git jetables et exécution du CLI.
+// Shared test tools: throwaway git repos and running the CLI.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -45,7 +45,7 @@ export function cli(dir, args, { env = {}, input } = {}) {
 }
 
 export function cleanup(dir) {
-  // Sous Windows, un processus coupé par un délai peut survivre quelques secondes et verrouiller le
-  // dossier (EBUSY) : on réessaie plutôt que d'échouer.
+  // On Windows, a process killed by a timeout may survive a few seconds and lock the folder (EBUSY):
+  // retry rather than fail.
   rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 }
