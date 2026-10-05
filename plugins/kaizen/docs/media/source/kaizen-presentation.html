@@ -245,6 +245,29 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createSakura } from './sakura.js';
+
+// ---------------------------------------------------------------- assets (CC0, Poly Haven, see fetch-assets.mjs)
+// Loaded before the scene is built: top-level await, and window.__ready tells the renderer to wait for them.
+// loadAsync only (fetch / ImageBitmap): a loader waiting on setTimeout would hang under the virtual clock.
+const texLoader = new THREE.TextureLoader();
+async function pbr(dir, { repeat = 1, color = true } = {}) {
+  const [diff, nor, arm] = await Promise.all(['diff', 'nor_gl', 'arm'].map((m) => texLoader.loadAsync(`assets/${dir}/${m}.jpg`)));
+  for (const t of [diff, nor, arm]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); t.anisotropy = 8; }
+  if (color) diff.colorSpace = THREE.SRGBColorSpace;
+  return { diff, nor, arm };
+}
+let resolveReady, rejectReady;
+window.__ready = new Promise((ok, ko) => { resolveReady = ok; rejectReady = ko; });
+const A = await Promise.all([
+  new RGBELoader().loadAsync('assets/belfast_open_field_1k.hdr'),
+  pbr('sakura_bark'), pbr('sandy_gravel'), pbr('rock_08'), pbr('mossy_rock'),
+  new GLTFLoader().loadAsync('assets/rock_moss_set_01/rock_moss_set_01_1k.gltf'),
+  new GLTFLoader().loadAsync('assets/rock_moss_set_02/rock_moss_set_02_1k.gltf'),
+]).then(([hdr, bark, sand, slab, moss, rocks1, rocks2]) => ({ hdr, bark, sand, slab, moss, rocks1, rocks2 }))
+  .catch((e) => { rejectReady(e); throw e; });
 
 const W = 1920, H = 1080;
 const $ = (s) => document.querySelector(s);
@@ -267,6 +290,19 @@ const renderer = new THREE.WebGLRenderer({ canvas: $('#gl'), antialias: true, pr
 renderer.setPixelRatio(devicePixelRatio);
 renderer.setSize(W, H, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+// Khronos PBR Neutral (keeps light warm tones as authored, so the sand matches the washi page around the scene;
+// AgX greyed them) then a saturation boost for a vivid vermilion, sand and blossoms.
+// CustomToneMapping is a hook three.js leaves empty; NeutralToneMapping is defined in the same shader chunk.
+const SATURATION = 1.25;
+THREE.ShaderChunk.tonemapping_pars_fragment = THREE.ShaderChunk.tonemapping_pars_fragment.replace(
+  'vec3 CustomToneMapping( vec3 color ) { return color; }',
+  `vec3 CustomToneMapping( vec3 color ) {
+    vec3 c = NeutralToneMapping( color );
+    float l = dot( c, vec3( 0.2126, 0.7152, 0.0722 ) );
+    return clamp( mix( vec3( l ), c, ${SATURATION.toFixed(2)} ), 0.0, 1.0 );
+  }`);
+renderer.toneMapping = THREE.CustomToneMapping;
+renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
@@ -274,20 +310,24 @@ scene.background = new THREE.Color(WASHI);
 scene.fog = new THREE.Fog(WASHI, 26, 64); // mist: depth reads like an ink wash
 const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 200);
 
-scene.add(new THREE.HemisphereLight(0xfffaf0, 0xb3a790, 1.25));
-const sun = new THREE.DirectionalLight(0xfff1dc, 1.5);
-sun.position.set(8, 20, 10);
+// light: an overcast sky (HDRI) for soft fill and real reflections, plus a low sun for shapes and contact shadows.
+// The HDRI lights the scene but is not shown: the background stays washi paper.
+A.hdr.mapping = THREE.EquirectangularReflectionMapping;
+scene.environment = A.hdr;
+scene.environmentIntensity = 0.38;
+const sun = new THREE.DirectionalLight(0xffeccc, 2.8);
+sun.position.set(12, 11, 9); // lower sun: grazing light gives the rake ridges their relief
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 1, far: 60 });
-sun.shadow.radius = 4;
+sun.shadow.radius = 3;
 sun.shadow.bias = -0.0006;
 scene.add(sun);
 // render level (render.mjs --quality): same scene everywhere, only the finesse changes
 // draft = no shadows (iterate fast) · standard = published video · high = more polygons, fine shadows, ambient occlusion
 const QUALITY = window.__quality ?? 'standard';
 if (QUALITY === 'draft') renderer.shadowMap.enabled = false;
-const HQ = QUALITY === 'high';
+const HQ = QUALITY === 'high', DRAFT = QUALITY === 'draft';
 if (HQ) sun.shadow.mapSize.set(4096, 4096);
 const shadowy = (m, cast = true, receive = false) => { m.castShadow = cast; m.receiveShadow = receive; return m; };
 
@@ -309,19 +349,12 @@ const speckle = (base, dark = 0.55, light = 1.18) => canvasTex(512, 512, (u, v, 
   const n = hn(x * 0.71, y * 1.13), m = hn(Math.floor(x / 3) * 3.1, Math.floor(y / 3) * 5.7), k = m > 0.93 ? dark : m < 0.05 ? light : 0.9 + 0.2 * n;
   return base.map((c) => Math.min(255, c * k));
 });
-const graniteTex = speckle([214, 206, 190]), slabTex = speckle([196, 188, 174]), rockTex = speckle([150, 144, 134], 0.6, 1.3);
+const graniteTex = speckle([214, 206, 190]), rockTex = speckle([150, 144, 134], 0.6, 1.3);
 
 // spiral: 6 stations per turn, each turn rises by PITCH
 const R = 5.2, PITCH = 2.3, TURNS = 4.2;
 const helix = (s) => { const a = (s / 6) * Math.PI * 2 - Math.PI / 2; return new THREE.Vector3(R * Math.cos(a), 0.9 + (s / 6) * PITCH, R * Math.sin(a)); };
 class HelixCurve extends THREE.Curve { getPoint(u, v = new THREE.Vector3()) { return v.copy(helix(u * 6 * TURNS)); } }
-// the path is a braided rope (shimenawa): three diagonal strands, ~4 twists per unit of length
-const tubeGeo = new THREE.TubeGeometry(new HelixCurve(), HQ ? 2400 : 900, 0.055, HQ ? 20 : 10, false);
-const ropeTex = canvasTex(128, 96, (u, v) => { const k = 0.5 + 0.5 * Math.cos(Math.PI * 2 * (u + 3 * v)); const c = 0.55 + 0.45 * Math.pow(k, 0.6); return [62 * c, 57 * c, 50 * c]; }, { repeat: [560, 1] });
-const ropeBump = canvasTex(128, 96, (u, v) => { const k = 255 * Math.pow(0.5 + 0.5 * Math.cos(Math.PI * 2 * (u + 3 * v)), 0.6); return [k, k, k]; }, { repeat: [560, 1], color: false });
-const tube = shadowy(new THREE.Mesh(tubeGeo, new THREE.MeshStandardMaterial({ map: ropeTex, bumpMap: ropeBump, bumpScale: 2, roughness: 0.9 })));
-scene.add(tube);
-const tubeIndexCount = tubeGeo.index.count;
 
 // irregular, deterministic stone; high: more facets and a fine octave (the grain of the rock)
 function stoneGeo(seed, detail = HQ ? 6 : 3) {
@@ -341,38 +374,66 @@ function stoneGeo(seed, detail = HQ ? 6 : 3) {
 // dry garden: gravel raked in circles around the center and each stone, in straight lines elsewhere
 const G = 15;
 const ROCKS = [[-2.7, 6.0, 0.62], [-0.85, 6.5, 0.44], [1.05, 6.2, 0.7], [2.9, 5.7, 0.4]]; // x, z, size: the 4 articles
-function gravelTexture() {
-  const N = HQ ? 3072 : 2048, c = document.createElement('canvas');
-  c.width = c.height = N;
-  const ctx = c.getContext('2d'), img = ctx.createImageData(N, N), d = img.data;
+// The rake pattern is a height field: it displaces a dense plane (real ridges that catch the low sun) and is
+// turned into a normal map for the fine slope; the sandy_gravel PBR texture gives the grain and the color.
+// smooth value noise (deterministic): the hand of the raker — ridges wander, swell and fade a little
+const vn = (x, z) => { const xi = Math.floor(x), zi = Math.floor(z), fx = x - xi, fz = z - zi, u = fx * fx * (3 - 2 * fx), w = fz * fz * (3 - 2 * fz);
+  return lerp(lerp(hn(xi, zi), hn(xi + 1, zi), u), lerp(hn(xi, zi + 1), hn(xi + 1, zi + 1), u), w); };
+function rakeHeight(x, z) {
   const spacing = 0.2;
-  for (let py = 0; py < N; py++) {
-    for (let px = 0; px < N; px++) {
-      const x = (px / N - 0.5) * G, z = (py / N - 0.5) * G;
-      let dist = null;
-      for (const [rx, rz, rs] of ROCKS) { const dd = Math.hypot(x - rx, z - rz) - rs * 1.05; if (dd < 0.75) { dist = Math.max(0, dd); break; } }
-      const rc = Math.hypot(x, z);
-      const groove = dist !== null ? Math.cos((dist / spacing) * Math.PI * 2)
-        : rc < 6.6 ? Math.cos((rc / spacing) * Math.PI * 2) : Math.cos((z / spacing) * Math.PI * 2);
-      const n = hn(px * 0.37, py * 0.53) - 0.5;
-      const grain = hn(Math.floor(px / 2) * 1.7, Math.floor(py / 2) * 2.3) > 0.97 ? -38 : 0; // small dark pebbles
-      const v = 222 + 13 * groove + 26 * n + grain;
-      const i = (py * N + px) * 4;
-      d[i] = v + 6; d[i + 1] = v; d[i + 2] = v - 16; d[i + 3] = 255;
-    }
+  const wander = 0.06 * (vn(x * 1.3, z * 1.3) - 0.5) + 0.02 * (vn(x * 5, z * 5) - 0.5); // ridge position drifts
+  const swell = 0.75 + 0.5 * vn(x * 0.8 + 7, z * 0.8); // ridge height varies along its length
+  // rounded ridges, sharper valleys (the tines dig in): |cos| shaped instead of a pure sine
+  const ridge = (d) => swell * (1 - Math.pow(Math.abs(Math.sin(((d + wander) / spacing) * Math.PI)), 1.4));
+  for (const [rx, rz, rs] of ROCKS) { const dd = Math.hypot(x - rx, z - rz) - rs * 1.05; if (dd < 0.75) return ridge(Math.max(0, dd)); }
+  const rc = Math.hypot(x, z);
+  if (rc < 1.35) return 0.45 + 0.1 * vn(x * 3, z * 3); // flat, untouched sand around the foot of the tree
+  return ridge(rc < 6.6 ? rc : z);
+}
+function rakeNormalMap() {
+  const N = HQ ? 3072 : DRAFT ? 1024 : 2048, c = document.createElement('canvas');
+  c.width = c.height = N;
+  const ctx = c.getContext('2d'), img = ctx.createImageData(N, N), d = img.data, e = G / N, k = 0.05 / (2 * e);
+  for (let py = 0; py < N; py++) for (let px = 0; px < N; px++) {
+    const x = (px / N - 0.5) * G, z = (py / N - 0.5) * G;
+    const nx = -(rakeHeight(x + e, z) - rakeHeight(x - e, z)) * k, nz = -(rakeHeight(x, z + e) - rakeHeight(x, z - e)) * k;
+    const l = Math.hypot(nx, nz, 1), i = (py * N + px) * 4;
+    // tangent space of a plane rotated -90° about x: u → +x, v → -z
+    d[i] = 255 * (0.5 + 0.5 * nx / l); d[i + 1] = 255 * (0.5 - 0.5 * nz / l); d[i + 2] = 255 * (0.5 + 0.5 / l); d[i + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
-  return tex;
+  const t = new THREE.CanvasTexture(c);
+  t.anisotropy = 8;
+  return t;
 }
-const gravel = gravelTexture();
-// sides: packed earth, darker at the bottom
+const sandSeg = HQ ? 768 : DRAFT ? 192 : 448;
+const sandGeo = new THREE.PlaneGeometry(G, G, sandSeg, sandSeg).rotateX(-Math.PI / 2);
+{ const p = sandGeo.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, 0.05 * rakeHeight(p.getX(i), p.getZ(i))); sandGeo.computeVertexNormals(); }
+// two uv sets: the PBR grain tiles 6 times across the garden (uv), the rake normal map covers it once (uv1)
+const sandUv = sandGeo.attributes.uv;
+sandGeo.setAttribute('uv1', sandUv.clone());
+for (let i = 0; i < sandUv.count; i++) sandUv.setXY(i, sandUv.getX(i) * 6, sandUv.getY(i) * 6);
+const rakeNor = rakeNormalMap(); rakeNor.channel = 1;
+const sandMat = new THREE.MeshStandardMaterial({ map: A.sand.diff, roughnessMap: A.sand.arm, normalMap: rakeNor, roughness: 1 });
+// the sand grain normal is layered on top of the rake normal (two normal maps)
+sandMat.onBeforeCompile = (sh) => {
+  sh.uniforms.grainNor = { value: A.sand.nor };
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D grainNor;')
+    // raked sand of a karesansui is pale and warm: keep the texture's grain, move its mean to washi-white
+    .replace('#include <map_fragment>', `#include <map_fragment>
+    float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+    diffuseColor.rgb = vec3(0.93, 0.85, 0.7) * (0.72 + 0.5 * lum); // warm raked sand`)
+    .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+    vec3 grain = texture2D(grainNor, vMapUv).xyz * 2.0 - 1.0;
+    normal = normalize(normal + tbn * vec3(grain.xy * 0.6, 0.0));`);
+};
+const sand = new THREE.Mesh(sandGeo, sandMat);
+sand.receiveShadow = true;
+scene.add(sand);
+// sides: packed earth, darker at the bottom (the top face is hidden under the sand)
 const sideMat = new THREE.MeshStandardMaterial({ map: canvasTex(256, 64, (u, v, x, y) => { const k = (0.92 + 0.12 * hn(x, y)) * (1 - 0.25 * v); return [207 * k, 196 * k, 173 * k]; }), roughness: 1 });
-const garden = new THREE.Mesh(new THREE.BoxGeometry(G, 0.5, G), [sideMat, sideMat,
-  new THREE.MeshStandardMaterial({ map: gravel, bumpMap: gravel, bumpScale: 1.4, roughness: 1 }), sideMat, sideMat, sideMat]);
-garden.position.y = -0.25;
+const garden = new THREE.Mesh(new THREE.BoxGeometry(G, 0.5, G), sideMat);
+garden.position.y = -0.251;
 garden.receiveShadow = true;
 scene.add(garden);
 // border: charred cedar beams (yakisugi), softened edges, grain along the length
@@ -406,37 +467,16 @@ const rocks = ROCKS.map(([x, z, s], i) => {
   return m;
 });
 
-// stepping stones: the stations of the path
+// stations of the path: one torii each (built with the gate torii below)
 const NAMES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'learn'];
 const NUMS = ['01', '02', '03', '04', '05', '06'];
 const KANJI = ['想', '計', '作', '検', '出', '積']; // imagine · plan · make · examine · ship · accumulate
-const stations = [];
-for (let s = 0; s < 6 * 4; s++) {
-  const g = new THREE.CylinderGeometry(0.44, 0.48, 0.13, HQ ? 44 : 22, HQ ? 3 : 2);
-  const p = g.attributes.position;
-  for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), k = 1 + 0.1 * Math.sin(Math.atan2(z, x) * 3 + s); p.setX(i, x * k); p.setZ(i, z * k);
-    p.setY(i, p.getY(i) + 0.012 * Math.sin(x * 17 + s) * Math.sin(z * 15 - s)); } // cut surface, not smooth
-  g.computeVertexNormals();
-  const m = shadowy(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: graniteTex, roughness: 1 })), true, true);
-  m.position.copy(helix(s)).add(new THREE.Vector3(0, -0.13, 0));
-  scene.add(m);
-  stations.push(m);
-}
 $('#labels').innerHTML = NAMES.map((n, i) => `<div class="lbl" id="lb${i}"><i>${KANJI[i]}</i><b>${NUMS[i]}</b>${n}</div>`).join('');
 
-// pile in the center: one flat stone per learning
-const slabs = [0, 1, 2, 3].map((i) => {
-  const g = new THREE.CylinderGeometry(1.0 - i * 0.13, 1.06 - i * 0.13, 0.3, HQ ? 48 : 24, HQ ? 4 : 2);
-  const p = g.attributes.position;
-  for (let j = 0; j < p.count; j++) { const x = p.getX(j), z = p.getZ(j), k = 1 + 0.09 * Math.sin(Math.atan2(z, x) * 2 + i * 1.7); p.setX(j, x * k); p.setZ(j, z * k);
-    p.setY(j, p.getY(j) + 0.015 * Math.sin(x * 11 + i) * Math.sin(z * 9 - i)); }
-  g.computeVertexNormals();
-  const m = shadowy(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: slabTex, roughness: 0.95 })), true, true);
-  m.position.set(0, 0.15 + i * 0.32, 0);
-  m.rotation.y = i * 0.8;
-  scene.add(m);
-  return m;
-});
+// cherry tree in the center: bare at first, it flowers a little more with each learning captured
+// (procedural, sakura.js; bark = sakura_bark PBR). Its petals fall on the garden and stay there.
+const sakura = createSakura({ textures: { barkDiff: A.bark.diff, barkNor: A.bark.nor, barkArm: A.bark.arm }, seed: 7, height: 4.6, quality: QUALITY });
+scene.add(sakura.group);
 
 // origami crane (orizuru): the unit of work. Folded vermilion paper: sharp facets, crease lines,
 // washi fibers. Local frame: front = +z, up = +y. Each wing = inner panel + outer panel
@@ -513,49 +553,68 @@ function foldCrane(k) { // 0 = flat sheet, 1 = folded crane
   }
 }
 
-// quality gate torii, right after the work station; the path goes under it
-const gp = helix(2.55);
-const torii = new THREE.Group();
+// The path is a spiral of torii (like the thousand gates of Fushimi Inari): the crane flies through one at
+// each station, 6 per turn, each turn higher. A torii on an upper turn stands on the lintel of the one below,
+// so nothing floats: six stacked columns of gates around the garden. The quality gate is the torii right after
+// the work station, closed by a bar while tests are red.
 const lacquer = canvasTex(64, 512, (u, v, x, y) => { const k = 0.94 + 0.06 * Math.sin(v * 90 + 2 * Math.sin(u * 7)) + 0.03 * (hn(x, y) - 0.5); return [196 * k, 64 * k, 31 * k]; });
 const shuMat = new THREE.MeshStandardMaterial({ map: lacquer, roughness: 0.5 });
 const kuroMat = new THREE.MeshStandardMaterial({ color: 0x1f1d1b, roughness: 0.6 });
-const seg = HQ ? 48 : 24;
-const TOP = gp.y + 1.9, HALF = 0.78;
-for (const z of [-HALF, HALF]) {
-  const pillar = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, TOP, seg), shuMat));
-  pillar.position.set(0, TOP / 2, z);
-  const base = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.135, 0.26, seg), kuroMat)); // kamebaku: black base
-  base.position.set(0, 0.13, z);
-  const collar = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.03, seg), kuroMat)); // base ring
-  collar.position.set(0, 0.27, z);
-  const daiwa = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, seg), kuroMat)); // daiwa: ring under the lintel
-  daiwa.position.set(0, TOP - 0.11, z);
-  const kusabi = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.16, 0.045), shuMat)); // wedge locking the tie beam
-  kusabi.position.set(0, TOP - 0.45, z + Math.sign(z) * 0.13);
-  torii.add(pillar, base, collar, daiwa, kusabi);
-}
-const nuki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.13, 2.05), shuMat)); nuki.position.y = TOP - 0.45;
-// gakuzuka: the central plaque, vermilion frame and black background
-const gakuF = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.24), shuMat)); gakuF.position.y = TOP - 0.24;
-const gakuI = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.22, 0.16), kuroMat); gakuI.position.y = TOP - 0.24;
-const shimaki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 2.2), shuMat)); shimaki.position.y = TOP - 0.03;
-// kasagi: black lintel with raised ends (sorihashi), thicker in the center
-const kasaGeo = new THREE.BoxGeometry(0.24, 0.13, 2.8, 2, 2, HQ ? 96 : 48);
+const seg = HQ ? 32 : DRAFT ? 12 : 20;
+const HALF = 0.78, CLEAR = 1.0; // half-width between the pillars; clearance above the crane's path
+// kasagi: black lintel with raised ends (sorihashi), thicker in the center — shared by every torii
+const kasaGeo = new THREE.BoxGeometry(0.24, 0.13, 2.8, 2, 2, HQ ? 96 : 32);
 { const p = kasaGeo.attributes.position; for (let i = 0; i < p.count; i++) { const z = p.getZ(i) / 1.4, a = Math.abs(z);
   p.setY(i, p.getY(i) * (1 - 0.25 * a) + 0.22 * Math.pow(a, 2.6)); p.setX(i, p.getX(i) * (1 + 0.15 * a)); } kasaGeo.computeVertexNormals(); }
-const kasagi = shadowy(new THREE.Mesh(kasaGeo, kuroMat)); kasagi.position.y = TOP + 0.09;
-// closing bar (kannuki): blocks the way while tests are red
+// one torii from y = foot to y = top, its tie beam across +z/-z; ground = black kamebaku bases, else a daiwa ring
+function makeTorii(foot, top, ground) {
+  const g = new THREE.Group(), H = top - foot;
+  for (const z of [-HALF, HALF]) {
+    const pillar = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.1, H, seg), shuMat), true, true);
+    pillar.position.set(0, foot + H / 2, z);
+    const daiwa = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.07, seg), kuroMat)); // ring under the lintel
+    daiwa.position.set(0, top - 0.11, z);
+    g.add(pillar, daiwa);
+    if (ground) {
+      const base = shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.135, 0.26, seg), kuroMat), true, true); // kamebaku
+      base.position.set(0, 0.13, z);
+      g.add(base);
+    }
+  }
+  const nuki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.13, 2.05), shuMat)); nuki.position.y = top - 0.45;
+  const shimaki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 2.2), shuMat)); shimaki.position.y = top - 0.03;
+  const kasagi = shadowy(new THREE.Mesh(kasaGeo, kuroMat)); kasagi.position.y = top + 0.09;
+  // gakuzuka: the central plaque, vermilion frame, black background
+  const gakuF = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.3, 0.24), shuMat)); gakuF.position.y = top - 0.24;
+  const gakuI = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.22, 0.16), kuroMat); gakuI.position.y = top - 0.24;
+  g.add(nuki, shimaki, kasagi, gakuF, gakuI);
+  return g;
+}
+// torii k stands at station k (+ half a step: the crane passes under it between two stations)
+const STATIONS = 6 * 4;
+const gates = [];
+for (let k = 0; k < STATIONS; k++) {
+  const p = helix(k + 0.5), below = gates[k - 6];
+  const top = p.y + CLEAR, foot = below ? below.top + 0.22 : 0;
+  const g = makeTorii(foot, top, !below);
+  g.position.set(p.x, 0, p.z);
+  g.lookAt(new THREE.Vector3(0, 0, 0)); // tie beam pointing to the center: the path runs through it
+  scene.add(g);
+  gates.push({ g, top, turn: Math.floor(k / 6) });
+}
+// the quality gate: the torii between work (station 2) and review (3); the bar hangs in it while tests are red
+const GATE = 2, gp = helix(GATE + 0.5), TOP = gates[GATE].top;
 const barMat = new THREE.MeshStandardMaterial({ color: 0x1f1d1b, roughness: 0.6, transparent: true });
 const kannuki = shadowy(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 1.62), barMat));
-torii.add(nuki, gakuF, gakuI, shimaki, kasagi, kannuki);
-torii.position.set(gp.x, 0, gp.z);
-torii.lookAt(new THREE.Vector3(0, 0, 0));
-scene.add(torii);
+gates[GATE].g.add(kannuki);
+const torii = gates[GATE].g;
 
-// reviewers: go stones orbiting the crane during the review
+// reviewers: cherry petals circling the crane during the review; the one that finds a problem turns vermilion
+const PETAL_PINK = 0xf6c9d4;
 const orbiters = Array.from({ length: 7 }, (_, i) => {
-  const m = shadowy(new THREE.Mesh(new THREE.SphereGeometry(0.12, HQ ? 48 : 32, HQ ? 32 : 20), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xf2eee4 : 0x1d1c1a, roughness: 0.25 })));
-  m.scale.y = 0.55;
+  const m = shadowy(new THREE.Mesh(sakura.petalGeometry, new THREE.MeshPhysicalMaterial({
+    color: PETAL_PINK, side: THREE.DoubleSide, roughness: 0.55, sheen: 1, sheenColor: new THREE.Color(1, 0.8, 0.86) })));
+  m.scale.setScalar(0.22);
   scene.add(m);
   return m;
 });
@@ -761,25 +820,19 @@ function sceneAt(t) { // t = story time
 
   // --- garden: appears with the title, the spiral extends during the final loop
   const worldV = sstep(prog(t, 8.8, 2.0));
-  const frac = clamp(0.04 + 0.32 * sstep(prog(t, 8.8, 3.0)) + 0.64 * sstep(prog(t, 50.6, 5.5)));
-  tube.geometry.setDrawRange(0, Math.floor((tubeIndexCount * frac) / 3) * 3);
-  tube.visible = worldV > 0.001;
-  for (const o of [garden, ...curbs, torii]) o.visible = worldV > 0.001;
-  stations.forEach((m, s) => {
-    const turn = Math.floor(s / 6);
-    const shown = turn === 0 ? worldV : sstep(prog(t, 51.0 + turn * 1.5, 1.2));
-    m.visible = shown > 0.01;
-    m.scale.setScalar(Math.max(0.001, shown));
-    const active = Math.abs(craneS(t) - s) < 0.35 && t > 17.8;
-    m.material.emissive.setHex(active ? 0x3a1206 : 0x000000);
+  for (const o of [garden, sand, ...curbs]) o.visible = worldV > 0.001;
+  // first turn with the garden; the upper turns rise one after the other during the final loop
+  gates.forEach(({ g, turn }, k) => {
+    const shown = turn === 0 ? worldV : sstep(prog(t, 51.0 + turn * 1.5 + (k % 6) * 0.12, 0.9));
+    g.visible = shown > 0.01;
+    g.scale.set(1, Math.max(0.001, shown), 1); // grows up from the gate below
   });
-  // the stones come out of the gravel one by one, with the articles
+  // the stones stay set in the gravel; each one glows briefly as its article is named (constitution)
   rocks.forEach((m, i) => {
-    const k = eo(prog(t, 14.2 + i * 0.6, 0.6));
-    m.visible = worldV > 0.01 && k > 0.001;
-    m.position.y = -0.55 * ROCKS[i][2] * (1 - k);
+    m.visible = worldV > 0.01;
     m.userData.moss.visible = m.visible;
-    m.userData.moss.scale.y = 0.05 * k;
+    const at = 14.2 + i * 0.6, glow = sstep(prog(t, at, 0.3)) * (1 - sstep(prog(t, at + 0.5, 1.2)));
+    m.material.emissive.setRGB(0.3 * glow, 0.06 * glow, 0.02 * glow);
   });
 
   // --- crane: born from a sheet that folds itself, then flies along the path
@@ -815,19 +868,17 @@ function sceneAt(t) { // t = story time
     m.visible = rv > 0.01;
     const a = (i / orbiters.length) * Math.PI * 2 + t * 1.6;
     m.position.copy(crane.position).add(tmp.set(Math.cos(a) * 1.15 * rv, 0.35 * Math.sin(a * 2 + i), Math.sin(a) * 1.15 * rv));
+    m.rotation.set(t * (1.1 + i * 0.13), a, t * (0.7 + i * 0.09)); // a petal tumbles as it flies
     const hit = i === 2 && t > 35.6;
-    m.material.color.setHex(hit ? SHU : i % 2 ? 0xf2eee4 : 0x1d1c1a);
+    m.material.color.setHex(hit ? SHU : PETAL_PINK);
   });
 
-  // --- pile in the center: one stone per pass through learn
-  const drops = [49.3, 52.7, 54.3, 55.5];
-  slabs.forEach((m, i) => {
-    const k = prog(t, drops[i], 0.7);
-    m.visible = t > drops[i] - 0.01 && worldV > 0.01;
-    m.position.y = 0.15 + i * 0.32 + 3.5 * (1 - eo(k));
-    const fresh = clamp(1 - (t - drops[i] - 0.7) / 1.5);
-    m.material.emissive.setRGB(0.3 * fresh, 0.06 * fresh, 0.02 * fresh);
-  });
+  // --- cherry tree: already flowering when the garden appears, it keeps blooming as the crane goes round
+  // the cycle, and each learning opens a further step; petals keep landing on the garden until the end
+  const LEARN = [49.3, 52.7, 54.3, 55.5];
+  sakura.group.visible = worldV > 0.01;
+  sakura.bloom(0.5 * sstep(prog(t, 8.4, 1.6)) + 0.26 * sstep(prog(t, 17.8, 29)) + LEARN.reduce((k, at) => k + 0.06 * sstep(prog(t, at, 1.2)), 0));
+  sakura.petals(t, 20, STORY - 22);
 
   // --- camera
   const [cp, ct] = cameraPose(t);
@@ -918,6 +969,7 @@ function sceneAt(t) { // t = story time
   $('#mbtn').style.transform = `scale(${pressed ? 0.95 : 1})`;
 }
 window.__seek = (t) => sceneAt(storyAt(t));
+resolveReady(); // scene built with every asset: the renderer may capture
 
 // Preview in a normal browser: the renderer calls __seek itself
 if (!window.__sfx) {
