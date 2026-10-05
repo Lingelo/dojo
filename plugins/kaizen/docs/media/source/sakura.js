@@ -51,8 +51,11 @@ function flowerGeometry() {
  * Build the tree. Returns { group, bloom(k), petals(t, t0, span) } where
  *   bloom(k)   opens the blossoms (0 = bare branches with buds, 1 = full bloom), clusters stagger in
  *   petals(t, t0, span) petals leave the crown one by one from t0 over span seconds, then rest on the ground
+ * ground(x, z) → y, in world space: where the petals land (default: flat at the tree's foot). The tree must not
+ * be rotated (its group position is used to go from local to world). gust: a share of the petals the wind
+ * carries far, up to `reach` metres downwind (wind = +x local), so they settle down the slope of a hill.
  */
-export function createSakura({ textures, seed = 7, height = 3.4, quality = 'standard' } = {}) {
+export function createSakura({ textures, seed = 7, height = 3.4, quality = 'standard', ground = null, gust = 0, reach = 8 } = {}) {
   const rand = rng(seed);
   const HQ = quality === 'high', DRAFT = quality === 'draft';
   const group = new THREE.Group();
@@ -198,8 +201,9 @@ export function createSakura({ textures, seed = 7, height = 3.4, quality = 'stan
   const P = Array.from({ length: NP }, () => ({
     from: crown[Math.floor(rand() * crown.length)].clone(), phase: rand() * 100, period: 4 + rand() * 4,
     drift: new THREE.Vector3(0.5 + rand() * 0.6, 0, (rand() - 0.5) * 0.7), spin: new THREE.Vector3(rand() * 4, rand() * 3, rand() * 5),
-    size: 0.05 + rand() * 0.03, gate: rand(),
+    size: 0.05 + rand() * 0.03, gate: rand(), far: rand() < gust ? 1 + rand() * (reach / 2.2 - 1) : 1,
   }));
+  if (gust) P.forEach((p) => { if (p.far > 1) { p.period *= 1 + 0.25 * p.far; p.drift.z *= 1.6; } }); // carried petals fly longer
   const pos = new THREE.Vector3(), rot = new THREE.Euler(), qq = new THREE.Quaternion();
   // petals(t, t0, span): each petal leaves the crown once, at t0 + gate·span, falls for its period, then stays
   // on the sand — no loop, so the ground keeps the trace of what fell (the garden remembers)
@@ -210,12 +214,17 @@ export function createSakura({ textures, seed = 7, height = 3.4, quality = 'stan
       if (u <= 0) { m4.makeScale(0, 0, 0); fallers.setMatrixAt(i, m4); return; }
       any = true;
       const v = Math.min(1, u);
+      // landing spot first (wind drift at v = 1), so the fall ends exactly on the ground below it
+      const lx = p.from.x + p.drift.x * 2.2 * p.far, lz = p.from.z + p.drift.z * 2.2 * p.far;
+      const land = 0.012 + (ground ? ground(lx + group.position.x, lz + group.position.z) - group.position.y : 0);
       pos.copy(p.from);
-      pos.y = p.from.y + (0.012 - p.from.y) * (v * v * (3 - 2 * v) * 0.3 + v * 0.7); // drag: eases out near the ground
+      // drag: eases out near the ground; a carried petal floats level for a while before it sinks
+      const fall = p.far > 1 ? Math.pow(v, 1.6) : v * v * (3 - 2 * v) * 0.3 + v * 0.7;
+      pos.y = p.from.y + (land - p.from.y) * fall;
       // flutter: lateral sway + wind drift growing with the fall (frozen once landed)
       const tt = start + v * p.period + p.phase;
-      pos.x += p.drift.x * v * 2.2 + 0.25 * Math.sin(tt * 1.7) * (1 - v * v);
-      pos.z += p.drift.z * v * 2.2 + 0.2 * Math.cos(tt * 1.3) * (1 - v * v);
+      pos.x += p.drift.x * v * 2.2 * p.far + 0.25 * Math.sin(tt * 1.7) * (1 - v * v);
+      pos.z += p.drift.z * v * 2.2 * p.far + 0.2 * Math.cos(tt * 1.3) * (1 - v * v);
       if (u >= 1) rot.set(-Math.PI / 2 + 0.15 * Math.sin(p.phase), 0, p.spin.z * p.phase); // lying on the sand
       else rot.set(p.spin.x * tt, p.spin.y * tt, p.spin.z * tt);
       const sc = p.size * Math.min(1, u * 10);
