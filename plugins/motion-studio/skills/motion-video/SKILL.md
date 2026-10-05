@@ -65,13 +65,14 @@ and generated **before** the storyboard.
 
 ### 1b. Voice-over (if requested) — guided preparation
 1. **Diagnosis**: `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" --lang en --home "${CLAUDE_PLUGIN_DATA}"` (✔/✖ per engine + recommendation; `--lang` = the narration language).
-2. **Engine** — if `piper`, `say` or `sapi` is ✔, use it without asking. Otherwise (or only `espeak`,
-   robotic), propose with `AskUserQuestion`:
-   - **Piper** (recommended): free local neural voice, the text stays on the machine. Prerequisite: Python ≥ 3.8; downloads ~60 MB.
+2. **Engine** — if `kokoro` or `piper` is ✔, use it without asking. Otherwise (only `say`/`sapi`, which sound
+   synthetic, or only `espeak`, robotic), propose with `AskUserQuestion`:
+   - **Kokoro** (recommended): free local neural voice, the most natural, the text stays on the machine. Prerequisite: Python 3.10–3.13; downloads ~190 MB (en, fr, es, it, pt).
+   - **Piper**: lighter local neural voice (~60 MB, also de), flatter. Prerequisite: Python ≥ 3.8.
    - **Edge TTS**: free online neural voice, no key; the text is sent to Microsoft; unofficial service.
    - **My own recording**: the user provides one audio file per sentence (`"file"`).
-   After approval: `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install piper --lang en --home "${CLAUDE_PLUGIN_DATA}"` (or `edge`).
-   Missing Python or `venv` → the script says so: relay the exact command. Piper is then picked
+   After approval: `node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install kokoro --home "${CLAUDE_PLUGIN_DATA}"` (or `piper --lang de`, `edge`).
+   Missing Python or `venv` → the script says so: relay the exact command. Kokoro/Piper is then picked
    automatically; Edge **never automatically** (text leaves the machine): pass `--engine edge`.
 3. **Narration**: write `video/narration.json` (see `references/voice-and-subtitles.md`), then
 ```bash

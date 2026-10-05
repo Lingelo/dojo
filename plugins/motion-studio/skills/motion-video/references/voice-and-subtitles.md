@@ -51,21 +51,22 @@ A plain text file (one line = one sentence) is also accepted instead of the JSON
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" --lang en                 # status + recommendation
-node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install piper --lang en   # then edge | espeak
+node "${CLAUDE_PLUGIN_ROOT}/scripts/voice-setup.mjs" install kokoro            # then piper | edge | espeak
 ```
 | Engine | Where | Quality | Prerequisites / installation |
 |---|---|---|---|
 | `say` | macOS | good (`Samantha`, `Thomas`, `Amelie`) | preinstalled |
 | `sapi` | Windows | fair | preinstalled |
-| `piper` | **local**, free, every OS | **very good** (neural) | Python ≥ 3.8; `install piper` creates a private venv, `pip install piper-tts`, downloads the voice (~60 MB: en, fr, es, de, it). No sudo. |
+| `kokoro` | **local**, free, every OS | **excellent**, the most natural (neural; voices `af_heart` en, `ff_siwis` fr, `ef_dora` es, `if_sara` it, `pf_dora` pt) | Python 3.10–3.13 (a newer default python is skipped for `python3.13`…`3.10`); `install kokoro` creates its own venv, `pip install kokoro-onnx` (pinned), downloads the model (~190 MB). No sudo. Other voices: `"voice": "am_michael"`, `"bf_emma"` (British phonemes)… — list in hexgrad/Kokoro-82M `VOICES.md`. |
+| `piper` | **local**, free, every OS | very good (neural), a bit flatter | Python ≥ 3.8; `install piper` creates a private venv, `pip install piper-tts`, downloads the voice (~60 MB: en, fr, es, de, it). No sudo. |
 | `edge` | **online**, free, no key | very good (`en-US-AriaNeural`, `en-GB-RyanNeural`, `fr-FR-DeniseNeural`…) | Python ≥ 3.8; `install edge`. The **text goes to Microsoft**, unofficial service (may change). Never chosen by `auto`: `--engine edge` or `"engine": "edge"` in the script. |
 | `espeak` | Linux | robotic, fallback | `sudo apt install espeak-ng` (the script does it by itself if root/passwordless sudo, otherwise it gives the command) |
 
-`auto` choice (local engines only): piper > say > sapi > espeak. Force one with `--engine`. Python packages
-live in `${CLAUDE_PLUGIN_DATA}/voice-venv`, Piper voices in `${CLAUDE_PLUGIN_DATA}/voices` (uninstalled
+`auto` choice (local engines only): kokoro > piper > say > sapi > espeak. Force one with `--engine`. Python packages
+live in `${CLAUDE_PLUGIN_DATA}/voice-venv` (Kokoro: `kokoro-venv` + `kokoro/`), Piper voices in `${CLAUDE_PLUGIN_DATA}/voices` (uninstalled
 with the plugin). Another Piper voice: drop an `.onnx` (+ `.onnx.json`) in `voices/` or set
 `PIPER_MODEL=/path/voice.onnx`. With `espeak` only, **warn** that the voice will be mechanical and propose
-Piper. For a "studio" quality voice: the user provides a recording (`file` field).
+Kokoro. For a "studio" quality voice: the user provides a recording (`file` field).
 
 ## 2. Subtitles
 

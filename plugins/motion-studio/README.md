@@ -79,7 +79,7 @@ node plugins/motion-studio/scripts/render.mjs composition.html [options]
 
 node plugins/motion-studio/scripts/sfx.mjs list | <sound> -o x.wav | bed --bpm 120 --duration 8
 node plugins/motion-studio/scripts/audio.mjs analyze music.mp3     # tempo, beats, onsets
-node plugins/motion-studio/scripts/voice-setup.mjs [install piper|edge|espeak] [--lang en]   # voice engines
+node plugins/motion-studio/scripts/voice-setup.mjs [install kokoro|piper|edge|espeak] [--lang en]   # voice engines
 node plugins/motion-studio/scripts/voice.mjs narration.json -o voice/       # voice-over + subtitles
 node plugins/motion-studio/scripts/inspect.mjs out.mp4 [--frames 2.1,3.6 -o check/]   # duration, fps, LUFS, frames
 ```
@@ -115,10 +115,11 @@ music generator), so no sound bank and no license. Details:
 | Mix the voice (music ducked under it) + burned-in subtitles | `node scripts/render.mjs comp.html --voice voice/voice.json` |
 | Subtitles from an existing `.srt/.vtt`, karaoke style, soft track | `--subs en.srt --captions karaoke --embed-subs` |
 
-Voice engines: `say` (macOS), SAPI (Windows), **Piper** (neural, local, free — recommended), **Edge TTS**
+Voice engines: **Kokoro** (neural, local, free, the most natural — recommended), **Piper** (neural, local,
+lighter), `say` (macOS), SAPI (Windows), **Edge TTS**
 (neural, online, free with no key, the text goes to Microsoft: never chosen automatically) and eSpeak NG
-(robotic). Guided installation: `node scripts/voice-setup.mjs` (status), `... install piper|edge|espeak`
-(private Python venv + voice, no sudo; prerequisite: Python ≥ 3.8). Default language: English (`--lang`
+(robotic). Guided installation: `node scripts/voice-setup.mjs` (status), `... install kokoro|piper|edge|espeak`
+(private Python venv + voice, no sudo; prerequisite: Python ≥ 3.8, 3.10–3.13 for Kokoro). Default language: English (`--lang`
 or `"lang"` in the script for another one: fr, es, de, it…). A line can also reference an existing
 recording (`"file"`). The duration of each sentence is **measured** on the audio: the storyboard is
 aligned on it, the subtitles follow (word timings estimated for karaoke). The `.srt`/`.vtt` files are

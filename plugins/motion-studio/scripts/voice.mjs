@@ -3,7 +3,7 @@
  * motion-studio voice — narration (text-to-speech) + subtitles, timed.
  *
  *   node voice.mjs engines
- *   node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|say|sapi|piper|edge|espeak]
+ *   node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|kokoro|piper|say|sapi|edge|espeak]
  *                  [--lang en] [--voice name] [--rate 1] [--gap 0.35] [--start 0.4] [--max-chars 42]
  *
  * script.json : { "lang": "en", "voice": "Samantha", "rate": 1, "gap": 0.35, "start": 0.4,
@@ -14,7 +14,8 @@
  * timeline), voice.json (timeline + subtitle cues), subs.srt, subs.vtt. The line timings are the
  * REAL durations of the audio → build the storyboard on them, then render with `--voice voice.json`.
  *
- * Local engines (no API, no key; installed by voice-setup.mjs): macOS `say`, Windows SAPI, Piper (PIPER_MODEL), eSpeak NG.
+ * Local engines (no API, no key; installed by voice-setup.mjs): Kokoro (most natural), Piper (PIPER_MODEL),
+ * macOS `say`, Windows SAPI, eSpeak NG. `auto` takes the first available in that order.
  * Online, free, no key: `edge` (Edge neural voices via `pip install edge-tts`) — never chosen by `auto`:
  * pass --engine edge (or "engine": "edge" in the script) since the text leaves the machine.
  * A line with "file" uses your own recording (any voice / service) instead of synthesizing.
@@ -29,11 +30,15 @@ import { SR, writeWav } from './sfx.mjs';
 import { decode } from './audio.mjs';
 import { cuesFromLine, toSrt, toVtt } from './captions.mjs';
 import { ensureDeps } from './deps.mjs';
-import { piperModel, venvBin } from './voice-env.mjs';
+import { kokoroInstall, piperModel, venvBin } from './voice-env.mjs';
 
 const probe = (cmd, args) => { const r = spawnSync(cmd, args, { stdio: 'ignore' }); return !r.error; };
 
 const EDGE_VOICES = { fr: 'fr-FR-DeniseNeural', en: 'en-US-AriaNeural', es: 'es-ES-ElviraNeural', de: 'de-DE-KatjaNeural', it: 'it-IT-ElsaNeural', pt: 'pt-PT-RaquelNeural', nl: 'nl-NL-ColetteNeural' };
+// Kokoro: voice and espeak language per lang (voice grades from hexgrad/Kokoro-82M VOICES.md: af_heart A, ff_siwis B-)
+const KOKORO = { en: ['af_heart', 'en-us'], fr: ['ff_siwis', 'fr-fr'], es: ['ef_dora', 'es'], it: ['if_sara', 'it'], pt: ['pf_dora', 'pt-br'] };
+// a British voice (bf_/bm_) needs British phonemes
+const kokoroLang = (lang, voice) => (/^b[fm]_/.test(voice || '') ? 'en-gb' : KOKORO[lang]?.[1]);
 const SAY_VOICES = { fr: 'Thomas', en: 'Samantha', es: 'Monica', de: 'Anna', it: 'Alice', pt: 'Joana', nl: 'Xander' };
 const POWERSHELL = String.raw`Add-Type -AssemblyName System.Speech
 $s = New-Object System.Speech.Synthesis.SpeechSynthesizer
@@ -46,6 +51,19 @@ $s.Dispose()`;
 
 /** Each engine: available() and speak({ text, lang, voice, rate, out, tmp }) → writes an audio file at `out`. */
 const ENGINES = {
+  kokoro: {
+    label: 'Kokoro (neural, local, most natural — node scripts/voice-setup.mjs install kokoro)',
+    available(lang = 'en') { return !!KOKORO[lang] && !!kokoroInstall(); },
+    speak({ text, lang, voice, rate, out }) {
+      const k = kokoroInstall(), v = voice || KOKORO[lang][0];
+      const script = path.join(path.dirname(fileURLToPath(import.meta.url)), 'kokoro_tts.py');
+      const r = spawnSync(k.python, [script, '--model', k.model, '--voices', k.voices, '--voice', v, '--lang', kokoroLang(lang, v), '--speed', String(rate), '--out', out],
+        { input: text, encoding: 'utf8', timeout: 180000 });
+      if (r.error) return `kokoro failed: ${r.error.message}`;
+      return r.status === 0 ? null : (r.stderr || '').trim().split('\n').slice(-3).join(' ') || 'kokoro failed';
+    },
+    ext: 'wav',
+  },
   say: {
     label: 'macOS say',
     available: () => process.platform === 'darwin' && probe('say', ['-v', '?']),
@@ -108,11 +126,13 @@ const ENGINES = {
 };
 
 export const detectEngines = (lang = 'en') => Object.entries(ENGINES).filter(([, e]) => e.available(lang)).map(([k]) => k);
-/** `auto` only picks local engines — an online one (edge) must be asked for explicitly. */
-const autoEngine = (lang) => detectEngines(lang).find((k) => !ENGINES[k].online);
+/** `auto` only picks local engines, best first — an online one (edge) must be asked for explicitly. */
+const AUTO_ORDER = ['kokoro', 'piper', 'say', 'sapi', 'espeak'];
+const autoEngine = (lang) => { const found = detectEngines(lang); return AUTO_ORDER.find((k) => found.includes(k)); };
 
 const INSTALL_HINT = `No usable text-to-speech engine detected. Install one (automatic, no sudo except eSpeak):
-  • node voice-setup.mjs install piper    free LOCAL neural voice, good quality (recommended)
+  • node voice-setup.mjs install kokoro   free LOCAL neural voice, most natural (recommended; en, fr, es, it, pt)
+  • node voice-setup.mjs install piper    free LOCAL neural voice, lighter, more languages
   • node voice-setup.mjs install edge     free online neural voice, no key (the text goes to Microsoft)
   • node voice-setup.mjs install espeak   Linux fallback, robotic voice
   • macOS: "say" and Windows: SAPI are preinstalled
@@ -213,11 +233,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     const found = detectEngines(opt.lang || 'en');
     for (const [k, e] of Object.entries(ENGINES)) console.log(`${found.includes(k) ? '✔' : '✖'} ${k.padEnd(7)} ${e.label}`);
     if (!found.length) console.log('\n' + INSTALL_HINT);
-    console.log('\nInstall an engine: node voice-setup.mjs install <edge|piper|espeak> [--lang en]');
+    console.log('\nInstall an engine: node voice-setup.mjs install <kokoro|piper|edge|espeak> [--lang en]');
     process.exit(found.length ? 0 : 1);
   }
   if (!pos[0] || !fs.existsSync(pos[0])) {
-    console.error('usage: node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|say|sapi|piper|edge|espeak] [--lang fr] [--voice v] [--rate 1] [--gap .35] [--start .4] [--max-chars 42]\n       node voice.mjs engines');
+    console.error('usage: node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|kokoro|piper|say|sapi|edge|espeak] [--lang fr] [--voice v] [--rate 1] [--gap .35] [--start .4] [--max-chars 42]\n       node voice.mjs engines');
     process.exit(1);
   }
   const raw = fs.readFileSync(pos[0], 'utf8');
