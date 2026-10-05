@@ -32,14 +32,14 @@ In Claude Code's settings (the project's or the user's `.claude/settings.json`):
 ```json
 {
   "extraKnownMarketplaces": {
-    "angelo-plugins": { "source": { "source": "github", "repo": "Lingelo/marketplace-claude-code" } }
+    "dojo": { "source": { "source": "github", "repo": "Lingelo/dojo" } }
   },
-  "enabledPlugins": { "kaizen@angelo-plugins": true }
+  "enabledPlugins": { "kaizen@dojo": true }
 }
 ```
 
-Or interactively: `/plugin marketplace add Lingelo/marketplace-claude-code`, then
-`/plugin install kaizen@angelo-plugins`. Check that `/kaizen:setup` appears in the list of commands.
+Or interactively: `/plugin marketplace add Lingelo/dojo`, then
+`/plugin install kaizen@dojo`. Check that `/kaizen:setup` appears in the list of commands.
 
 ## 2. Prepare the repo: `/kaizen:setup`
 

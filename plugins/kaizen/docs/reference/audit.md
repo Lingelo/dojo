@@ -20,7 +20,7 @@ protects first).
 | `lint` | lint | a lint command | 3 | — |
 | `typecheck` | type checking (typed projects) | a typecheck command | 2 | — |
 | `gitignore_env` | secret files ignored | `.env` in `.gitignore` | 1 | `gitignore_env` |
-| `secret_scanning` | secret scanning for everyone's commits | a gitleaks/detect-secrets/trufflehog config, or a scanner (including `kaizen.mjs secrets scan`) in pre-commit or CI; the legacy `security@angelo-plugins` plugin also counts. Kaizen's commit hook alone does not: it only sees Claude's commits | 2 | `secret_scanning` |
+| `secret_scanning` | secret scanning for everyone's commits | a gitleaks/detect-secrets/trufflehog config, or a scanner (including `kaizen.mjs secrets scan`) in pre-commit or CI. Kaizen's commit hook alone does not: it only sees Claude's commits | 2 | `secret_scanning` |
 
 ### Flow
 

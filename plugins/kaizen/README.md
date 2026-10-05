@@ -51,7 +51,7 @@ of the conversation). Plans and constitutions written in French with Kaizen 2.x 
 ## Installation
 
 ```json
-{ "enabledPlugins": { "kaizen@angelo-plugins": true } }
+{ "enabledPlugins": { "kaizen@dojo": true } }
 ```
 
 Prerequisites: Node ≥ 18 and git; `gh` for PRs. No npm dependency. In a repo:

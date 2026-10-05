@@ -56,7 +56,7 @@ change its mind**.
 title: Exports go through a job queue
 date: 2026-10-02
 status: accepted          # proposed | accepted | rejected | superseded
-deciders: [angelo]
+deciders: [alice]
 reversibility: costly
 review_by: 2027-04-01
 artifact: kaizen-adr/v1

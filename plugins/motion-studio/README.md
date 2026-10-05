@@ -13,7 +13,7 @@ No real-time capture (Playwright's `recordVideo` = variable 25 fps, compressed W
 ```json
 {
   "enabledPlugins": {
-    "motion-studio@angelo-plugins": true
+    "motion-studio@dojo": true
   }
 }
 ```

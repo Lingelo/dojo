@@ -9,7 +9,7 @@ A **plugin marketplace** for Claude Code — not a traditional application. Ther
 ## Architecture
 
 ```
-.claude-plugin/marketplace.json   ← Plugin registry (name: "angelo-plugins")
+.claude-plugin/marketplace.json   ← Plugin registry (name: "dojo")
 plugins/<name>/
   ├── .claude-plugin/plugin.json  ← Metadata (name, version, description, author)
   ├── README.md
