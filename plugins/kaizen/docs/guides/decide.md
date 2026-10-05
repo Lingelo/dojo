@@ -73,7 +73,6 @@ sets the old one to `superseded`. Template: [`templates/adr.md`](../../templates
 - **No verdict without evidence.** If a decisive piece of information is missing and cannot be found,
   the answer is "Blocked — missing context", with what it takes to unblock.
 - ADRs are read by `learnings-researcher`: an accepted decision constrains the following plans.
-- For the heaviest choices, the `architect` agent of the `experts` plugin remains a good complement.
 
 ## See also
 

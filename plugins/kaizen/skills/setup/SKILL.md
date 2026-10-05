@@ -30,7 +30,7 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    (**fix** (Recommended) · **later** · **never for this repo**):
    - **scaffold** (`scaffold` not null) → `node "$K" audit fix <id>` (CODEOWNERS: ask for
      `--owner @…` first, never invent it; `monitor_patrol`: also offer `monitor_alert` if the team has
-     alerts, and a pinned `--ref <sha>` of the Kaizen repository). Show the written file; it stays
+     alerts, and a pinned `--ref <sha>` of the Kaizen repository — same for `secret_scanning`). Show the written file; it stays
      uncommitted, to be reviewed;
    - **deployment** → `node "$K" deploy detect`, show the candidates (commands, rollback, confidence,
      notes), have the user choose, then `node "$K" deploy configure <id>`; nothing recognized →

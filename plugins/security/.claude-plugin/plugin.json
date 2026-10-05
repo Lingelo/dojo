@@ -1,9 +1,0 @@
-{
-  "name": "security",
-  "description": "Blocks access to sensitive files and scans git commits for leaked secrets",
-  "version": "1.2.0",
-  "author": {
-    "name": "Angelo LIMA",
-    "email": "contact@example.com"
-  }
-}

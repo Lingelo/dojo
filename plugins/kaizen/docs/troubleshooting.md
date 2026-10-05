@@ -105,6 +105,30 @@ repository not found`.
   version)?
 - After a marketplace update: `/plugin marketplace update angelo-plugins`.
 
+## The browser does not open (`polish`, UI checks)
+
+Kaizen ships the Playwright MCP server (`.mcp.json`, started with `npx`). Check `/mcp`: `playwright`
+must be connected.
+
+- **Failed to start**: Node ≥ 18 and network access to the npm registry are needed on first start.
+- **Browser not installed**: ask Claude to run the `browser_install` tool, or run
+  `npx playwright install chrome`.
+- **No display** (SSH, container, CI): the default browser is headed. Add `"--headless"` to the `args`
+  of the `playwright` server in your user MCP configuration, or let `polish` give you the URL.
+- **Not wanted**: disable the server with `/mcp`; the skills fall back to giving you the URL.
+
+## `git commit` is refused: "possible secret(s)"
+
+The secret scan found a key or token in the lines about to be committed (`file:line — type`).
+
+- **Real secret**: move it to an environment variable, an untracked `.env` or a secret manager, and
+  unstage it. If it was already pushed or shared anywhere, **rotate it**: removing it from the code
+  does not revoke it.
+- **False positive** (test fixture, public key, documented sample): add the path to `secrets.ignore`
+  in `.kaizen/config.json`, or use an obvious placeholder (`example`, `changeme`, `${API_KEY}`).
+- **`--no-verify` refused**: it skips your repo's commit hooks; run that commit yourself if you mean it.
+- Check without committing: `node $K secrets scan` (or `--staged`).
+
 ## Upgrading from Kaizen 2.x
 
 Kaizen 3.0 speaks English (instructions, CLI and hook messages). Nothing breaks in your repos:

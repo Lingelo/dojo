@@ -39,8 +39,8 @@ touch-up to the surface concerned.
      never kills a process on its own;
    - the server is started in the background, then `node $K dev probe` checks that it answers. On
      failure, you see the last 20 lines of its log.
-3. **Opening**: the page touched by the branch, through the `playwright` plugin's Playwright MCP if it
-   is installed. Otherwise, the URL is given to you.
+3. **Opening**: the page touched by the branch, through the Playwright MCP server Kaizen
+   ships. If the browser cannot start, the URL is given to you.
 4. **Loop**: for each piece of feedback, touch-up of the surface concerned following the design system,
    then a screenshot if it is visual (at 375 px for mobile).
 5. **Closing**, when you say it is done: `verify` must stay green, then a local commit of only the

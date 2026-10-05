@@ -1,65 +1,23 @@
 {
     "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
     "name": "angelo-plugins",
-    "description": "Angelo Lima's Claude Code plugins: security, git workflows, Playwright E2E tests, statusline, AI-assisted SDLC (Kaizen), motion design and more",
+    "description": "Angelo Lima's Claude Code plugins: Kaizen (AI-assisted SDLC) and Motion Studio (motion design as code)",
     "owner": {
         "name": "Angelo Lima",
         "email": "angelomiguellima@gmail.com"
     },
     "plugins": [
         {
-            "name": "security",
-            "source": "./plugins/security",
-            "description": "Blocks access to sensitive files, scans commits for leaked secrets, and provides circuit breaker utility",
-            "category": "security"
-        },
-        {
-            "name": "notifications-system",
-            "source": "./plugins/notifications-system",
-            "description": "System sound & OS notifications when Claude completes tasks or needs attention",
-            "category": "productivity"
-        },
-        {
-            "name": "git",
-            "source": "./plugins/git",
-            "description": "Git utilities: conventional commits with Jira extraction + safe push (blocks main/master)",
+            "name": "kaizen",
+            "source": "./plugins/kaizen",
+            "description": "AI-assisted SDLC adapted from the Compound Engineering loop: engineering constitution enforced as gates, plan with traceability/threats/rollout/PR-sized slices and independent doc review, test-first work with a Stop-hook quality gate, multi-agent code review, ship & PR watching, UI polish, learnings/ADRs/postmortems read back every cycle, DORA metrics, releases, watched deployments with rollback and production monitoring",
             "category": "development"
-        },
-        {
-            "name": "playwright",
-            "source": "./plugins/playwright",
-            "description": "Playwright MCP server + agents (planner, generator, healer) for automated E2E tests",
-            "category": "development"
-        },
-        {
-            "name": "statusline",
-            "source": "./plugins/statusline",
-            "description": "Statusline setup wizard: cost, context, 5-hour window, burn rate and sessions, with multi-plan and pay-as-you-go support",
-            "category": "productivity"
-        },
-        {
-            "name": "experts",
-            "source": "./plugins/experts",
-            "description": "Senior architect agent for deep code analysis and evolution proposals",
-            "category": "development"
-        },
-        {
-            "name": "frustration-detector",
-            "source": "./plugins/frustration-detector",
-            "description": "Detects developer frustration (French and English) and adapts Claude's response style (less talk, more action)",
-            "category": "productivity"
         },
         {
             "name": "motion-studio",
             "source": "./plugins/motion-studio",
             "description": "Motion design as code: HTML/CSS/SVG/Canvas animations rendered frame by frame to MP4/WebM/GIF via Playwright + ffmpeg, with synced sound, voice-over and subtitles",
             "category": "creative"
-        },
-        {
-            "name": "kaizen",
-            "source": "./plugins/kaizen",
-            "description": "AI-assisted SDLC adapted from the Compound Engineering loop: engineering constitution enforced as gates, plan with traceability/threats/rollout/PR-sized slices and independent doc review, test-first work with a Stop-hook quality gate, multi-agent code review, ship & PR watching, UI polish, learnings/ADRs/postmortems read back every cycle, DORA metrics, releases, watched deployments with rollback and production monitoring",
-            "category": "development"
         }
     ]
 }

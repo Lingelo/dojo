@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="520" viewBox="0 0 1100 520" role="img" aria-labelledby="t d">
 <title id="t">Kaizen’s hooks in a Claude Code session</title>
-<desc id="d">Five hook registrations make the important rules deterministic. They are inactive outside a Kaizen repo and never block on their own errors.</desc>
+<desc id="d">Six hook registrations make the important rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</desc>
 <style>
   .bg { fill: #fbfaf7; stroke: #e4e0d8; }
   text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
@@ -64,7 +64,7 @@
 <defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
 <rect class="bg" x="0.5" y="0.5" width="1099" height="519" rx="14"/>
 <text class="title" x="28" y="38">Kaizen’s hooks in a Claude Code session</text>
-<text class="desc" x="28" y="58">Five hook registrations make the important rules deterministic. They are inactive outside a Kaizen repo and never block on their own errors.</text>
+<text class="desc" x="28" y="58">Six hook registrations make the important rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</text>
 <text class="regionlabel" x="36" y="114" text-anchor="start">YOU</text>
 <path class="line" d="M150,110 L1064,110"/>
 <text class="regionlabel" x="36" y="254" text-anchor="start">CLAUDE</text>
@@ -78,11 +78,12 @@
 <text class="sub" x="285" y="187" text-anchor="middle">review-hooks.mjs --confirm</text>
 <text class="sub" x="285" y="201" text-anchor="middle">kaizen waive / deploy &lt;code&gt;</text>
 <path class="line" d="M285,134 L285,150" marker-end="url(#h-default)"/>
-<rect class="gate" x="440" y="214" width="270" height="76" rx="8" stroke-width="1.5"/>
-<text class="label" x="575" y="235" text-anchor="middle">PreToolUse</text>
-<text class="sub" x="575" y="250" text-anchor="middle">review-gate.mjs: git push without</text>
-<text class="sub" x="575" y="264" text-anchor="middle">review, raw protected deploy, forged</text>
-<text class="sub" x="575" y="278" text-anchor="middle">tags, writes to review state → exit 2</text>
+<rect class="gate" x="440" y="212" width="270" height="100" rx="8" stroke-width="1.5"/>
+<text class="label" x="575" y="238" text-anchor="middle">PreToolUse</text>
+<text class="sub" x="575" y="253" text-anchor="middle">secret-gate.mjs: commit carrying a</text>
+<text class="sub" x="575" y="267" text-anchor="middle">secret, --no-verify · review-gate.mjs:</text>
+<text class="sub" x="575" y="281" text-anchor="middle">push without review, raw protected</text>
+<text class="sub" x="575" y="295" text-anchor="middle">deploy, forged tags, state writes → 2</text>
 <rect class="gate" x="740" y="160" width="324" height="64" rx="8" stroke-width="1.5"/>
 <text class="label" x="902" y="182" text-anchor="middle">PostToolUse (Bash)</text>
 <text class="sub" x="902" y="197" text-anchor="middle">quality-gate.mjs --claim: binds the</text>
@@ -99,14 +100,14 @@
 <rect class="plain" x="170" y="230" width="230" height="44" rx="8" stroke-width="1.5"/>
 <text class="label" x="285" y="256" text-anchor="middle">Claude calls a tool</text>
 <path class="line" d="M285,214 L285,230" marker-end="url(#h-default)"/>
-<path class="line" d="M400,252 L440,252" marker-end="url(#h-default)"/>
-<path class="line ok" d="M710,236.8 L740,192" marker-end="url(#h-ok)"/>
-<rect class="pill" x="662.05" y="197.4" width="125.89999999999999" height="17" rx="4"/>
-<text class="edge" x="725" y="208.4" text-anchor="middle">allowed → tool runs</text>
-<path class="line ok" d="M710,267.2 L740,270" marker-end="url(#h-ok)"/>
-<path class="line dashed" d="M575,290 L575,352" marker-end="url(#h-default)"/>
-<rect class="pill" x="578" y="314" width="77.1" height="17" rx="4"/>
-<text class="edge" x="583" y="325" text-anchor="start">… turn ends</text>
+<path class="line" d="M400,252 L440,262" marker-end="url(#h-default)"/>
+<path class="line ok" d="M710,242 L740,192" marker-end="url(#h-ok)"/>
+<rect class="pill" x="662.05" y="200" width="125.89999999999999" height="17" rx="4"/>
+<text class="edge" x="725" y="211" text-anchor="middle">allowed → tool runs</text>
+<path class="line ok" d="M710,282 L740,270" marker-end="url(#h-ok)"/>
+<path class="line dashed" d="M575,312 L575,352" marker-end="url(#h-default)"/>
+<rect class="pill" x="578" y="325" width="77.1" height="17" rx="4"/>
+<text class="edge" x="583" y="336" text-anchor="start">… turn ends</text>
 <text class="small" x="36" y="470" text-anchor="start">Exit 0 = allow, exit 2 = block with the message on stderr (sent back to Claude). UserPromptSubmit and PostToolUse only observe (always exit 0).</text>
 <text class="small" x="36" y="485" text-anchor="start">All registrations live in hooks/hooks.json and use ${CLAUDE_PLUGIN_ROOT}; timeouts: PreToolUse 30 s, PostToolUse 10–15 s, Stop 900 s, UserPromptSubmit 30 s.</text>
 </svg>

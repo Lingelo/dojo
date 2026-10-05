@@ -100,6 +100,16 @@ test('hooks.json points to existing scripts, with quoted paths', () => {
   }
 });
 
+test('bundled MCP servers: pinned versions, never @latest', () => {
+  const mcp = JSON.parse(readFileSync(join(PLUGIN, '.mcp.json'), 'utf8')).mcpServers;
+  assert.ok(mcp.playwright, 'the Playwright MCP server ships with Kaizen (polish, UI checks)');
+  for (const [name, server] of Object.entries(mcp)) {
+    const pkg = server.args.find((a) => /^@?[\w./-]+@/.test(a));
+    assert.ok(pkg, `${name}: package without a version`);
+    assert.match(pkg, /@\d+\.\d+\.\d+$/, `${name}: pin an exact version (${pkg})`);
+  }
+});
+
 test('templates: constitution and example plan follow their contracts', () => {
   const tpl = readFileSync(join(PLUGIN, 'templates/constitution.md'), 'utf8');
   for (const s of ['## Articles', '## AI policy', '## Governance', '**Check:**', 'NON-NEGOTIABLE', 'artifact: kaizen-constitution/v1']) assert.ok(tpl.includes(s), s);

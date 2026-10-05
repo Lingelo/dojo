@@ -83,7 +83,7 @@ Otherwise, it reports a blocker to you.
 - Never `git add -A` or `commit -a`, never a write to the default branch without an explicit request.
 - Many independent units: Claude may hand them to subagents in parallel (model of the `implement`
   role), but it stays the integrator (diff inspected, verification rerun, commits made by it).
-- Interface touched: check in a browser if the `playwright` plugin is installed.
+- Interface touched: check in a browser through the Playwright MCP server Kaizen ships.
 - A unit applying a learning cites it in its commit (`Applies docs/learnings/…`): that is what
   `/kaizen:metrics` counts as a learning **applied**.
 - The gate reruns the checks at every end of turn. Slow suite: configure targeted checks
