@@ -3,16 +3,29 @@
 // Plucked strings (Karplus-Strong) on the miyako-bushi scale in D (D, E♭, G, A, B♭),
 // a low drone and a muffled drum on the strong beats. Deterministic, no dependency.
 //
-//   node bed-ma.mjs --duration 61 --bpm 84 --start 9.1 -o <work>/bed.wav > <work>/bed.json
+//   node bed-ma.mjs --bpm 84 -o <work>/bed.wav > <work>/bed.json
 //
+// Markers (--start, --dense-from/--dense-to, --end) are in story time, like the composition: they go
+// through the same table (timeline.js) to land in real time, so the cadence follows the picture.
 // The output JSON has the same format as `sfx.mjs bed` (exact beats for --beats).
+import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
+import { fileURLToPath } from 'node:url';
 import { SR, synth, writeWav } from '../../../../motion-studio/scripts/sfx.mjs';
+
+const tl = {};
+vm.runInNewContext(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'timeline.js'), 'utf8'), tl);
+const { realAt, DUR } = tl.__timeline;
 
 const opts = {};
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) if (argv[i].startsWith('-')) opts[argv[i].replace(/^--?/, '')] = argv[++i];
-const duration = +(opts.duration ?? 61), bpm = +(opts.bpm ?? 84), start = +(opts.start ?? 9.1), out = opts.o ?? 'bed.wav';
+const num = (k, d) => { const v = +(opts[k] ?? d); if (!Number.isFinite(v)) { console.error(`bed-ma: --${k} must be a number`); process.exit(1); } return v; };
+// story-time markers: title (music enters), busy middle of the cycle, ensō of the end (final cadence)
+const bpm = num('bpm', 84), start = realAt(num('start', 9.1)), out = opts.o ?? 'bed.wav';
+const denseFrom = realAt(num('dense-from', 17.5)), denseTo = realAt(num('dense-to', 47)), end = realAt(num('end', 56.85));
+const duration = +DUR.toFixed(2);
 
 const beat = 60 / bpm, bar = beat * 4, TAU = Math.PI * 2;
 const L = new Float32Array(Math.round(duration * SR)), R = new Float32Array(L.length);
@@ -87,9 +100,10 @@ const PHRASES = [
 const beats = [];
 for (let t = start; t < duration - 0.05; t += beat) beats.push(+t.toFixed(4));
 
-for (let b = 0, t0 = start; t0 < duration - 3; b++, t0 = start + b * bar) {
+// phrases stop a bar before the cadence so it rings alone
+for (let b = 0, t0 = start; t0 < end - bar; b++, t0 = start + b * bar) {
   // ma: during the constitution, the title and the end, let it breathe
-  const dense = t0 > 17.5 && t0 < 47;
+  const dense = t0 > denseFrom && t0 < denseTo;
   const phrase = PHRASES[b % PHRASES.length];
   phrase.forEach(([pos, deg], k) => {
     if (!dense && k > 1) return;
@@ -100,10 +114,10 @@ for (let b = 0, t0 = start; t0 < duration - 3; b++, t0 = start + b * bar) {
 }
 
 // final cadence: low D and high D, left to ring
-add(pluck(50, 5, 0.6), 56.85, 0.4, -0.1);
-add(pluck(62, 5, 0.5), 57.0, 0.3, 0.15);
-add(drum(), 56.85, 0.35, 0);
-add(synth('chime', { note: 74, dur: 4 }), 57.0, 0.12, 0.2);
+add(pluck(50, 5, 0.6), end, 0.4, -0.1);
+add(pluck(62, 5, 0.5), end + 0.15, 0.3, 0.15);
+add(drum(), end, 0.35, 0);
+add(synth('chime', { note: 74, dur: 4 }), end + 0.15, 0.12, 0.2);
 
 const fo = Math.round(1.2 * SR);
 for (let i = 0; i < fo; i++) { const g = i / fo; L[L.length - 1 - i] *= g; R[R.length - 1 - i] *= g; }

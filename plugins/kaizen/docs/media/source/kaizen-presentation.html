@@ -19,8 +19,9 @@
   (想 imagine · 計 plan · 作 make · 検 examine · 出 ship · 積 accumulate). Steps numbered 01 to 06.
   Procedural materials (no image): braided rope path, speckled granite, moss, charred cedar, lacquer.
 
-  Time: the composition is written in story time (0–61 s); storyAt()/realAt() slow it down while
-  the cards are readable. narration.json carries "at" values in real time, computed with the same table.
+  Time: the composition is written in story time (0–61 s); storyAt()/realAt() (timeline.js) slow it down while
+  the cards are readable. narration.json carries "at" values in real time, computed with the same table;
+  bed-ma.mjs reads timeline.js itself, so its arguments stay in story time.
   No invented figure: the only cited sources are DORA "State of AI-assisted Software Development" 2025 and
   "ROI of AI-assisted Software Development" (2026.01, May 2026), for their shared qualitative finding (AI amplifies;
   throughput up, instability too: the "instability tax"). The 2026 ROI figures are an example model, not reused; the example
@@ -30,7 +31,7 @@
   Render (from this folder, <work> = working folder):
     node ../../../../motion-studio/scripts/voice-setup.mjs install piper --lang en    # once
     node ../../../../motion-studio/scripts/voice.mjs narration.json -o <work>/voice
-    node bed-ma.mjs --duration 79.6 --bpm 84 --start 11.05 -o <work>/bed.wav > <work>/bed.json
+    node bed-ma.mjs --bpm 84 -o <work>/bed.wav > <work>/bed.json
     node ../../../../motion-studio/scripts/render.mjs kaizen-presentation.html --quality high --voice <work>/voice/voice.json \
          --audio <work>/bed.wav --beats <work>/bed.json -o <work>/kaizen-presentation.mp4
     ffmpeg -i <work>/kaizen-presentation.mp4 -c:v libx264 -preset slow -crf 24 -tune animation -pix_fmt yuv420p \
@@ -235,6 +236,7 @@
 <div id="vignette"></div>
 <div id="grain"></div>
 
+<script src="timeline.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
@@ -256,23 +258,8 @@ const hn = (a, b) => { const h = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; r
 const sfx = (src, at, gain = 0.35, extra = {}) => window.__sfx?.(src, { at: realAt(at), gain, ...extra });
 
 // ---------------------------------------------------------------- story time / real time
-// The whole composition is written in story time (0 → 61 s). Real time plays through it more slowly
-// while a card is readable (SLOW), at normal speed during transitions: reading time is gained
-// without touching the movements. Sounds and voice (narration.json, "at") follow the same table.
-const STORY = 61, SLOW = 0.68, RAMP = 0.5;
-const READ = [[3.6, 8.3], [13.5, 17.5], [18.5, 21.7], [22.7, 27.8], [28.9, 32.7], [33.7, 38.0], [39.1, 46.9], [48.0, 56.0], [57.4, 61]];
-const speedAt = (s) => 1 - (1 - SLOW) * Math.max(0, ...READ.map(([a, b]) => sstep(clamp((s - a) / RAMP)) * sstep(clamp((b - s) / RAMP))));
-const STEP = 0.002, REAL = [0];
-for (let s = STEP; s <= STORY + 1e-9; s += STEP) REAL.push(REAL.at(-1) + STEP / speedAt(s - STEP / 2));
-const DUR = REAL.at(-1);
-function realAt(s) { const i = clamp(s / STEP, 0, REAL.length - 1), j = Math.floor(i); return lerp(REAL[j], REAL[Math.min(j + 1, REAL.length - 1)], i - j); }
-function storyAt(t) {
-  let lo = 0, hi = REAL.length - 1;
-  if (t >= REAL[hi]) return STORY;
-  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (REAL[m] <= t) lo = m; else hi = m; }
-  return (lo + (t - REAL[lo]) / (REAL[hi] - REAL[lo])) * STEP;
-}
-window.__timeline = { realAt, storyAt, DUR }; // to align narration.json and the music (see the header)
+// The table lives in timeline.js, shared with bed-ma.mjs so the music follows the same clock.
+const { realAt, storyAt, DUR, STORY } = window.__timeline;
 
 // ---------------------------------------------------------------- scene
 const WASHI = 0xefe8d9, SHU = 0xc4401f, STONE = 0x5a564f, GRANITE = 0xb4ab9b;
