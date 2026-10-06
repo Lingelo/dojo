@@ -13,6 +13,7 @@
  * (kokoro-onnx does not support 3.14 yet: a python3.13…3.10 is looked for when the default one is newer).
  */
 import { spawnSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { detectEngines } from './voice.mjs';
@@ -92,6 +93,14 @@ async function installPiper() {
 // kokoro-onnx release assets (MIT code, Apache-2.0 model): https://github.com/thewh1teagle/kokoro-onnx/releases
 const KOKORO_RELEASE = 'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1';
 const KOKORO_PKG = 'kokoro-onnx==0.6.1'; // pinned: the voice must not change silently between two renders
+// size and sha256 of each model file, from the release's own asset digests (GitHub API, model-files-v1.1):
+// a corrupt, truncated or swapped download never becomes the model. (The pip dependencies of kokoro-onnx —
+// onnxruntime, numpy… — are not hash-pinned: only kokoro-onnx itself is, by version.)
+const KOKORO_SUMS = {
+  'kokoro-v1.0.fp16.onnx': [163527961, 'f3a290d384fbb27966d462905c71a46cef9e5fd00516b40df32a0b4afe77ac96'],
+  'voices-v1.0.bin': [28214398, 'bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d'],
+};
+const sha256 = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
 
 async function installKokoro() {
   out('Kokoro — local neural voice, most natural (en, fr, es, it, pt)');
@@ -104,11 +113,17 @@ async function installKokoro() {
     if (!imported()) { out('  ✖ kokoro-onnx installed but cannot be imported (see the message above)'); return false; }
   } else out(`  ✔ ${KOKORO_PKG} already installed`);
   for (const [what, name] of Object.entries(KOKORO_FILES)) {
-    const file = path.join(kokoroDir(), name);
-    if (fs.existsSync(file)) continue;
+    const file = path.join(kokoroDir(), name), [size, sum] = KOKORO_SUMS[name];
+    // an existing file is kept only if it is the pinned one (size first: hashing 160 MB is only for a match)
+    if (fs.existsSync(file) && fs.statSync(file).size === size && sha256(file) === sum) continue;
+    if (fs.existsSync(file)) out(`  ⚠ ${name} does not match its pinned checksum: downloading it again`);
     out(`  … downloading the ${what} ${name}`);
-    try { await download(`${KOKORO_RELEASE}/${name}`, `${file}.part`); fs.renameSync(`${file}.part`, file); }
-    catch (e) { fs.rmSync(`${file}.part`, { force: true }); out(`  ✖ download failed: ${e.message}`); return false; }
+    try {
+      await download(`${KOKORO_RELEASE}/${name}`, `${file}.part`);
+      const got = sha256(`${file}.part`); // checked BEFORE it replaces anything
+      if (got !== sum) throw new Error(`sha256 ${got} ≠ ${sum}`);
+      fs.renameSync(`${file}.part`, file);
+    } catch (e) { fs.rmSync(`${file}.part`, { force: true }); out(`  ✖ download failed: ${e.message}`); return false; }
   }
   if (!kokoroInstall()) { out('  ✖ Kokoro incomplete after install'); return false; }
   out(`  ✔ Kokoro ready (${kokoroDir()}) — the default engine from now on`);

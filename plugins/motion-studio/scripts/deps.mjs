@@ -180,6 +180,9 @@ export async function serveLocal(context, root, file) {
     try { rel = decodeURIComponent(new URL(route.request().url()).pathname); } catch { return route.fulfill({ status: 400 }); }
     const f = path.resolve(base, '.' + rel);
     if (f !== base && !f.startsWith(base + path.sep)) return route.fulfill({ status: 403 });
+    // hidden files and folders (.env, .git, .ssh…) are never served: the page's JS could fetch() and leak them,
+    // which file:// used to forbid. A composition never needs one.
+    if (path.relative(base, f).split(path.sep).some((seg) => seg.startsWith('.'))) return route.fulfill({ status: 403, body: `hidden path not served: ${rel}` });
     let body;
     try { body = fs.readFileSync(f); } catch { return route.fulfill({ status: 404, body: `not found: ${rel}` }); }
     await route.fulfill({ status: 200, body, headers: { 'content-type': MIME[path.extname(f).toLowerCase()] || 'application/octet-stream' } });

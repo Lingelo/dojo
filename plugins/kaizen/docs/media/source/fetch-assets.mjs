@@ -109,16 +109,24 @@ const checkOnly = process.argv.includes('--check');
 let bad = 0;
 for (const [rel, src, sum] of ASSETS) {
   const f = path.join(dir, rel);
-  if (!fs.existsSync(f)) {
-    if (checkOnly) { console.error(`✖ missing ${rel}`); bad++; continue; }
-    const r = await fetch(`${DL}/${src}`);
-    if (!r.ok) { console.error(`✖ ${rel}: HTTP ${r.status}`); bad++; continue; }
+  // a file with the wrong md5 is treated as missing: re-downloaded (or reported by --check), never kept
+  if (fs.existsSync(f) && md5(f) === sum) continue;
+  if (checkOnly) { console.error(fs.existsSync(f) ? `✖ ${rel}: md5 ${md5(f)} ≠ ${sum}` : `✖ missing ${rel}`); bad++; continue; }
+  // one file failing (network, timeout, bad checksum) is reported and the others still run
+  try {
+    const r = await fetch(`${DL}/${src}`, { signal: AbortSignal.timeout(120000) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
     fs.mkdirSync(path.dirname(f), { recursive: true });
     fs.writeFileSync(`${f}.part`, Buffer.from(await r.arrayBuffer()));
+    // checked BEFORE it replaces anything: a corrupt or swapped download never becomes the asset
+    const got = md5(`${f}.part`);
+    if (got !== sum) { fs.rmSync(`${f}.part`, { force: true }); throw new Error(`md5 ${got} ≠ ${sum}`); }
     fs.renameSync(`${f}.part`, f);
     console.error(`↓ ${rel}`);
+  } catch (e) {
+    fs.rmSync(`${f}.part`, { force: true });
+    console.error(`✖ ${rel}: ${e.name === 'TimeoutError' ? 'timed out' : e.message}`); bad++;
   }
-  if (md5(f) !== sum) { console.error(`✖ ${rel}: md5 ${md5(f)} ≠ ${sum}`); bad++; }
 }
 console.error(bad ? `✖ ${bad} problem(s)` : `✔ ${ASSETS.length} assets verified`);
 process.exit(bad ? 1 : 0);

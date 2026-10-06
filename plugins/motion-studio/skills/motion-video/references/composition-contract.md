@@ -116,7 +116,8 @@ window.__seek = (t) => tl.seek(t, false);
 - **Local assets (HDRI, glTF, textures, JSON)**: reference them with relative paths. The renderer serves the
   composition's folder at `http://composition.local/` (not `file://`, where Chrome blocks `fetch()` and taints
   WebGL textures), so `RGBELoader`, `GLTFLoader`, `TextureLoader` and `fetch()` work. Assets in a parent
-  folder: `--root <dir>` (it must contain the composition; nothing outside it is served). To preview the
+  folder: `--root <dir>` (it must contain the composition; nothing outside it is served, nor any hidden path such as
+  `.git` or a dotfile — point it at an assets folder, not at the root of a repository). To preview the
   page in a browser, serve the folder too (`npx serve`, `python3 -m http.server`): `file://` will not load them.
 - **Wait for async assets**: set `window.__ready = (async () => { …await loaders… })()` in the page. The
   renderer awaits it before the first frame (a rejection stops the render with its message). Without it,
