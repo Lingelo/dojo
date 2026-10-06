@@ -88,7 +88,11 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    `CODEOWNERS` line for `CONSTITUTION.md` and `kaizen-packs/`. Remind that a review is required
    before any `git push` of a branch (`review.require_before_push`) and that only the team can choose
    to relax it.
-11. **Summary** — finish with the health check above and the command to run next
+11. **Summary** — open it with the **profile in effect and what it costs**, on its own line, before anything
+   else: e.g. "Profile **lean**: code review on sonnet, critical review on sonnet (opus in standard) — change
+   it with `profile` in `.kaizen/config.json`". It decides the price and depth of every later review, so it
+   is never buried among the assumptions, least of all when it was chosen without asking. Then the health
+   check above and the command to run next
    (`/kaizen:brainstorm <idea>` or `/kaizen:ideate`); remind that `/kaizen:help` says at any time what
    to do next.
 

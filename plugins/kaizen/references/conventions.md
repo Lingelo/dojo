@@ -159,7 +159,9 @@ English.**
 - Only ask what the code, the config or the conversation does not settle.
 - A decision already made in the conversation is **settled**: do not ask it again, record it.
 - Non-interactive modes (`mode:auto`, `mode:return`) ask **no** question: they take the conservative
-  default and record it.
+  default and record it. `mode:return` also replaces the final "what next?" menu with its return value and
+  stops there: it is the mode to drive a skill from a script, a CI job or another agent one step at a time.
+  Without it, a headless run takes the menu's recommended option and goes on to the next skill.
 
 ## Subagents
 
