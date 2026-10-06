@@ -111,9 +111,11 @@ Create `video/<name>.html` (or the requested folder) from `assets/starter.html`:
 
 ### 4. Preview with stills (fast loop)
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.html --stills 0.5,1.8,3.2,5.5 -o video/stills
+node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --home "${CLAUDE_PLUGIN_DATA}" video/intro.html --stills 0.5,1.8,3.2,5.5 --sheet -o video/stills
 ```
-**Read each PNG** (Read tool) and critique like an art director: legibility, alignment, hierarchy,
+`--sheet [cols]` also writes `sheet.jpg`, every still in one grid labelled with its time: read it first to
+review the whole storyboard, then the PNGs of the shots to fix. 3D: judge framing in `--quality draft`, but
+light and materials only in `standard`/`high` (draft has no shadows). **Read each PNG** (Read tool) and critique like an art director: legibility, alignment, hierarchy,
 contrast, collisions, elements out of frame, ugly intermediate states. Fix, start again. Show the key
 stills to the user before a long render.
 

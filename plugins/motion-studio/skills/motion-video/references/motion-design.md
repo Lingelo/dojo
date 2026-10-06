@@ -67,3 +67,17 @@ const spring = (t, { k = 170, c = 26, m = 1 } = {}) => {        // t in s → 0.
 - Subtle vignette to center the eye.
 - Motion blur (`--motion-blur 4`) on any fast movement: it is what makes it look like "video" and not
   "web page".
+
+## Camera in a 3D scene
+
+- **A subject following a winding path** (switchbacks, a spiral): do not chase it — the camera swings 180° at
+  every hairpin and the picture becomes unreadable. Frame each stop with a fixed shot, and move between two
+  shots in a straight line (lift it with a small arc if the line grazes the ground).
+- **A decorative element earns its place with a shot designed for it.** Placed "somewhere in the scene", it ends
+  up hidden by the fog, the banks or the foreground (Kaizen: a mirror pond moved four times, never readable).
+  Decide the shot first, then put the element in it.
+- **Keep the camera's corridors clear**: when placing decor procedurally (trees, rocks), exclude the volume the
+  camera flies through, or a branch will cross the lens.
+- **Contact sheet before full render**: `--stills … --sheet` assembles the stills in one image to review a whole
+  storyboard at a glance.
+

@@ -54,6 +54,8 @@ Options (CLI overrides the <body data-*> attributes of the composition):
       --transparent      Transparent background (use with --format webm|mov)
       --seed <n>          Seed for Math.random (default 42)
       --stills <t,t,...>  Only export PNG stills at these times (seconds) — preview mode
+      --sheet [cols]      With --stills: also assemble them in one contact sheet (sheet.jpg, default
+                          3 columns, each still scaled to 640 px wide, labelled with its time)
       --from <s> --to <s> Render only a time range (fast iteration on one scene)
       --jpeg              Capture JPEG q95 instead of PNG (≈2× faster, slight loss)
       --root <dir>        Folder served with a local file (default: its folder) at http://composition.local,
@@ -74,7 +76,7 @@ function parseArgs(argv) {
       key = alias[key] || key;
       if (val === undefined) {
         const next = argv[i + 1];
-        if (next !== undefined && !next.startsWith('--') && !['help', 'transparent', 'jpeg', 'no-sfx', 'embed-subs'].includes(key)) {
+        if (next !== undefined && !next.startsWith('--') && !['help', 'transparent', 'jpeg', 'no-sfx', 'embed-subs'].includes(key) && !(key === 'sheet' && !/^\d+$/.test(next))) {
           val = next; i++;
         } else val = true;
       }
@@ -303,6 +305,22 @@ const VIRTUAL_TIME = String.raw`
 })();
 `;
 
+// ---------------------------------------------------------------- contact sheet (--stills … --sheet)
+// One image of every still in a grid (xstack: unlike hstack/vstack it takes any count; the last row is padded).
+// The time labels are already drawn on the captures. Returns an error message, or null.
+function contactSheet(ffmpeg, shots, out, cols) {
+  if (!Number.isInteger(cols) || cols < 1) return `--sheet expects a column count ≥ 1 (got ${cols})`;
+  if (!shots.length) return 'No still to assemble';
+  const n = shots.length, c = Math.min(cols, n);
+  const scaled = shots.map((_, i) => `[${i}:v]scale=640:-2[s${i}]`);
+  // cells are 640 wide; rows take the height of the first still (the stills of one composition share a size)
+  const sum = (k, unit) => (k ? Array.from({ length: k }, () => unit).join('+') : '0');
+  const graph = n === 1 ? '[0:v]scale=640:-2'
+    : `${scaled.join(';')};${shots.map((_, i) => `[s${i}]`).join('')}xstack=inputs=${n}:layout=${shots.map((_, i) => `${sum(i % c, 'w0')}_${sum(Math.floor(i / c), 'h0')}`).join('|')}:fill=black`;
+  const r = spawnSync(ffmpeg, ['-y', '-loglevel', 'error', ...shots.flatMap(({ f }) => ['-i', f]), '-filter_complex', graph, '-frames:v', '1', '-q:v', '3', out], { encoding: 'utf8' });
+  return r.status === 0 ? null : `contact sheet failed: ${(r.stderr || '').trim().split('\n').pop()}`;
+}
+
 // ---------------------------------------------------------------- main
 const input = args._[0];
 let url = /^(https?|file|data):/.test(input) ? input : pathToFileURL(path.resolve(input)).href;
@@ -314,7 +332,7 @@ if (localFile && path.relative(localRoot, localFile).startsWith('..')) die(`--ro
 const serve = async (ctx) => { if (localFile) url = await serveLocal(ctx, localRoot, localFile); };
 
 let deps;
-try { deps = await ensureDeps({ needFfmpeg: !args.stills || !!args.audio }); } catch (e) { die(e.message); }
+try { deps = await ensureDeps({ needFfmpeg: !args.stills || !!args.audio || !!args.sheet }); } catch (e) { die(e.message); }
 const { chromium, ffmpeg } = deps;
 
 // Image follows sound: analyze the music once, expose it to the page as window.__audio.
@@ -410,11 +428,28 @@ try {
     const dir = args.out && !path.extname(args.out) ? base : path.dirname(base);
     const stem = args.out && !path.extname(args.out) ? 'still' : path.basename(base);
     fs.mkdirSync(dir, { recursive: true });
+    const shots = [];
     for (const t of times) {
       await page.evaluate((ms) => window.__vt.frame(ms), t * 1000);
       const f = path.join(dir, `${stem}-${t.toFixed(2)}s.png`);
       fs.writeFileSync(f, await capture());
       console.log(f);
+      if (args.sheet) {
+        // the sheet's copy carries its time, drawn by the page itself: ffmpeg-static has no drawtext (no font)
+        const lf = path.join(dir, `.sheet-${t.toFixed(2)}s.png`);
+        await page.evaluate((txt) => { const d = document.createElement('div'); d.id = '__sheet_label'; d.textContent = txt;
+          d.style.cssText = 'position:fixed;left:16px;top:14px;z-index:2147483647;padding:6px 14px;font:600 40px/1.2 system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.6);border-radius:6px;pointer-events:none';
+          document.body.appendChild(d); }, `${t.toFixed(2)} s`);
+        fs.writeFileSync(lf, await capture());
+        await page.evaluate(() => document.getElementById('__sheet_label')?.remove());
+        shots.push({ f: lf, t, tmp: true });
+      }
+    }
+    if (args.sheet) {
+      const f = path.join(dir, `${stem === 'still' ? '' : stem + '-'}sheet.jpg`);
+      const r = contactSheet(ffmpeg, shots, f, args.sheet === true ? 3 : Number(args.sheet));
+      for (const s of shots) if (s.tmp) fs.rmSync(s.f, { force: true });
+      if (r) die(r); else console.log(f);
     }
     process.exitCode = 0;
   } else {

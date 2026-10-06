@@ -51,8 +51,12 @@ if (HQ) { sun.shadow.mapSize.set(4096, 4096); /* + EffectComposer with GTAOPass 
 - **The lever depends on the materials**: a matte scene (stone, paper, sand) gains from ambient occlusion
   (`GTAOPass`) and fine shadows; an environment map (`RoomEnvironment`) lights it twice, fills the shadows
   and washes it out — it is for shiny materials (metal, lacquer, glass). Compare with stills.
-- Measured order of magnitude (Apple Silicon Mac, kaizen scene): `high` ≈ `standard` in speed; do not
-  assume "high = slow", measure with `--from/--to`.
+- **Never judge light on a draft**: `draft` switches shadows off, so the picture looks flat and unlit. Judge
+  framing and timing in `draft`; light, materials and reflections in `standard` / `high` stills only.
+- **Cost is per effect, measure it**: `high` can cost about what `standard` does (more polygons, finer shadows) or
+  ten times more as soon as it adds full-screen passes — each screen-space reflection (`SSRPass`), planar mirror
+  (`Reflector`) or ambient occlusion pass re-renders the scene. Kaizen video: 0.1–0.2 frame/s in `high` with SSR
+  + a mirror + GTAO + an 8k shadow map, ~6 h for 80 s. Time 30 frames (`--from/--to`) before a full `high` render.
 
 ## Story time ≠ real time (slowing down to read)
 
@@ -136,6 +140,26 @@ window.__seek = (t) => tl.seek(t, false);
   on `__quality` give a different sequence per level. For stable positions, draw from a **hash**
   (`fract(sin(i·k)·43758.5)`).
 - `preserveDrawingBuffer: true` avoids black frames at capture.
+- **Per-vertex values must be continuous**: an attribute computed per vertex (distance to a path, "nearest X",
+  a layer mask) is interpolated across each triangle. If it jumps between two neighbouring vertices — because
+  the "nearest" candidate switches — the jump is drawn as a sawtooth along the triangle edges. Use a metric that
+  stays continuous (a min over every candidate, each one penalised smoothly) rather than the value of the nearest one.
+- **Painted sky behind a misty scene**: a cylinder or sphere with `MeshBasicMaterial({ side: BackSide, fog: false,
+  depthWrite: false })` stays crisp while `scene.fog` swallows the 3D (fog only applies to materials with `fog: true`).
+- **Text drawn in a canvas texture** (a sign, a kanji plate) uses the system fonts, not the page's `@font-face`
+  unless it is loaded: `await document.fonts.load('700 76px "My Font"')` before `fillText`, with the font file
+  next to the composition. Otherwise CJK and special glyphs differ per OS (or render as boxes).
+- **Screen-space reflections** (`SSRPass`, three r170): it renders the scene itself — put it first, no `RenderPass`
+  before it; `GTAOPass` then composites over its output (`SSRPass → GTAOPass → OutputPass`). Its mask is binary
+  (the selected meshes, `metalness == 0` → no reflection) with one global `opacity`; a graded mask (wet puddles
+  strong, lacquer weak) needs a patch of its shader, which is tied to that three version. SSR only reflects what is
+  on screen: the edges of the frame have nothing to reflect. A planar mirror (`Reflector`) is exact but costs a
+  second render of the scene per frame.
+- **Procedural geometry without UVs**: project scanned PBR textures in world space (triplanar). Reference
+  implementation: `plugins/kaizen/docs/media/source/pbr.js` (scan + tint, desaturation, moss in crevices, clearcoat
+  varnish, via `onBeforeCompile`; static objects only, the texture is pinned to the world).
+- **Heavy assets** (2k scans, HDRIs): do not commit them, nor LFS — a script downloads them and checks a pinned md5
+  per file (reproducible, offline once fetched). Example: `plugins/kaizen/docs/media/source/fetch-assets.mjs`.
 
 **Embedded video** — `<video src="clip.mp4" data-start="2.5" muted playsinline preload="auto">`: never `autoplay`.
 
