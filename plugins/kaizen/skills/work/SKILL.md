@@ -15,7 +15,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Before writing code for 
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
 **`mode:return`** (set by `/kaizen:autopilot`): implementation and local verification **only** — no
-simplification, review, push or PR (the caller handles them), no questions. Return:
+simplification, review, push or PR (the caller handles them), no questions. **Leave the gate on**: the caller
+keeps it for its whole run and turns it off itself (Phase 4 does not apply). Return:
 `{ status: complete|blocked, plan_path, branch, commits: [sha…], units: [{id, status, evidence}],
 verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
 

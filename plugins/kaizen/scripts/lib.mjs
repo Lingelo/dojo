@@ -486,14 +486,17 @@ export function worktreeTree(root) {
 }
 
 // Lines changed between two trees or commits, excluding files ignored by pr.ignore.
-export function changedLines(root, from, to, ignore = []) {
+// onlyIn: a ref — paths absent from it are skipped (e.g. files that existed only in the reviewed tree).
+export function changedLines(root, from, to, ignore = [], { onlyIn = null } = {}) {
   const out = git(root, ['diff', '--numstat', from, to], { allowFail: true });
   if (out === null) return null;
   const res = ignore.map(globToRegex);
+  const kept = onlyIn ? new Set((git(root, ['ls-tree', '-r', '--name-only', onlyIn], { allowFail: true }) || '').split('\n').filter(Boolean)) : null;
   let total = 0;
   for (const line of out ? out.split('\n') : []) {
     const [a, d, ...rest] = line.split('\t');
-    if (a === '-' || res.some((r) => r.test(rest.join('\t')))) continue;
+    const file = rest.join('\t');
+    if (a === '-' || res.some((r) => r.test(file)) || (kept && !kept.has(file))) continue;
     total += Number(a) + Number(d);
   }
   return total;

@@ -190,7 +190,9 @@ export function checkPush(root, config = loadConfig(root)) {
   const max = Number(config.review.max_unreviewed_lines ?? 80);
   const rec = readJson(root, 'reviews.json', {})[branch];
   if (!rec) return { allowed: false, branch, reason: 'no review recorded for this branch', branch_lines: lines };
-  const since = changedLines(root, rec.tree, 'HEAD', config.pr.ignore);
+  // Only what is pushed counts: a file the review read while untracked (a plan, a constitution) and HEAD never
+  // contained shows up as a full deletion between the reviewed tree and HEAD — it is not part of the push.
+  const since = changedLines(root, rec.tree, 'HEAD', config.pr.ignore, { onlyIn: 'HEAD' });
   if (since === null) return { allowed: false, branch, reason: 'the reviewed tree cannot be found (history rewritten?)', review: rec };
   if (rec.verdict === 'blocked' && since === 0) {
     return { allowed: false, branch, reason: 'the last review returned ⛔ and nothing changed since', review: rec, unreviewed_lines: 0 };

@@ -17,6 +17,7 @@ export default {
       const log = c.git('log', '--format=%s', 'main..HEAD').trim().split('\n').filter(Boolean);
       return { ok: branch !== 'main' && log.length >= 1 && log.every((s) => /^(feat|fix|test|refactor|chore|docs)(\(.+\))?!?: /.test(s)), note: `${branch} · ${log.join(' / ')}` };
     }],
-    ['gate off at the end of the work', (_, c) => !/"active":\s*true/.test(c.kaizen('gate', 'status').out)],
+    // mode:return leaves the gate on: its caller (autopilot) keeps it for the whole run and turns it off itself
+    ['gate left on for the caller (mode:return)', (_, c) => /"active":\s*true/.test(c.kaizen('gate', 'status').out)],
   ],
 };

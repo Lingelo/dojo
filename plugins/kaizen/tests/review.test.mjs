@@ -182,3 +182,34 @@ test('branch without code changes: nothing to review', () => {
   assert.equal(prePush(dir).status, 0);
   cleanup(dir);
 });
+
+test('a push whose target is the default branch is guarded too, whatever branch it starts from', () => {
+  const dir = featureRepo();
+  // from feat/x, pushing it onto main: the code reaches main without any review
+  assert.equal(prePush(dir, 'git push origin feat/x:main').status, 2, 'feat/x:main without a review');
+  assert.equal(prePush(dir, 'git push origin HEAD:main').status, 2, 'HEAD:main without a review');
+  assert.equal(prePush(dir, 'git push origin HEAD:refs/heads/main').status, 2, 'full ref');
+  // after the review of that branch, the same push goes through
+  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  assert.equal(prePush(dir, 'git push origin HEAD:main').status, 0);
+  cleanup(dir);
+  // pushing main itself from main stays the git plugin's business
+  const m = tempRepo({ '.kaizen/config.json': {}, 'app.js': 'a\n' });
+  writeFiles(m, { 'app.js': 'a\nb\n' });
+  gitc(m, ['commit', '-qam', 'feat: b']);
+  assert.equal(prePush(m, 'git push origin main').status, 0);
+  cleanup(m);
+});
+
+test('files left untracked during the review are not counted as changed at push time', () => {
+  const dir = featureRepo({ review: { max_unreviewed_lines: 5 } });
+  // a plan and a constitution written by brainstorm/plan, never committed: they are not part of the push
+  writeFiles(dir, { 'docs/plans/p.md': Array.from({ length: 60 }, (_, i) => `line ${i}`).join('\n'), 'CONSTITUTION.md': 'x\n'.repeat(40) });
+  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  assert.equal(prePush(dir).status, 0, 'untracked files read by the review do not block the push');
+  // a real change after the review still counts
+  writeFiles(dir, { 'app.js': 'a\nb\nc\n' + Array.from({ length: 10 }, (_, i) => `n${i}`).join('\n') + '\n' });
+  gitc(dir, ['commit', '-qam', 'feat: more']);
+  assert.equal(prePush(dir).status, 2, 'committed lines beyond the ceiling still block');
+  cleanup(dir);
+});
