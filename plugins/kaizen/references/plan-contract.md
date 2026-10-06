@@ -96,7 +96,8 @@ table, before any unit:
 ```
 
 A **NON-NEGOTIABLE** article admits no ⚠️: if the plan cannot respect it, the plan is blocked (capsule:
-open blocker) or the constitution must be amended. Every exception is restated in the PR description.
+open blocker) or the constitution must be amended. Not for a **draft** constitution (`status: draft`):
+its articles are assessed the same way, but a gap is a warning, never a blocker. Every exception is restated in the PR description.
 
 ### Threats (`kaizen:threats`)
 

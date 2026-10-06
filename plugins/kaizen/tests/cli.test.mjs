@@ -383,3 +383,44 @@ test('help and unknown command', () => {
   execFileSync('git', ['status'], { cwd: dir });
   cleanup(dir);
 });
+
+// A draft constitution (status: draft) is written when nobody can answer: it informs, it never blocks.
+const DRAFT = CONSTITUTION.replace('ratified: 2026-10-02\nlast_amended: 2026-10-02\n', 'status: draft\n');
+
+test('draft constitution: not yet ratified is a warning, a malformed text stays an error', () => {
+  const dir = tempRepo({ 'CONSTITUTION.md': DRAFT });
+  const ok = cli(dir, ['constitution', 'check', '--json']);
+  assert.equal(ok.code, 0, 'no ratification dates: expected for a draft');
+  assert.equal(ok.json.draft, true);
+  assert.ok(ok.json.warnings.some((w) => /draft/.test(w)), 'the draft is announced');
+  assert.equal(ok.json.errors.length, 0);
+  // the structure must still be sound: a draft is advisory, not an excuse for an unusable text
+  writeFileSync(join(dir, 'CONSTITUTION.md'), DRAFT.replace('### III.', '### IV.'));
+  const bad = cli(dir, ['constitution', 'check', '--json']);
+  assert.equal(bad.code, 1);
+  assert.ok(bad.json.errors.some((e) => /expected numbering III/.test(e)));
+  cleanup(dir);
+});
+
+test('draft constitution never blocks a plan; a ratified one still does', () => {
+  const plan = readFileSync(join(PLUGIN, 'templates/plan-example.md'), 'utf8').replace(/\r\n/g, '\n')
+    .replace('| V. Agent autonomy | ✅ | no migration or dependency added |\n', '');
+  const ratified = tempRepo({ 'CONSTITUTION.md': CONSTITUTION, 'p.md': plan });
+  const strict = cli(ratified, ['plan', 'check', 'p.md', '--json']);
+  assert.equal(strict.code, 1);
+  assert.ok(strict.json.errors.some((e) => /article V \(Agent autonomy\) not assessed/.test(e)));
+  cleanup(ratified);
+  const draft = tempRepo({ 'CONSTITUTION.md': DRAFT, 'p.md': plan });
+  const soft = cli(draft, ['plan', 'check', 'p.md', '--json']);
+  assert.equal(soft.code, 0, 'a draft article never fails plan check');
+  assert.ok(soft.json.warnings.some((w) => /article V \(Agent autonomy\) not assessed/.test(w) && /draft/.test(w)));
+  cleanup(draft);
+});
+
+test('status surfaces a draft constitution waiting for ratification', () => {
+  const dir = tempRepo({ 'CONSTITUTION.md': DRAFT, '.kaizen/config.json': {} });
+  const st = cli(dir, ['status', '--json']).json;
+  assert.equal(st.constitution.draft, true);
+  assert.ok(st.next.some((n) => /\/kaizen:constitution/.test(n.command)), 'ratifying it is proposed');
+  cleanup(dir);
+});

@@ -25,7 +25,8 @@ the full text and had one round of corrections before writing.
   constitution only keeps what holds for **all** the work.
 - **The user answers; the repo only sharpens the question.** Principles are not inferred from the
   code. Use it to ask a better question ("your tests are mostly integration tests — is that a principle
-  or an accident?").
+  or an accident?"). The one exception is the **draft** below, written when nobody can answer: it is
+  marked as such, every article cites its evidence, and it binds nobody until the team ratifies it.
 - **Short is a quality.** 5 to 9 articles. Beyond 12, nobody applies them all anymore.
 - **Never edit** an article marked `<!-- approved -->` without going through an amendment.
 
@@ -39,6 +40,25 @@ the full text and had one round of corrections before writing.
    lines what you take from it, sources named, and invite corrections.
 3. Route: no file → **Phase 1**; `amend …` → **Phase 2**; `audit` → **Phase 3**; existing file without
    an argument → propose amend or audit.
+
+## Nobody to answer — draft (`mode:auto`, `mode:return`, autopilot, CI)
+
+Principles belong to the team: without anyone to interview, do not write a ratified constitution. Write a
+**draft** instead, so the next steps have concrete rules to inform them:
+- frontmatter `status: draft`, `version: 1.0.0`, **no** `ratified` / `last_amended` / `ratified_by` (they
+  come with the ratification);
+- only principles the repo actually shows, each with its evidence on the rule's line ("_Evidence:_
+  `src/orders.js:12` integer cents; `README.md` "prices are integers in cents"") — and the principles the
+  user gave in the request, cited as theirs. No principle from general good practice alone. 3 to 6 articles;
+- an AI policy article (agents never merge, never force push, never publish a release on their own) is
+  always included: it protects the team whatever they decide;
+- `node "$K" constitution check` must pass (structure); its "draft" warning is expected;
+- report: "draft, not ratified — it informs reviews and plans but blocks nothing; run
+  `/kaizen:constitution` to review and ratify it".
+
+A draft never blocks: `plan check` turns its gaps into warnings, reviewers report its violations as
+advisory (never P0/P1). **Ratifying** it (interactive only): go through Phase 1 with the draft as the
+starting point, then remove `status: draft` and set the dates — a ratified constitution binds.
 
 ## Phase 1 — Interview (first time)
 

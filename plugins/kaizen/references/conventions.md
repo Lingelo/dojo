@@ -11,7 +11,11 @@ debug → fix → review → learn      polish: user-guided UI touch-ups      pr
 decide → ADR      postmortem → learnings, packs, amendments      metrics: DORA + reuse      release
 ```
 
-**Rule hierarchy**: constitution > Kaizen Pack rules > learnings > preferences.
+**Rule hierarchy**: constitution > Kaizen Pack rules > learnings > preferences — for a **ratified**
+constitution. A **draft** one (frontmatter `status: draft`, written when nobody could answer, see
+`/kaizen:constitution`) is advisory: it informs every step but blocks none — `plan check` warns instead of
+failing, reviewers report its violations as P3, a NON-NEGOTIABLE draft article blocks no plan. Until the
+team ratifies it, propose `/kaizen:constitution` to review it.
 
 Principle: **each unit of work must make the next one easier.** 80 % of the time in planning and
 review, 20 % in execution. A learning written today is read back by the next `/kaizen:plan` and the

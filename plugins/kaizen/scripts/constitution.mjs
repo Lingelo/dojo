@@ -84,13 +84,21 @@ export function loadConstitution(root) {
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
 
+// A constitution with `status: draft` was written when nobody could answer (autopilot, CI): it informs the
+// reviewers but binds nobody. Its text must still be well formed (numbering, rules, checks); what only a
+// ratification brings (dates, approvals) is not required yet.
+export const isDraft = (c) => String(c?.meta?.status || '').toLowerCase() === 'draft';
+
 export function validateConstitution(c) {
   const errors = [];
   const warnings = [];
   const m = c.meta;
+  const draft = isDraft(c);
+  if (draft) warnings.push('draft: not ratified by the team — its articles inform, they block nothing (ratify it with /kaizen:constitution)');
   if (m.artifact !== 'kaizen-constitution/v1') warnings.push('frontmatter: artifact: kaizen-constitution/v1 expected');
   if (!/^\d+\.\d+\.\d+$/.test(String(m.version || ''))) errors.push(`version in MAJOR.MINOR.PATCH format expected: "${m.version ?? ''}"`);
   for (const k of ['ratified', 'last_amended']) {
+    if (draft && !m[k]) continue; // not ratified yet: no date is expected
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(m[k] || ''))) errors.push(`${k} in YYYY-MM-DD format expected: "${m[k] ?? ''}"`);
   }
   if (m.ratified && m.last_amended && String(m.last_amended) < String(m.ratified)) errors.push('last_amended is earlier than ratified');
@@ -109,7 +117,7 @@ export function validateConstitution(c) {
   // must have an amendment in the log approved by one of them — an agent does not approve a change to
   // the rules it must follow.
   const approvers = handles(m.approvers);
-  if (approvers.length) {
+  if (approvers.length && !draft) { // governance applies once the team has ratified it
     if (!handles(m.ratified_by).length) warnings.push('ratified_by missing: who ratified the constitution?');
     const amendments = c.amendments || [];
     const current = amendments.filter((a) => a.version === String(m.version));

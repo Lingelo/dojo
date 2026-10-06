@@ -2,6 +2,28 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.2.0] - 2026-10-06
+
+Found by running the whole cycle headless on a throwaway project.
+
+### Added
+- **Draft constitution when nobody can answer** (`status: draft`): instead of producing nothing,
+  `/kaizen:constitution` in `mode:auto`/`mode:return`/autopilot writes a draft limited to what the repo
+  shows (each article citing its evidence) plus an AI policy article. It informs but never blocks:
+  `constitution check` only requires a sound structure (no ratification dates, no governance yet),
+  `plan check` turns its gaps into warnings, reviewers report its violations as P3. `status` shows
+  "(draft, not ratified)" and proposes `/kaizen:constitution` to ratify it.
+
+### Fixed
+- **Push no longer blocked by files the review read but nobody committed.** `review record` stores the
+  tree it read, untracked files included; at push time a plan or constitution left uncommitted counted as
+  "changed since the review". Only paths present in HEAD count now.
+
+### Changed
+- `setup` opens its summary with the profile in effect and the review models it implies.
+- `work mode:return` states it leaves the quality gate on for its caller; `conventions.md` documents
+  `mode:return` as the way to drive `brainstorm`/`plan` one step at a time from a script or CI.
+
 ## [3.1.0] - 2026-10-05
 
 Kaizen is self-sufficient: what it used to borrow from the marketplace's `security` and `playwright`

@@ -3,6 +3,7 @@
 // French field names from plans written before Kaizen 3.0 are still accepted.
 
 import { readFileSync } from 'node:fs';
+import { isDraft } from './constitution.mjs';
 import { parseFrontmatter } from './lib.mjs';
 
 const CLARIFY_RE = /\[(NEEDS CLARIFICATION|À CLARIFIER|A CLARIFIER)\s*:[^\]]*\]/gi;
@@ -115,15 +116,18 @@ export function checkPlan(file, { constitution = null, stage = 'auto' } = {}) {
   report.slices = new Set(slices).size || (unitIds.length ? 1 : 0);
   if (slices.length && slices.length !== blocks.length) warnings.push('some units have no **Slice:** while others do');
 
-  // Constitution: every article appears in the constitution check.
+  // Constitution: every article appears in the constitution check. A draft constitution (not ratified)
+  // informs but binds nobody: its gaps are warnings, never errors.
   if (constitution?.articles?.length) {
+    const draft = isDraft(constitution);
+    const gap = (msg) => (draft ? warnings.push(`${msg} (draft constitution: advisory)`) : errors.push(msg));
     const cc = sectionText(body, 'constitution');
-    if (!cc) errors.push('section kaizen:constitution missing (CONSTITUTION.md exists)');
+    if (!cc) gap('section kaizen:constitution missing (CONSTITUTION.md exists)');
     else {
       for (const a of constitution.articles) {
         // The article is cited as "IV." at the start of a cell, bullet or line.
         const re = new RegExp(`(^|[|\\s*-])${a.id}\\.`, 'm');
-        if (!re.test(cc)) errors.push(`constitution check: article ${a.id} (${a.title}) not assessed`);
+        if (!re.test(cc)) gap(`constitution check: article ${a.id} (${a.title}) not assessed`);
       }
       if (/⚠️|exception/i.test(cc) && !/Justification|justifi/i.test(cc)) warnings.push('constitutional exception without a visible justification');
     }

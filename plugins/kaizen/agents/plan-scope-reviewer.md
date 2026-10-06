@@ -26,6 +26,7 @@ is consistent with itself (that is `coherence`).
   default branch healthy; a single-PR plan of obviously excessive size. Propose the split (which units,
   in which order, behind which flag).
 - **Constitution** — weakly declared exceptions, "simplicity" or "small batches" articles bypassed
-  without justification; a NON-NEGOTIABLE article marked as an exception.
+  without justification; a NON-NEGOTIABLE article marked as an exception. A draft constitution
+  (`status: draft`) is advisory: its gaps are low-severity notes, never a blocker.
 - **Too narrow** — conversely, a scope that does not deliver the capsule's outcome (half the journey
   is missing for it to be usable).

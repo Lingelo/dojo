@@ -1,7 +1,7 @@
 {
   "name": "kaizen",
   "description": "High-quality AI SDLC adapted from the Compound Engineering loop: engineering constitution enforced as gates, brainstorm, plan (traceability, threats, rollout, PR-sized slices) with independent doc review, test-first work with a Stop-hook quality gate, multi-agent code review, ship and PR watching, UI polish, learnings in docs/learnings/ read back by every cycle, ADRs, blameless postmortems, DORA metrics, releases, deployments and production monitoring",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "author": {
     "name": "Angelo LIMA",
     "email": "contact@example.com"

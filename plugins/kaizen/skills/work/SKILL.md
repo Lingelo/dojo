@@ -46,7 +46,7 @@ verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
    red (3 blocks max, then it lets through while saying so).
 4. **Context** — read the files referenced by the plan, the learnings it cites (`docs/learnings/…`),
    the cited pack rules and `CONSTITUTION.md` if it exists. A cited learning is an implementation
-   constraint; a constitution article is a rule, not a suggestion. Check the plan once:
+   constraint; a constitution article is a rule, not a suggestion (a **draft** one, `status: draft`, informs only). Check the plan once:
    `node "$K" plan check <path>` (red → `/kaizen:plan` first).
 5. **Tasks** — one task per unit (`TaskCreate`), in dependency order.
 

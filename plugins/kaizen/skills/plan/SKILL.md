@@ -62,7 +62,8 @@ settling it in one KTD line.
 - What really remains open and blocks: a question to the user (one at a time). In `mode:return`,
   record the chosen assumption; never leave a `[NEEDS CLARIFICATION: …]` in a ready plan.
 - **Constitution**: assess each article (`kaizen:constitution` section). A NON-NEGOTIABLE article that
-  cannot be respected blocks the plan (capsule: open blocker) — do not work around it.
+  cannot be respected blocks the plan (capsule: open blocker) — do not work around it. A **draft**
+  constitution (`status: draft`) is assessed too but blocks nothing: state the gap, carry on.
 - **Threats**: risk surface (auth, sensitive data, payment, external input, integration) →
   `kaizen:threats` section (lightweight STRIDE), each countermeasure carried by a unit. `full` profile:
   always.

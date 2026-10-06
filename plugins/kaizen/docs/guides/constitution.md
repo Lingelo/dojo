@@ -78,6 +78,13 @@ In depth: [constitution](../concepts/constitution.md).
 | `/kaizen:review` | the `standards` reviewer applies each **Check** to the diff: violating a NON-NEGOTIABLE article = P0, another article = P1 |
 | `/kaizen:ship` | exceptions are restated in the PR |
 
+**A draft blocks nothing.** When nobody can answer (`/kaizen:autopilot`, a CI job, `mode:auto`),
+`/kaizen:constitution` does not invent the team's principles: it writes a **draft** (`status: draft`, no
+ratification date), limited to what the repository shows — each article citing its evidence — plus an AI
+policy article. Until the team ratifies it, it only informs: `plan check` warns instead of failing, the
+`standards` reviewer reports its violations as P3, and a NON-NEGOTIABLE draft article blocks no plan.
+`node $K status` keeps proposing `/kaizen:constitution` to review and ratify it.
+
 ## Amending
 
 An amendment always has a **reason** (postmortem, recurring learning, too frequent exception) and an

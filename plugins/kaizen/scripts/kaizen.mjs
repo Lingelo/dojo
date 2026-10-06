@@ -47,7 +47,7 @@ import { createHash } from 'node:crypto';
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { loadConstitution, validateConstitution } from './constitution.mjs';
+import { isDraft, loadConstitution, validateConstitution } from './constitution.mjs';
 import { checkPlan } from './plancheck.mjs';
 import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
@@ -560,7 +560,7 @@ function repoStatus(root) {
   const dirty = (git(root, ['status', '--porcelain'], { allowFail: true }) || '').split('\n').filter(Boolean).length;
 
   const c = loadConstitution(root);
-  const constitution = c ? { exists: true, version: c.meta.version ?? null, valid: validateConstitution(c).errors.length === 0 } : { exists: false };
+  const constitution = c ? { exists: true, version: c.meta.version ?? null, valid: validateConstitution(c).errors.length === 0, draft: isDraft(c) } : { exists: false };
 
   let docs = null;
   try {
@@ -593,6 +593,7 @@ function repoStatus(root) {
   for (const i of incidentsState?.without_postmortem || []) say('/kaizen:postmortem', `${i.env} incident of ${i.detected_at} resolved (${i.resolved_by}) without a postmortem`);
   if (!initialized) say('/kaizen:setup', 'Kaizen is not initialized in this repo');
   else if (!constitution.exists) say('/kaizen:constitution', 'no CONSTITUTION.md: plan and review only have generic rules');
+  else if (constitution.draft) say('/kaizen:constitution', 'the constitution is a draft written without the team: review and ratify it (until then it blocks nothing)');
   if (gate.active) say('/kaizen:work', `work in progress under the quality gate${gate.plan ? ` (${gate.plan})` : ''}: resume it, or \`gate off\` if it was abandoned`);
   else if (branch && branch !== def && (ahead || dirty)) {
     if (review?.pending_waiver) say('kaizen waive <code>', 'a review waiver awaits your confirmation (to type yourself)');
@@ -654,7 +655,7 @@ function cmdStatus(root) {
   const yes = (b) => (b ? '✔' : '✘');
   out(`Kaizen — ${st.branch || 'detached HEAD'}${st.ahead_of_base ? ` (+${st.ahead_of_base} commit(s))` : ''}${st.uncommitted_files ? `, ${st.uncommitted_files} modified file(s)` : ''}`);
   out(`  ${yes(st.initialized)} initialized${st.initialized ? ` · profile ${st.profile}` : ''}`);
-  out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.valid ? '' : ' (invalid)'}` : ''}`);
+  out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.draft ? ' (draft, not ratified)' : ''}${st.constitution.valid ? '' : ' (invalid)'}` : ''}`);
   out(`  · ${st.plans} plan(s)${st.latest_plan ? ` — latest: ${st.latest_plan.path} (${st.latest_plan.stage})` : ''} · ${st.learnings} learning(s)`);
   if (st.gate.active) out(`  ⚠ quality gate active since ${st.gate.since}`);
   if (st.incidents?.open) out(`  ⛔ ${st.incidents.open} open incident(s)`);
@@ -863,9 +864,9 @@ try {
       }
       if (sub === 'check') {
         const v = validateConstitution(c);
-        if (flags.json) out({ exists: true, version: c.meta.version, articles: c.articles.length, ...v });
+        if (flags.json) out({ exists: true, version: c.meta.version, articles: c.articles.length, draft: isDraft(c), ...v });
         else {
-          out(`${v.errors.length ? '✘' : '✔'} CONSTITUTION.md v${c.meta.version ?? '?'} — ${c.articles.length} article(s)`);
+          out(`${v.errors.length ? '✘' : '✔'} CONSTITUTION.md v${c.meta.version ?? '?'}${isDraft(c) ? ' (draft)' : ''} — ${c.articles.length} article(s)`);
           for (const e of v.errors) out(`    ✘ ${e}`);
           for (const w of v.warnings) out(`    ⚠ ${w}`);
         }

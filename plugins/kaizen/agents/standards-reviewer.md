@@ -17,7 +17,9 @@ Apply the reviewer contract provided in your prompt. Your reviewer name: `standa
 
 0. **`CONSTITUTION.md`** — the articles and their **Check**. Apply each check to the diff; violating a
    NON-NEGOTIABLE article is P0 (confidence 100 if citable), another article P1, unless an exception
-   is justified in the provided plan. Cite `CONSTITUTION.md, article <n>`.
+   is justified in the provided plan. Cite `CONSTITUTION.md, article <n>`. **A draft constitution**
+   (frontmatter `status: draft`, not ratified by the team) binds nobody: report its violations as **P3,
+   advisory** ("draft article <n>"), never P0/P1/P2 — the team has not adopted these rules yet.
 1. **Standards files** — `CLAUDE.md` (root and folders of the changed files), `AGENTS.md`,
    `CONTRIBUTING.md`, `.claude/rules/*.md`, style guides they reference.
 2. **Kaizen Pack rules** whose `applies_when` matches the diff — cite them `(pack: <id>, <file>)`. A

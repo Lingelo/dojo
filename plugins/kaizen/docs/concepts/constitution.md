@@ -88,6 +88,14 @@ Errors (exit 1):
 Warnings: `artifact` missing; more than 12 articles ("nobody applies them all anymore"); no
 `ratified_by` while approvers are declared; no article about AI policy (recommended by DORA 2025).
 
+## Draft (`status: draft`)
+
+Written by `/kaizen:constitution` when nobody can answer. No `ratified` / `last_amended` yet, and the
+governance rules (approvers, amendments) do not apply until it is ratified. Its structure is still
+checked (numbering, rules, **Check:**). Everywhere else it is advisory: `plan check` turns its gaps into
+warnings, reviewers report its violations as P3, and the rule hierarchy (constitution > packs > learnings)
+only applies once it is ratified — by removing `status: draft` and setting the dates.
+
 ## Where it is enforced
 
 | Point | What happens |
