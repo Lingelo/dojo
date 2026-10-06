@@ -2,7 +2,7 @@
 
 **An AI-assisted SDLC where each unit of work makes the next one easier.**
 
-<a href="docs/media/kaizen-presentation.mp4"><img src="docs/media/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds: the cycle's spiral above a dry garden" width="100%"></a>
+<a href="docs/media/kaizen-presentation.mp4"><img src="docs/media/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds: an origami crane climbs a small replica of Mount Fuji, one switchback per step of the cycle" width="100%"></a>
 
 *80-second presentation with voice-over: [watch the video (MP4)](docs/media/kaizen-presentation.mp4)
 · [subtitles](docs/media/kaizen-presentation.srt). Reproducible source:

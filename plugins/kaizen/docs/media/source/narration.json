@@ -1,7 +1,7 @@
-{ "lang": "en", "engine": "piper", "rate": 1, "gap": 0.45, "start": 0.6, "maxChars": 42,
+{ "lang": "en", "engine": "kokoro", "rate": 1, "gap": 0.45, "start": 0.6, "maxChars": 42,
   "lines": [
     { "id": "hook",    "at": 0.6, "text": "AI writes code faster than ever." },
-    { "id": "amp",     "at": 3, "text": "According to the DORA 2025 and 2026 reports, it speeds up delivery, but it also increases instability.", "caption": "According to DORA 2025 and 2026, it speeds up delivery, but also increases instability.", "pause": 0.6 },
+    { "id": "amp",     "at": 3, "text": "According to DORA 2025 and 2026, it speeds up delivery, but also increases instability.", "pause": 0.6 },
     { "id": "kaizen",  "at": 11.07, "text": "Kaizen turns Claude Code into a controlled development cycle.", "pause": 0.6 },
     { "id": "const",   "at": 14.95, "text": "Everything starts from a constitution: your principles, each with a verifiable check." },
     { "id": "plan1",   "at": 21.58, "text": "The brainstorm defines what to build. The plan decides how." },

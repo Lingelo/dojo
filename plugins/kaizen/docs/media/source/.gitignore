@@ -1,0 +1,16 @@
+# 2k scans of the Kaizen video (~123 MB): not versioned, downloaded and md5-checked by `node fetch-assets.mjs`.
+# The 1k sets committed earlier stay in git.
+assets/dark_rock_02/
+assets/dark_wooden_planks/
+assets/grey_roof_tiles_02/
+assets/grey_stone_path/
+assets/japanese_stone_wall/
+assets/lichen_rock/
+assets/pine_bark/
+assets/red_plaster_weathered/
+assets/rock_boulder_dry/
+assets/rocky_terrain_02/
+assets/snow_02/
+assets/thatch_roof_angled/
+assets/weathered_planks/
+assets/white_plaster_rough_02/

@@ -96,7 +96,7 @@ export function createSakura({ textures, seed = 7, height = 3.4, quality = 'stan
       p = q0;
     }
     if (depth === 0) rad[0] *= 1.6; // the flare at ground level
-    limbs.push({ pts, rad });
+    limbs.push({ pts, rad, depth });
     if (depth >= 6 || rEnd < 0.01) { if (p.y > crownBase) tips.push({ p, dir: d, depth }); return; }
     // fork: a leader (most of the section) + 1–2 thinner children; areas sum to the parent's
     const n = depth === 0 ? 3 : rand() < 0.3 ? 3 : 2;
@@ -154,17 +154,32 @@ export function createSakura({ textures, seed = 7, height = 3.4, quality = 'stan
     vertexColors: true, side: THREE.DoubleSide, roughness: 0.55, sheen: 1, sheenRoughness: 0.4,
     sheenColor: new THREE.Color(1, 0.8, 0.86), emissive: new THREE.Color(0.22, 0.08, 0.11), // subsurface: light through the petal
   });
+  // bunches of 3–5 flowers on short stalks, real size (~3.5 cm): round every tip and all along the two outermost
+  // orders of twigs — the crown reads as a cloud made of thousands of small flowers, not a few big ones
   const flowers = [];
-  const perTip = DRAFT ? 3 : HQ ? 10 : 8;
+  const perTip = DRAFT ? 3 : HQ ? 9 : 6, perMetre = DRAFT ? 0 : HQ ? 26 : 16;
   const q = new THREE.Quaternion(), e = new THREE.Euler();
-  for (const { p, dir } of tips) {
-    for (let i = 0; i < perTip; i++) {
-      const off = new THREE.Vector3(rand() - 0.5, (rand() - 0.3) * 0.8, rand() - 0.5).multiplyScalar(0.3);
-      const pos = p.clone().add(off).addScaledVector(dir, rand() * 0.08);
-      // facing outwards and up a bit, random roll
-      const out = off.clone().add(dir.clone().multiplyScalar(0.6)).add(new THREE.Vector3(0, 0.25, 0)).normalize();
+  const bunch = (c, dir) => {
+    const n = 3 + Math.floor(rand() * 3);
+    for (let i = 0; i < n; i++) {
+      const off = new THREE.Vector3(rand() - 0.5, rand() - 0.75, rand() - 0.5).multiplyScalar(0.07); // the flowers hang a little
+      const pos = c.clone().add(off);
+      const out = off.clone().normalize().add(dir.clone().multiplyScalar(0.4)).add(new THREE.Vector3(0, 0.15, 0)).normalize();
       q.setFromUnitVectors(up, out).multiply(new THREE.Quaternion().setFromEuler(e.set(0, rand() * Math.PI * 2, 0)));
-      flowers.push({ pos, q: q.clone(), size: 0.085 + rand() * 0.04, delay: rand() * 0.42 + (pos.y / height) * 0.12 });
+      flowers.push({ pos, q: q.clone(), size: DRAFT ? 0.07 + rand() * 0.03 : 0.03 + rand() * 0.012, delay: rand() * 0.42 + (pos.y / height) * 0.12 });
+    }
+  };
+  for (const { p, dir } of tips) for (let i = 0; i < perTip; i++) {
+    bunch(p.clone().add(new THREE.Vector3(rand() - 0.5, (rand() - 0.3) * 0.7, rand() - 0.5).multiplyScalar(0.28)).addScaledVector(dir, rand() * 0.08), dir);
+  }
+  const maxDepth = Math.max(...limbs.map((l) => l.depth));
+  for (const { pts, depth } of limbs) if (perMetre && depth >= maxDepth - 1) {
+    const curve = new THREE.CatmullRomCurve3(pts), L = curve.getLength(), n = Math.round(L * perMetre), c = new THREE.Vector3(), t = new THREE.Vector3();
+    for (let i = 0; i < n; i++) {
+      const u = 0.25 + 0.75 * rand(); curve.getPointAt(u, c); curve.getTangentAt(u, t);
+      if (c.y < crownBase) continue;
+      const side = new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).cross(t).normalize();
+      bunch(c.clone().addScaledVector(side, 0.03), side);
     }
   }
   const blossoms = new THREE.InstancedMesh(flowerGeo, petalMat, flowers.length);
