@@ -12,7 +12,7 @@ Two independent building blocks, which can be combined with synced sound (`sound
 Write the script (`video/narration.json`) — **one sentence per line**, short (timing within a line is
 estimated):
 ```json
-{ "lang": "en", "voice": "Samantha", "rate": 1, "gap": 0.35, "start": 0.4,
+{ "lang": "en", "rate": 1, "gap": 0.35, "start": 0.4,
   "lines": [
     "Welcome to Motion Studio.",
     { "text": "Everything is written like a web page.", "pause": 0.6 },
@@ -23,7 +23,7 @@ estimated):
 | Field | Role |
 |---|---|
 | `lang` | `en`, `fr`, `es`… (picks the default voice; default `en`) |
-| `voice` | Engine voice name (`Samantha`, `Thomas`, `en`, SAPI name…) — optional |
+| `voice` | Optional; omit it to get the best default voice of whichever engine runs. Voice names belong to one engine: a Kokoro id (`af_heart`, `ff_siwis`) makes `auto` pick Kokoro; any other name (`Samantha`, `Thomas`, a SAPI name) makes `auto` skip Kokoro for the engine that has it. Forcing `--engine kokoro` with a non-Kokoro voice stops with an error |
 | `rate` | Speed (1 = normal, 0.9 = measured); can be set per line |
 | `gap` / `pause` | Silence after each line (default 0.35 s) / for one line |
 | `start` | Start of the 1st line (default 0.4 s) |

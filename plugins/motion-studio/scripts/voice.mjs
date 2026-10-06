@@ -6,7 +6,7 @@
  *   node voice.mjs <script.json|script.txt> -o <dir> [--engine auto|kokoro|piper|say|sapi|edge|espeak]
  *                  [--lang en] [--voice name] [--rate 1] [--gap 0.35] [--start 0.4] [--max-chars 42]
  *
- * script.json : { "lang": "en", "voice": "Samantha", "rate": 1, "gap": 0.35, "start": 0.4,
+ * script.json : { "lang": "en", "rate": 1, "gap": 0.35, "start": 0.4,     (optional "voice": an engine's own name)
  *                 "lines": [ "A sentence.", { "text": "Another", "at": 4.2, "pause": 0.6, "file": "my-voice.wav" } ] }
  * script.txt  : one line of narration per non-empty line.
  *
@@ -39,6 +39,9 @@ const EDGE_VOICES = { fr: 'fr-FR-DeniseNeural', en: 'en-US-AriaNeural', es: 'es-
 const KOKORO = { en: ['af_heart', 'en-us'], fr: ['ff_siwis', 'fr-fr'], es: ['ef_dora', 'es'], it: ['if_sara', 'it'], pt: ['pf_dora', 'pt-br'] };
 // a British voice (bf_/bm_) needs British phonemes
 const kokoroLang = (lang, voice) => (/^b[fm]_/.test(voice || '') ? 'en-gb' : KOKORO[lang]?.[1]);
+// Kokoro voice ids: accent letter + f/m + "_" + name (af_heart, ff_siwis, bm_george). Engines do not share voice
+// names: "Samantha" (say) or a SAPI name would make Kokoro fail the whole narration.
+const isKokoroVoice = (voice) => /^[a-z][fm]_[a-z]+$/.test(voice || '');
 const SAY_VOICES = { fr: 'Thomas', en: 'Samantha', es: 'Monica', de: 'Anna', it: 'Alice', pt: 'Joana', nl: 'Xander' };
 const POWERSHELL = String.raw`Add-Type -AssemblyName System.Speech
 $s = New-Object System.Speech.Synthesis.SpeechSynthesizer
@@ -128,7 +131,12 @@ const ENGINES = {
 export const detectEngines = (lang = 'en') => Object.entries(ENGINES).filter(([, e]) => e.available(lang)).map(([k]) => k);
 /** `auto` only picks local engines, best first — an online one (edge) must be asked for explicitly. */
 const AUTO_ORDER = ['kokoro', 'piper', 'say', 'sapi', 'espeak'];
-const autoEngine = (lang) => { const found = detectEngines(lang); return AUTO_ORDER.find((k) => found.includes(k)); };
+// auto: the first available engine that can speak the requested voice — a Kokoro id goes to Kokoro, any other
+// voice name skips Kokoro (it would reject it) for the next engine, which takes it or falls back to its default
+const autoEngine = (lang, voice) => {
+  const found = detectEngines(lang);
+  return AUTO_ORDER.find((k) => found.includes(k) && (k !== 'kokoro' || !voice || isKokoroVoice(voice)));
+};
 
 const INSTALL_HINT = `No usable text-to-speech engine detected. Install one (automatic, no sudo except eSpeak):
   • node voice-setup.mjs install kokoro   free LOCAL neural voice, most natural (recommended; en, fr, es, it, pt)
@@ -163,7 +171,11 @@ export function buildVoice({ script, outDir, ffmpeg, baseDir = process.cwd(), en
   let eng = null;
   if (needSynth) {
     const found = detectEngines(lang);
-    const name = engine === 'auto' ? autoEngine(lang) : engine;
+    // every voice the script asks for (script-level and per line): auto must pick an engine that accepts them all
+    const voices = [...new Set(lines.filter((l) => !l.file).map((l) => l.voice ?? script.voice).filter(Boolean))];
+    const foreign = voices.find((v) => !isKokoroVoice(v));
+    const name = engine === 'auto' ? autoEngine(lang, foreign ?? voices[0]) : engine;
+    if (name === 'kokoro' && foreign) throw new Error(`Kokoro cannot speak the voice "${foreign}" (a Kokoro voice looks like ${KOKORO[lang]?.[0] ?? 'af_heart'}). Use a Kokoro voice, remove "voice", or pick the engine that has it (--engine say|sapi|piper|edge|espeak).`);
     if (!name || !ENGINES[name]) throw new Error(INSTALL_HINT);
     if (!ENGINES[name].available(lang)) throw new Error(`Engine "${name}" unavailable on this machine.\n${INSTALL_HINT}`);
     eng = name;
