@@ -35,7 +35,9 @@ raw deploy command: a hook refuses it, and it would bypass the approval, the tag
 4. **Rollback ready**: `deploy.environments.<env>.rollback` declared, or a flag to turn off
    (`deploy.flags`). Otherwise, for a protected environment, say so and ask whether to go on anyway.
 5. **Signals**: `node "$K" monitor check --env <env>` before deploying. Already out of threshold → stop:
-   no deploying on top of an ongoing incident.
+   no deploying on top of an ongoing incident. A **blind** signal (`blind: true`: its command fails or
+   prints no number) cannot watch this deployment: say so, propose to repair it first, and for a
+   protected environment go on only if the user accepts an unwatched signal (non-interactive: stop).
 
 ## 2. Approval (protected environment)
 
@@ -64,6 +66,9 @@ the first confirmed breach. Meanwhile, show the URL (`url`) and the samples.
   plan exposes through a flag), unless `deploy.auto_rollback` already did it. Check the result with
   `node "$K" monitor check --env <env>`. Then propose `/kaizen:postmortem`: the timeline is in
   `deploy list` and `.kaizen/state/monitor.jsonl`.
+- **`blind`** → the signals listed in `blind` could not be measured (broken command, expired token…):
+  the deployment is **not verified** on them. No rollback for a broken measurement — say which signal
+  to repair and recommend an HTTP health-check if none is declared.
 - **`no-signals`** → say nothing was watched and recommend declaring signals (`monitor.signals`): an
   unwatched deployment is not verified.
 

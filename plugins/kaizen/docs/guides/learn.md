@@ -30,40 +30,14 @@ In depth: [learnings](../concepts/learnings.md).
 > If this document disappeared, would a future developer reading the final implementation probably
 > make the mistake again, or redo the same investigation?
 
-Neither the effort spent nor the size of the diff counts. If the answer is no, nothing is written and
-Claude says why. A real example from an eval: for a typo fixed in the README, the answer is "Learning
-not written: … the diff and the commit message are enough".
+If the answer is no, nothing is written and Claude says why (a typo fixed in the README: "the diff and
+the commit message are enough").
 
 ## A learning
 
-Two tracks, depending on `problem_type`:
-- **bug**: `runtime_error`, `test_failure`, `security_issue`…, with `symptoms`, `root_cause` and
-  `resolution_type` required;
-- **knowledge**: `best_practice`, `convention`, `architecture_pattern`, `tooling_decision`…, with
-  `applies_when` recommended.
-
-```markdown
----
-title: Excel shows broken accents in CSV exports
-date: 2026-09-12
-category: runtime-errors
-module: exports
-problem_type: runtime_error
-component: service_layer
-symptoms:
-  - "Accents show up as Ã© when opened in Excel"
-root_cause: wrong_api
-resolution_type: code_fix
-severity: medium
-tags: [csv, excel, encoding, bom]
----
-# Excel shows broken accents in CSV exports
-## Problem · ## Symptoms · ## What didn't work · ## Solution · ## Why it works · ## Prevention
-```
-
-The **"What didn't work"** section is often the most valuable. Full schema:
-[`references/learnings-schema.md`](../../references/learnings-schema.md). Validation:
-`node $K learnings validate`.
+A Markdown file in `docs/learnings/` with a validated frontmatter, on one of two tracks: **bug**
+(`symptoms`, `root_cause`, `resolution_type` required) or **knowledge** (`applies_when` recommended).
+Schema and a full example: [learnings](../concepts/learnings.md#format).
 
 ## Good to know
 

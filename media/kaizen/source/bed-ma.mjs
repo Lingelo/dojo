@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { SR, synth, writeWav } from '../../../../motion-studio/scripts/sfx.mjs';
+import { SR, synth, writeWav } from '../../../plugins/motion-studio/scripts/sfx.mjs';
 
 const tl = {};
 vm.runInNewContext(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'timeline.js'), 'utf8'), tl);

@@ -215,8 +215,8 @@ refuses a protected environment without a confirmed approval for that commit.
 | Command | Exit 1 when |
 |---|---|
 | `monitor check [--env e] [--plan p]` | a signal is out of threshold |
-| `monitor watch [--env e] [--plan p] [--minutes 15] [--interval 60]` | a confirmed breach (incident opened; rollback if `auto_rollback`) |
-| `monitor patrol --env e [--plan p] [--interval 60]` | a confirmed breach (incident opened) |
+| `monitor watch [--env e] [--plan p] [--minutes 15] [--interval 60]` | a confirmed breach (incident opened; rollback if `auto_rollback`), or a signal blind throughout (`status: blind`, nothing opened) |
+| `monitor patrol --env e [--plan p] [--interval 60]` | a confirmed breach (incident opened), or a blind signal (`status: blind`, no incident) |
 | `monitor alert [--env e] [--file f\|-]` | — (prints the parsed alert and the action) |
 | `monitor incident open --env e [--at iso] [--summary …] [--source s]` · `resolve --env e [--at iso] [--summary …]` · `list [--env e]` | — |
 

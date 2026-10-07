@@ -36,17 +36,10 @@ In depth: [plans](../concepts/plans.md).
    - **Direct**: the change is stated in a few sentences;
    - **Brief**: the plan fits in the chat;
    - **Durable**: a file. Always the case for auth, payment, a migration or an external contract.
-2. **Parallel research** (each agent with the model of its role, see
-   [`models`](../configuration.md#models--the-right-model-for-each-task)):
-
-   | Agent | Role |
-   |---|---|
-   | `repo-researcher` | patterns to imitate, integration points, neighboring tests, with exact paths |
-   | `learnings-researcher` | learnings, ADRs, postmortems and pack rules that apply |
-   | `git-historian` | why the code is the way it is (old or fragile area) |
-   | `docs-researcher` | a dependency's behavior **in your lockfile's version** |
-   | `flow-analyst` | missing journeys and error cases (if no brainstorm) |
-
+2. **Parallel research**: `repo-researcher` (patterns to imitate, with exact paths),
+   `learnings-researcher` (learnings, ADRs, postmortems, pack rules), and when useful `git-historian`,
+   `docs-researcher` (behavior in your lockfile's version) and `flow-analyst`. See
+   [agents and models](../concepts/agents-and-models.md#research-agents).
 3. **Decisions**: each KTD has a reason, a rejected alternative and the requirements it covers. An
    applicable learning **changes** the plan and is cited in it.
 4. **Kaizen-specific sections**:
@@ -70,16 +63,10 @@ In depth: [plans](../concepts/plans.md).
 
 ## What `plan check` verifies
 
-- frontmatter (`artifact: kaizen-plan/v1`, no `status`) and sections present;
-- R, U numbered without gaps;
-- **each R and each AE covered by a unit**;
-- each unit with **Covers**, **Files**, **Evidence** and **Verification**;
-- no `[NEEDS CLARIFICATION: …]` left in a ready plan;
-- each `CONSTITUTION.md` article assessed;
-- the rollout's rollback and signal (with a threshold) — warnings.
-
-Full example: [`templates/plan-example.md`](../../templates/plan-example.md). Contract:
-[`references/plan-contract.md`](../../references/plan-contract.md).
+Above all that **each R and each AE is covered by a unit**, that each unit has its evidence and
+verification, that no `[NEEDS CLARIFICATION: …]` is left and that every constitution article is assessed.
+Every rule: [plans](../concepts/plans.md#everything-plan-check-verifies). Full example:
+[`templates/plan-example.md`](../../templates/plan-example.md).
 
 ## Options
 

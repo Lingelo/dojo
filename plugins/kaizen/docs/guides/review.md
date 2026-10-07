@@ -29,38 +29,22 @@ In depth: [review](../concepts/review.md).
 
 ## The reviewers
 
-| Reviewer | When |
-|---|---|
-| `correctness-reviewer` | always. Mentally executes the code: boundaries, null, state, swallowed errors, unmet intent |
-| `standards-reviewer` | as soon as there is a constitution, standards, a pack rule or a relevant learning. Applies each constitution **Check** and quotes the violated rule |
-| `testing-reviewer` | tests touched, or behavior changed |
-| `security-reviewer` | auth, user input, endpoints, secrets, crypto… (OWASP and CWE in the title) |
-| `performance-reviewer` | queries, heavy loops, fan-out, cache |
-| `reliability-reviewer` | errors, retries, timeouts, jobs, external calls |
-| `api-contract-reviewer` | externally consumed interface |
-| `data-migration-reviewer` | migrations, backfills, schemas |
-| `maintainability-reviewer` | refactors, new abstractions, ≥ 200 lines |
-| `adversarial-reviewer` | ≥ 50 lines, or risk (auth, payment, concurrency, CI…): builds failure scenarios |
-
-Selection is made **by judgment on the real diff**, and each chosen reviewer is justified in one line.
-For a diff of 20 lines or fewer, without risk: direct review, without subagents. Each reviewer runs
-with the model of its role ([`models`](../configuration.md#models--the-right-model-for-each-task));
-the model actually requested is recorded.
+`correctness` always, then only the reviewers whose area the diff touches: `standards` (constitution,
+packs, learnings), `testing`, `security`, `performance`, `reliability`, `api-contract`,
+`data-migration`, `maintainability`, `adversarial`. Each chosen reviewer is justified in one line; a diff
+of 20 lines or fewer, without risk, is reviewed directly. Selection rules:
+[review](../concepts/review.md#3-selection).
 
 ## What makes the findings reliable
 
-- **Shared contract** ([`references/review-contract.md`](../../references/review-contract.md)):
-  - severity P0 to P3;
-  - confidence anchored at 50, 75 or 100;
-  - a concrete fix proposed, with its assumptions named;
-  - a list of non-findings to keep quiet (style, what the linter catches, intentional code…).
-- **"Quote the line" rule**: no confidence of 75 or more without the verbatim line with `file:line`.
-- **Validation**: the orchestrator rereads the lines of each P0 and P1 itself. A refuted finding is
-  removed. A protected topic (data loss, access, injection, secrets) can only be dismissed on evidence.
+Every reviewer follows one contract (severity P0–P3, confidence 50/75/100, a concrete fix), must quote
+the verbatim `file:line` behind any confident finding, and the orchestrator rereads the lines of each P0
+and P1 itself before reporting it. Details: [the reviewer contract](../concepts/review.md#5-the-reviewer-contract)
+and [synthesis](../concepts/review.md#6-synthesis).
 
 Real example, from an evaluation: a diff with `execSync(\`grep "${customer}" …\`)` and
 `Math.floor(total / size)` gives the ⛔ verdict. The command injection comes out as **P0** (100) and the
-lost last page as **P1**. The orchestrator also corrected two reviewers' wrong line numbers.
+lost last page as **P1**.
 
 ## Options
 

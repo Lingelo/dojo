@@ -80,7 +80,7 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 
 ### Kaizen
 
-<a href="plugins/kaizen/docs/media/kaizen-presentation.mp4"><img src="plugins/kaizen/docs/media/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds" width="100%"></a>
+<a href="media/kaizen/kaizen-presentation.mp4"><img src="media/kaizen/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds" width="100%"></a>
 
 ![The Kaizen loop](plugins/kaizen/docs/media/diagrams/kaizen-loop.svg)
 

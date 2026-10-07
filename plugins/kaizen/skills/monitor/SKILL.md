@@ -30,11 +30,15 @@ signal cited by a plan but not declared (`unknown_plan_signals`) is a monitoring
   (`monitor.interval_seconds`), stopping at the first confirmed breach (`monitor.consecutive` samples
   in a row).
 - **`patrol`**: `node "$K" monitor patrol --env <env>` — a confirmed check for a scheduled run; a breach
-  opens an incident (no duplicate while one is open), exit 1.
+  opens an incident (no duplicate while one is open), exit 1. `blind` (a signal unmeasurable on every
+  sample) also exits 1 so the scheduler alerts someone, but opens no incident.
 - **`incidents`**: `node "$K" monitor incident list --env <env>` — detection, resolution, duration.
 
 Report each signal: value, threshold, threshold source (plan or config), ✅ or ⛔. A failing command or a
-non-numeric output is not "green": it is a blind signal, to repair.
+non-numeric output is not "green": it is a **blind** signal (`blind: true`), to repair. It is never a
+breach: the measuring tool is broken, not necessarily the service, so no rollback and no incident (a
+false incident would distort DORA metrics). An HTTP health-check that cannot connect is not blind: it is
+the outage itself.
 
 ## 3. If a threshold is breached
 

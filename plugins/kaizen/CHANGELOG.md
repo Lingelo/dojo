@@ -2,6 +2,31 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.2.1] - 2026-10-07
+
+### Changed
+- **The plugin no longer ships its presentation video**: the MP4, its subtitles and its 3D sources
+  (~49 MB) moved to `media/kaizen/` at the root of the `dojo` repository. Installing Kaizen now
+  downloads ~2 MB instead of ~51 MB; the README links still point to the video.
+- **Guides no longer repeat the concept pages**: each guide says when and how to use a command and links
+  to the concept or reference page for rules, formats, tables and CLI flags (deploy, monitor, review,
+  ship, constitution, plan, learn, metrics, doc-review, watch-pr, setup). `docs/README.md` states the
+  split.
+
+### Fixed
+- **A broken metric no longer fakes an incident.** A command signal that fails or prints no number is
+  now **blind** (`blind: true`): the measuring tool is broken, not necessarily the service. `monitor
+  watch` and `patrol` no longer count it towards a breach, so no rollback (even with `auto_rollback`)
+  and no `incident/…` tag that would distort DORA failure rate and time to restore. Blind on
+  `consecutive` samples, their result is `status: blind` (exit 1: the environment was not verified).
+  An unreachable HTTP health-check is still a breach: it is the outage.
+
+### Added
+- Four end-to-end evals for the operate phase: `monitor-blind` (a broken metric rolls nothing back and
+  opens no incident), `deploy-healthy` (a healthy watch rolls nothing back),
+  `deploy-unconfigured` (an undeclared environment is never deployed with a guessed command) and
+  `deploy-rollback-urgent` (rolling back a protected environment needs no approval code).
+
 ## [3.2.0] - 2026-10-06
 
 Found by running the whole cycle headless on a throwaway project.

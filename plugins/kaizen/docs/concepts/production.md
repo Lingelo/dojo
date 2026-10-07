@@ -118,7 +118,12 @@ hand-made deployment tag.
   `timeout_seconds` (10 s), redirects not followed.
 - `command` — anything that prints a number as its **last word** (Prometheus, Datadog, CloudWatch, SQL,
   `grep -c` on logs), timeout 30 s by default, `KAIZEN_ENV` set; a failing command or non-numeric output
-  is red (a blind signal is not a healthy one).
+  is **blind**: red in `check` (a blind signal is not a healthy one), but never a breach — the measuring
+  tool is broken, not necessarily the service. `watch` and `patrol` neither roll back nor open an
+  incident for it (a false incident would distort DORA metrics); blind on `consecutive` samples, their
+  result is `blind` (exit 1, environment not verified). An unreachable HTTP health-check is not blind:
+  it is the outage. If your metrics endpoint is served by the application itself, also declare an HTTP
+  health-check, so that a real outage is not mistaken for a broken measurement.
 - `max` / `min` — thresholds; `env` restricts a signal to some environments; `{env}` is replaced in
   `url` and `command`.
 
@@ -131,8 +136,8 @@ the environment’s last deployment are used.
 
 | Command | When | Breach |
 |---|---|---|
-| `monitor watch [--env e] [--minutes 15] [--interval 60]` | right after a deployment | `consecutive` red samples of the same signal → incident (and rollback with `auto_rollback`), exit 1 |
-| `monitor patrol --env e [--interval 60]` | scheduled: Claude Code routine, cron, CI workflow | a red signal is re-measured up to `consecutive` samples; confirmed → incident, exit 1 |
+| `monitor watch [--env e] [--minutes 15] [--interval 60]` | right after a deployment | `consecutive` red samples of the same signal → incident (and rollback with `auto_rollback`), exit 1; blind signal → `blind`, exit 1, no rollback |
+| `monitor patrol --env e [--interval 60]` | scheduled: Claude Code routine, cron, CI workflow | a red signal is re-measured up to `consecutive` samples; confirmed → incident, exit 1; blind signal → `blind`, exit 1, no incident |
 | `monitor alert [--env e] [--file f\|-]` | your alerting tool calls it (e.g. a `repository_dispatch` workflow) | firing → incident opened; resolved → incident resolved |
 | `monitor incident open\|resolve --env e [--at iso] [--summary …]` · `monitor incident list [--env e]` | by hand | — |
 

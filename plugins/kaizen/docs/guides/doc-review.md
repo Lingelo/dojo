@@ -26,32 +26,16 @@ An already good plan receives no change.
 
 ## The review team
 
-| Reviewer | When | Looks for |
-|---|---|---|
-| `plan-coherence-reviewer` | always | contradictions between sections, drifting vocabulary, broken references, ambiguities, a goal that does not survive its mechanism, traceability |
-| `plan-feasibility-reviewer` | always | nonexistent interfaces (it reads the code), missing dependencies, impossible order, illusory rollback, nonexistent verification commands |
-| `plan-scope-reviewer` | every ready plan; many requirements | unrequested mechanisms, scope drift, slices too big, weak constitution exceptions |
-| `plan-security-reviewer` | auth, sensitive data, payment, endpoints, integrations | missing threats, unspecified authorization, secrets, trust boundaries |
-| `plan-adversarial-reviewer` | high-stakes area, new abstraction, plan without a brainstorm, widened scope | wrong premises, unverified assumptions, irreversible commitments, 6-month failure scenario |
-| `plan-design-reviewer` | screens, forms, journeys | unspecified states (empty, loading, error), accessibility, responsiveness, consistency with the design system |
-
-The chosen team is announced to you, with the reason for each conditional reviewer. Each reviewer runs
-with the model of its role ([`models`](../configuration.md#models--the-right-model-for-each-task)).
+`plan-coherence-reviewer` and `plan-feasibility-reviewer` always (feasibility reads the code), then
+`plan-scope-reviewer`, `plan-security-reviewer`, `plan-adversarial-reviewer` and `plan-design-reviewer`
+when the plan calls for them. The chosen team is announced with the reason for each conditional
+reviewer. Who looks for what: [agents and models](../concepts/agents-and-models.md#plan-reviewers-kaizendoc-review).
 
 ## How the findings are handled
 
-1. Deduplicated. Two reviewers saying the same thing raise confidence.
-2. Filtered:
-   - confidence 75 or 100 kept;
-   - confidence 50 only if P0;
-   - quote not found in the plan: finding rejected.
-3. **Each P0 and P1 is checked again by the orchestrator**, which rereads the passage and the quoted
-   code.
-4. A finding challenging a decision already made without proving it cannot work is removed.
-5. Fixes:
-   - `safe_auto` (reference, count, term): applied directly;
-   - `gated_auto` that clarifies without changing a decision: applied too;
-   - the rest becomes a question for you.
+Deduplicated, filtered by confidence, each P0 and P1 checked again by the orchestrator; a finding that
+challenges a settled decision without proving it cannot work is removed. Mechanical fixes are applied
+directly, the rest becomes a question for you. Details: [plan review](../concepts/review.md#plan-review).
 
 Real example, from an evaluation: on a slug generation plan, the adversarial reviewer found that the
 accent normalization does not decompose `œ`, `æ` and `ß`. The plan was fixed with a new acceptance

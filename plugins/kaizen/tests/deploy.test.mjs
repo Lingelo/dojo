@@ -136,7 +136,9 @@ test('monitor check: config thresholds, plan thresholds, native HTTP signal', as
   assert.equal(s.error_rate.threshold_source, 'plan');
   assert.equal(s.p95_ms.ok, true, 'plan threshold: 1000');
   assert.equal(s.broken.ok, false);
+  assert.equal(s.broken.blind, true, 'a broken measurement is blind, not a breach');
   assert.match(s.broken.detail, /non-numeric/);
+  assert.equal(s.ready.blind, undefined, 'an HTTP signal that answers badly is a real failure');
   cleanup(dir);
 });
 
@@ -197,6 +199,63 @@ test('monitor patrol: outside the window, confirmed breach → incident opened o
   const again = await cliAsync(dir, ['monitor', 'patrol', '--env', 'production', '--interval', '0']);
   assert.equal(again.json.opened, false, 'incident already open: no duplicate');
   assert.equal(cli(dir, ['monitor', 'incident', 'list']).json.length, 1);
+  cleanup(dir);
+});
+
+test('monitor watch: a blind signal rolls nothing back and opens no incident', async () => {
+  const dir = shopRepo({
+    deploy: { auto_rollback: true, environments: { staging: { command: MARK, rollback: `${MARK} # rb` } } },
+    monitor: { signals: { error_rate: { command: 'node -e "process.exit(3)"', max: 0.5 }, latency: { command: 'node -e "console.log(1)"', max: 5 } }, consecutive: 2 },
+  });
+  cli(dir, ['deploy', 'run', 'staging']);
+  const r = await cliAsync(dir, ['monitor', 'watch', '--env', 'staging', '--minutes', '0.01', '--interval', '0']);
+  assert.equal(r.code, 1, 'not verified: not green');
+  assert.equal(r.json.status, 'blind');
+  assert.deepEqual(r.json.blind, ['error_rate']);
+  assert.equal(r.json.rollback, undefined);
+  assert.equal(r.json.incident, undefined);
+  assert.deepEqual(cli(dir, ['deploy', 'list']).json.map((d) => d.kind), ['deploy']);
+  cleanup(dir);
+});
+
+test('monitor watch: a real breach still wins next to a blind signal', async () => {
+  const dir = shopRepo({
+    monitor: { signals: { broken: { command: 'echo n/a' }, error_rate: { command: 'node -e "console.log(1)"', max: 0.5 } }, consecutive: 2 },
+  });
+  cli(dir, ['deploy', 'run', 'staging']);
+  const r = await cliAsync(dir, ['monitor', 'watch', '--env', 'staging', '--minutes', '1', '--interval', '0']);
+  assert.equal(r.json.status, 'breach');
+  assert.deepEqual(r.json.breached, ['error_rate']);
+  cleanup(dir);
+});
+
+test('monitor patrol: a blind signal exits 1 without opening an incident', async () => {
+  const dir = shopRepo({
+    deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } },
+    monitor: { signals: { error_rate: { command: 'node -e "process.exit(2)"', max: 0.5 } }, consecutive: 2 },
+  });
+  cli(dir, ['deploy', 'run', 'production']);
+  const r = await cliAsync(dir, ['monitor', 'patrol', '--env', 'production', '--interval', '0']);
+  assert.equal(r.code, 1, 'the scheduler must alert someone');
+  assert.equal(r.json.status, 'blind');
+  assert.deepEqual(r.json.blind, ['error_rate']);
+  assert.equal(cli(dir, ['monitor', 'incident', 'list']).json.length, 0, 'no incident, so no false DORA failure');
+  cleanup(dir);
+});
+
+test('monitor patrol: an unreachable HTTP health-check is an outage, not blind', async () => {
+  const server = createServer();
+  await new Promise((r) => server.listen(0, r));
+  const port = server.address().port;
+  await new Promise((r) => server.close(r));
+  const dir = shopRepo({
+    deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } },
+    monitor: { signals: { health: { type: 'http', url: `http://127.0.0.1:${port}/health`, timeout_seconds: 2 } }, consecutive: 2 },
+  });
+  cli(dir, ['deploy', 'run', 'production']);
+  const r = await cliAsync(dir, ['monitor', 'patrol', '--env', 'production', '--interval', '0']);
+  assert.equal(r.json.status, 'breach');
+  assert.equal(r.json.opened, true);
   cleanup(dir);
 });
 

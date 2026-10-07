@@ -27,56 +27,27 @@ In depth: [pull requests](../concepts/pull-requests.md#driving-the-pr-to-looks-r
 
 ## A cycle (imposed order)
 
-1. **Snapshot** `node $K pr snapshot`: the only source of truth. Threads are read in full (paginated),
-   with comments, reviews, the head commit's checks, the merge state and the time since the last
-   activity.
-2. **PR finished** (merged or closed) → stop.
-3. **Feedback before CI** → `address-feedback` once, then each item is **marked** (`pr mark`), so it is
-   never handled again as long as nobody answers.
-4. **Stale head commit**: if a push just happened, the observed CI is obsolete.
-5. **CI**:
-   - infrastructure failure: **one** rerun;
-   - real failure: logs, then `debug`, `verify` and push.
-
-   Never a disabled test, never an empty commit to rerun.
-6. **Update from the base**: only if GitHub says `BEHIND` (update through the API, with the expected
-   head commit) or `DIRTY` (local merge of the base, never a rebase).
-7. **Convergence**: same check red after 2 fixes, or threads going up → stop fixing blindly.
+A fresh `pr snapshot` (the only source of truth), then: PR finished → stop; **feedback before CI**
+(`address-feedback`, each item marked so it is never handled twice); stale head → wait; CI (one rerun
+for an infrastructure failure, otherwise `debug` and a fix — never a disabled test or an empty commit);
+update from the base only when GitHub says `BEHIND` or `DIRTY`; stop fixing blindly when the same check
+stays red after 2 fixes. Details: [one cycle](../concepts/pull-requests.md#one-cycle).
 
 ## Waiting without spending
 
-Between two cycles, Claude starts in the background:
-
-```bash
-node $K pr watch --pr 42 --interval 150
-```
-
-This watcher polls GitHub every 150 s **without consuming tokens**. It stops by writing a
-`KAIZEN_WAKE {"reason": …}` line when there is something to do: `actionable`, `behind`, `conflict`,
-`looks-ready`, `blocked-failing`, `blocked-external`, `needs-human`, `terminal`, `budget`. Its stop
-wakes Claude, which resumes the cycle.
+Between two cycles, `node $K pr watch --pr 42` polls GitHub in the background **without consuming
+tokens**, and wakes Claude when there is something to do. Verdicts:
+[waiting without spending](../concepts/pull-requests.md#waiting-without-spending).
 
 ## When does it say "looks ready"?
 
-All these conditions must be met:
-- GitHub says `MERGEABLE` and `CLEAN`;
-- checks are finished and green;
-- no thread or comment is pending;
-- no human decision is outstanding;
-- the branch is up to date;
-- **the PR stayed quiet for at least 5 minutes**.
-
-Before announcing it, it checks two things:
-- **is a review still on its way?** (👀 reaction, "reviewing…", a reviewer who reviewed a previous
-  commit but not this one). If so, it waits up to 15 then 30 minutes at most;
-- **is the description still true?** Otherwise, `ship refresh-description`.
-
-It **never** says "safe to merge".
+Mergeable and clean, checks green, nothing pending, no human decision outstanding, branch up to date,
+and the PR quiet for at least 5 minutes. Before announcing it, it waits for a review still on its way
+and checks the description is still true. It **never** says "safe to merge". Conditions:
+[before saying "looks ready"](../concepts/pull-requests.md#before-saying-looks-ready).
 
 ## Good to know
 
-- `needs-human` and `blocked-failing` do not end the watch: they only prevent the "ready" verdict. The
-  watch goes on for the other feedback.
 - `blocked-external` (a fork PR's CI waiting for approval): Kaizen never approves.
 - Budget: 8 h of active watching by default, 3-day safety net.
 - Local state: `.kaizen/state/pr/<owner>-<repo>-<n>.json`. Deleting it starts over.
