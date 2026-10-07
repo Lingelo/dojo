@@ -52,12 +52,23 @@ plain `ul`/`ol` (accent bullets / numbers, one nested level), `figure.media` (im
 
 ## Themes and brand
 
-`<html data-theme="ink|paper|slate|neon">`. Tokens: `--bg --surface --line --ink --muted --accent
---accent-ink --good --bad`, fonts `--font-display --font-body --font-mono`, type scale `--fs-hero` …
+`<html data-theme="ink|paper|slate|neon|kaizen">`. Tokens: `--bg --surface --line --ink --muted --accent
+--accent-ink --accent-text` (small accent text, darker when the accent is under 4.5:1) `--good --bad --texture`
+(background layer of every slide), fonts `--font-display --font-body --font-mono`, type scale `--fs-hero` …
 `--fs-micro`, safe area `--pad-x --pad-y`, `--radius`. Override them in the **BRAND** block
 (`html[data-theme] { … }`), never per slide. A custom font: add its `<link>` (Google Fonts) or an
 `@font-face` with a local file next to the deck, then set `--font-display` / `--font-body`.
 `--accent-ink` is the text color on the accent: check its contrast (`slides.mjs check` measures it).
+
+### The `kaizen` theme
+
+The identity of the Kaizen plugin (its presentation video): washi paper `#efe8d9` with a paper grain,
+sumi ink `#1d1c1a`, vermilion `#c4401f`, moss `#5d7436`; titles in Shippori Mincho, body in Zen Kaku
+Gothic New; a grey spaced kicker over a short vermilion rule; cards and sides as paper plates; outlined
+call to action. The runtime adds an **ensō** (a brush circle drawn in one stroke, deterministic) with a
+**hanko** seal `改善` on the title and closing slides: `data-enso="off"` on a slide to skip it,
+`<html data-seal="…">` to change the seal text (`""` = no seal). The mark works in any theme by hand:
+`<div class="enso-mark" aria-hidden="true"><canvas class="enso"></canvas><span class="hanko">改善</span></div>`.
 
 ## Other formats
 

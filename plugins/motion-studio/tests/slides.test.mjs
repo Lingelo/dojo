@@ -24,6 +24,14 @@ test('the template has one sample slide and one style per layout, and nothing el
   for (const t of THEMES) assert.ok(html.includes(`html[data-theme="${t}"]`), `theme ${t}`);
 });
 
+test('the kaizen theme carries the Kaizen identity: palette, fonts, ensō + hanko', () => {
+  for (const token of ['#efe8d9', '#1d1c1a', '#c4401f', '"Shippori Mincho"', '"Zen Kaku Gothic New"', 'family=Shippori+Mincho', 'family=Zen+Kaku+Gothic+New'])
+    assert.ok(html.includes(token), token);
+  assert.match(html, /function drawEnso/);
+  assert.match(html, /theme === 'kaizen'/);
+  assert.match(buildDeck(html, { layouts: ['title'], theme: 'kaizen' }), /<html lang="en" data-theme="kaizen">/);
+});
+
 test('buildDeck keeps the requested layouts in order, repeats included', () => {
   const out = buildDeck(html, { layouts: ['title', 'bullets', 'bullets', 'closing'] });
   assert.deepEqual([...out.matchAll(/<!-- slide:([\w-]+) -->/g)].map((m) => m[1]), ['title', 'bullets', 'bullets', 'closing']);

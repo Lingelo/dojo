@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Deck title</title>
-<!-- Fonts: optional. Offline, the stacks below fall back to system fonts (slides.mjs check warns). -->
+<!-- Fonts: optional (only the families a theme uses are downloaded). Offline, the stacks below fall back to system fonts (slides.mjs check warns). -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================ TOKENS
    Every slide is a fixed 1920×1080 canvas (scaled to the window when presenting), so sizes are in px.
@@ -21,11 +21,15 @@
   --fs-hero: 136px; --fs-h1: 96px; --fs-h2: 68px; --fs-h3: 42px;
   --fs-lead: 44px; --fs-body: 36px; --fs-small: 29px; --fs-micro: 22px;
   --radius: 20px;
+  --texture: none;                                     /* background layer of every slide (paper grain…) */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 html[data-theme="ink"]   { --bg: #0b0d12; --surface: #151923; --line: #272c3a; --ink: #f4efe6; --muted: #8f93a0; --accent: #d97757; --accent-ink: #0b0d12; --good: #5fb98e; --bad: #e06c6c; }
 html[data-theme="paper"] { --bg: #f6f1e7; --surface: #fffaf0; --line: #e3d9c6; --ink: #1d1b18; --muted: #6b6458; --accent: #b94a24; --accent-ink: #fffaf0; --good: #2f7d55; --bad: #b3261e; }
 html[data-theme="slate"] { --bg: #ffffff; --surface: #f2f5f9; --line: #dce3ec; --ink: #0f172a; --muted: #566074; --accent: #2557d6; --accent-ink: #ffffff; --good: #15803d; --bad: #c2410c; }
+html[data-theme="kaizen"] { --bg: #efe8d9; --surface: #f6f1e6; --line: #d2c8b4; --ink: #1d1c1a; --muted: #6a6459; --accent: #c4401f; --accent-ink: #f6f1e6; --good: #5d7436; --bad: #a8321a; --accent-text: #a8321a;
+  --font-display: "Shippori Mincho", "Liberation Serif", Georgia, serif; --font-body: "Zen Kaku Gothic New", "Liberation Sans", Arial, sans-serif;
+  --texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .35 0 0 0 0 .25 0 0 0 .11 0'/%3E%3C/filter%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .22' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .43 0 0 0 0 .32 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"); }
 html[data-theme="neon"]  { --bg: #07060d; --surface: #14111f; --line: #2a2540; --ink: #f5f3ff; --muted: #9b95b9; --accent: #b6f24a; --accent-ink: #07060d; --good: #4ade80; --bad: #fb7185; }
 
 /* BRAND — override the theme here (colors, fonts, radius). Body text needs ≥ 4.5:1 contrast on --bg. */
@@ -35,6 +39,7 @@ html[data-theme] {
 
 /* originals, so a slide can swap its own colors (data-bg) */
 html { --bg-solid: var(--bg); --ink-solid: var(--ink); --accent-solid: var(--accent); }
+/* small accent text (tags, dates, numbers) may need a darker accent to keep 4.5:1: --accent-text in the theme */
 
 /* ============================================================ BASE */
 * { box-sizing: border-box; }
@@ -44,10 +49,10 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 .slide {
   position: relative; width: var(--slide-w); height: var(--slide-h); overflow: hidden;
   padding: var(--pad-y) var(--pad-x); display: grid; gap: 40px; align-content: start;
-  background: var(--bg); color: var(--ink); font: 400 var(--fs-body)/1.4 var(--font-body);
+  background-color: var(--bg); background-image: var(--texture); color: var(--ink); font: 400 var(--fs-body)/1.4 var(--font-body);
 }
 .slide[data-bg="accent"] {
-  --bg: var(--accent-solid); --ink: var(--accent-ink); --accent: var(--accent-ink);
+  --bg: var(--accent-solid); --ink: var(--accent-ink); --accent: var(--accent-ink); --accent-text: var(--accent-ink);
   --muted: color-mix(in srgb, var(--accent-ink) 74%, var(--accent-solid));
   --surface: color-mix(in srgb, var(--accent-ink) 9%, var(--accent-solid));
   --line: color-mix(in srgb, var(--accent-ink) 24%, var(--accent-solid));
@@ -68,12 +73,12 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 .slide p, .slide li { text-wrap: pretty; }
 .slide mark { background: none; color: var(--accent); }
 .slide a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
-.kicker { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.kicker { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-text, var(--accent)); }
 .lead { font-size: var(--fs-lead); line-height: 1.3; color: var(--muted); max-width: 1400px; }
 .small { font-size: var(--fs-small); }
 .muted { color: var(--muted); }
 .source { font-size: var(--fs-micro); color: var(--muted); }
-.tag { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.tag { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-text, var(--accent)); }
 
 /* plain lists: accent dash bullets, numbered ordered lists */
 .slide ul:not([class]), .slide ol:not([class]) { list-style: none; padding: 0; display: grid; gap: 26px; max-width: 1400px; }
@@ -123,7 +128,7 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 [data-layout="agenda"] { align-content: start; }
 .agenda { list-style: none; padding: 0; margin-top: 24px; counter-reset: ag; display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 5), auto); column-gap: 96px; align-content: start; }
 .agenda > li { counter-increment: ag; display: grid; grid-template-columns: 100px minmax(0, 1fr); align-items: baseline; padding: 28px 0; border-top: 2px solid var(--line); font: 650 var(--fs-h3)/1.2 var(--font-display); letter-spacing: -0.015em; }
-.agenda > li::before { content: counter(ag, decimal-leading-zero); font: 700 var(--fs-small)/1 var(--font-body); color: var(--accent); }
+.agenda > li::before { content: counter(ag, decimal-leading-zero); font: 700 var(--fs-small)/1 var(--font-body); color: var(--accent-text, var(--accent)); }
 .agenda > li small { grid-column: 2; display: block; margin-top: 10px; font: 400 var(--fs-small)/1.35 var(--font-body); color: var(--muted); letter-spacing: 0; }
 .agenda:has(> .is-current) > li:not(.is-current) { color: var(--muted); }
 .agenda > li.is-current { border-top-color: var(--accent); }
@@ -198,7 +203,7 @@ body { background: var(--bg); color: var(--ink); font-family: var(--font-body); 
 .timeline > li.is-done::before { background: var(--accent); border-color: var(--accent); }
 .timeline > li.is-done { border-top-color: var(--accent); }
 .timeline > li.is-current::before { background: var(--bg); border: 6px solid var(--accent); box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 22%, transparent); }
-.timeline time { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.timeline time { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-text, var(--accent)); }
 .timeline p { font-size: var(--fs-small); line-height: 1.4; color: var(--muted); }
 
 /* comparison — two sides and a divider; .side.is-highlight is the one we argue for */
@@ -242,6 +247,33 @@ pre mark { display: inline-block; width: calc(100% + 112px); margin: 0 -56px; pa
 .contact { display: flex; flex-wrap: wrap; gap: 16px 64px; margin-top: 24px; font-size: var(--fs-small); color: var(--muted); }
 .contact strong { display: block; color: var(--ink); font-weight: 600; }
 
+/* ============================================================ KAIZEN THEME — washi paper, sumi ink, vermilion seal
+   (identity of the Kaizen plugin: Shippori Mincho titles, Zen Kaku Gothic body, grey spaced kicker over a
+   vermilion rule, paper plates, ensō + 改善 hanko on title and closing slides — drawn by the runtime) */
+html[data-theme="kaizen"] .slide :is(h1, h2, .statement, blockquote, .agenda > li) { font-weight: 500; letter-spacing: -0.005em; }
+html[data-theme="kaizen"] .slide :is(h3, .stat, .kpi .value, .num) { font-weight: 700; letter-spacing: -0.01em; }
+html[data-theme="kaizen"] .kicker { font-weight: 500; letter-spacing: 0.26em; color: var(--muted); }
+html[data-theme="kaizen"] .kicker::after { content: ""; display: block; width: 56px; height: 3px; margin-top: 24px; border-radius: 2px; background: var(--accent); }
+html[data-theme="kaizen"] [data-layout="image"] .kicker { color: #fff; }
+html[data-theme="kaizen"] [data-layout="title"]::before { display: none; }
+html[data-theme="kaizen"] :is(.card, .side) { background: var(--texture), var(--surface); border-color: transparent; box-shadow: 0 40px 60px -40px rgba(70, 52, 28, 0.45), 0 0 0 1px rgba(120, 100, 70, 0.12); border-radius: 4px; }
+html[data-theme="kaizen"] :is(.card, .side).is-highlight { box-shadow: 0 40px 60px -40px rgba(70, 52, 28, 0.45), inset 0 0 0 3px var(--accent); }
+html[data-theme="kaizen"] .slide pre { border-radius: 4px; background: var(--texture), var(--surface); }
+html[data-theme="kaizen"] .slide .cta { background: transparent; color: var(--ink); border: 2px solid var(--ink); border-radius: 0; letter-spacing: 0.04em; }
+html[data-theme="kaizen"] :is([data-layout="title"], [data-layout="closing"]):has(> .enso-mark) > :is(h1, .lead) { max-width: 1020px; }
+
+/* ensō + hanko: a brush circle drawn in one stroke (canvas, deterministic) and a seal stamped on it.
+   Added by the runtime on title/closing slides of the kaizen theme (data-enso="off" to skip, <html data-seal="…"> for the
+   seal text, "" for none); usable in any theme with <div class="enso-mark"><canvas class="enso"></canvas><span class="hanko">改善</span></div>. */
+.enso-mark { position: absolute; right: calc(var(--pad-x) + 40px); top: 50%; width: 600px; height: 600px; transform: translateY(-50%); pointer-events: none; }
+.enso-mark .enso { display: block; width: 100%; height: 100%; }
+.hanko {
+  position: absolute; right: -22px; top: 70px; display: grid; place-items: center; width: 96px; height: 184px; padding-top: 4px;
+  background: var(--accent); color: var(--accent-ink); border-radius: 7px; box-shadow: inset 0 0 0 5px var(--accent), inset 0 0 0 7px var(--accent-ink);
+  font: 700 64px/1.12 "Shippori Mincho", var(--font-display); writing-mode: vertical-rl; mix-blend-mode: multiply; transform: rotate(2deg);
+}
+.hanko:empty { display: none; }
+
 /* blank — free canvas: position things yourself (stay inside the safe area) */
 [data-layout="blank"] { display: block; }
 
@@ -251,8 +283,8 @@ pre mark { display: inline-block; width: calc(100% + 112px); margin: 0 -56px; pa
 .is-present .deck { position: fixed; left: 50%; top: 50%; width: var(--slide-w); height: var(--slide-h); transform: translate(-50%, -50%) scale(var(--fit, 1)); }
 .is-present .slide { position: absolute; inset: 0; visibility: hidden; }
 .is-present .slide.is-active { visibility: visible; }
-.is-present .slide.is-active > :not(.chrome, .notes, .step, .media) { animation: enter 0.7s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms + 60ms); }
-.is-present .slide.is-active > .media { animation: fade 0.9s var(--ease) both; }
+.is-present .slide.is-active > :not(.chrome, .notes, .step, .media, .enso-mark) { animation: enter 0.7s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms + 60ms); }
+.is-present .slide.is-active > :is(.media, .enso-mark) { animation: fade 0.9s var(--ease) both; }
 .is-present .step { opacity: 0; transform: translateY(18px); transition: opacity 0.45s var(--ease), transform 0.45s var(--ease); }
 .is-present .step.is-shown { opacity: 1; transform: none; }
 @keyframes enter { from { opacity: 0; transform: translateY(26px); } }
@@ -539,6 +571,49 @@ html.is-overview .progress { display: none; }
   const q = new URLSearchParams(location.search);
   const NO_CHROME = ['title', 'section', 'statement', 'image', 'closing'];
   const footer = root.dataset.footer || document.title;
+  const theme = root.dataset.theme;
+
+  // ensō: one brush stroke, 26 bristles, dry towards the end (same drawing as the Kaizen presentation video)
+  const hn = (a, b) => { const h = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return h - Math.floor(h); };
+  function drawEnso(cv) {
+    const px = 1200, ctx = cv.getContext('2d');
+    cv.width = cv.height = px;
+    const cx = px / 2, cy = px / 2, r = px * 0.38, thick = px * 0.075;
+    const total = Math.PI * 2 * 0.92, th0 = -Math.PI * 0.6, steps = 620, N = 26;
+    const ink = getComputedStyle(cv).color;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = ink;
+    for (let j = 0; j < N; j++) {
+      const o = (j / (N - 1)) * 2 - 1;
+      let prev = null;
+      for (let i = 0; i <= steps; i++) {
+        const u = i / steps, th = th0 + total * u;
+        const w = thick * Math.min(1, 0.35 + u * 10) * (1 - 0.62 * u) * (0.88 + 0.12 * Math.sin(u * 9 + 1));
+        const rr = r * (1 + 0.035 * Math.sin(u * 4.6 + 0.6)) + (o * w) / 2;
+        const pt = [cx + rr * Math.cos(th), cy + rr * Math.sin(th) * 0.96];
+        const dry = Math.min(1, Math.max(0, (u - 0.5) / 0.5)) * 0.8 + (Math.abs(o) > 0.82 ? 0.3 : 0);
+        if (prev && hn(j * 1.7, Math.floor(u * 150 + j * 2.3)) > dry) {
+          ctx.globalAlpha = 0.86;
+          ctx.lineWidth = (w / N) * 2.3;
+          ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(pt[0], pt[1]); ctx.stroke();
+        }
+        prev = pt;
+      }
+    }
+  }
+  if (theme === 'kaizen') {
+    const seal = root.dataset.seal ?? '改善';
+    for (const s of slides) {
+      if (!['title', 'closing'].includes(s.dataset.layout) || s.dataset.enso === 'off' || s.querySelector(':scope > .enso-mark')) continue;
+      const m = document.createElement('div');
+      m.className = 'enso-mark';
+      m.setAttribute('aria-hidden', 'true');
+      m.innerHTML = '<canvas class="enso"></canvas><span class="hanko"></span>';
+      m.lastChild.textContent = seal;
+      s.prepend(m);
+    }
+  }
+  document.querySelectorAll('canvas.enso').forEach(drawEnso);
 
   slides.forEach((s, i) => {
     s.dataset.index = i + 1;

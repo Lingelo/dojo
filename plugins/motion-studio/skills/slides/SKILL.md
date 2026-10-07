@@ -49,7 +49,8 @@ Infer from the message (and from any document given: plan, README, notes, report
 missing:
 audience & goal (what they should think or do afterwards) · talk length (≈ 1 slide per 1–2 min; a
 read-alone deck sent as PDF holds more text per slide) · theme (`ink` dark, `paper` warm light,
-`slate` corporate light, `neon` dark vivid, or brand colors / font / logo) · language · deliverable
+`slate` corporate light, `neon` dark vivid, `kaizen` washi paper + sumi ink + vermilion seal — the Kaizen
+plugin's identity, for Kaizen talks and engineering reviews — or brand colors / font / logo) · language · deliverable
 (HTML to present, PDF, PNGs) · format (16:9 by default; 4:3 → `references/layouts.md`).
 
 ### 2. Storyline — before any slide

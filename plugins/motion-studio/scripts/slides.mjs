@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const TEMPLATE = path.join(HERE, '..', 'skills', 'slides', 'assets', 'deck.html');
-export const THEMES = ['ink', 'paper', 'slate', 'neon'];
+export const THEMES = ['ink', 'paper', 'slate', 'neon', 'kaizen'];
 
 /** Every layout of the template: name → when to use it. The template holds one sample slide for each. */
 export const LAYOUTS = {
@@ -102,10 +102,12 @@ function audit({ known }) {
     .reduce((acc, v, i) => acc + v * [0.2126, 0.7152, 0.0722][i], 0);
   const over = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
   /** solid background behind el, or null when an image / gradient / media is involved */
+  // the theme texture (paper grain) is a background image too, but a faint one: it does not change contrast
+  const TEX = (() => { const s = document.querySelector('.deck > .slide'); return s ? getComputedStyle(s).backgroundImage : 'none'; })();
   const backdrop = (el) => {
     for (let e = el; e; e = e.parentElement) {
       const cs = getComputedStyle(e);
-      if (cs.backgroundImage !== 'none' || e.matches('.media, [data-layout="image"]')) return null;
+      if ((cs.backgroundImage !== 'none' && cs.backgroundImage !== TEX) || e.matches('.media, [data-layout="image"]')) return null;
       const c = rgb(cs.backgroundColor);
       if (c && c.a > 0.98) return c;
       if (c && c.a > 0.02) return null;
@@ -130,7 +132,7 @@ function audit({ known }) {
     const cs = getComputedStyle(s);
     const safe = { l: sr.left + parseFloat(cs.paddingLeft), r: sr.right - parseFloat(cs.paddingRight), t: sr.top + parseFloat(cs.paddingTop), b: sr.bottom - parseFloat(cs.paddingBottom) };
     const tol = 6;
-    const skip = (el) => el.closest('.notes, .chrome, script, style, [data-check="off"]');
+    const skip = (el) => el.closest('.notes, .chrome, script, style, [data-check="off"], [aria-hidden="true"]');
 
     // text: outside the slide (clipped) / outside the safe area / too small / contrast
     const walker = document.createTreeWalker(s, NodeFilter.SHOW_TEXT);
@@ -143,7 +145,13 @@ function audit({ known }) {
       if (ecs.visibility === 'hidden' || ecs.display === 'none' || Number(ecs.opacity) === 0) continue;
       const range = document.createRange();
       range.selectNodeContents(n);
-      const rects = [...range.getClientRects()].filter((r) => r.width > 0 && r.height > 0);
+      // a text rect spans the font's content area, far taller than the line for some fonts (Mincho):
+      // keep the band of one em (or the line, if taller) centered on it — what the eye reads as the text
+      const band = Math.max(parseFloat(ecs.fontSize), parseFloat(ecs.lineHeight) || 0);
+      const rects = [...range.getClientRects()].filter((r) => r.width > 0 && r.height > 0).map((r) => {
+        const h = Math.min(r.height, band), top = r.top + (r.height - h) / 2;
+        return { left: r.left, right: r.right, width: r.width, top, bottom: top + h, height: h };
+      });
       if (!rects.length) continue;
       seen.add(el);
       const box = { l: Math.min(...rects.map((r) => r.left)), r: Math.max(...rects.map((r) => r.right)), t: Math.min(...rects.map((r) => r.top)), b: Math.max(...rects.map((r) => r.bottom)) };
@@ -238,8 +246,9 @@ function audit({ known }) {
     if (fam) families.add(fam);
   }
   for (const fam of families) {
-    const declared = [...document.fonts].some((f) => f.family.replace(/^["']|["']$/g, '') === fam);
-    if (declared && !document.fonts.check(`16px "${fam}"`))
+    // a family served in unicode-range slices (CJK fonts) only loads the slices the page uses
+    const faces = [...document.fonts].filter((f) => f.family.replace(/^["']|["']$/g, '') === fam);
+    if (faces.length && !faces.some((f) => f.status === 'loaded'))
       deckIssues.push({ level: 'warn', msg: `font "${fam}" did not load (offline?) — slides fall back to the next font of the stack` });
   }
   if (document.title.trim() === 'Deck title' || !document.title.trim())
