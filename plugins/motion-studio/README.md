@@ -3,8 +3,7 @@
 Motion design as code for Claude Code: Claude writes the video like a web page (HTML, CSS, SVG, Canvas
 2D/WebGL, WAAPI, GSAP…), then a renderer films it **frame by frame** in headless Chromium and encodes it
 with ffmpeg, with **sample-accurate synced sound** (synthesized sound effects + analyzed music), voice-over
-and subtitles. The same stack also builds **slide decks** (`/slides`): one HTML file from a themed
-template with 19 layouts, audited slide by slide and exported to PDF/PNG.
+and subtitles.
 
 No real-time capture (Playwright's `recordVideo` = variable 25 fps, compressed WebM): time is
 **virtualized**, each frame is computed exactly, the render is reproducible to the pixel.
@@ -55,7 +54,7 @@ Only case that cannot be automated: Linux without Chromium's system libraries �
 > through the model (1,920 calls for 8 s), with no init script for the virtual clock and no stream to
 > ffmpeg. It stays useful to *explore* a page; and if it already downloaded Chromium, `setup.mjs` reuses it.
 
-## Skills
+## Skill
 
 ### /motion-video
 
@@ -66,40 +65,6 @@ Only case that cannot be automated: Linux without Chromium's system libraries �
 Workflow: brief → (voice-over) → storyboard (timed beats) → HTML composition → **control stills read by
 Claude** → quick draft → final render → frame check. Claude talks to you in your language; the texts in
 the video follow the language you ask for.
-
-### /slides
-
-```bash
-/slides 10-minute talk for the team offsite on our move to smaller pull requests, paper theme
-```
-
-Presentation decks as **one HTML file** built from a themed template (`skills/slides/assets/deck.html`):
-19 layouts (title, agenda, section, statement, bullets, split, split-reverse, cards, columns, big-number,
-kpis, chart, timeline, comparison, code, quote, image, closing, blank), 3 themes (`ink`, `paper`
-and `kaizen`: the Kaizen plugin's washi/sumi/vermilion identity with ensō and 改善 seal) plus a BRAND block for your colors and fonts. The file presents itself in any browser
-(→ / ← / Space, step reveals, `O` overview, `N` speaker notes, `F` fullscreen, `#/5` deep links) and
-exports to PDF, PNG per slide or a contact sheet.
-
-Workflow: brief → **storyline** (one assertion title per slide, layout chosen per message) →
-`slides.mjs new` scaffolds the deck with the sample slide of each chosen layout → Claude replaces the
-content → **`slides.mjs check`** audits every slide at its real size → contact sheet + PNGs read by
-Claude → PDF.
-
-```bash
-node plugins/motion-studio/scripts/slides.mjs layouts
-node plugins/motion-studio/scripts/slides.mjs themes --out deck/themes     # one preview per theme, to choose
-node plugins/motion-studio/scripts/slides.mjs new deck/deck.html --layouts title,agenda,kpis,chart,closing --theme paper --title "Q3 review"
-node plugins/motion-studio/scripts/slides.mjs check deck/deck.html            # exit 1 on errors
-node plugins/motion-studio/scripts/slides.mjs export deck/deck.html --pdf deck/deck.pdf --png deck/png --sheet deck/sheet.jpg [--slides 1,3-5] [--scale 2]
-```
-
-`check` lays the deck out in headless Chromium and reports, per slide: text overflowing the slide or
-spilling out of its column, text running into other text, clipped boxes, text outside the safe area or
-under 20 px, WCAG contrast, images not loaded or without `alt`, placeholders and sample text left,
-density (words, bullets, code lines); and for the deck: three identical layouts in a row, web fonts
-that did not load, script errors. `new` and `layouts` need no dependency; `check` and `export` reuse
-the renderer's Playwright + Chromium (no ffmpeg). Layout catalog:
-[`skills/slides/references/layouts.md`](skills/slides/references/layouts.md).
 
 ## Renderer
 
@@ -235,17 +200,11 @@ motion-studio/
 │   ├── SKILL.md
 │   ├── references/              # composition contract, motion design, sound design, voice & subtitles
 │   └── assets/starter.html
-├── skills/slides/
-│   ├── SKILL.md
-│   ├── references/              # layouts catalog, slide design
-│   └── assets/deck.html         # deck template: themes, 19 layouts, presenter runtime
 ├── scripts/
 │   ├── setup.mjs  deps.mjs      # self-sufficient dependency resolution
 │   ├── render.mjs               # virtual clock, capture, encoding, mixing, subtitles
 │   ├── sfx.mjs  audio.mjs       # synthesized sounds, music bed, beat/energy analysis
 │   ├── voice.mjs  voice-setup.mjs  voice-env.mjs  captions.mjs   # TTS, engines, SRT/VTT
-│   ├── inspect.mjs              # check a render without a system ffmpeg
-│   └── slides.mjs               # decks: new, check, export (PDF / PNG / sheet)
-├── tests/                       # node --test plugins/motion-studio/tests/*.test.mjs
+│   └── inspect.mjs              # check a render without a system ffmpeg
 └── examples/                    # sketch-intro, sketch-3d, demo-3d-voice
 ```

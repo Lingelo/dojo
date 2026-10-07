@@ -26,8 +26,8 @@ References to load when needed:
 
 ## 0. Tools
 
-`slides.mjs new` and `layouts` need nothing. `check` and `export` drive headless Chromium (the same
-dependency as `/motion-video`, no ffmpeg needed). Before the first check, run (idempotent, < 1 s when
+`slides.mjs new` and `layouts` need nothing. `check` and `export` drive a headless Chromium (Playwright,
+reused when the machine has one). Before the first check, run (idempotent, < 1 s when
 ready; first time ~20 s and ~110 MB, warn the user):
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/setup.mjs" --home "${CLAUDE_PLUGIN_DATA}"
@@ -127,7 +127,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/slides.mjs" export deck/deck.html --pdf deck
 
 Deliver: the HTML (presentable offline; web fonts need the network, otherwise the fallback stack
 applies), the PDF, the storyline table. A slide or the whole talk as a video (animated, voice-over):
-hand over to `/motion-video`, which reuses the same tokens.
+hand over to `/motion-video` (plugin motion-studio) if it is installed, reusing the theme's colors and fonts.
 
 ## Golden rules
 1. **Storyline before slides**, assertion titles: reading only the titles tells the story.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * motion-studio slides — HTML decks built from the template in skills/slides/assets/deck.html.
+ * slide-studio — HTML decks built from the template in skills/slides/assets/deck.html.
  *
  *   node slides.mjs layouts                                   list the layouts
  *   node slides.mjs new deck/deck.html --layouts title,bullets,closing [--theme paper] [--title "…"] [--lang fr]
@@ -8,8 +8,8 @@
  *   node slides.mjs check deck/deck.html [--json]             overflow, safe area, density, contrast, images, fonts
  *   node slides.mjs export deck/deck.html [--pdf f.pdf] [--png dir] [--sheet f.jpg] [--slides 1,3-5] [--scale 2]
  *
- * `new` and `layouts` need nothing; `check` and `export` drive the same headless Chromium as render.mjs
- * (auto-installed by setup.mjs, no ffmpeg needed). The deck is opened with ?export: every slide is stacked
+ * `new` and `layouts` need nothing; `check` and `export` drive a headless Chromium
+ * (reused or auto-installed by setup.mjs). The deck is opened with ?export: every slide is stacked
  * at its real size, steps revealed, no animation.
  */
 import { spawnSync } from 'node:child_process';
@@ -266,11 +266,10 @@ function audit({ known }) {
 
 // ---------------------------------------------------------------- browser
 async function openDeck(file, { scale = 1 } = {}) {
-  const { LAUNCH_ARGS, ensureDeps, routeCdnToLocal, serveLocal } = await import('./deps.mjs');
-  const { chromium, browser: b } = await ensureDeps({ needFfmpeg: false });
+  const { LAUNCH_ARGS, ensureDeps, serveLocal } = await import('./deps.mjs');
+  const { chromium, browser: b } = await ensureDeps();
   const browser = await chromium.launch({ ...b.opts, args: LAUNCH_ARGS });
   const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: scale, reducedMotion: 'reduce' });
-  await routeCdnToLocal(context);
   const url = await serveLocal(context, path.dirname(path.resolve(file)), file);
   const page = await context.newPage();
   const errors = [];
@@ -287,7 +286,7 @@ async function openDeck(file, { scale = 1 } = {}) {
 
 // ---------------------------------------------------------------- CLI
 const HELP = `
-motion-studio slides — HTML decks: scaffold, check, export
+slide-studio — HTML decks: scaffold, check, export
 
   node slides.mjs layouts
   node slides.mjs new <deck.html> [--layouts a,b,c] [--theme ${THEMES.join('|')}] [--title "…"] [--lang en] [--force]
@@ -302,7 +301,7 @@ motion-studio slides — HTML decks: scaffold, check, export
   node slides.mjs export <deck.html> [--pdf out.pdf] [--png dir] [--sheet sheet.jpg [--cols 3]] [--slides 1,3-5] [--scale 2]
       PDF (one page per slide, vector text), PNG per slide, contact sheet of the whole deck.
       No target = <deck>.pdf next to the deck.
-  Every command accepts --home <dir> (dependency folder, as render.mjs).
+  Every command accepts --home <dir> (dependency folder, default \${CLAUDE_PLUGIN_DATA}).
 `;
 
 function parseArgs(argv) {

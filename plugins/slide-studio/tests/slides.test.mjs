@@ -1,4 +1,4 @@
-// node --test plugins/motion-studio/tests/*.test.mjs
+// node --test plugins/slide-studio/tests/*.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -79,10 +79,10 @@ test('CLI: layouts, new, overwrite guard', () => {
 });
 
 // Needs a browser: runs only where setup.mjs already found one (never installs anything from the tests).
-const home = process.env.MOTION_STUDIO_HOME || process.env.CLAUDE_PLUGIN_DATA;
+const home = process.env.SLIDE_STUDIO_HOME || process.env.CLAUDE_PLUGIN_DATA;
 const ready = home && fs.existsSync(path.join(home, 'env.json'));
-test('check: gallery passes, overflow and collisions are errors', { skip: !ready && 'no MOTION_STUDIO_HOME with a ready env.json' }, () => {
-  const env = { ...process.env, MOTION_STUDIO_NO_INSTALL: '1' };
+test('check: gallery passes, overflow and collisions are errors', { skip: !ready && 'no SLIDE_STUDIO_HOME with a ready env.json' }, () => {
+  const env = { ...process.env, SLIDE_STUDIO_NO_INSTALL: '1' };
   const run = (f) => spawnSync(process.execPath, [CLI, 'check', f, '--json', '--home', home], { encoding: 'utf8', env });
   const dir = tmp();
   const gallery = path.join(dir, 'gallery.html');
@@ -106,9 +106,9 @@ test('check: gallery passes, overflow and collisions are errors', { skip: !ready
   assert.match(msgs, /overflows the slide/);
 });
 
-test('themes: one preview per theme', { skip: !ready && 'no MOTION_STUDIO_HOME with a ready env.json' }, () => {
+test('themes: one preview per theme', { skip: !ready && 'no SLIDE_STUDIO_HOME with a ready env.json' }, () => {
   const out = path.join(tmp(), 'themes');
-  const r = spawnSync(process.execPath, [CLI, 'themes', '--out', out, '--home', home], { encoding: 'utf8', env: { ...process.env, MOTION_STUDIO_NO_INSTALL: '1' } });
+  const r = spawnSync(process.execPath, [CLI, 'themes', '--out', out, '--home', home], { encoding: 'utf8', env: { ...process.env, SLIDE_STUDIO_NO_INSTALL: '1' } });
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(fs.readdirSync(out).sort(), THEMES.map((t) => `theme-${t}.jpg`).sort());
 });
