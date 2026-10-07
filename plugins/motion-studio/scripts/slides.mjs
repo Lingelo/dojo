@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const TEMPLATE = path.join(HERE, '..', 'skills', 'slides', 'assets', 'deck.html');
-export const THEMES = ['ink', 'paper', 'slate', 'neon', 'kaizen'];
+export const THEMES = ['ink', 'paper', 'kaizen'];
 
 /** Every layout of the template: name → when to use it. The template holds one sample slide for each. */
 export const LAYOUTS = {

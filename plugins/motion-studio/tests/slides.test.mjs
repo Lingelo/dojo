@@ -66,10 +66,10 @@ test('CLI: layouts, new, overwrite guard', () => {
   assert.equal(l.status, 0);
   for (const name of Object.keys(LAYOUTS)) assert.match(l.stdout, new RegExp(`^${name}\\s`, 'm'));
   const dir = tmp(), f = path.join(dir, 'd', 'deck.html');
-  const n = spawnSync(process.execPath, [CLI, 'new', f, '--layouts', 'title,kpis', '--theme', 'slate', '--title', 'T'], { encoding: 'utf8' });
+  const n = spawnSync(process.execPath, [CLI, 'new', f, '--layouts', 'title,kpis', '--theme', 'paper', '--title', 'T'], { encoding: 'utf8' });
   assert.equal(n.status, 0, n.stderr);
   assert.match(n.stdout, /2 slides: 1\.title {2}2\.kpis/);
-  assert.match(fs.readFileSync(f, 'utf8'), /data-theme="slate"/);
+  assert.match(fs.readFileSync(f, 'utf8'), /data-theme="paper"/);
   const again = spawnSync(process.execPath, [CLI, 'new', f], { encoding: 'utf8' });
   assert.equal(again.status, 1);
   assert.match(again.stderr, /exists \(use --force/);

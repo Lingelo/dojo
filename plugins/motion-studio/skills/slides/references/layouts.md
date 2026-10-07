@@ -52,7 +52,7 @@ plain `ul`/`ol` (accent bullets / numbers, one nested level), `figure.media` (im
 
 ## Themes and brand
 
-`<html data-theme="ink|paper|slate|neon|kaizen">`. Tokens: `--bg --surface --line --ink --muted --accent
+`<html data-theme="ink|paper|kaizen">`. Tokens: `--bg --surface --line --ink --muted --accent
 --accent-ink --accent-text` (small accent text, darker when the accent is under 4.5:1) `--good --bad --texture`
 (background layer of every slide), fonts `--font-display --font-body --font-mono`, type scale `--fs-hero` …
 `--fs-micro`, safe area `--pad-x --pad-y`, `--radius`. Override them in the **BRAND** block

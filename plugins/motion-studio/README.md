@@ -75,8 +75,8 @@ the video follow the language you ask for.
 
 Presentation decks as **one HTML file** built from a themed template (`skills/slides/assets/deck.html`):
 19 layouts (title, agenda, section, statement, bullets, split, split-reverse, cards, columns, big-number,
-kpis, chart, timeline, comparison, code, quote, image, closing, blank), 5 themes (`ink`, `paper`,
-`slate`, `neon`, and `kaizen`: the Kaizen plugin's washi/sumi/vermilion identity with ensō and 改善 seal) plus a BRAND block for your colors and fonts. The file presents itself in any browser
+kpis, chart, timeline, comparison, code, quote, image, closing, blank), 3 themes (`ink`, `paper`
+and `kaizen`: the Kaizen plugin's washi/sumi/vermilion identity with ensō and 改善 seal) plus a BRAND block for your colors and fonts. The file presents itself in any browser
 (→ / ← / Space, step reveals, `O` overview, `N` speaker notes, `F` fullscreen, `#/5` deep links) and
 exports to PDF, PNG per slide or a contact sheet.
 
