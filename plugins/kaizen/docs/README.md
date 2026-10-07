@@ -4,6 +4,11 @@ Documentation for the plugin's **users**. The instructions Claude follows live i
 `skills/<skill>/SKILL.md`; they are authoritative for the exact behavior, but they are not written to be
 read by a human.
 
+Each thing is described once: a **guide** says when and how to use a command (examples, options, what
+to watch for), a **concept** page explains how a mechanism works (rules, formats, tables), the
+**reference** lists every command, file and configuration key. A guide links to the concept page
+instead of repeating it.
+
 Kaizen is written in English since 3.0. Claude still talks to you in your language, and the documents it
 writes in your repo (plans, learnings, ADRs, PR descriptions) follow `language` in
 [Configuration](configuration.md#language).

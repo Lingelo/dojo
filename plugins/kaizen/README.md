@@ -2,11 +2,11 @@
 
 **An AI-assisted SDLC where each unit of work makes the next one easier.**
 
-<a href="docs/media/kaizen-presentation.mp4"><img src="docs/media/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds: an origami crane climbs a small replica of Mount Fuji, one switchback per step of the cycle" width="100%"></a>
+<a href="../../media/kaizen/kaizen-presentation.mp4"><img src="../../media/kaizen/kaizen-presentation.jpg" alt="Kaizen presented in 80 seconds: an origami crane climbs a small replica of Mount Fuji, one switchback per step of the cycle" width="100%"></a>
 
-*80-second presentation with voice-over: [watch the video (MP4)](docs/media/kaizen-presentation.mp4)
-· [subtitles](docs/media/kaizen-presentation.srt). Reproducible source:
-[docs/media/source/](docs/media/source/kaizen-presentation.html), rendered with the `motion-studio` plugin.*
+*80-second presentation with voice-over: [watch the video (MP4)](../../media/kaizen/kaizen-presentation.mp4)
+· [subtitles](../../media/kaizen/kaizen-presentation.srt). Reproducible source:
+[media/kaizen/source/](../../media/kaizen/source/kaizen-presentation.html), rendered with the `motion-studio` plugin.*
 
 Kaizen structures work with Claude Code from the project's constitution to the merge-ready PR and the
 production deployment, then **closes the loop**: what was learned is written where the next cycle will

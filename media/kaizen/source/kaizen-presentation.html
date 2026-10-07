@@ -36,11 +36,11 @@
   Fonts: Shippori Mincho and Zen Kaku Gothic New (SIL OFL 1.1, see fonts/), embedded subsets.
 
   Render (from this folder, <work> = working folder):
-    node ../../../../motion-studio/scripts/voice-setup.mjs install kokoro --lang en   # once
+    node ../../../plugins/motion-studio/scripts/voice-setup.mjs install kokoro --lang en   # once
     node fetch-assets.mjs                                                             # once: the 2k scans (md5-pinned)
-    node ../../../../motion-studio/scripts/voice.mjs narration.json -o <work>/voice
+    node ../../../plugins/motion-studio/scripts/voice.mjs narration.json -o <work>/voice
     node bed-ma.mjs --bpm 84 -o <work>/bed.wav > <work>/bed.json
-    node ../../../../motion-studio/scripts/render.mjs kaizen-presentation.html --quality high --voice <work>/voice/voice.json \
+    node ../../../plugins/motion-studio/scripts/render.mjs kaizen-presentation.html --quality high --voice <work>/voice/voice.json \
          --audio <work>/bed.wav --beats <work>/bed.json -o <work>/kaizen-presentation.mp4
     ffmpeg -i <work>/kaizen-presentation.mp4 -c:v libx264 -preset slow -crf 26 -tune animation -pix_fmt yuv420p \
          -movflags +faststart -c:a aac -b:a 160k ../kaizen-presentation.mp4   # ~33 MB instead of ~113, SSIM 0.974 (crf 28 smooths the stone grain)

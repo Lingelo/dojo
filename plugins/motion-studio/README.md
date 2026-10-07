@@ -164,8 +164,8 @@ subtitles, music driving the picture; each narration line is pinned to its scene
 
 ### A real production
 
-The [Kaizen presentation video](../kaizen/docs/media/kaizen-presentation.mp4) (source:
-[`kaizen-presentation.html`](../kaizen/docs/media/source/kaizen-presentation.html)) was rendered with this
+The [Kaizen presentation video](../../media/kaizen/kaizen-presentation.mp4) (source:
+[`kaizen-presentation.html`](../../media/kaizen/source/kaizen-presentation.html)) was rendered with this
 plugin: Three.js scene, story time slowed down for reading, Piper voice-over, burned-in subtitles.
 
 ## Why a browser (Playwright)?

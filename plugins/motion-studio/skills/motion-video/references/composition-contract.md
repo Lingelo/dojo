@@ -70,7 +70,7 @@ window.__seek = (t) => sceneAt(storyAt(t));
 const sfx = (src, at) => window.__sfx?.(src, { at: realAt(at) });  // sounds written in story time
 ```
 Set `data-duration` to `realAt(end)`, and the `"at"` of `narration.json` to `realAt(start of each line)`.
-Full example: `plugins/kaizen/docs/media/source/kaizen-presentation.html`.
+Full example: `media/kaizen/source/kaizen-presentation.html`.
 
 ## Recipes per technology
 
@@ -156,10 +156,10 @@ window.__seek = (t) => tl.seek(t, false);
   on screen: the edges of the frame have nothing to reflect. A planar mirror (`Reflector`) is exact but costs a
   second render of the scene per frame.
 - **Procedural geometry without UVs**: project scanned PBR textures in world space (triplanar). Reference
-  implementation: `plugins/kaizen/docs/media/source/pbr.js` (scan + tint, desaturation, moss in crevices, clearcoat
+  implementation: `media/kaizen/source/pbr.js` (scan + tint, desaturation, moss in crevices, clearcoat
   varnish, via `onBeforeCompile`; static objects only, the texture is pinned to the world).
 - **Heavy assets** (2k scans, HDRIs): do not commit them, nor LFS — a script downloads them and checks a pinned md5
-  per file (reproducible, offline once fetched). Example: `plugins/kaizen/docs/media/source/fetch-assets.mjs`.
+  per file (reproducible, offline once fetched). Example: `media/kaizen/source/fetch-assets.mjs`.
 
 **Embedded video** — `<video src="clip.mp4" data-start="2.5" muted playsinline preload="auto">`: never `autoplay`.
 

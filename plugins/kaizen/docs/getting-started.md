@@ -3,8 +3,8 @@
 This guide walks through a real Kaizen cycle on an example: adding an **orders CSV export** to an
 application. Count on an hour the first time, most of it in discussion with Claude.
 
-For an overview before starting: [the presentation video](media/kaizen-presentation.mp4) (80 seconds,
-voice-over and [subtitles](media/kaizen-presentation.srt)).
+For an overview before starting: [the presentation video](../../../media/kaizen/kaizen-presentation.mp4) (80 seconds,
+voice-over and [subtitles](../../../media/kaizen/kaizen-presentation.srt)).
 
 The cycle you are about to run, end to end ([explained here](concepts/the-loop.md)):
 
