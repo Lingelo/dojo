@@ -32,6 +32,12 @@ test('the kaizen theme carries the Kaizen identity: palette, fonts, ensō + hank
   assert.match(buildDeck(html, { layouts: ['title'], theme: 'kaizen' }), /<html lang="en" data-theme="kaizen">/);
 });
 
+test('a template checked out with CRLF line endings (Windows) parses the same', () => {
+  const crlf = html.replace(/\n/g, '\r\n');
+  assert.deepEqual(Object.keys(parseTemplate(crlf).samples), Object.keys(LAYOUTS));
+  assert.equal([...buildDeck(crlf, { layouts: ['title', 'closing'] }).matchAll(/<!-- slide:/g)].length, 2);
+});
+
 test('buildDeck keeps the requested layouts in order, repeats included', () => {
   const out = buildDeck(html, { layouts: ['title', 'bullets', 'bullets', 'closing'] });
   assert.deepEqual([...out.matchAll(/<!-- slide:([\w-]+) -->/g)].map((m) => m[1]), ['title', 'bullets', 'bullets', 'closing']);

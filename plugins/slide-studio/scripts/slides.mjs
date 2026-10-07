@@ -46,7 +46,8 @@ export const LAYOUTS = {
 };
 
 // ---------------------------------------------------------------- template → deck (no browser)
-const SAMPLE = /<!-- slide:([\w-]+) -->\n([\s\S]*?)<!-- \/slide -->\n?/g;
+// \r?\n: on Windows, git may check the template out with CRLF line endings
+const SAMPLE = /<!-- slide:([\w-]+) -->\r?\n([\s\S]*?)<!-- \/slide -->(?:\r?\n)?/g;
 
 /** Split the template into head, one sample per layout, tail. */
 export function parseTemplate(html) {
