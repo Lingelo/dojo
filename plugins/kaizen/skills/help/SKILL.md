@@ -58,7 +58,7 @@ autopilot: from request to ready PR, autonomously
 
 | Situation | Command | Why that one |
 |---|---|---|
-| Kaizen never used in this repo | `/kaizen:setup` | config, verification commands, detected deployment, profile (`lean` to start) |
+| Kaizen never used in this repo | `/kaizen:setup` | config, verification commands, detected deployment, profile (by the repo's stakes) |
 | Set up the SDLC, find out what the project lacks | `/kaizen:setup audit` | maturity per area (CI, tests, secrets, review, deployment, monitoring) and guided fixes by priority |
 | Choose or adjust the agents' model | `node $K models`, then `models` in `.kaizen/config.json` | one model per role depending on the profile: frugal research, critical judgments on the strongest |
 | Lay down the project's rules | `/kaizen:constitution` | 5 to 9 principles, each with a check that plan and review enforce |
@@ -89,8 +89,9 @@ Tie-breakers:
 - **work or autopilot**: `work` moves forward with the user; `autopilot` goes alone up to the PR.
 - **debug or work**: unknown cause → `debug`; obvious fix → `work`.
 - **brainstorm or plan**: not sure yet exactly what → `brainstorm`; known → `plan`.
-- **Profile**: too much ceremony for the team → `lean` profile (`.kaizen/config.json`), which lightens
-  plan and review without touching the gates.
+- **Profile**: it follows the repo's stakes. Too much ceremony on a low-stakes repo (prototype,
+  internal tool) → `lean` profile (`.kaizen/config.json`), which lightens plan and review without
+  touching the gates; a repo that went to production or handles sensitive data → `standard` or `full`.
 
 ## What help does not do
 
