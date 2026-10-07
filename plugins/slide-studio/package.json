@@ -1,0 +1,9 @@
+{
+  "name": "slide-studio-runtime",
+  "private": true,
+  "description": "Runtime dependency of the slide-studio plugin (check and export only), installed on demand into ${CLAUDE_PLUGIN_DATA} by scripts/setup.mjs",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "^1.56.0"
+  }
+}

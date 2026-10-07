@@ -1,0 +1,9 @@
+{
+  "name": "slide-studio",
+  "description": "Presentation decks as one HTML file: a themed template with 19 layouts (ink, paper and kaizen themes), presentable in any browser, audited slide by slide in headless Chromium (overflow, collisions, contrast, density) and exported to PDF, PNG or a contact sheet",
+  "version": "1.0.0",
+  "author": {
+    "name": "Angelo LIMA",
+    "email": "contact@example.com"
+  }
+}
