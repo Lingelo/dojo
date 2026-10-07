@@ -33,7 +33,7 @@ test('the kaizen theme carries the Kaizen identity: palette, fonts, ensō + hank
 });
 
 test('a template checked out with CRLF line endings (Windows) parses the same', () => {
-  const crlf = html.replace(/\n/g, '\r\n');
+  const crlf = html.replace(/\r?\n/g, '\r\n'); // also when the checkout is already CRLF
   assert.deepEqual(Object.keys(parseTemplate(crlf).samples), Object.keys(LAYOUTS));
   assert.equal([...buildDeck(crlf, { layouts: ['title', 'closing'] }).matchAll(/<!-- slide:/g)].length, 2);
 });
