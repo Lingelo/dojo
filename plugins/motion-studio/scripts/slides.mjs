@@ -400,7 +400,7 @@ if (isMain) {
         const gap = 28, padding = 36;
         const width = 1920;
         const zoom = (width - 2 * padding - (cols - 1) * gap) / cols / size.width;
-        await page.setViewportSize({ width, height: 1080 });
+        await page.setViewportSize({ width, height: 200 }); // full-page capture = the grid, no empty tail
         await page.evaluate((z) => { document.documentElement.classList.add('is-overview'); document.documentElement.style.setProperty('--ov-zoom', z); }, zoom.toFixed(4));
         if (args.slides) await page.evaluate((keep) => document.querySelectorAll('.deck > .slide').forEach((s, i) => { if (!keep.includes(i + 1)) s.style.display = 'none'; }), pick);
         fs.mkdirSync(path.dirname(path.resolve(targets.sheet)), { recursive: true });
