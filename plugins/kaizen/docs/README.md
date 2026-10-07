@@ -56,6 +56,7 @@ In-depth pages: what each mechanism does exactly, with its rules, limits and dia
 | [CLI](reference/cli.md) | every `kaizen.mjs` command, flag, output and exit code |
 | [State and files](reference/state-and-files.md) | deliverables, git tags, `.kaizen/state/`, caches, environment variables |
 | [SDLC audit](reference/audit.md) | every audit check, priorities, scoring, scaffolds |
+| [Hosts](reference/hosts.md) | the probe that measures Cursor and Codex against Claude Code, and the compatibility matrix |
 | [Configuration](configuration.md) | every key of `.kaizen/config.json` |
 | [Kaizen Packs](packs.md) | prescriptive team rules shared across repos |
 

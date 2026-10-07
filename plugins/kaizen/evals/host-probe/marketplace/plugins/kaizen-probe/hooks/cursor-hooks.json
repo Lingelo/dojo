@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event sessionStart --via cursor-root",
+        "timeout": 30
+      },
+      {
+        "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event sessionStart --via claude-root",
+        "timeout": 30
+      },
+      {
+        "command": "node ./scripts/dump.mjs --host cursor --event sessionStart --via relative",
+        "timeout": 30
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event preToolUse --via cursor-root",
+        "timeout": 30
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event postToolUse --via cursor-root",
+        "timeout": 30
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event beforeShellExecution --via cursor-root --role pre",
+        "timeout": 30
+      }
+    ],
+    "afterShellExecution": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event afterShellExecution --via cursor-root",
+        "timeout": 30
+      }
+    ],
+    "subagentStart": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event subagentStart --via cursor-root",
+        "timeout": 30
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event subagentStop --via cursor-root",
+        "timeout": 30
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event beforeSubmitPrompt --via cursor-root",
+        "timeout": 30
+      }
+    ],
+    "stop": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/scripts/dump.mjs\" --host cursor --event stop --via cursor-root --role stop",
+        "timeout": 30
+      }
+    ]
+  }
+}

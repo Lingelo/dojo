@@ -1,0 +1,14 @@
+{
+  "name": "kaizen-probe",
+  "version": "0.1.0",
+  "description": "Throwaway probe: records what the host gives to skills and hooks",
+  "author": { "name": "Kaizen" },
+  "license": "MIT",
+  "skills": "./skills/",
+  "extensions": {
+    "com.openai": {
+      "hooks": "./hooks/codex-hooks.json",
+      "interface": { "displayName": "Kaizen probe", "defaultPrompt": ["Use the probe-locate skill."] }
+    }
+  }
+}

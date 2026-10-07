@@ -1,0 +1,8 @@
+{
+  "name": "kaizen-probe",
+  "version": "0.1.0",
+  "description": "Throwaway probe: records what the host gives to skills and hooks",
+  "author": { "name": "Kaizen" },
+  "license": "MIT",
+  "hooks": "./hooks/claude-hooks.json"
+}

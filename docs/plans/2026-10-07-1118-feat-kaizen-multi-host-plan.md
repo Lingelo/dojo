@@ -186,8 +186,10 @@ documented way and never silently weakens a gate.
 - **Goal:** confirm on real installs what each host does, before building on it.
 - **Covers:** R1, R2, R3, R5
 - **Depends on:** —
-- **Files:** `plugins/kaizen/docs/reference/hosts.md` (new),
-  `plugins/kaizen/tests/fixtures/hooks/` (new: captured stdin payloads per host and event)
+- **Files:** `plugins/kaizen/docs/reference/hosts.md` (new: protocol and matrix),
+  `plugins/kaizen/evals/host-probe/` (new: probe marketplace and plugin, `probe.mjs`),
+  `plugins/kaizen/tests/probe.test.mjs` (new), `plugins/kaizen/docs/README.md`,
+  `plugins/kaizen/tests/fixtures/hooks/` (new, after the run: captured stdin payloads per host and event)
 - **Approach:** install a throwaway plugin with a `.cursor-plugin` and a `.codex-plugin` manifest
   and a hook that dumps its stdin. Record: skill invocation syntax, the skill path given to the
   model (KTD2), `CLAUDE_PLUGIN_ROOT`/`CURSOR_PLUGIN_ROOT` expansion in hooks, the shell tool name and
@@ -357,7 +359,8 @@ documented way and never silently weakens a gate.
 - AE1, AE2, AE3 by hand on the latest Cursor and Codex, following the S0 smoke protocol in
   `docs/reference/hosts.md`, before the version bump.
 - AE4, AE5, AE6, AE7 proved by the automated tests of U6, U8, U5 and U2.
-- Size estimates (reviewable lines): S0 ~150, S1 ~250, S2 ~250, S3 ~350, S4 ~300, S5 ~380,
+- Size estimates (reviewable lines): S0 ~1,050 as built (over `pr.max_lines`: ~250 are generated
+  hook JSON, ~160 the protocol page; accepted for a throwaway probe, reviewed as one unit), S1 ~250, S2 ~250, S3 ~350, S4 ~300, S5 ~380,
   S6 ~150, S7 ~250 — each under `pr.max_lines` (400).
 
 <!-- kaizen:done -->

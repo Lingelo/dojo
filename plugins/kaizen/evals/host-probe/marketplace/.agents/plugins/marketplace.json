@@ -1,0 +1,12 @@
+{
+  "name": "kaizen-probe-market",
+  "interface": { "displayName": "Kaizen probe" },
+  "plugins": [
+    {
+      "name": "kaizen-probe",
+      "source": { "source": "local", "path": "./plugins/kaizen-probe" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Developer Tools"
+    }
+  ]
+}

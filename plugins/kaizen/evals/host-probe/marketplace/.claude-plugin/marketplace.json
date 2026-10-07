@@ -1,0 +1,7 @@
+{
+  "name": "kaizen-probe-market",
+  "owner": { "name": "Kaizen" },
+  "plugins": [
+    { "name": "kaizen-probe", "source": "./plugins/kaizen-probe", "description": "Throwaway probe: records what the host gives to skills and hooks" }
+  ]
+}
