@@ -11,7 +11,8 @@
 //   node kaizen.mjs deploy detect [--json] | configure <id> [--force]   recognized platform → config
 //   node kaizen.mjs monitor check|watch [--env e] [--plan p] [--minutes 15] [--interval 60]
 //                                                 production signals (exit 1 if a threshold is breached)
-//   node kaizen.mjs monitor patrol --env e        schedulable check: confirmed breach → incident (exit 1)
+//   node kaizen.mjs monitor patrol --env e        schedulable check: confirmed breach → incident (exit 1);
+//                                                 a blind signal (broken command) → exit 1, no incident
 //   node kaizen.mjs monitor alert [--env e] [--file f|-]   Alertmanager/PagerDuty/Datadog/JSON alert → incident
 //   node kaizen.mjs monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]
 //   node kaizen.mjs config                       effective configuration (JSON)
@@ -784,12 +785,13 @@ try {
           r.rollback = rollback(root, env, { reason: `monitor: ${r.breached.join(', ')} out of threshold` });
         }
         out(r);
-        process.exit(r.status === 'breach' ? 1 : 0);
+        // A blind watch verified nothing: not green either, but no incident and no rollback.
+        process.exit(r.status === 'breach' || r.status === 'blind' ? 1 : 0);
       } else if (sub === 'patrol') {
         if (!env) die('usage: monitor patrol --env <env> [--plan p] [--interval 60]');
         const r = await patrol(root, { env, plan, intervalSeconds: flags.interval });
         out(r);
-        process.exit(r.status === 'breach' ? 1 : 0);
+        process.exit(r.status === 'breach' || r.status === 'blind' ? 1 : 0);
       } else if (sub === 'alert') {
         const file = typeof flags.file === 'string' ? flags.file : '-';
         const payload = readFileSync(file === '-' ? 0 : file, 'utf8');

@@ -13,8 +13,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
   ship, constitution, plan, learn, metrics, doc-review, watch-pr, setup). `docs/README.md` states the
   split.
 
+### Fixed
+- **A broken metric no longer fakes an incident.** A command signal that fails or prints no number is
+  now **blind** (`blind: true`): the measuring tool is broken, not necessarily the service. `monitor
+  watch` and `patrol` no longer count it towards a breach, so no rollback (even with `auto_rollback`)
+  and no `incident/…` tag that would distort DORA failure rate and time to restore. Blind on
+  `consecutive` samples, their result is `status: blind` (exit 1: the environment was not verified).
+  An unreachable HTTP health-check is still a breach: it is the outage.
+
 ### Added
-- Three end-to-end evals for the operate phase: `deploy-healthy` (a healthy watch rolls nothing back),
+- Four end-to-end evals for the operate phase: `monitor-blind` (a broken metric rolls nothing back and
+  opens no incident), `deploy-healthy` (a healthy watch rolls nothing back),
   `deploy-unconfigured` (an undeclared environment is never deployed with a guessed command) and
   `deploy-rollback-urgent` (rolling back a protected environment needs no approval code).
 

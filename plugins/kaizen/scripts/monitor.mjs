@@ -9,6 +9,11 @@
 // threshold, "**Signal**: `error_rate` > 0.01 → rollback". A threshold breached on `consecutive`
 // samples in a row (2 by default) is a **breach**: `watch` stops and says so.
 //
+// A command signal that fails or prints no number is **blind**: the measuring tool is broken, not
+// necessarily the service. It never counts towards a breach (no rollback, no incident, so no false
+// failure in DORA metrics); blind for `consecutive` samples, it makes the result `blind`, which says the
+// environment was not verified. An HTTP health-check that cannot connect is not blind: it is the outage.
+//
 // Beyond the post-deployment window, two paths detect an incident without manual action:
 // - `patrol`: a confirmed one-off check, to schedule (Claude Code routine, cron, CI workflow);
 // - `alert`: translates an alert from the team's tool (Alertmanager, PagerDuty, Datadog, plain JSON),
@@ -74,7 +79,7 @@ async function sample(name, spec, env) {
   const r = runBounded(sub(spec.command), { timeoutMs: (spec.timeout_seconds || 30) * 1000, env: { ...process.env, KAIZEN_ENV: env || '' } });
   const raw = (r.stdout || '').trim().split(/\s+/).pop();
   const value = raw !== undefined && raw !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : null;
-  if (r.status !== 0 || value === null) return { value, ok: false, ms: Date.now() - started, detail: r.timedOut ? 'timeout' : r.status !== 0 ? `command failed (exit ${r.status})` : `non-numeric output: "${(r.stdout || '').trim().slice(0, 60)}"` };
+  if (r.status !== 0 || value === null) return { value, ok: false, blind: true, ms: Date.now() - started, detail: r.timedOut ? 'timeout' : r.status !== 0 ? `command failed (exit ${r.status})` : `non-numeric output: "${(r.stdout || '').trim().slice(0, 60)}"` };
   const breach = (spec.max !== undefined && value > Number(spec.max)) || (spec.min !== undefined && value < Number(spec.min));
   return { value, ok: !breach, ms: Date.now() - started, detail: breach ? `threshold breached (${spec.max !== undefined ? `max ${spec.max}` : `min ${spec.min}`})` : 'ok' };
 }
@@ -98,6 +103,15 @@ export async function check(root, opts = {}) {
   return { at: new Date().toISOString(), env: opts.env || null, ok: Object.values(results).every((r) => r.ok), signals: results, unknown_plan_signals };
 }
 
+// Consecutive-sample counters per signal: out of threshold (`streak`) and blind (`blindStreak`).
+function count(c, streak, blindStreak) {
+  for (const [name, r] of Object.entries(c.signals)) {
+    streak[name] = r.ok || r.blind ? 0 : (streak[name] || 0) + 1;
+    blindStreak[name] = r.blind ? (blindStreak[name] || 0) + 1 : 0;
+  }
+}
+const reached = (counters, needed) => Object.entries(counters).filter(([, n]) => n >= needed).map(([name]) => name);
+
 // Watches for `minutes`; stops at the first confirmed breach (consecutive samples).
 export async function watch(root, { env = null, plan = null, minutes, intervalSeconds, consecutive, onSample } = {}) {
   const config = loadConfig(root);
@@ -106,19 +120,23 @@ export async function watch(root, { env = null, plan = null, minutes, intervalSe
   const needed = Number(consecutive ?? config.monitor.consecutive ?? 2);
   const started = Date.now();
   const streak = {};
+  const blindStreak = {};
+  const blind = new Set();
   const samples = [];
   for (;;) {
     const c = await check(root, { env, plan });
     samples.push(c);
     appendFileSync(join(stateDir(root), 'monitor.jsonl'), `${JSON.stringify(c)}\n`);
     onSample?.(c);
-    for (const [name, r] of Object.entries(c.signals)) streak[name] = r.ok ? 0 : (streak[name] || 0) + 1;
-    const breached = Object.entries(streak).filter(([, n]) => n >= needed).map(([name]) => name);
+    count(c, streak, blindStreak);
+    for (const name of reached(blindStreak, needed)) blind.add(name);
+    const breached = reached(streak, needed);
     if (breached.length) {
       return { status: 'breach', env, plan, breached, detected_at: c.at, started_at: new Date(started).toISOString(), samples: samples.length, last: c };
     }
     if (!Object.keys(c.signals).length) return { status: 'no-signals', env, plan, samples: samples.length, last: c };
     if (Date.now() - started + every > duration) {
+      if (blind.size) return { status: 'blind', env, plan, blind: [...blind], started_at: new Date(started).toISOString(), ended_at: new Date().toISOString(), samples: samples.length, last: c };
       return { status: 'healthy', env, plan, started_at: new Date(started).toISOString(), ended_at: new Date().toISOString(), samples: samples.length, last: c };
     }
     await new Promise((r) => setTimeout(r, every));
@@ -133,18 +151,22 @@ export async function patrol(root, { env = null, plan = null, intervalSeconds, c
   const every = Number(intervalSeconds ?? config.monitor.interval_seconds ?? 60) * 1000;
   const needed = Number(consecutive ?? config.monitor.consecutive ?? 2);
   const streak = {};
+  const blindStreak = {};
   let c;
   for (let i = 0; i < needed; i++) {
     if (i) await new Promise((r) => setTimeout(r, every));
     c = await check(root, { env, plan });
     appendFileSync(join(stateDir(root), 'monitor.jsonl'), `${JSON.stringify(c)}\n`);
-    for (const [name, r] of Object.entries(c.signals)) streak[name] = r.ok ? 0 : (streak[name] || 0) + 1;
+    count(c, streak, blindStreak);
     if (c.ok) break;
   }
   if (!Object.keys(c.signals).length) return { status: 'no-signals', env, last: c };
-  const breached = Object.entries(streak).filter(([, n]) => n >= needed).map(([name]) => name);
+  const breached = reached(streak, needed);
   const open = incidents(root, { env }).filter((i) => !i.resolved_at);
-  if (!breached.length) return { status: 'healthy', env, open_incidents: open, last: c };
+  if (!breached.length) {
+    const blind = reached(blindStreak, needed);
+    return blind.length ? { status: 'blind', env, blind, open_incidents: open, last: c } : { status: 'healthy', env, open_incidents: open, last: c };
+  }
   const incident = openIncident(root, env, { source: 'patrol', summary: `${breached.join(', ')} out of threshold`, signals: breached });
   return { status: 'breach', env, breached, detected_at: incident.incident.detected_at, ...incident, last: c };
 }

@@ -119,7 +119,8 @@ The detection time is the alert's, not the reception's.
 
 - A breach only counts after `monitor.consecutive` samples in a row out of threshold (2 by default),
   every `monitor.interval_seconds` (60 by default): an isolated spike triggers nothing.
-- A failing command or a non-numeric output counts as red: it is a blind signal.
+- A failing command or a non-numeric output is a **blind** signal: red, to repair, but never a breach —
+  no rollback, no incident. An unreachable HTTP health-check is a real breach.
 - Restoring comes before understanding: on a breach, the rollback comes first.
 
 ## See also
