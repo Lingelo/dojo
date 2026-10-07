@@ -70,41 +70,21 @@ In depth: [constitution](../concepts/constitution.md).
 
 ## How it is enforced
 
-| Where | How |
-|---|---|
-| `/kaizen:plan` | "Constitution check" section: one verdict per article, justified exceptions |
-| `node $K plan check` | fails if an article is not assessed |
-| `/kaizen:doc-review` | the scope reviewer checks the exceptions |
-| `/kaizen:review` | the `standards` reviewer applies each **Check** to the diff: violating a NON-NEGOTIABLE article = P0, another article = P1 |
-| `/kaizen:ship` | exceptions are restated in the PR |
+`plan` assesses every article, `plan check` fails if one is missing, `doc-review` checks the exceptions,
+the `standards` reviewer applies each **Check** to the diff (NON-NEGOTIABLE violated = P0) and `ship`
+restates the exceptions in the PR. Details: [where it is enforced](../concepts/constitution.md#where-it-is-enforced).
 
-**A draft blocks nothing.** When nobody can answer (`/kaizen:autopilot`, a CI job, `mode:auto`),
-`/kaizen:constitution` does not invent the team's principles: it writes a **draft** (`status: draft`, no
-ratification date), limited to what the repository shows — each article citing its evidence — plus an AI
-policy article. Until the team ratifies it, it only informs: `plan check` warns instead of failing, the
-`standards` reviewer reports its violations as P3, and a NON-NEGOTIABLE draft article blocks no plan.
-`node $K status` keeps proposing `/kaizen:constitution` to review and ratify it.
+**A draft blocks nothing.** When nobody can answer (`/kaizen:autopilot`, a CI job, `mode:auto`), Kaizen
+writes a `status: draft` limited to what the repository shows. It only informs until the team ratifies
+it: [draft](../concepts/constitution.md#draft-status-draft).
 
 ## Amending
 
-An amendment always has a **reason** (postmortem, recurring learning, too frequent exception) and an
-**impact analysis**: plans in progress, packs and learnings becoming contradictory. Version:
-- MAJOR if an article is removed or redefined incompatibly;
-- MINOR if an article is added or widened;
-- PATCH for a clarification.
-
-The amendment is noted in a `## Amendments` log at the bottom of the file.
-
-**In a team**, declare who may approve:
-
-```yaml
-approvers: [@alice, @bob]
-ratified_by: alice
-```
-
-Each log entry then ends with `Approved by: @bob`, and `node $K constitution check` refuses a version
-without an amendment approved by a declared approver, or approved by an agent. Add `CONSTITUTION.md` and
-`kaizen-packs/` to `CODEOWNERS` so that GitHub requests their review (`node $K audit fix codeowners`).
+`/kaizen:constitution amend <change>` requires a **reason** (postmortem, recurring learning, too frequent
+exception), lists the impact on plans, packs and learnings, bumps the version (SemVer) and logs the
+change under `## Amendments`. In a team, declare `approvers` in the frontmatter: `constitution check` then
+refuses a version without an amendment approved by one of them. Steps and governance:
+[amendments and governance](../concepts/constitution.md#amendments-and-governance).
 
 ## Good to know
 

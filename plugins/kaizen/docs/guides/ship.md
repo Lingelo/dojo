@@ -43,20 +43,10 @@ In depth: [gates and hooks](../concepts/gates-and-hooks.md#the-review-required-b
 
 ## The description produced
 
-```markdown
-## Why
-## What changes              (one bullet per covered requirement: R1, R2…)
-## How to review             (reviewer guide: where to start, what to look at closely, what to skim)
-## Evidence                  (green commands, covered AEs, Kaizen review verdict)
-## Rollout and rollback
-## Constitution              (only if there are exceptions)
-## Review waived             (only if the review was waived)
-## Open points
-```
-
-It is written in the configured language and ends with the `<!-- kaizen -->` marker, which keeps
-`watch-pr` from taking this text for feedback to handle. The title is a conventional commit of 72
-characters at most: `feat(SHOP-412): export filtered orders as CSV`.
+Why, what changes (one bullet per requirement), a reviewer guide, evidence, rollout and rollback, then
+constitution exceptions, a waived review and open points when there are any. Written in the configured
+language; the title is a conventional commit of 72 characters at most. Full template:
+[pull requests](../concepts/pull-requests.md#shipping-a-reviewable-pr).
 
 ## Options
 

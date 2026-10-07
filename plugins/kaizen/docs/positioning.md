@@ -1,6 +1,6 @@
 # Kaizen — SDLC assessment and positioning
 
-*As of October 7, 2026, version 3.2.0.*
+*As of October 7, 2026, version 3.2.1.*
 
 Kaizen is a complete SDLC tooled for an AI agent. It covers the idea, the plan, the code, the review,
 the delivery, the watched deployment and the learning, with guardrails enforced by code. It is not a

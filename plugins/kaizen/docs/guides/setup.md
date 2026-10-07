@@ -29,29 +29,13 @@ In depth: [state and files](../reference/state-and-files.md).
 
 ## The audit: setting up the SDLC
 
-`node $K audit` (`--json`, `--no-github` without an authenticated `gh`) scores the project on five
-areas:
-
-| Area | Checks |
-|---|---|
-| **Foundations** | remote repository, CI running the tests, automated tests, lint, type checking, `.env` ignored, secret scanning |
-| **Flow** | default branch protection (through `gh`), CODEOWNERS, PR template, Dependabot/Renovate, `CLAUDE.md` |
-| **Delivery** | tooled deployment (or recognized by `deploy detect`), rollback, protected production |
-| **Operations** | watched signals, continuous incident detection, health endpoint (route found in the code) |
-| **Kaizen loop** | Kaizen initialized, constitution, findable learnings |
-
-Each check is `ok`, `warn`, `missing` or `unknown`, with its evidence and a priority (P1 protects, P3
-improves). Then Claude offers to fix each point, **P1 first**, one by one, with your approval:
-- **scaffolds** generated from your stack, never over an existing file:
-  `audit fix ci` (GitHub Actions: install and detected verification commands),
-  `pr_template`, `dependabot` (detected ecosystems), `codeowners --owner @team`, `gitignore_env`,
-  `secret_scanning` (every PR scanned for keys and tokens, `--ref <sha>`),
-  `monitor_patrol` and `monitor_alert` (continuous incident detection, `--env`, `--ref <sha>`);
-- **deployment**: `deploy detect`, you choose, `deploy configure <id>`;
-- **administration settings** (branch protection): Claude gives the exact settings, you apply them;
-- **skills**: constitution, installation.
-
-The audit is rerun at the end to show the before/after.
+`node $K audit` scores the project on five areas — foundations, flow, delivery, operations, Kaizen loop —
+each check `ok`, `warn`, `missing` or `unknown` with its evidence and a priority. Claude then offers to
+fix each point, **P1 first**, one by one, with your approval: scaffolds generated from your stack and
+never written over an existing file (`audit fix ci`, `pr_template`, `dependabot`, `codeowners`,
+`gitignore_env`, `secret_scanning`, `monitor_patrol`, `monitor_alert`), deployment through
+`deploy detect`, the exact branch protection settings for you to apply. The audit is rerun at the end to
+show the before/after. Every check and scaffold: [SDLC audit](../reference/audit.md).
 
 ## The installation, step by step
 
@@ -77,18 +61,8 @@ The audit is rerun at the end to show the before/after.
 
 ## The health check (`check`)
 
-| Point | Command |
-|---|---|
-| Root and config | `node $K root`, `node $K config` |
-| Checks | `node $K detect` |
-| Learnings | `node $K learnings validate` |
-| Packs | `node $K packs` |
-| Constitution | `node $K constitution check` |
-| Gate | `node $K gate status` (a gate left active without work in progress → `gate off`) |
-| Review | `node $K review status` |
-| Models | `node $K models` (invalid values reported) |
-
-Each point shows ✔ or ⚠, with the proposed fix.
+Config, detected checks, learnings, packs, constitution, gate, review state and models, each shown ✔ or
+⚠ with the proposed fix.
 
 ## Good to know
 
