@@ -53,8 +53,9 @@ review, deployment, monitoring) and fixes the most important things first.
 Claude creates `.kaizen/config.json` and the `docs/plans`, `docs/learnings` and `docs/ideation`
 folders. It detects the stack and shows you the verification commands it found (`npm test`,
 `npm run -s lint`…). **Check them**: they are what the quality gate will run. It then offers a short
-section in `CLAUDE.md`, so that any agent knows where to find the learnings, then a **profile**: `lean`
-is recommended for a first cycle (less ceremony, same gates).
+section in `CLAUDE.md`, so that any agent knows where to find the learnings, then a **profile**, chosen by
+the repo's stakes: `lean` for a prototype or internal tool, `standard` for a product in production,
+`full` for regulated or critical domains (all three keep the same gates).
 
 What changes in the repo: `.kaizen/config.json`, `docs/…/.gitkeep`, one line in `.gitignore`. Commit
 them.

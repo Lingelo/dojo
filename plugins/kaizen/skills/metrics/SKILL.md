@@ -45,7 +45,8 @@ does not close (learnings not findable, badly tagged, or `learnings-researcher` 
 `CLAUDE.md`.
 
 **Cost**: weigh it against the gain. Long or expensive cycles with a failure rate that does not drop →
-the ceremony does not pay off: propose the `lean` profile. A gate blocking in most cycles → checks too
+the ceremony does not pay off: on a low-stakes repo, propose the `lean` profile; on a repo in
+production, target the costly step instead (`models.roles`, `gate.targeted`). A gate blocking in most cycles → checks too
 slow or unstable (`gate.targeted`), or units too big. Read `tokens_by_role` with the model policy
 (`node "$K" models`): a role weighing heavily on a strong model is the first savings lever (`lean`
 profile or `models.roles`). Say the measurement is local, and that an `unknown` role designates

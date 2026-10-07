@@ -80,8 +80,11 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    notes, have the user choose, then `node "$K" deploy configure <id>`. Nothing recognized → ask for
    the commands, never invent them. Complete the signals (error rate, latency: a command printing a
    number). `production` is protected by default. Check with `node "$K" monitor check --env <env>`.
-10. **Profile** — ask (one question): **lean** (Recommended for a first adoption: minimal ceremony,
-   gates kept) · **standard** · **full** (regulated domains, seasoned team). The profile also sets
+10. **Profile** — ask (one question), chosen by the **stakes of the repo**, never by the team's
+   experience with Kaizen: **lean** (prototype, spike, internal tool: minimal ceremony, gates kept) ·
+   **standard** (a product in production) · **full** (regulated or critical domains: payment, health,
+   sensitive data at scale). Mark as Recommended the one the repo suggests (deployment detected, risk
+   surfaces, domain); unsure → **standard**. The profile also sets
    **each agent's model** (`node "$K" models`): show it, and offer to adjust a role (`models.roles`)
    or an agent (`models.agents`) if the team has a cost or quality constraint. Write `profile` in
    `.kaizen/config.json`. Team of several people → propose `approvers` in `CONSTITUTION.md` and a

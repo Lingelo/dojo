@@ -119,8 +119,9 @@ No deliverable carries a mutable status ("in progress", "done"): progress is rea
 
 A **risk surface** is auth, sessions, permissions, personal or payment data, migrations, public APIs or
 dependencies. The Stop-hook gate, `verify`, `size`, `plan check` and the review required before
-`git push` stay active in every profile. Start `lean`, raise it once the team has found its rhythm:
-small steps, in the kaizen spirit. See [Agents and models](agents-and-models.md) for the model side.
+`git push` stay active in every profile. Choose it by the stakes of the repo, not by the team's
+experience: `lean` for a prototype or internal tool, `standard` for a product in production, `full` for
+regulated or critical domains. See [Agents and models](agents-and-models.md) for the model side.
 
 ## Language
 

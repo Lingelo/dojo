@@ -89,11 +89,13 @@ quality gate, `verify`, `size`, `plan check`, review required before `git push`)
 
 | Profile | For whom | What changes |
 |---|---|---|
-| `lean` | first adoption, small team, prototype | short plan (threats and rollout only on a risk surface), `doc-review` reduced to `plan check` + coherence, review at the core + security if needed, `autopilot` without a written plan for a change ≤ ~30 lines with no risk |
-| `standard` | most teams | the cycle as described in the guides |
-| `full` | regulated domains, seasoned team | threats and rollout always, adversarial reviewer always on the plan and from the targeted review |
+| `lean` | prototype, spike, internal tool: a defect is cheap to fix | short plan (threats and rollout only on a risk surface), `doc-review` reduced to `plan check` + coherence, review at the core + security if needed, `autopilot` without a written plan for a change ≤ ~30 lines with no risk |
+| `standard` | a product in production (default) | the cycle as described in the guides |
+| `full` | regulated or critical domains (payment, health, sensitive data at scale) | threats and rollout always, adversarial reviewer always on the plan and from the targeted review |
 
-The recommended path: start in `lean`, then go up once the team has found its rhythm. An unknown value
+Choose it by the **stakes of the repo** (what a defect costs once shipped), not by the team's experience
+with Kaizen: a team new to Kaizen on a payment service still wants `standard` or `full`, a seasoned team
+on a prototype is fine in `lean`. Change it when the stakes change. An unknown value
 falls back to `standard` and is reported by `node $K config` (`profile_warning`). The profile also sets
 each agent's model (see [`models`](#models--the-right-model-for-each-task)).
 

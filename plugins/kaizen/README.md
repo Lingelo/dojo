@@ -154,9 +154,9 @@ requires evidence: a hook logs the reviewers actually launched, the agent cannot
 did not happen. Only the user can waive it, by typing the confirmation code themselves, and the waiver
 appears in the PR.
 
-**Staged adoption.** `profile`: `lean` (minimal ceremony, to start), `standard`, `full`. The profile sets
-the ceremony (plan size, number of reviewers), never the deterministic gates. Small steps, in the kaizen
-spirit.
+**Ceremony proportional to stakes.** `profile`: `lean` (prototype, internal tool), `standard` (product in
+production), `full` (regulated or critical domains). The profile sets the ceremony (plan size, number of
+reviewers, models), never the deterministic gates.
 
 **From production to the next cycle.** Each plan says how to roll back and which signal to watch, with
 its threshold (`plan check` warns otherwise). `release` derives the production checklist from it,

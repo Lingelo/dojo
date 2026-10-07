@@ -79,8 +79,9 @@ every profile.
 | Capture | proposed only when the durability test is obvious | proposed | always assessed |
 
 A **risk surface**: auth, sessions, permissions, personal or payment data, migrations, public APIs,
-dependencies. Starting in `lean` then raising the profile once the team has found its rhythm is the
-recommended adoption path: that is the kaizen spirit, small steps.
+dependencies. The profile follows the **stakes of the repo**, not the team's experience with Kaizen:
+`lean` for a prototype, spike or internal tool, `standard` for a product in production, `full` for
+regulated or critical domains (payment, health, sensitive data at scale).
 
 ## Push gate
 

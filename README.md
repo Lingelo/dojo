@@ -87,7 +87,7 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 ```bash
 /kaizen:help                                    # what it is, where the repo stands, which command to run
 /kaizen:setup audit                             # what the project lacks (CI, secrets, deployment…), fixed by priority
-/kaizen:setup                                   # config, profile (lean to start), detected deployment
+/kaizen:setup                                   # config, profile (by the repo's stakes), detected deployment
 /kaizen:constitution                            # the project's non-negotiable principles
 /kaizen:brainstorm orders CSV export            # WHAT to build → docs/plans/…-plan.md
 /kaizen:plan                                    # HOW → units, tests, rollback + plan review
