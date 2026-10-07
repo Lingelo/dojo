@@ -105,3 +105,10 @@ test('check: gallery passes, overflow and collisions are errors', { skip: !ready
   assert.match(msgs, /spills \d+px out of its box/);
   assert.match(msgs, /overflows the slide/);
 });
+
+test('themes: one preview per theme', { skip: !ready && 'no MOTION_STUDIO_HOME with a ready env.json' }, () => {
+  const out = path.join(tmp(), 'themes');
+  const r = spawnSync(process.execPath, [CLI, 'themes', '--out', out, '--home', home], { encoding: 'utf8', env: { ...process.env, MOTION_STUDIO_NO_INSTALL: '1' } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(fs.readdirSync(out).sort(), THEMES.map((t) => `theme-${t}.jpg`).sort());
+});

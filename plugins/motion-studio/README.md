@@ -87,6 +87,7 @@ Claude → PDF.
 
 ```bash
 node plugins/motion-studio/scripts/slides.mjs layouts
+node plugins/motion-studio/scripts/slides.mjs themes --out deck/themes     # one preview per theme, to choose
 node plugins/motion-studio/scripts/slides.mjs new deck/deck.html --layouts title,agenda,kpis,chart,closing --theme paper --title "Q3 review"
 node plugins/motion-studio/scripts/slides.mjs check deck/deck.html            # exit 1 on errors
 node plugins/motion-studio/scripts/slides.mjs export deck/deck.html --pdf deck/deck.pdf --png deck/png --sheet deck/sheet.jpg [--slides 1,3-5] [--scale 2]

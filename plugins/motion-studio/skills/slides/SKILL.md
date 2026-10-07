@@ -48,10 +48,23 @@ At the end: file paths + how to present (open the HTML; → / ← / Space, `O` o
 Infer from the message (and from any document given: plan, README, notes, report); ask only what is
 missing:
 audience & goal (what they should think or do afterwards) · talk length (≈ 1 slide per 1–2 min; a
-read-alone deck sent as PDF holds more text per slide) · theme (`ink` dark, `paper` warm light,
-`kaizen` washi paper + sumi ink + vermilion seal — the Kaizen
-plugin's identity, for Kaizen talks and engineering reviews — or brand colors / font / logo) · language · deliverable
-(HTML to present, PDF, PNGs) · format (16:9 by default; 4:3 → `references/layouts.md`).
+read-alone deck sent as PDF holds more text per slide) · language · deliverable (HTML to present, PDF,
+PNGs) · format (16:9 by default; 4:3 → `references/layouts.md`).
+
+**Theme — always ask**, unless the user already named one or gave brand colors. Show the themes first:
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/slides.mjs" themes --out deck/themes --home "${CLAUDE_PLUGIN_DATA}"
+```
+It writes `deck/themes/theme-<name>.jpg` (title, cards and big number in each theme): share them with
+the user (or give their paths), then ask with `AskUserQuestion`, the option that fits the context first
+and marked recommended:
+- **ink** — night background, terracotta accent: talks projected in a dark room, technical demos.
+- **paper** — warm paper, brick red: sober decks, PDFs read alone, mixed audiences.
+- **kaizen** — washi paper with grain, sumi ink, vermilion, Mincho titles, ensō + 改善 seal on title and
+  closing: talks about Kaizen and engineering practice (the Kaizen plugin's identity).
+- **Our brand** — one of the above as a base + the BRAND block (accent, fonts, logo): ask for the colors
+  and the logo file.
+The question can go with the other missing brief questions (`AskUserQuestion` takes up to 4).
 
 ### 2. Storyline — before any slide
 Write the outline as a table and have the user approve it for decks > 8 slides:

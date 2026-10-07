@@ -4,6 +4,7 @@
  *
  *   node slides.mjs layouts                                   list the layouts
  *   node slides.mjs new deck/deck.html --layouts title,bullets,closing [--theme paper] [--title "…"] [--lang fr]
+ *   node slides.mjs themes [--out dir]                        one preview image per theme (to choose)
  *   node slides.mjs check deck/deck.html [--json]             overflow, safe area, density, contrast, images, fonts
  *   node slides.mjs export deck/deck.html [--pdf f.pdf] [--png dir] [--sheet f.jpg] [--slides 1,3-5] [--scale 2]
  *
@@ -11,7 +12,9 @@
  * (auto-installed by setup.mjs, no ffmpeg needed). The deck is opened with ?export: every slide is stacked
  * at its real size, steps revealed, no animation.
  */
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -290,6 +293,8 @@ motion-studio slides — HTML decks: scaffold, check, export
   node slides.mjs new <deck.html> [--layouts a,b,c] [--theme ${THEMES.join('|')}] [--title "…"] [--lang en] [--force]
       Copy the template with the sample slide of each layout, in order (repeat a layout to get it twice).
       No --layouts = the full gallery (one slide per layout).
+  node slides.mjs themes [--out dir] [--slides 1,8,10]
+      One preview per theme (<dir>/theme-<name>.jpg: the same sample slides in each theme), to choose one.
   node slides.mjs check <deck.html> [--json]
       Lint every slide at its real size: text overflowing the slide or the safe area, clipped boxes, text < 20px,
       contrast, broken images, placeholders left, density (words, bullets, code lines), layout rhythm, fonts.
@@ -341,6 +346,23 @@ if (isMain) {
     const made = [...html.matchAll(/<!-- slide:([\w-]+) -->/g)].map((m) => m[1]);
     console.log(`✔ ${file} — ${made.length} slides: ${made.map((l, i) => `${i + 1}.${l}`).join('  ')}`);
     console.log('  Replace every sample text, then: node slides.mjs check ' + file);
+  } else if (cmd === 'themes') {
+    // the gallery in each theme, exported as a small sheet: same slides side by side → an informed choice
+    const out = path.resolve(typeof args.out === 'string' ? args.out : 'slides-themes');
+    const pick = typeof args.slides === 'string' ? args.slides : '1,8,10';
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'slides-themes-'));
+    fs.mkdirSync(out, { recursive: true });
+    const home = typeof args.home === 'string' ? ['--home', args.home] : [];
+    try {
+      for (const theme of THEMES) {
+        const deck = path.join(tmpDir, `${theme}.html`);
+        fs.writeFileSync(deck, buildDeck(fs.readFileSync(TEMPLATE, 'utf8'), { theme, title: `Theme ${theme}` }));
+        const f = path.join(out, `theme-${theme}.jpg`);
+        const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), 'export', deck, '--sheet', f, '--slides', pick, ...home], { stdio: ['ignore', 'ignore', 'inherit'] });
+        if (r.status !== 0) die(`preview of theme ${theme} failed`);
+        console.log(`✔ ${f}`);
+      }
+    } finally { fs.rmSync(tmpDir, { recursive: true, force: true }); }
   } else if (cmd === 'check') {
     if (!file || !fs.existsSync(file)) die('usage: slides.mjs check <deck.html> [--json]');
     let deck, r;
