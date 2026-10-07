@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en" data-theme="ink">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deck title</title>
+<!-- Fonts: optional. Offline, the stacks below fall back to system fonts (slides.mjs check warns). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================ TOKENS
+   Every slide is a fixed 1920×1080 canvas (scaled to the window when presenting), so sizes are in px.
+   4:3 → --slide-w: 1440px (and @page size below). */
+:root {
+  --slide-w: 1920px; --slide-h: 1080px;
+  --pad-x: 128px; --pad-y: 104px;                     /* safe area: text never goes past it */
+  --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --fs-hero: 136px; --fs-h1: 96px; --fs-h2: 68px; --fs-h3: 42px;
+  --fs-lead: 44px; --fs-body: 36px; --fs-small: 29px; --fs-micro: 22px;
+  --radius: 20px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html[data-theme="ink"]   { --bg: #0b0d12; --surface: #151923; --line: #272c3a; --ink: #f4efe6; --muted: #8f93a0; --accent: #d97757; --accent-ink: #0b0d12; --good: #5fb98e; --bad: #e06c6c; }
+html[data-theme="paper"] { --bg: #f6f1e7; --surface: #fffaf0; --line: #e3d9c6; --ink: #1d1b18; --muted: #6b6458; --accent: #b94a24; --accent-ink: #fffaf0; --good: #2f7d55; --bad: #b3261e; }
+html[data-theme="slate"] { --bg: #ffffff; --surface: #f2f5f9; --line: #dce3ec; --ink: #0f172a; --muted: #566074; --accent: #2557d6; --accent-ink: #ffffff; --good: #15803d; --bad: #c2410c; }
+html[data-theme="neon"]  { --bg: #07060d; --surface: #14111f; --line: #2a2540; --ink: #f5f3ff; --muted: #9b95b9; --accent: #b6f24a; --accent-ink: #07060d; --good: #4ade80; --bad: #fb7185; }
+
+/* BRAND — override the theme here (colors, fonts, radius). Body text needs ≥ 4.5:1 contrast on --bg. */
+html[data-theme] {
+  /* --accent: #ff5a1f; --accent-ink: #ffffff; --font-display: "Your Font", sans-serif; */
+}
+
+/* originals, so a slide can swap its own colors (data-bg) */
+html { --bg-solid: var(--bg); --ink-solid: var(--ink); --accent-solid: var(--accent); }
+
+/* ============================================================ BASE */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+
+.slide {
+  position: relative; width: var(--slide-w); height: var(--slide-h); overflow: hidden;
+  padding: var(--pad-y) var(--pad-x); display: grid; gap: 40px; align-content: start;
+  background: var(--bg); color: var(--ink); font: 400 var(--fs-body)/1.4 var(--font-body);
+}
+.slide[data-bg="accent"] {
+  --bg: var(--accent-solid); --ink: var(--accent-ink); --accent: var(--accent-ink);
+  --muted: color-mix(in srgb, var(--accent-ink) 74%, var(--accent-solid));
+  --surface: color-mix(in srgb, var(--accent-ink) 9%, var(--accent-solid));
+  --line: color-mix(in srgb, var(--accent-ink) 24%, var(--accent-solid));
+}
+.slide[data-bg="inverse"] {
+  --bg: var(--ink-solid); --ink: var(--bg-solid);
+  --muted: color-mix(in srgb, var(--bg-solid) 66%, var(--ink-solid));
+  --surface: color-mix(in srgb, var(--bg-solid) 8%, var(--ink-solid));
+  --line: color-mix(in srgb, var(--bg-solid) 20%, var(--ink-solid));
+}
+.slide[data-bg="surface"] { --bg: var(--surface); --surface: var(--bg-solid); }
+.slide[data-align="center"] { text-align: center; justify-items: center; }
+
+.slide h1, .slide h2, .slide h3, .slide p, .slide ul, .slide ol, .slide blockquote, .slide figure { margin: 0; }
+.slide h1 { font: 800 var(--fs-h1)/1.02 var(--font-display); letter-spacing: -0.035em; text-wrap: balance; }
+.slide h2 { font: 750 var(--fs-h2)/1.08 var(--font-display); letter-spacing: -0.03em; text-wrap: balance; max-width: 1500px; }
+.slide h3 { font: 700 var(--fs-h3)/1.15 var(--font-display); letter-spacing: -0.02em; }
+.slide p, .slide li { text-wrap: pretty; }
+.slide mark { background: none; color: var(--accent); }
+.slide a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
+.kicker { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: var(--fs-lead); line-height: 1.3; color: var(--muted); max-width: 1400px; }
+.small { font-size: var(--fs-small); }
+.muted { color: var(--muted); }
+.source { font-size: var(--fs-micro); color: var(--muted); }
+.tag { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+
+/* plain lists: accent dash bullets, numbered ordered lists */
+.slide ul:not([class]), .slide ol:not([class]) { list-style: none; padding: 0; display: grid; gap: 26px; max-width: 1400px; }
+.slide ul:not([class]) > li, .slide ol:not([class]) > li { position: relative; padding-left: 60px; }
+.slide ul:not([class]) > li::before { content: ""; position: absolute; left: 0; top: 0.66em; width: 30px; height: 4px; border-radius: 2px; background: var(--accent); }
+.slide ol:not([class]) { counter-reset: n; }
+.slide ol:not([class]) > li { counter-increment: n; }
+.slide ol:not([class]) > li::before { content: counter(n); position: absolute; left: 0; top: 0.2em; font: 800 0.8em/1 var(--font-display); color: var(--accent); }
+.slide li > ul:not([class]) { margin-top: 18px; gap: 14px; font-size: var(--fs-small); color: var(--muted); }
+.slide li > ul:not([class]) > li::before { width: 16px; background: var(--muted); }
+
+/* media: <figure class="media"> holding an img / video / svg / canvas, or a .placeholder to replace */
+.media { position: relative; min-width: 0; min-height: 0; overflow: hidden; border-radius: var(--radius); }
+.media > :is(img, video, svg, canvas) { display: block; width: 100%; height: 100%; object-fit: cover; }
+.media.contain > :is(img, video) { object-fit: contain; }
+.media > figcaption { position: absolute; left: 24px; bottom: 20px; font-size: var(--fs-micro); color: #fff; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); }
+.placeholder {
+  width: 100%; height: 100%; min-height: 240px; display: grid; place-items: center; padding: 32px; text-align: center;
+  color: var(--muted); font: 600 var(--fs-small)/1.3 var(--font-body); border: 2px dashed var(--line); border-radius: inherit;
+  background: repeating-linear-gradient(135deg, var(--surface) 0 22px, color-mix(in srgb, var(--surface) 82%, var(--line)) 22px 44px);
+}
+.logo { position: absolute; top: var(--pad-y); left: var(--pad-x); height: 64px; width: auto; }
+
+/* chrome: footer added by the runtime (deck name · page number), off on title/section/statement/image/closing */
+.chrome {
+  position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 40px; display: flex; justify-content: space-between;
+  font: 500 var(--fs-micro)/1 var(--font-body); color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+}
+.notes { display: none; }
+
+/* ============================================================ LAYOUTS  (<section class="slide" data-layout="…">) */
+
+/* content layouts: title at the top (same height on every slide), main block centered in the space left */
+:is([data-layout="bullets"], [data-layout="cards"], [data-layout="columns"], [data-layout="timeline"], [data-layout="comparison"]) { display: flex; flex-direction: column; }
+[data-layout="bullets"] > :is(ul, ol), .slide > :is(.cards, .columns, .timeline, .compare) { margin-block: auto; }
+
+/* title — cover */
+[data-layout="title"] { align-content: end; gap: 36px; }
+[data-layout="title"]::before { content: ""; position: absolute; left: var(--pad-x); top: var(--pad-y); width: 120px; height: 12px; border-radius: 6px; background: var(--accent); }
+[data-layout="title"]:has(> .logo)::before { display: none; }
+[data-layout="title"] h1 { font-size: var(--fs-hero); max-width: 1500px; }
+[data-layout="title"] .lead { max-width: 1250px; }
+.meta { display: flex; flex-wrap: wrap; gap: 16px 56px; margin-top: 20px; padding-top: 36px; border-top: 2px solid var(--line); font-size: var(--fs-small); color: var(--muted); }
+.meta strong { color: var(--ink); font-weight: 600; }
+
+/* agenda — numbered chapters, two columns past 5 items, li.is-current highlights where we are */
+[data-layout="agenda"] { align-content: start; }
+.agenda { list-style: none; padding: 0; margin-top: 24px; counter-reset: ag; display: grid; grid-auto-flow: column; grid-template-rows: repeat(var(--rows, 5), auto); column-gap: 96px; align-content: start; }
+.agenda > li { counter-increment: ag; display: grid; grid-template-columns: 100px minmax(0, 1fr); align-items: baseline; padding: 28px 0; border-top: 2px solid var(--line); font: 650 var(--fs-h3)/1.2 var(--font-display); letter-spacing: -0.015em; }
+.agenda > li::before { content: counter(ag, decimal-leading-zero); font: 700 var(--fs-small)/1 var(--font-body); color: var(--accent); }
+.agenda > li small { grid-column: 2; display: block; margin-top: 10px; font: 400 var(--fs-small)/1.35 var(--font-body); color: var(--muted); letter-spacing: 0; }
+.agenda:has(> .is-current) > li:not(.is-current) { color: var(--muted); }
+.agenda > li.is-current { border-top-color: var(--accent); }
+
+/* section — chapter divider (pairs well with data-bg="accent") */
+[data-layout="section"] { align-content: center; gap: 28px; }
+[data-layout="section"] .num { font: 800 240px/0.85 var(--font-display); letter-spacing: -0.05em; color: var(--accent); }
+[data-layout="section"] h2 { font-size: var(--fs-h1); line-height: 1.02; }
+
+/* statement — one sentence, nothing else */
+[data-layout="statement"] { align-content: center; }
+.statement { font: 750 112px/1.06 var(--font-display); letter-spacing: -0.04em; text-wrap: balance; max-width: 1560px; }
+
+/* bullets — title + list */
+[data-layout="bullets"] { align-content: start; }
+
+/* split / split-reverse — text + media side by side; --left / --right change the ratio, .media.bleed goes edge to edge */
+[data-layout^="split"] { grid-template-columns: minmax(0, var(--left, 1fr)) minmax(0, var(--right, 1fr)); grid-template-rows: minmax(0, 1fr); align-content: stretch; align-items: center; column-gap: 96px; }
+[data-layout^="split"] > .text { display: grid; gap: 32px; align-content: center; }
+[data-layout^="split"] > .text :is(ul, ol) { font-size: var(--fs-small); gap: 20px; }
+[data-layout^="split"] > .media { align-self: stretch; }
+[data-layout="split"] > .media.bleed { margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) calc(-1 * var(--pad-y)) 0; border-radius: 0; }
+[data-layout="split-reverse"] > .media { order: -1; }
+[data-layout="split-reverse"] > .media.bleed { margin: calc(-1 * var(--pad-y)) 0 calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)); border-radius: 0; }
+
+/* cards / columns — 2 to 4 equal blocks (boxed / open) */
+.cards, .columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 32px; }
+.card { display: grid; gap: 20px; align-content: start; padding: 48px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.col { display: grid; gap: 20px; align-content: start; padding-top: 36px; border-top: 4px solid var(--accent); }
+:is(.card, .col) p { font-size: var(--fs-small); line-height: 1.45; color: var(--muted); }
+:is(.card, .col) :is(ul, ol) { font-size: var(--fs-small); gap: 14px; }
+.card.is-highlight { border: 3px solid var(--accent); }
+.columns { gap: 64px; }
+
+/* big-number — one figure that carries the slide */
+[data-layout="big-number"] { align-content: center; grid-template-columns: auto minmax(0, 1fr); column-gap: 96px; row-gap: 48px; align-items: end; }
+[data-layout="big-number"] > .kicker { grid-column: 1 / -1; }
+.stat { font: 800 320px/0.8 var(--font-display); letter-spacing: -0.06em; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat small { font-size: 0.42em; letter-spacing: -0.03em; }
+[data-layout="big-number"] > .text { display: grid; gap: 24px; max-width: 880px; padding-bottom: 8px; }
+
+/* kpis — a row of 2 to 4 metrics */
+[data-layout="kpis"] { align-content: center; }
+.kpis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin-top: 48px; }
+.kpi { display: grid; gap: 16px; align-content: start; padding: 8px 48px; border-left: 2px solid var(--line); }
+.kpi:first-child { padding-left: 0; border-left: 0; }
+.kpi .value { font: 800 104px/0.92 var(--font-display); letter-spacing: -0.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kpi .value small { font-size: 0.45em; letter-spacing: -0.01em; }
+.kpi .label { font-size: var(--fs-small); line-height: 1.35; color: var(--muted); }
+.delta { font: 700 var(--fs-small)/1 var(--font-body); }
+.delta.up::before { content: "▲ "; } .delta.down::before { content: "▼ "; }
+.delta.good { color: var(--good); } .delta.bad { color: var(--bad); }
+
+/* chart — CSS bar chart (or any inline SVG in .chart) + a takeaway; one bar .is-highlight carries the message */
+[data-layout="chart"] { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: 96px; align-content: start; }
+[data-layout="chart"] > :is(.kicker, h2, .lead) { grid-column: 1 / -1; }
+[data-layout="chart"]:not(:has(> .text)) > .chart { grid-column: 1 / -1; }
+[data-layout="chart"] > .text { display: grid; gap: 24px; align-content: center; }
+.chart { min-width: 0; display: grid; gap: 24px; align-content: center; }
+.bars { list-style: none; padding: 0; margin: 0; display: grid; gap: 26px; }
+.bars > li { display: grid; grid-template-columns: 240px minmax(0, 1fr) 130px; align-items: center; gap: 28px; font-size: var(--fs-small); }
+.bars .bar { height: 46px; width: calc(var(--v, 0) * 100%); border-radius: 0 10px 10px 0; background: color-mix(in srgb, var(--muted) 42%, transparent); }
+.bars > li.is-highlight { font-weight: 700; }
+.bars > li.is-highlight .bar { background: var(--accent); }
+.bars b { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* timeline — 3 to 6 milestones; li.is-done / li.is-current */
+[data-layout="timeline"] { align-content: start; }
+.timeline { list-style: none; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.timeline > li { position: relative; display: grid; gap: 14px; align-content: start; padding: 56px 40px 0 0; border-top: 3px solid var(--line); }
+.timeline > li::before { content: ""; position: absolute; left: 0; top: -12.5px; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); border: 3px solid var(--muted); }
+.timeline > li.is-done::before { background: var(--accent); border-color: var(--accent); }
+.timeline > li.is-done { border-top-color: var(--accent); }
+.timeline > li.is-current::before { background: var(--bg); border: 6px solid var(--accent); box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 22%, transparent); }
+.timeline time { font: 700 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.timeline p { font-size: var(--fs-small); line-height: 1.4; color: var(--muted); }
+
+/* comparison — two sides and a divider; .side.is-highlight is the one we argue for */
+[data-layout="comparison"] { align-content: start; }
+.compare { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 40px; align-items: stretch; }
+.side { display: grid; gap: 28px; align-content: start; padding: 48px 56px; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); }
+.side.is-highlight { border-color: var(--accent); }
+.side :is(ul, ol) { font-size: var(--fs-small); gap: 18px; }
+.side:not(.is-highlight) ul > li::before { background: var(--muted); }
+.vs { align-self: center; display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; border: 2px solid var(--line); font: 800 var(--fs-micro)/1 var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+/* code — a listing (+ optional explanation); spans .c .k .s .n color tokens, <mark> highlights a line */
+[data-layout="code"] { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); column-gap: 72px; align-content: start; }
+[data-layout="code"] > :is(.kicker, h2, .lead) { grid-column: 1 / -1; }
+[data-layout="code"]:not(:has(> .text)) > pre { grid-column: 1 / -1; }
+[data-layout="code"] > .text { display: grid; gap: 24px; align-content: center; }
+[data-layout="code"] > .text :is(ul, ol) { font-size: var(--fs-small); gap: 18px; }
+.slide pre { margin: 0; min-width: 0; padding: 44px 56px; overflow: hidden; white-space: pre; tab-size: 2; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); font: 400 28px/1.6 var(--font-mono); color: var(--ink); }
+pre .c { color: var(--muted); font-style: italic; } pre .k { color: var(--accent); font-weight: 600; } pre .s { color: var(--good); } pre .n { color: var(--bad); }
+pre mark { display: inline-block; width: calc(100% + 112px); margin: 0 -56px; padding: 0 56px; color: inherit; background: color-mix(in srgb, var(--accent) 16%, transparent); }
+
+/* quote — a testimonial or a citation */
+[data-layout="quote"] { align-content: center; gap: 48px; }
+.slide blockquote { font: 600 70px/1.2 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; max-width: 1560px; }
+.slide blockquote::before { content: "“"; display: block; height: 96px; font: 800 220px/1 var(--font-display); color: var(--accent); }
+.cite { font-size: var(--fs-small); color: var(--muted); }
+.cite strong { color: var(--ink); font-weight: 650; }
+
+/* image — full-bleed picture with a caption on a scrim */
+[data-layout="image"] { align-content: end; gap: 24px; --ink: #ffffff; --muted: rgba(255, 255, 255, 0.8); color: var(--ink); }
+[data-layout="image"] > .media { position: absolute; inset: 0; border-radius: 0; }
+[data-layout="image"] > .media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.2) 55%, transparent 80%); pointer-events: none; }
+[data-layout="image"] > .media .placeholder { border: 0; border-radius: 0; place-items: start center; padding-top: 30%; }
+[data-layout="image"] > :not(.media, .chrome) { position: relative; max-width: 1300px; }
+[data-layout="image"] .kicker { color: #fff; }
+
+/* closing — thanks, call to action, contacts */
+[data-layout="closing"] { align-content: center; gap: 40px; }
+[data-layout="closing"] h1 { font-size: var(--fs-hero); }
+.slide .cta { justify-self: start; display: inline-block; padding: 24px 44px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: 700 var(--fs-small)/1 var(--font-body); text-decoration: none; }
+.contact { display: flex; flex-wrap: wrap; gap: 16px 64px; margin-top: 24px; font-size: var(--fs-small); color: var(--muted); }
+.contact strong { display: block; color: var(--ink); font-weight: 600; }
+
+/* blank — free canvas: position things yourself (stay inside the safe area) */
+[data-layout="blank"] { display: block; }
+
+/* ============================================================ RUNTIME MODES (set by the script below) */
+/* present: one slide at a time, fitted to the window */
+.is-present, .is-present body { height: 100%; overflow: hidden; background: color-mix(in srgb, var(--bg) 80%, #000); }
+.is-present .deck { position: fixed; left: 50%; top: 50%; width: var(--slide-w); height: var(--slide-h); transform: translate(-50%, -50%) scale(var(--fit, 1)); }
+.is-present .slide { position: absolute; inset: 0; visibility: hidden; }
+.is-present .slide.is-active { visibility: visible; }
+.is-present .slide.is-active > :not(.chrome, .notes, .step, .media) { animation: enter 0.7s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms + 60ms); }
+.is-present .slide.is-active > .media { animation: fade 0.9s var(--ease) both; }
+.is-present .step { opacity: 0; transform: translateY(18px); transition: opacity 0.45s var(--ease), transform 0.45s var(--ease); }
+.is-present .step.is-shown { opacity: 1; transform: none; }
+@keyframes enter { from { opacity: 0; transform: translateY(26px); } }
+@keyframes fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .is-present .slide * { animation: none !important; transition: none !important; } }
+.progress { position: fixed; left: 0; top: 0; height: 4px; width: calc(var(--progress, 0) * 100%); background: var(--accent-solid); z-index: 5; transition: width 0.3s var(--ease); }
+.notes-panel { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; max-height: 38vh; overflow: auto; padding: 20px 28px; background: rgba(10, 10, 14, 0.92); color: #eee; font: 400 18px/1.5 var(--font-body); }
+.notes-panel b { color: #fff; }
+.show-notes .notes-panel { display: block; }
+
+/* export (?export, print, slides.mjs): every slide stacked, one page each, everything revealed */
+.is-export .deck { width: var(--slide-w); }
+.is-export .slide { break-after: page; }
+.is-export .slide:last-child { break-after: auto; }
+@page { size: 1920px 1080px; margin: 0; }
+
+/* overview (O key, slides.mjs --sheet): thumbnails grid */
+html.is-overview, html.is-overview body { height: auto; overflow: auto; }
+html.is-overview .deck { position: static; transform: none; width: auto; height: auto; display: grid; grid-template-columns: repeat(auto-fill, calc(var(--slide-w) * var(--ov-zoom, 0.2))); justify-content: center; gap: 28px; padding: 36px; }
+html.is-overview .slide { position: relative; inset: auto; visibility: visible; zoom: var(--ov-zoom, 0.2); outline: 6px solid transparent; cursor: pointer; break-after: auto; }
+html.is-overview .slide.is-active { outline-color: var(--accent-solid); }
+html.is-overview .slide::after { content: attr(data-index); position: absolute; right: 24px; top: 20px; z-index: 9; padding: 10px 22px; border-radius: 999px; background: rgba(0, 0, 0, 0.72); color: #fff; font: 700 56px/1 var(--font-body); }
+html.is-overview .slide * { animation: none !important; }
+html.is-overview .step { opacity: 1; transform: none; }
+html.is-overview .progress { display: none; }
+</style>
+</head>
+<body>
+<main class="deck">
+
+<!-- slide:title -->
+<section class="slide" data-layout="title">
+  <p class="kicker">Engineering offsite · 2026</p>
+  <h1>Smaller pull requests, faster flow</h1>
+  <p class="lead">What six months of PR-sized slices did to our lead time.</p>
+  <div class="meta"><span><strong>Platform team</strong></span><span>October 2026</span></div>
+  <aside class="notes">Open with the question: who reviewed a 2,000-line PR this month?</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:agenda -->
+<section class="slide" data-layout="agenda">
+  <p class="kicker">Agenda</p>
+  <h2>Four parts, thirty minutes</h2>
+  <ol class="agenda">
+    <li>Why it matters<small>The cost of large changes</small></li>
+    <li>What we changed<small>Slices, habits, tooling</small></li>
+    <li>Results<small>Six months of data</small></li>
+    <li>Next steps<small>What we ask of you</small></li>
+  </ol>
+  <aside class="notes">Mark the current chapter with class="is-current" when you reuse this slide.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:section -->
+<section class="slide" data-layout="section" data-bg="accent">
+  <p class="num">01</p>
+  <h2>Why it matters</h2>
+  <p class="lead">Size is the first predictor of review quality.</p>
+  <aside class="notes">Chapter divider: pause, breathe, one sentence.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:statement -->
+<section class="slide" data-layout="statement">
+  <p class="statement">Big pull requests don’t get reviewed. They get <mark>approved</mark>.</p>
+  <aside class="notes">Let it land. Say nothing for two seconds.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:bullets -->
+<section class="slide" data-layout="bullets">
+  <p class="kicker">The problem</p>
+  <h2>Large pull requests hide risk in plain sight</h2>
+  <ul>
+    <li class="step">Reviewers skim past line 400</li>
+    <li class="step">Conflicts pile up while the branch lives</li>
+    <li class="step">One revert undoes a week of work</li>
+    <li class="step">Nobody can tell what is safe to ship</li>
+  </ul>
+  <aside class="notes">Each bullet appears on its own press (class="step").</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:split -->
+<section class="slide" data-layout="split">
+  <div class="text">
+    <p class="kicker">What we changed</p>
+    <h2>Every plan is cut into PR-sized slices</h2>
+    <p class="muted">A slice ships one behavior, end to end, behind a flag if needed.</p>
+    <ul>
+      <li>Under 400 changed lines</li>
+      <li>Reviewable in one sitting</li>
+      <li>Revertible on its own</li>
+    </ul>
+  </div>
+  <figure class="media bleed"><div class="placeholder">Diagram: plan → slices</div></figure>
+  <aside class="notes">Replace the placeholder with an img or an inline SVG.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:split-reverse -->
+<section class="slide" data-layout="split-reverse">
+  <div class="text">
+    <p class="kicker">Review</p>
+    <h2>Reviews start within the hour</h2>
+    <p class="muted">Small diffs get picked up between meetings, not saved for Friday.</p>
+  </div>
+  <figure class="media"><div class="placeholder">Screenshot: review queue</div></figure>
+  <aside class="notes">Media on the left, framed inside the safe area (no .bleed).</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:cards -->
+<section class="slide" data-layout="cards">
+  <p class="kicker">Habits</p>
+  <h2>Three habits made it stick</h2>
+  <div class="cards">
+    <div class="card"><p class="tag">01</p><h3>Slice by behavior</h3><p>Each PR delivers something a user or a test can observe.</p></div>
+    <div class="card is-highlight"><p class="tag">02</p><h3>Flag, don’t branch</h3><p>Unfinished work merges dark instead of living on a branch.</p></div>
+    <div class="card"><p class="tag">03</p><h3>Review first</h3><p>Open reviews beat new work at the start of every day.</p></div>
+  </div>
+  <aside class="notes">2 to 4 cards. One .is-highlight at most.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:columns -->
+<section class="slide" data-layout="columns">
+  <p class="kicker">Roles</p>
+  <h2>What each role owns</h2>
+  <div class="columns">
+    <div class="col"><h3>Authors</h3><p>Cut the slice, write the test first, keep the description short.</p></div>
+    <div class="col"><h3>Reviewers</h3><p>Answer within the hour, block only on correctness.</p></div>
+    <div class="col"><h3>Leads</h3><p>Protect review time, watch the size trend, not individuals.</p></div>
+  </div>
+  <aside class="notes">Same as cards, without boxes: lighter, more editorial.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:big-number -->
+<section class="slide" data-layout="big-number">
+  <p class="kicker">Results</p>
+  <p class="stat">3.4<small>×</small></p>
+  <div class="text">
+    <h2>faster lead time for changes</h2>
+    <p class="muted">From first commit to production, median over the last 90 days.</p>
+    <p class="source">Source: deployment tags, April–September 2026</p>
+  </div>
+  <aside class="notes">One number. Say where it comes from.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:kpis -->
+<section class="slide" data-layout="kpis">
+  <p class="kicker">Six months later</p>
+  <h2>Every flow metric moved the right way</h2>
+  <div class="kpis">
+    <div class="kpi"><p class="value">1.8<small> d</small></p><p class="label">Lead time for changes</p><p class="delta down good">62 %</p></div>
+    <div class="kpi"><p class="value">212</p><p class="label">Median changed lines per PR</p><p class="delta down good">71 %</p></div>
+    <div class="kpi"><p class="value">47<small> min</small></p><p class="label">Time to first review</p><p class="delta down good">80 %</p></div>
+    <div class="kpi"><p class="value">4.1<small> %</small></p><p class="label">Change failure rate</p><p class="delta down good">2.3 pts</p></div>
+  </div>
+  <aside class="notes">2 to 4 metrics. .delta.up/.down for direction, .good/.bad for meaning.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:chart -->
+<section class="slide" data-layout="chart">
+  <p class="kicker">Evidence</p>
+  <h2>Review time explodes past 1,000 lines</h2>
+  <div class="chart">
+    <ul class="bars">
+      <li style="--v: 0.07"><span>&lt; 100 lines</span><span class="bar"></span><b>0.6 h</b></li>
+      <li style="--v: 0.17"><span>100–400</span><span class="bar"></span><b>1.4 h</b></li>
+      <li style="--v: 0.43"><span>400–1,000</span><span class="bar"></span><b>3.5 h</b></li>
+      <li class="is-highlight" style="--v: 1"><span>&gt; 1,000</span><span class="bar"></span><b>8.2 h</b></li>
+    </ul>
+    <p class="source">Median time from review request to approval, 1,240 PRs</p>
+  </div>
+  <div class="text">
+    <h3>Doubling the size more than doubles the wait</h3>
+    <p class="muted small">Past 1,000 lines, reviews wait for a free afternoon.</p>
+  </div>
+  <aside class="notes">--v is the bar length from 0 to 1 (value ÷ max). Highlight the bar that makes the point.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:timeline -->
+<section class="slide" data-layout="timeline">
+  <p class="kicker">Rollout</p>
+  <h2>How we rolled it out</h2>
+  <ol class="timeline">
+    <li class="is-done"><time>April</time><h3>Pilot</h3><p>One team, size check in warning mode.</p></li>
+    <li class="is-done"><time>June</time><h3>Habits</h3><p>Review-first mornings, flags by default.</p></li>
+    <li class="is-current"><time>September</time><h3>Everyone</h3><p>The size check blocks above 1,000 lines.</p></li>
+    <li><time>2027</time><h3>Next</h3><p>Slices planned before the first commit.</p></li>
+  </ol>
+  <aside class="notes">3 to 6 milestones: .is-done, then one .is-current.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:comparison -->
+<section class="slide" data-layout="comparison">
+  <p class="kicker">Before / after</p>
+  <h2>Same team, same scope, another rhythm</h2>
+  <div class="compare">
+    <div class="side">
+      <p class="tag">Before</p>
+      <ul><li>One PR per feature</li><li>Review after two days</li><li>Merge on Friday, fix on Monday</li></ul>
+    </div>
+    <div class="vs">vs</div>
+    <div class="side is-highlight">
+      <p class="tag">After</p>
+      <ul><li>Four to six slices per feature</li><li>Review within the hour</li><li>Ship any day, revert one slice</li></ul>
+    </div>
+  </div>
+  <aside class="notes">The highlighted side is the one you argue for.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:code -->
+<section class="slide" data-layout="code">
+  <p class="kicker">Tooling</p>
+  <h2>A size check in a dozen lines</h2>
+<pre><code><span class="c">// fail the check when a PR outgrows a slice</span>
+<span class="k">const</span> size = pr.additions + pr.deletions;
+<span class="k">const</span> limit = <span class="n">1000</span>;
+
+<mark><span class="k">if</span> (size &gt; limit) {</mark>
+  fail(<span class="s">`${size} lines: split it`</span>);
+}</code></pre>
+  <div class="text">
+    <ul>
+      <li>Runs on every push</li>
+      <li>Warns first, blocks later</li>
+      <li>Generated files excluded</li>
+    </ul>
+  </div>
+  <aside class="notes">Keep listings under ~14 lines. Spans: .c comment, .k keyword, .s string, .n number; mark = highlighted line.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:quote -->
+<section class="slide" data-layout="quote">
+  <blockquote>We stopped arguing about big pull requests. There aren’t any left to argue about.</blockquote>
+  <p class="cite"><strong>Staff engineer</strong> · Payments team</p>
+  <aside class="notes">A real quote, attributed. Under 25 words.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:image -->
+<section class="slide" data-layout="image">
+  <figure class="media"><div class="placeholder">Full-bleed photo</div></figure>
+  <p class="kicker">Next steps</p>
+  <h2>Ship small. Ship often.</h2>
+  <aside class="notes">Use a real image: &lt;img src="assets/photo.jpg" alt="…"&gt; inside .media.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:closing -->
+<section class="slide" data-layout="closing">
+  <h1>Thank you</h1>
+  <p class="lead">Questions, ideas and war stories are welcome.</p>
+  <a class="cta" href="#">Read the playbook</a>
+  <div class="contact"><span><strong>Channel</strong>#platform-team</span><span><strong>Docs</strong>docs/playbook.md</span></div>
+  <aside class="notes">Leave this slide up during questions.</aside>
+</section>
+<!-- /slide -->
+
+<!-- slide:blank -->
+<section class="slide" data-layout="blank">
+  <aside class="notes">Free canvas: absolute positioning, SVG, canvas. Keep text inside the safe area.</aside>
+</section>
+<!-- /slide -->
+
+</main>
+<script>
+/* Deck runtime — present (default), ?export (all slides stacked: print / PDF / PNG) and overview modes.
+   Keys: → ↓ Space PageDown next · ← ↑ PageUp previous · Home End · O overview · F fullscreen · N notes · 12⏎ go to slide 12 */
+(() => {
+  const root = document.documentElement;
+  const deck = document.querySelector('.deck');
+  const slides = [...deck.querySelectorAll(':scope > .slide')];
+  const q = new URLSearchParams(location.search);
+  const NO_CHROME = ['title', 'section', 'statement', 'image', 'closing'];
+  const footer = root.dataset.footer || document.title;
+
+  slides.forEach((s, i) => {
+    s.dataset.index = i + 1;
+    [...s.children].forEach((c, k) => c.style.setProperty('--i', k));
+    const chrome = s.dataset.chrome || (NO_CHROME.includes(s.dataset.layout) ? 'off' : 'on');
+    if (chrome !== 'off' && !s.querySelector(':scope > .chrome')) {
+      const f = document.createElement('footer');
+      f.className = 'chrome';
+      f.append(Object.assign(document.createElement('span'), { textContent: footer }),
+               Object.assign(document.createElement('span'), { textContent: `${i + 1} / ${slides.length}` }));
+      s.append(f);
+    }
+    s.querySelectorAll('.agenda').forEach((a) => { const n = a.children.length; a.style.setProperty('--rows', n > 5 ? Math.ceil(n / 2) : n); });
+  });
+
+  if (q.has('export')) {
+    root.classList.add('is-export');
+    if (q.has('overview')) root.classList.add('is-overview');
+    return;
+  }
+
+  root.classList.add('is-present');
+  const W = parseFloat(getComputedStyle(root).getPropertyValue('--slide-w')) || 1920;
+  const H = parseFloat(getComputedStyle(root).getPropertyValue('--slide-h')) || 1080;
+  const progress = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'progress' }));
+  const panel = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'notes-panel' }));
+  const steps = (s) => [...s.querySelectorAll('.step')];
+  let cur = 0, step = 0, typed = '';
+
+  const fit = () => deck.style.setProperty('--fit', Math.min(innerWidth / W, innerHeight / H));
+  function show(i, st = 0) {
+    cur = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle('is-active', k === cur));
+    const ss = steps(slides[cur]);
+    step = st < 0 ? ss.length : Math.min(st, ss.length);
+    ss.forEach((e, k) => e.classList.toggle('is-shown', k < step));
+    progress.style.setProperty('--progress', slides.length > 1 ? cur / (slides.length - 1) : 1);
+    const next = slides[cur + 1]?.querySelector('h1, h2, .statement, blockquote')?.textContent.trim();
+    panel.innerHTML = `<b>${cur + 1} / ${slides.length}</b> — ${slides[cur].querySelector('.notes')?.innerHTML || '<i>no notes</i>'}${next ? `<br><b>Next:</b> ${next.replace(/[<&]/g, (c) => c === '<' ? '&lt;' : '&amp;')}` : ''}`;
+    if (location.hash !== `#/${cur + 1}`) history.replaceState(null, '', `#/${cur + 1}`);
+  }
+  const next = () => { const n = steps(slides[cur]).length; step < n ? show(cur, step + 1) : show(cur + 1); };
+  const prev = () => { step > 0 ? show(cur, step - 1) : cur > 0 && show(cur - 1, -1); };
+  const fromHash = () => { const m = location.hash.match(/^#\/(\d+)/); return m ? Number(m[1]) - 1 : 0; };
+  const overview = (on = !root.classList.contains('is-overview')) => {
+    root.classList.toggle('is-overview', on);
+    if (on) slides[cur].scrollIntoView({ block: 'center' });
+  };
+
+  addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, textarea, [contenteditable]')) return;
+    const k = e.key;
+    if (/^\d$/.test(k)) { typed += k; return; }
+    if (k === 'Enter' && typed) { show(Number(typed) - 1); typed = ''; overview(false); return; }
+    typed = '';
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) next();
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) prev();
+    else if (k === 'Home') show(0);
+    else if (k === 'End') show(slides.length - 1, -1);
+    else if (k === 'o' || k === 'O') overview();
+    else if (k === 'Escape') overview(false);
+    else if (k === 'f' || k === 'F') document.fullscreenElement ? document.exitFullscreen() : root.requestFullscreen?.();
+    else if (k === 'n' || k === 'N') root.classList.toggle('show-notes');
+    else return;
+    e.preventDefault();
+  });
+  deck.addEventListener('click', (e) => {
+    if (root.classList.contains('is-overview')) {
+      const s = e.target.closest('.slide');
+      if (s) { show(slides.indexOf(s)); overview(false); }
+      return;
+    }
+    if (e.target.closest('a, button, input, video, [data-no-advance]')) return;
+    e.clientX < innerWidth / 3 ? prev() : next();
+  });
+  let x0 = null;
+  addEventListener('pointerdown', (e) => { x0 = e.pointerType === 'touch' ? e.clientX : null; });
+  addEventListener('pointerup', (e) => { if (x0 !== null && Math.abs(e.clientX - x0) > 60) (e.clientX < x0 ? next : prev)(); x0 = null; });
+  addEventListener('resize', fit);
+  addEventListener('hashchange', () => show(fromHash()));
+  addEventListener('beforeprint', () => { root.classList.remove('is-present'); root.classList.add('is-export'); });
+  addEventListener('afterprint', () => { root.classList.remove('is-export'); root.classList.add('is-present'); fit(); });
+  fit();
+  show(fromHash());
+})();
+</script>
+</body>
+</html>
