@@ -4,6 +4,7 @@
 //   node kaizen.mjs status [--json]              where the repo stands in the loop, and the next command
 //   node kaizen.mjs root                         deliverable paths (JSON)
 //   node kaizen.mjs models [--json] [--agent a]  model of each agent per profile and config
+//   node kaizen.mjs tools [--json] | tools pick <intent> [--json]   MCP servers and CLIs, tool for an intent
 //   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   project SDLC maturity
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
 //                                                 deployment through the team's commands, deploy/<env>/… tag
@@ -57,6 +58,7 @@ import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { audit, scaffold } from './audit.mjs';
+import { INTENTS, inventory, pick as pickTool } from './tools.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
@@ -810,6 +812,34 @@ try {
           die(err.message);
         }
       } else die('usage: monitor check|watch|patrol [--env e] [--plan p] [--minutes 15] [--interval 60] | alert [--env e] [--file f] | incident open|resolve|list');
+      break;
+    }
+    case 'tools': {
+      const root = requireRepo();
+      const inv = inventory(root);
+      if (sub === 'pick') {
+        const intent = positional[2];
+        const res = intent && pickTool(intent, inv);
+        if (!res) die(`usage: tools pick <${Object.keys(INTENTS).join('|')}>`);
+        if (flags.json) out(res);
+        else {
+          out(`${res.intent} — ${res.question}`);
+          out(`  → ${res.pick.tool}${res.pick.via ? ` (${res.pick.via})` : ''}: ${res.pick.how}`);
+          for (const a of res.alternatives) out(`    or ${a.tool}${a.via ? ` (${a.via})` : ''}: ${a.how}`);
+          if (res.missing.length) out(`    not available: ${res.missing.join(', ')}`);
+        }
+      } else if (sub === 'intents') {
+        out(Object.fromEntries(Object.entries(INTENTS).map(([k, v]) => [k, v.question])));
+      } else if (sub) die('usage: tools [--json] | tools intents | tools pick <intent> [--json]');
+      else if (flags.json) out(inv);
+      else {
+        out(`MCP servers (${inv.servers.length})`);
+        for (const s of inv.servers) out(`  ${s.status === 'enabled' ? '✔' : '·'} ${s.name.padEnd(18)} ${s.category.padEnd(13)} ${s.scope}${s.status === 'enabled' ? '' : ` — ${s.status}`}`);
+        out(`CLIs: ${Object.entries(inv.clis).map(([k, v]) => `${v ? '✔' : '✘'} ${k}`).join('  ')}`);
+        out(`Playwright test suite in the repo: ${inv.playwright_test ? 'yes' : 'no'}`);
+        for (const w of inv.warnings) out(`  ⚠ ${w}`);
+        out(`Not seen here: ${inv.not_seen}`);
+      }
       break;
     }
     case 'config':

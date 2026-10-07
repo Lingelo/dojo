@@ -62,6 +62,19 @@ The model of each role and agent for the current profile and configuration, with
 value and warnings for invalid entries. `--agent kaizen:security-reviewer` prints just that model.
 See [Agents and models](../concepts/agents-and-models.md#the-model-policy).
 
+### `tools [--json]` · `tools intents` · `tools pick <intent> [--json]`
+
+Backend of [`/kaizen:tools`](../guides/tools.md). `tools`: the MCP servers declared for the repo —
+Kaizen's own (`.mcp.json` of the plugin), project (`.mcp.json`, status from `enabledMcpjsonServers` /
+`disabledMcpjsonServers` / `enableAllProjectMcpServers` in `.claude/settings*.json` and `~/.claude.json`),
+local and user scopes (`~/.claude.json`, or `$CLAUDE_CONFIG_DIR/.claude.json`) — each with
+`{ name, scope, status, transport, category, command|url, pinned }`; the CLIs on the PATH; whether the
+repo has a Playwright test suite; `warnings` (unpinned package or image, project server waiting for
+approval, same name in several scopes). Environment values, headers and URL credentials are never
+printed. `intents`: the fixed vocabulary. `pick`: `{ intent, question, pick, alternatives, missing,
+fallback }` — ordered preferences, the first available wins, `ask` when none is (exit 2 on an unknown
+intent). Rules: [`references/tool-choice.md`](../../references/tool-choice.md).
+
 ## Checks
 
 ### `verify [--only test,lint,…|audit] [--json]`

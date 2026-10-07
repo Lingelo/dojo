@@ -69,6 +69,7 @@ autopilot: from request to ready PR, autonomously
 | A ready plan, or a small precise change | `/kaizen:work [plan]` | test first, one commit per unit, gate, review |
 | A bug with an unknown cause | `/kaizen:debug <symptom>` | reproduction, causal chain, test-first fix |
 | Visual touch-ups to an interface | `/kaizen:polish` | dev server, feedback applied live |
+| Which tool for a step (browser, GitHub, tracker, logs, database, design), which MCP servers are available | `/kaizen:tools [intent or situation]` | the tool picked from what is installed, how to use it, what to do if missing |
 | Get code reviewed (branch or PR) | `/kaizen:review [PR number]` | reviewers chosen by the diff; records the review required at push |
 | Open the PR | `/kaizen:ship` | checks, size, description from the plan |
 | Review comments on the PR | `/kaizen:address-feedback` | verdict, fix pushed, reply, thread resolved |

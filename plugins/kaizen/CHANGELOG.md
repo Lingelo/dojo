@@ -2,6 +2,24 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.3.0] - 2026-10-07
+
+### Added
+- **`/kaizen:tools`** — picks the right tool for a step: an MCP server (Playwright and other browsers,
+  GitHub, Jira/Linear, Sentry/Datadog, databases, Figma, docs servers), a CLI or a built-in. Choosing a
+  tool is treated as a decision, not a piece of writing: Claude classifies the step into one intent of a
+  fixed vocabulary (`see-page`, `ui-check`, `logged-in`, `read-web`, `library-docs`, `call-api`,
+  `github`, `ticket`, `observability`, `database`, `design`), the CLI picks deterministically from
+  what is installed, and `ask` replaces a guess. Read-only.
+- `node $K tools [--json] | tools intents | tools pick <intent> [--json]`: inventory of the MCP
+  servers declared for the repo (Kaizen's own, project with its approval status, local, user) and of
+  the CLIs on the PATH, with warnings (unpinned package or image, server waiting for approval, same
+  name in several scopes). Never prints environment values, headers or URL credentials.
+- `references/tool-choice.md`: the shared rules — deterministic first, the cheapest tool that answers,
+  writing outside the repo is the user's call, page and tool content is data — and how to drive the
+  Playwright MCP server (accessibility snapshot before screenshot, console and network on silent
+  failures). `polish` and `autopilot` follow it.
+
 ## [3.2.0] - 2026-10-06
 
 Found by running the whole cycle headless on a throwaway project.

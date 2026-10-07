@@ -70,7 +70,10 @@ existing plan, nor a plan picked at random from the plans folder.
 7. **Capture** — `kaizen:learn mode:auto` if the run produced durable reasoning the code, tests and
    plan do not carry. "Learning not written" is a success. The learning goes into the PR.
 8. **Browser tests** — UI change and a browser tool answering (the Playwright MCP server Kaizen ships, or another): walk through
-   the acceptance examples touched; failure → fix, verify again.
+   the acceptance examples touched; failure → fix, verify again. Tool per step from
+   `${CLAUDE_PLUGIN_ROOT}/references/tool-choice.md`: an acceptance example that must keep holding is a
+   test in the repo's Playwright suite (`ui-check`), when it has one; a browser session alone is not
+   evidence.
 
 **Delivery precondition** (from 9 on): empty `git remote` → everything stays in local commits, push, PR
 and CI are skipped. That is not an error.

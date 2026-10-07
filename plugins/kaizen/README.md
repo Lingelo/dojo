@@ -61,7 +61,7 @@ Prerequisites: Node ≥ 18 and git; `gh` for PRs. No npm dependency. In a repo:
 /kaizen:constitution
 ```
 
-## The commands (23 skills)
+## The commands (24 skills)
 
 Lost? **`/kaizen:help`** explains Kaizen, looks at where your repo stands and tells you which command to
 run next.
@@ -117,6 +117,7 @@ run next.
 |---|---|
 | `/kaizen:autopilot` | Autonomous: plan or debug → work → simplification → review with fixes → learn → ship → watch-pr. Stops at "looks ready". Never deploys. |
 | `/kaizen:setup` | Configuration, stack detection, discoverability from `CLAUDE.md`, pack creation (`pack:<name>`), health check (`check`), SDLC maturity audit and scaffolding (`audit`). |
+| `/kaizen:tools` | Picks the right tool for a step (Playwright or another MCP server, a CLI, a built-in) from what the repo and session really have: one intent of a fixed vocabulary, deterministic pick (`node $K tools pick`), how to use it, what to do when it is missing. Flags unpinned or unapproved servers. Read-only. |
 | `/kaizen:help` | Explains Kaizen and recommends the command to run for your situation and the state of the repo (`node $K status`). Read-only. |
 
 ## What guarantees quality
@@ -251,6 +252,7 @@ node $K detect                                 # stack and verification commands
 node $K audit [--json] [--no-github]           # SDLC maturity in five areas
 node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]
 node $K models [--json] [--agent a]            # model of each agent per profile and config
+node $K tools [--json] | tools intents | tools pick <intent> [--json]   # MCP servers and CLIs, tool for a step
 
 # Principles, plans, learnings
 node $K constitution [check] [--json]          # CONSTITUTION.md articles / validation
@@ -332,5 +334,5 @@ node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, co
 
 - **Commits**: conventional format (`<type>(<JIRA>): …`, Jira key read from the branch).
 - **Secrets**: never in reports (`<REDACTED>`).
-- **Browser**: Kaizen ships the Playwright MCP server (`.mcp.json`, pinned version, started with `npx`); `polish`, `work` and `autopilot` use it to see and verify the UI.
+- **Browser**: Kaizen ships the Playwright MCP server (`.mcp.json`, pinned version, started with `npx`); `polish`, `work` and `autopilot` use it to see and verify the UI. Which tool for which step (browser, GitHub, tracker, observability, database, design, docs): [`references/tool-choice.md`](references/tool-choice.md), `/kaizen:tools`.
 - **Secrets**: scanned by Kaizen itself before every commit (`secret-gate.mjs`), no other plugin needed.

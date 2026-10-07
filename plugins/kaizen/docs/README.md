@@ -92,6 +92,7 @@ In-depth pages: what each mechanism does exactly, with its rules, limits and dia
 **Orchestrate**
 - [autopilot](guides/autopilot.md) — chain everything autonomously
 - [setup](guides/setup.md) — install and check Kaizen in a repo
+- [tools](guides/tools.md) — pick the right tool (MCP server, CLI) for a step
 - [help](guides/help.md) — know which command to run now
 
 ## Conventions of these pages
