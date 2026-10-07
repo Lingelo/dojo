@@ -1,0 +1,45 @@
+name: slide-studio
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/slide-studio/**'
+      - '.github/workflows/slide-studio.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'plugins/slide-studio/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: tests (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [18, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Dependency folder
+        run: echo "SLIDE_STUDIO_HOME=$RUNNER_TEMP/slide-studio" >> "$GITHUB_ENV"
+      - name: Script syntax
+        run: for f in plugins/slide-studio/scripts/*.mjs; do node --check "$f"; done
+      - name: Chromium system libraries (Linux)
+        if: runner.os == 'Linux'
+        run: sudo npx -y playwright-core@1.56 install-deps chromium
+      - name: Dependencies (the plugin's own setup, as on a user machine)
+        run: node plugins/slide-studio/scripts/setup.mjs
+      - name: Template, CLI, check and export tests (browser tests must run, not skip)
+        run: |
+          node --test plugins/slide-studio/tests/*.test.mjs | tee test.log
+          grep -q '^# skipped 0' test.log
