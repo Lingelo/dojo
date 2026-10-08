@@ -99,6 +99,12 @@
 <text class="label" x="956" y="275" text-anchor="middle">✔ healthy</text>
 <text class="sub" x="956" y="290" text-anchor="middle">nothing to do</text>
 <path class="line ok" d="M814,273.4 L848,278" marker-end="url(#h-ok)"/>
+<rect class="plain" x="320" y="250" width="230" height="78" rx="8" stroke-width="1.5"/>
+<text class="label" x="435" y="272" text-anchor="middle">◌ blind signal</text>
+<text class="sub" x="435" y="287" text-anchor="middle">metric command fails or prints</text>
+<text class="sub" x="435" y="301" text-anchor="middle" style="font-size:11.2px">no number: tool broken, not proven</text>
+<text class="sub" x="435" y="315" text-anchor="middle">down · no rollback, no incident</text>
+<path class="line dashed" d="M584,289 L550,289" marker-end="url(#h-default)"/>
 <rect class="artifact" x="584" y="370" width="230" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="699" y="395" text-anchor="middle" style="font-size:12.9px">incident/&lt;env&gt;/&lt;detected&gt;</text>
 <text class="sub" x="699" y="410" text-anchor="middle">opened at detection</text>
