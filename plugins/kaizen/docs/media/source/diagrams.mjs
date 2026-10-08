@@ -549,6 +549,8 @@ written.push(
     d.arrow(['tag.b', [956, 230], [699, 230], 'watch.t'], { tone: 'accent' });
     d.box('ok', 848, 250, 216, 56, 'plain', '✔ healthy', 'nothing to do');
     d.arrow(['watch.r@0.3', 'ok.l'], { tone: 'ok' });
+    d.box('blind', 320, 250, 230, 78, 'plain', '◌ blind signal', 'metric command fails or prints\nno number: tool broken, not proven\ndown · no rollback, no incident');
+    d.arrow(['watch.l@0.5', 'blind.r@0.5'], { dashed: true });
     d.box('inc', 584, 370, 230, 56, 'artifact', 'incident/<env>/<detected>', 'opened at detection');
     d.box('rb', 320, 370, 230, 76, 'skill', 'deploy rollback <env>', 'no approval needed · automatic\nif deploy.auto_rollback · target =\nprevious successful deploy');
     d.box('rbtag', 36, 370, 250, 56, 'artifact', 'rollback/<env>/<stamp>', 'resolves the incident');
@@ -568,7 +570,7 @@ written.push(
 // 9. Incident lifecycle
 // ---------------------------------------------------------------------------------------------------
 written.push(
-  diagram('incident-lifecycle', 1100, 520, 'Incidents: detection, resolution, learning', 'An incident is a dated git tag, so time to restore and postmortem timelines are measured, not remembered.', (d) => {
+  diagram('incident-lifecycle', 1100, 560, 'Incidents: detection, resolution, learning', 'An incident is a dated git tag, so time to restore and postmortem timelines are measured, not remembered.', (d) => {
     const src = [
       ['w', 'monitor watch', 'after a deployment'],
       ['p', 'monitor patrol --env e', 'scheduled: routine, cron, CI'],
@@ -590,8 +592,8 @@ written.push(
     ];
     use.forEach(([id, l, s], i) => d.box(id, 376 + i * 228, 360, 212, 96, 'skill', l, s));
     d.arrow(['inc.b', [495, 330]], { tone: 'blue' });
-    d.text(36, 426, 'Alert time wins over reception time.\n--env wins over the alert’s env label.\nA resolution older than the detection\nis moved to the detection time.', 'small');
-    d.legend(36, 506, LEGEND.filter(([k]) => k === 'skill' || k === 'artifact'));
+    d.text(36, 426, 'Alert time wins over reception time.\n--env wins over the alert’s env label.\nA resolution older than the detection\nis moved to the detection time.\nA blind signal (broken metric command)\nopens none; an unreachable health-check does.', 'small');
+    d.legend(36, 546, LEGEND.filter(([k]) => k === 'skill' || k === 'artifact'));
   }),
 );
 
