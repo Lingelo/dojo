@@ -1,6 +1,6 @@
 # Dojo
 
-A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen) and motion design as code (Motion Studio).
+A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen), motion design as code (Motion Studio) and presentation decks as HTML (Slide Studio).
 
 ## Available plugins
 
@@ -8,6 +8,7 @@ A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen) and mot
 |---|---|---|
 | [**kaizen**](plugins/kaizen/README.md) | AI-assisted SDLC (adapted from Compound Engineering): engineering constitution enforced as checks, brainstorm → plan (traceability, threats, rollback, PR-sized slices) → doc-review → work (quality gate) → multi-agent review → ship → watch-pr, UI polish, learnings/ADRs/postmortems read back every cycle, DORA metrics and cycle cost, release; review enforced by a hook before any push, watched deployment with rollback (`/kaizen:deploy`, `/kaizen:monitor`), lean/standard/full profiles, `/kaizen:help` to find your way | 23 skills, 21 agents, hooks (incl. secret scan before commit), CLI, Playwright MCP |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design as code: HTML/CSS/SVG/Canvas → MP4/WebM/GIF frame by frame, synced sound, voice-over and subtitles (Playwright + ffmpeg) | Skill, scripts |
+| [**slide-studio**](plugins/slide-studio/README.md) | Presentation decks as one HTML file: 19 layouts, 3 themes (`ink`, `paper`, `kaizen`) + brand tokens, presenter mode (steps, notes, overview), every slide audited in headless Chromium (overflow, collisions, contrast, density), export to PDF/PNG/contact sheet | Skill, scripts |
 
 Everything is in English. Claude still answers in the language you write in.
 
@@ -41,6 +42,7 @@ Or interactively:
 ```bash
 /plugin install motion-studio@dojo
 /plugin install kaizen@dojo
+/plugin install slide-studio@dojo
 ```
 
 ## Team configuration
@@ -59,7 +61,8 @@ Add to your project's `.claude/settings.json` to configure every team member aut
   },
   "enabledPlugins": {
     "kaizen@dojo": true,
-    "motion-studio@dojo": true
+    "motion-studio@dojo": true,
+    "slide-studio@dojo": true
   }
 }
 ```
@@ -113,17 +116,27 @@ Storyboard → HTML/CSS/SVG/Canvas composition → control stills → frame-by-f
 clock, motion blur, supersampling) with synced sound effects, music, voice-over and subtitles.
 Dependencies (Playwright, Chromium, ffmpeg) installed automatically on first use.
 
+### Slide Studio
+```bash
+/slides 10-minute talk for the team offsite on our move to smaller pull requests, paper theme
+```
+Brief → storyline (one assertion title per slide, a layout per message) → deck scaffolded from the
+themed template → every slide audited at its real size (`slides.mjs check`) → contact sheet, PNGs and PDF.
+The HTML file presents itself in any browser (← / →, `O` overview, `N` notes, `F` fullscreen).
+Writing a deck needs nothing; Playwright and Chromium are installed automatically for check and export.
+
 ## Structure
 
 ```
 dojo/
 ├── .claude-plugin/
 │   └── marketplace.json      # Marketplace registry
-├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows)
+├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows; slide-studio.yml: same for Slide Studio)
 ├── docs/                     # This repo's own brainstorms, plans and learnings
 ├── plugins/
 │   ├── kaizen/               # AI-assisted SDLC: skills, agents, hooks, zero-dependency CLI
-│   └── motion-studio/        # Motion design videos from HTML (Playwright + ffmpeg)
+│   ├── motion-studio/        # Motion design videos from HTML (Playwright + ffmpeg)
+│   └── slide-studio/         # Presentation decks as one HTML file, audited and exported (Playwright)
 ├── CLAUDE.md
 └── README.md
 ```
@@ -136,7 +149,8 @@ dojo/
 4. Register it in `.claude-plugin/marketplace.json`
 5. Add a `README.md` documenting your plugin, in English
 
-Kaizen has a test suite: `node --test plugins/kaizen/tests/*.test.mjs`.
+Test suites: `node --test plugins/kaizen/tests/*.test.mjs` (Kaizen) and
+`node --test plugins/slide-studio/tests/*.test.mjs` (Slide Studio).
 
 ## License
 
