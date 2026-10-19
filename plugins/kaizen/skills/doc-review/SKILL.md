@@ -65,6 +65,9 @@ rules, the settled decisions (annotated Key Decisions, "decided in session" KTDs
   decision through `AskUserQuestion`, with the quoted passage, the consequence, and your
   recommendation first; apply the answer. In `mode:auto`: leave them in the return.
 
+Once no decision is left open (or the user has accepted those that remain), `node "$K" plan reviewed
+<path>`: the plan check stops warning "plan never reviewed" until the body changes again.
+
 ## 6. Report
 
 In the user's language:

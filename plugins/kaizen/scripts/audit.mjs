@@ -12,6 +12,8 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statS
 import { dirname, join } from 'node:path';
 import { loadConstitution, validateConstitution } from './constitution.mjs';
 import { detectDeploy } from './deploydetect.mjs';
+import { pluginDeclared, gitHooksState } from './doctor.mjs';
+import { declarePlugin, installGitHooks } from './githooks.mjs';
 import { defaultBranch, ghCommand, git, loadConfig, verifyCommands } from './lib.mjs';
 
 const read = (root, p) => {
@@ -162,6 +164,12 @@ export function audit(root, { github = true } = {}) {
   const c = loadConstitution(root);
   const valid = c ? validateConstitution(c).errors.length === 0 : false;
   add('constitution', 'Kaizen loop', 'Engineering constitution', c ? (valid ? 'ok' : 'warn') : 'missing', c ? `v${c.meta.version} — ${c.articles.length} article(s)${valid ? '' : ', invalid'}` : 'no CONSTITUTION.md', { how: '/kaizen:constitution', skill: '/kaizen:constitution' }, 2);
+  if (initialized) {
+    const decl = pluginDeclared(root);
+    add('claude_settings', 'Kaizen loop', 'Plugin declared for every clone', decl.declared ? 'ok' : 'missing', decl.declared ? '.claude/settings.json enables kaizen@dojo' : decl.why, { how: 'declare the dojo marketplace and kaizen@dojo in the versioned .claude/settings.json', scaffold: 'claude_settings' }, 2);
+    const hooks = gitHooksState(root);
+    add('git_hooks', 'Kaizen loop', 'Git hooks (review and secrets without the plugin)', hooks.wired ? 'ok' : hooks.present.length ? 'warn' : 'missing', hooks.wired ? '.githooks/ wired' : hooks.present.length ? '.githooks/ present, core.hooksPath unset' : 'none: without the plugin, nothing refuses an unreviewed push', { how: 'git hooks that refuse an unreviewed push and a staged secret', scaffold: 'git_hooks' }, 3);
+  }
   const findable = /learnings/.test(read(root, 'CLAUDE.md') || '');
   add('learnings', 'Kaizen loop', 'Learnings findable by agents', findable ? 'ok' : 'warn', findable ? 'CLAUDE.md cites docs/learnings/' : 'CLAUDE.md does not mention learnings', { how: '/kaizen:setup (findability step)', skill: '/kaizen:setup' }, 3);
 
@@ -387,7 +395,11 @@ export function scaffold(root, id, { owner, env, ref } = {}) {
       appendFileSync(join(root, '.gitignore'), `${gi && !gi.endsWith('\n') ? '\n' : ''}# Local secrets (added by Kaizen, audit fix gitignore_env)\n.env\n.env.*\n!.env.example\n`);
       return { written: '.gitignore' };
     }
+    case 'git_hooks':
+      return installGitHooks(root);
+    case 'claude_settings':
+      return declarePlugin(root);
     default:
-      throw new Error(`no scaffold for "${id}" (scaffolds: ci, pr_template, dependabot, codeowners, gitignore_env, secret_scanning, monitor_patrol, monitor_alert)`);
+      throw new Error(`no scaffold for "${id}" (scaffolds: ci, pr_template, dependabot, codeowners, gitignore_env, secret_scanning, monitor_patrol, monitor_alert, git_hooks, claude_settings)`);
   }
 }

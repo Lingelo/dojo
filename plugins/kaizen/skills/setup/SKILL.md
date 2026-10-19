@@ -12,9 +12,12 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 
 Prerequisites: Node ≥ 18 and a git repository. Otherwise, say what is missing and stop.
 
+Every mode starts with `node "$K" doctor --in-skill` (conventions, "Guard rails"); its findings are part
+of what setup fixes.
+
 ## `check` — health check only (no writes)
 
-`node "$K" root`, `node "$K" config`, `node "$K" detect`, `node "$K" learnings validate`,
+`node "$K" doctor`, `node "$K" root`, `node "$K" config`, `node "$K" detect`, `node "$K" learnings validate`,
 `node "$K" packs`, `node "$K" constitution check`, `node "$K" gate status`, `node "$K" review status`,
 `node "$K" models` (warnings) → report: ✔/⚠ per point, with the proposed fix.
 A gate left active without work in progress (`gate status` active) → propose `gate off`.
@@ -80,6 +83,16 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    notes, have the user choose, then `node "$K" deploy configure <id>`. Nothing recognized → ask for
    the commands, never invent them. Complete the signals (error rate, latency: a command printing a
    number). `production` is protected by default. Check with `node "$K" monitor check --env <env>`.
+9b. **Guard rails without the plugin** — Kaizen's gates are Claude Code hooks: in a clone or a cloud
+   session where the plugin is not loaded, nothing refuses anything. Offer, one question each:
+   - **declare the plugin** (Recommended when `doctor` says it is not): `node "$K" audit fix
+     claude_settings` merges the dojo marketplace and `kaizen@dojo` into the versioned
+     `.claude/settings.json` — show the diff, it stays uncommitted;
+   - **git hooks** (opt-in: they change the git configuration): `node "$K" audit fix git_hooks`
+     writes `.githooks/pre-push` (no push of an unreviewed branch) and `.githooks/pre-commit` (no
+     staged secret) and sets `core.hooksPath`. They refuse when the Kaizen CLI cannot be found — say so.
+     Hooks already in use (husky, `.git/hooks`) → nothing is shadowed: relay the `chain` lines. Each
+     clone wires them once with `git config core.hooksPath .githooks` (`doctor` reminds it).
 10. **Profile** — ask (one question), chosen by the **stakes of the repo**, never by the team's
    experience with Kaizen: **lean** (prototype, spike, internal tool: minimal ceremony, gates kept) ·
    **standard** (a product in production) · **full** (regulated or critical domains: payment, health,

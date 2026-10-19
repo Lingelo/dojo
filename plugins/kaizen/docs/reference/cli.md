@@ -29,6 +29,16 @@ its stage and `plan check` errors, number of learnings, gate state, deploy envir
 commits, open incidents and resolved ones without a postmortem, review state and push decision, and the
 ordered `next` list ([decision order](../concepts/the-loop.md#knowing-where-you-are)).
 
+### `doctor [--in-skill] [--json] [--strict]`
+
+Are the guard rails on? Checks, each with the command that fixes it: `.kaizen/config.json` present;
+the versioned `.claude/settings.json` declares the `dojo` marketplace and enables `kaizen@dojo` (else a
+fresh clone or a cloud session runs without Kaizen); Claude Code hooks firing (heartbeat written by the
+SessionStart hook — absent means "not verified" from a terminal, "off" with `--in-skill`, which the
+entry skills pass); git hooks in `.githooks/` wired through `core.hooksPath`; verification commands
+detected; the branch's review state, and whether its upstream was pushed without a review. Exit 0, or 1
+with `--strict` when anything needs attention.
+
 ### `root`
 
 JSON of the deliverable paths: `repo`, `docs_root`, `plans`, `learnings`, `ideation`, `debug`,
@@ -63,6 +73,13 @@ value and warnings for invalid entries. `--agent kaizen:security-reviewer` print
 See [Agents and models](../concepts/agents-and-models.md#the-model-policy).
 
 ## Checks
+
+### `perf [--json]`
+
+Runs `perf.command` (see [configuration](../configuration.md#perf--the-performance-budget)), reads its
+`name=value` lines and holds each metric to its threshold. `--json`:
+`{ status: pass|fail|blind, metrics: { name: { value, threshold, ok } }, detail, seconds }`. Exit 0 pass,
+1 over budget, 2 blind (crash, timeout, a metric not printed, or no `perf.command`).
 
 ### `verify [--only test,lint,…|audit] [--json]`
 
@@ -105,6 +122,18 @@ if taken) and prints the path. Type and topic are slugified (accents removed, 60
 
 `latest`: the most recently modified plan (exit 1 if none). `list`: JSON of every plan with `path`,
 `title`, `stage` (`requirements` | `implementation-ready`) and `updated`.
+
+### `plan amend <path> --add-req "…" [--covered-by U<n>]… --by "…" --reason "…"` · `plan amend <path> --replace-req R<n> "…" --by "…" --reason "…"`
+
+Changes a plan's scope without a hand edit. IDs are append-only: `--add-req` writes the next free
+requirement at the end of the requirements and appends it to each `--covered-by` unit's **Covers:**;
+`--replace-req` rewrites the text and keeps the ID. The amendment is recorded in the frontmatter
+(`amended:` — `"<date> | <by> | <R id> | <reason>"`). The result is checked like `plan check`: an
+amendment that adds an error (an uncovered requirement, an unknown unit) writes nothing.
+
+### `plan reviewed <path>`
+
+Writes `reviewed: "<date> <hash>"` (SHA-256 prefix of the body). Run by `/kaizen:doc-review`.
 
 ### `plan check <path> [--json]`
 
@@ -150,11 +179,15 @@ Reserves `<docs_root>/postmortems/YYYY-MM-DD-<title>.md` (`-2`, `-3`… if taken
 
 ## Review
 
-### `review record --verdict ready|concerns|blocked [--run <folder>]`
+### `review record --verdict ready|concerns|blocked [--run <folder>] [--allow-missing a,b]`
 
 Records the reviewed tree of the current branch. Refused without evidence of a reviewer since the
 previous review, except a light review (branch ≤ 20 lines) or an update after fixes (≤
-`review.max_unreviewed_lines` since the reviewed tree). Prints the entry: branch, head, tree, verdict,
+`review.max_unreviewed_lines` since the reviewed tree). Refused too when a reviewer launched for this
+run on this branch (logged by the PreToolUse hook on Agent, with its `Slice:` and `Run:` lines) left no
+`<name>[-<slice>].json` holding a `findings` array in the run folder its prompt named. `--allow-missing`
+does not record: it prints a code the user types (`kaizen waive <code>`), and the review is then
+recorded with `gaps`. Prints the entry: branch, head, tree, verdict,
 depth (`agents` | `light` | `update`), reviewers, models, run, at. `reserves` is accepted for
 `concerns`.
 
@@ -163,10 +196,11 @@ depth (`agents` | `light` | `update`), reviewers, models, run, at. `reserves` is
 Creates a pending waiver for the branch and prints `{ code, expires_in_minutes: 30, instruction }`. Only
 your message `kaizen waive <code>` confirms it.
 
-### `review status` · `review check`
+### `review status` · `review check [--branch <name> --sha <sha>]`
 
 `status`: the recorded review, a pending waiver, and the push decision. `check`: the push decision
-alone, exit 1 when a push would be refused. See
+alone, exit 1 when a push would be refused; `--branch`/`--sha` check a given commit of a branch instead
+of `HEAD` (what the git pre-push hook passes). See
 [the decision at push time](../concepts/gates-and-hooks.md#the-decision-at-push-time).
 
 ### `run-dir <type>`

@@ -213,3 +213,84 @@ test('files left untracked during the review are not counted as changed at push 
   assert.equal(prePush(dir).status, 2, 'committed lines beyond the ceiling still block');
   cleanup(dir);
 });
+
+// --- Launched reviewers must leave their output (R8, R9) ---------------------------------------------
+
+const launch = (dir, name, run, extra = '') =>
+  hook('launch', dir, { tool_name: 'Agent', tool_input: { subagent_type: `kaizen:${name}-reviewer`, prompt: `<review-context>\nReviewer: ${name}\nRun: ${run}\n${extra}</review-context>` } });
+
+const newRun = (dir) => cli(dir, ['run-dir', 'reviews']).stdout.trim();
+const ok = { reviewer: 'x', findings: [] };
+
+test('a launched reviewer without output blocks the record, named; the gap needs the user (AE6)', () => {
+  const dir = bigBranch();
+  const run = newRun(dir);
+  for (const n of ['correctness', 'testing', 'security', 'performance']) {
+    launch(dir, n, run);
+    if (n !== 'security') {
+      runReviewer(dir, `kaizen:${n}-reviewer`);
+      writeFiles(dir, { [`${run}/${n}.json`]: ok });
+    }
+  }
+  let r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]);
+  assert.equal(r.code, 2);
+  assert.match(r.stderr, /without a valid output in .*: security/);
+  const other = newRun(dir);
+  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', other]).stderr, /security/, 'another --run folder hides nothing');
+  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready']).stderr, /security/, 'nor does omitting --run');
+  r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run, '--allow-missing', 'security']);
+  assert.equal(r.code, 0);
+  assert.equal(r.json.pending, true, 'only a code: the agent cannot accept the gap');
+  assert.equal(prePush(dir).status, 2);
+  const c = hook('confirm', dir, { prompt: `kaizen waive ${r.json.code}` });
+  assert.match(c.stdout, /gap accepted by the user \(security without output\)/);
+  const rec = cli(dir, ['review', 'status']).json.review;
+  assert.deepEqual(rec.gaps, ['security']);
+  assert.equal(rec.verdict, 'ready');
+  assert.equal(prePush(dir).status, 0);
+  cleanup(dir);
+});
+
+test('an output without the findings array does not count', () => {
+  const dir = bigBranch();
+  const run = newRun(dir);
+  launch(dir, 'correctness', run);
+  runReviewer(dir, 'kaizen:correctness-reviewer');
+  writeFiles(dir, { [`${run}/correctness.json`]: 'Rate limit reached, try later' });
+  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).stderr, /correctness/);
+  writeFiles(dir, { [`${run}/correctness.json`]: ok });
+  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).code, 0);
+  cleanup(dir);
+});
+
+test('a split review needs every slice output (AE9)', () => {
+  const dir = bigBranch();
+  const run = newRun(dir);
+  launch(dir, 'correctness', run, 'Slice: S1\n');
+  launch(dir, 'correctness', run, 'Slice: S2\n');
+  runReviewer(dir, 'kaizen:correctness-reviewer');
+  writeFiles(dir, { [`${run}/correctness-S1.json`]: ok });
+  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).stderr, /: correctness-S2 —/);
+  writeFiles(dir, { [`${run}/correctness-S2.json`]: ok });
+  const r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]);
+  assert.equal(r.code, 0, r.stderr);
+  cleanup(dir);
+});
+
+test('launches of another branch, or outside a review run, do not block a record', () => {
+  const dir = bigBranch();
+  gitc(dir, ['checkout', '-qb', 'feat/other']);
+  launch(dir, 'security', newRun(dir));
+  gitc(dir, ['checkout', '-q', 'feat/big']);
+  hook('launch', dir, { tool_name: 'Agent', tool_input: { subagent_type: 'kaizen:testing-reviewer', prompt: 'ad hoc' } });
+  runReviewer(dir, 'kaizen:correctness-reviewer');
+  const r = cli(dir, ['review', 'record', '--verdict', 'ready']);
+  assert.equal(r.code, 0, r.stderr);
+  cleanup(dir);
+});
+
+test('the launch log is protected and only fed by the hook', () => {
+  const dir = bigBranch();
+  assert.equal(preTool(dir, 'Bash', { command: 'echo [] > .kaizen/state/review-launches.json' }).status, 2);
+  cleanup(dir);
+});

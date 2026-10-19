@@ -18,7 +18,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { changedLines, defaultBranch, diffBase, git, loadConfig, worktreeTree } from './lib.mjs';
 
 export const VERDICTS = ['ready', 'concerns', 'blocked'];
@@ -28,7 +28,7 @@ export const LIGHT_MAX_LINES = 20;
 const EVIDENCE_MAX_AGE_MS = 12 * 3600 * 1000;
 const WAIVER_MAX_AGE_MS = 30 * 60 * 1000;
 // State files only the CLI and the hooks write (the PreToolUse hook refuses direct writes).
-export const PROTECTED_STATE = ['reviews.json', 'review-evidence.json', 'waivers.json'];
+export const PROTECTED_STATE = ['reviews.json', 'review-evidence.json', 'waivers.json', 'hooks-seen.json', 'review-launches.json'];
 
 function stateDir(root) {
   const dir = join(root, '.kaizen', 'state');
@@ -55,9 +55,21 @@ export function currentBranch(root) {
   return b && b !== 'HEAD' ? b : null;
 }
 
-function branchLines(root, config) {
-  const base = diffBase(root);
-  return base ? changedLines(root, base, 'HEAD', config.pr.ignore) ?? 0 : 0;
+// Merge base of `ref` with the default branch (diffBase is HEAD's).
+function baseOf(root, ref) {
+  if (ref === 'HEAD') return diffBase(root);
+  const def = defaultBranch(root);
+  if (!def) return null;
+  for (const b of [`origin/${def}`, def]) {
+    const mb = git(root, ['merge-base', ref, b], { allowFail: true });
+    if (mb) return mb;
+  }
+  return null;
+}
+
+function branchLines(root, config, ref = 'HEAD') {
+  const base = baseOf(root, ref);
+  return base ? changedLines(root, base, ref, config.pr.ignore) ?? 0 : 0;
 }
 
 function snapshot(root, branch) {
@@ -87,6 +99,48 @@ export function addEvidence(root, { reviewer, session = null, model = null }) {
   writeJson(root, 'review-evidence.json', list);
 }
 
+// Launches (PreToolUse on Agent): a reviewer that dies (rate limit, error) never reaches PostToolUse,
+// so only the launch log knows it was expected. Its prompt may name a slice ("Slice: S2") and the run
+// folder ("Run: <dir>").
+export function addLaunch(root, toolInput = {}, { session = null } = {}) {
+  const reviewer = reviewerOf(toolInput);
+  if (!reviewer) return null;
+  const prompt = String(toolInput.prompt || '');
+  const slice = /^\s*Slice\s*:\s*(S\d+)\b/m.exec(prompt)?.[1] || null;
+  const run = /^\s*Run\s*:\s*(\S+)/m.exec(prompt)?.[1] || null;
+  const now = Date.now();
+  const list = readJson(root, 'review-launches.json', []).filter((e) => now - Date.parse(e.at) < EVIDENCE_MAX_AGE_MS);
+  const entry = { reviewer, slice, run, branch: currentBranch(root), session, at: new Date(now).toISOString() };
+  list.push(entry);
+  writeJson(root, 'review-launches.json', list);
+  return entry;
+}
+
+const outputName = (l) => `${l.reviewer.replace(/-reviewer$/, '')}${l.slice ? `-${l.slice}` : ''}`;
+
+// Reviewers launched by /kaizen:review on `branch` since `since` with no valid output in the run folder
+// their own prompt named (`<run>/<name>[-<slice>].json` holding the contract's `findings` array) —
+// never a folder the caller picks. Launches without a `Run:` line (an ad-hoc reviewer outside a review)
+// are not part of a run.
+export function missingOutputs(root, branch, since) {
+  const from = Math.max(since ? Date.parse(since) : 0, Date.now() - EVIDENCE_MAX_AGE_MS);
+  const launches = readJson(root, 'review-launches.json', []).filter((l) => l.run && l.branch === branch && Date.parse(l.at) > from);
+  const missing = new Set();
+  for (const l of launches) {
+    const name = outputName(l);
+    const dir = resolve(root, l.run);
+    const ok = [`${name}.json`, `${l.reviewer}${l.slice ? `-${l.slice}` : ''}.json`].some((f) => {
+      try {
+        return Array.isArray(JSON.parse(readFileSync(join(dir, f), 'utf8')).findings);
+      } catch {
+        return false;
+      }
+    });
+    if (!ok) missing.add(name);
+  }
+  return { launched: launches.length, runs: [...new Set(launches.map((l) => l.run))], missing: [...missing].sort() };
+}
+
 function evidenceSince(root, since) {
   const from = Math.max(since ? Date.parse(since) : 0, Date.now() - EVIDENCE_MAX_AGE_MS);
   return readJson(root, 'review-evidence.json', []).filter((e) => Date.parse(e.at) > from);
@@ -94,7 +148,7 @@ function evidenceSince(root, since) {
 
 // --- Recording a review ----------------------------------------------------------------------------
 
-export function recordReview(root, { verdict, run = null } = {}) {
+export function recordReview(root, { verdict, run = null, allowMissing = [] } = {}) {
   verdict = VERDICT_ALIASES[verdict] || verdict;
   const branch = currentBranch(root);
   if (!branch) throw new Error('detached HEAD: a review is recorded on a branch');
@@ -102,6 +156,16 @@ export function recordReview(root, { verdict, run = null } = {}) {
   const config = loadConfig(root);
   const state = readJson(root, 'reviews.json', {});
   const previous = state[branch];
+  // Every reviewer launched for this branch since its last record left its output — or the user accepts
+  // the gap.
+  const { runs, missing: gaps } = missingOutputs(root, branch, previous?.at);
+  const unaccepted = gaps.filter((m) => !allowMissing.includes(m));
+  if (unaccepted.length) {
+    throw new Error(
+      `launched reviewer(s) without a valid output in ${runs.join(', ')}: ${unaccepted.join(', ')} — resume or relaunch them ` +
+        '(their JSON saved as <name>[-<slice>].json in that run folder); if the user accepts the gap: --allow-missing <names>',
+    );
+  }
   const evidence = evidenceSince(root, previous?.at);
   const reviewers = [...new Set(evidence.map((e) => e.reviewer))].sort();
   // Model actually requested for each reviewer (`model` parameter of the Agent call, otherwise the one
@@ -126,6 +190,8 @@ export function recordReview(root, { verdict, run = null } = {}) {
     );
   }
   const entry = { ...snapshot(root, branch), verdict, depth: reviewers.length ? 'agents' : 'light', reviewers, models, run, at: new Date().toISOString() };
+  // A gap is the user's call, never the agent's: it goes through the same typed code as a waiver.
+  if (gaps.length) return requestWaiver(root, { reason: `review recorded without ${gaps.join(', ')}`, gap: { ...entry, gaps } });
   state[branch] = entry;
   writeJson(root, 'reviews.json', state);
   return entry;
@@ -133,14 +199,14 @@ export function recordReview(root, { verdict, run = null } = {}) {
 
 // --- Waiver: requested by the agent, confirmed by the user ----------------------------------------
 
-export function requestWaiver(root, { reason }) {
+export function requestWaiver(root, { reason, gap = null }) {
   const branch = currentBranch(root);
   if (!branch) throw new Error('detached HEAD: a waiver applies to a branch');
   if (!reason) throw new Error('review waive requires --reason "<the user\'s request>"');
   const code = randomBytes(4).toString('hex').slice(0, 6).toUpperCase();
   const now = Date.now();
   const pending = readJson(root, 'waivers.json', []).filter((w) => now - Date.parse(w.at) < WAIVER_MAX_AGE_MS && w.branch !== branch);
-  pending.push({ code, reason, ...snapshot(root, branch), at: new Date(now).toISOString() });
+  pending.push({ code, reason, ...snapshot(root, branch), ...(gap ? { kind: 'gap', review: gap } : {}), at: new Date(now).toISOString() });
   writeJson(root, 'waivers.json', pending);
   return {
     pending: true,
@@ -158,7 +224,7 @@ export function confirmWaiver(root, code, { session = null } = {}) {
   const w = pending.find((x) => x.code === String(code).toUpperCase() && now - Date.parse(x.at) < WAIVER_MAX_AGE_MS);
   if (!w) return null;
   const state = readJson(root, 'reviews.json', {});
-  const entry = {
+  const entry = w.kind === 'gap' ? { ...w.review, confirmed_by: 'user (message)', session, at: new Date(now).toISOString() } : {
     branch: w.branch,
     head: w.head,
     tree: w.tree,
@@ -175,16 +241,24 @@ export function confirmWaiver(root, code, { session = null } = {}) {
   return entry;
 }
 
+// --- Heartbeat: proof that Claude Code runs Kaizen's hooks here -----------------------------------
+
+export function recordHeartbeat(root, { session = null, source = null } = {}) {
+  writeJson(root, 'hooks-seen.json', { at: new Date().toISOString(), session, source });
+}
+
 // --- Decision at push time ---------------------------------------------------------------------------
 
-// Decides whether the branch's current state may be pushed. Always { allowed, reason, ... }.
-export function checkPush(root, config = loadConfig(root)) {
+// Decides whether a branch state may be pushed: the current branch at HEAD by default, or the
+// `branch` and commit `sha` a git pre-push hook received. Always { allowed, reason, ... }.
+export function checkPush(root, config = loadConfig(root), { branch = null, sha = null } = {}) {
   if (config.review.require_before_push === false) return { allowed: true, reason: 'review.require_before_push disabled' };
-  const branch = currentBranch(root);
+  branch = branch || currentBranch(root);
+  const ref = sha || 'HEAD';
   if (!branch) return { allowed: true, reason: 'detached HEAD' };
   if (branch === defaultBranch(root)) return { allowed: true, reason: 'default branch (guarded by the git plugin)' };
-  if (!diffBase(root)) return { allowed: true, reason: 'base not found' };
-  const lines = branchLines(root, config);
+  if (!baseOf(root, ref)) return { allowed: true, reason: 'base not found' };
+  const lines = branchLines(root, config, ref);
   if (!lines) return { allowed: true, reason: 'no code change on the branch' };
 
   const max = Number(config.review.max_unreviewed_lines ?? 80);
@@ -192,7 +266,7 @@ export function checkPush(root, config = loadConfig(root)) {
   if (!rec) return { allowed: false, branch, reason: 'no review recorded for this branch', branch_lines: lines };
   // Only what is pushed counts: a file the review read while untracked (a plan, a constitution) and HEAD never
   // contained shows up as a full deletion between the reviewed tree and HEAD — it is not part of the push.
-  const since = changedLines(root, rec.tree, 'HEAD', config.pr.ignore, { onlyIn: 'HEAD' });
+  const since = changedLines(root, rec.tree, ref, config.pr.ignore, { onlyIn: ref });
   if (since === null) return { allowed: false, branch, reason: 'the reviewed tree cannot be found (history rewritten?)', review: rec };
   if (rec.verdict === 'blocked' && since === 0) {
     return { allowed: false, branch, reason: 'the last review returned ⛔ and nothing changed since', review: rec, unreviewed_lines: 0 };
@@ -202,6 +276,18 @@ export function checkPush(root, config = loadConfig(root)) {
   }
   const reason = rec.verdict === 'waived' ? `review waived by the user: ${rec.reason}` : `review ${rec.verdict} (${rec.depth === 'light' ? 'light' : rec.reviewers.join(', ')})`;
   return { allowed: true, branch, reason, review: rec, unreviewed_lines: since };
+}
+
+// The refusal both push gates print (Claude Code hook and git pre-push hook).
+export function pushRefusal(res, K) {
+  return (
+    `[kaizen] Push refused on ${res.branch}: ${res.reason}.\n` +
+    'A review is mandatory before any push (Kaizen cycle constitution).\n' +
+    `- Run /kaizen:review (it records the reviewed state via \`node "${K}" review record\`), apply the P0/P1 fixes, then push.\n` +
+    `- If the user explicitly asked to skip it: \`node "${K}" review waive --reason "<their request>"\`, ` +
+    'then ask them to type the displayed confirmation message themselves (kaizen waive <code>); you cannot confirm it for them.\n' +
+    'Do not bypass this gate any other way, and do not disable it without an explicit request.\n'
+  );
 }
 
 export function reviewStatus(root) {

@@ -36,6 +36,9 @@ source: brainstorm                    # brainstorm | plan (who wrote the product
 jira: SHOP-412                        # optional
 origin: docs/ideation/…               # optional upstream document
 deepened: 2026-10-03                  # optional, set by "plan deepen"
+reviewed: "2026-10-04 3f9a1c0b2d4e"   # set by `plan reviewed` (doc-review): date + body hash
+amended:                              # set by `plan amend`, one entry per scope change
+  - "2026-10-06 | Ana (PO) | R6 | audit: who exported what"
 ---
 ```
 
@@ -109,7 +112,8 @@ and an ADR rather than one line.
 
 One unit ≈ one commit, ordered by dependency. **Evidence** is one of *test first*, *characterization
 first* (existing code without tests) or *exception* (rename, pure config, generated files) with its
-reason and replacement check.
+reason and replacement check; a unit that changes what is seen adds *visual: <views>* (captured before
+and after).
 
 ### Slices
 
@@ -164,7 +168,10 @@ and `release notes` copies the section into the production checklist. Recognized
 Warnings (exit 0): title without the ` - Plan` suffix; `[NEEDS CLARIFICATION]` left in a requirements
 plan; `kaizen:rollout` missing, or without **Rollback**, without **Signal**, or with a signal that has
 no threshold; some units with a **Slice** and others without; a constitutional exception without a
-visible justification.
+visible justification; an implementation-ready plan never reviewed (no `reviewed:` mark), or whose body
+changed since its review (amended with `plan amend` or edited by hand); a unit whose **Files** match
+shader, style or render paths (`.glsl`, `.wgsl`, `.frag`, `.vert`, `.css`, `.scss`, `.sass`, `.less`,
+`materials/`, `shaders/`, `render/`) without `visual:` evidence or an exception.
 
 The output summarizes the stage and the counts:
 `✔ docs/plans/…-plan.md — implementation-ready · 5 R · 3 AE · 3 U · 2 slice(s)`.

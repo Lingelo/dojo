@@ -46,13 +46,13 @@ In-depth pages: what each mechanism does exactly, with its rules, limits and dia
 | [The Kaizen loop](concepts/the-loop.md) | steps, who decides what, what runs automatically, `/kaizen:help` routing, autopilot, profiles, language |
 | [Plans](concepts/plans.md) | `kaizen-plan/v1`: frontmatter, sections and markers, R/AE/KTD/U/S ids, slices, rollout, every `plan check` rule |
 | [The constitution](concepts/constitution.md) | format, parsing, validation, where it is enforced, NON-NEGOTIABLE, amendments and governance |
-| [Gates and hooks](concepts/gates-and-hooks.md) | the six hooks, the secret scan before `git commit`, the Stop-hook quality gate, the review required before `git push`, waivers, tamper protection, `verify` |
+| [Gates and hooks](concepts/gates-and-hooks.md) | the hooks, `kaizen doctor` and the git-hook fallback, the secret scan before `git commit`, the Stop-hook quality gate, the review required before `git push`, waivers, tamper protection, `verify` |
 | [The review system](concepts/review.md) | code review depth, reviewer selection, the reviewer contract, synthesis, verdicts; plan review |
 | [Pull requests](concepts/pull-requests.md) | PR description, answering feedback, the snapshot, watcher verdicts, one watch-pr cycle |
 | [Production](concepts/production.md) | release notes and SemVer, deployment and approval, platform detection, signals, watch/patrol/alert, incidents, postmortems |
 | [Learnings](concepts/learnings.md) | durability test, schema, validation, search scoring, read vs applied, pruning, packs |
 | [Metrics](concepts/metrics.md) | every DORA, loop and cycle-cost indicator and how it is computed |
-| [Agents and models](concepts/agents-and-models.md) | the 21 agents, when each runs, the model policy per profile |
+| [Agents and models](concepts/agents-and-models.md) | the 22 agents, when each runs, the model policy per profile |
 
 ## Reference
 

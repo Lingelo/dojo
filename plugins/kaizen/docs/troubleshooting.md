@@ -36,8 +36,23 @@ That is the review hook: in a Kaizen repo, a branch does not leave without a rev
 | "the last review returned ⛔" | fix the blocking findings, then rerun the review |
 | You want to push without a review (hotfix, throwaway branch) | ask Claude: it runs `node $K review waive --reason "…"` and gives you a code; type `kaizen waive <code>` yourself |
 | "no Kaizen reviewer launched" at `review record` time | the review did not launch its reviewers (or they ran more than 12 h ago in another session): rerun `/kaizen:review` |
+| "launched reviewer(s) without a valid output" at `review record` time | a reviewer died (rate limit, error) or its JSON was not saved: rerun it (the review skill resumes it once); if you accept the gap, Claude runs `--allow-missing <name>` and you type the code |
 | "the reviewed tree cannot be found (history rewritten?)" | the branch was rebased or amended after the review: rerun `/kaizen:review` |
 | You do not want this rule in this repo | `"review": { "require_before_push": false }` |
+
+## The git hooks refuse: "Kaizen CLI not found"
+
+The hooks installed by `audit fix git_hooks` look for the CLI in `git config kaizen.cli`, then
+`$KAIZEN_CLI`, then the newest `kaizen` of the `dojo` marketplace in the Claude Code plugin cache
+(`~/.claude/plugins/cache/dojo/kaizen/<version>/`, or under `$CLAUDE_CONFIG_DIR`). They never run a
+`kaizen` from another marketplace, and refuse rather than let a push through unchecked.
+
+- Enable the plugin in Claude Code (`/plugin`), or point to a checkout:
+  `git config kaizen.cli /path/to/dojo/plugins/kaizen/scripts/kaizen.mjs`.
+- To remove them: delete `.githooks/` and run `git config --unset core.hooksPath`.
+
+`kaizen doctor` says "`.githooks/` present but core.hooksPath unset": this clone has the hooks but
+does not run them — `git config core.hooksPath .githooks`.
 
 ## Deployment refused
 

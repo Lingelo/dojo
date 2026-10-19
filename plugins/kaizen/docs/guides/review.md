@@ -67,6 +67,15 @@ lost last page as **P1**.
   permission to switch branches.
 - The reviewers' raw returns are kept in `.kaizen/state/reviews/<timestamp>/`.
 
+## Large diffs and failed reviewers
+
+Above 1500 changed lines, the review is split by slice (else by unit commit range) and the slices are
+reviewed one after the other, at most 4 reviewers at a time, each with the reviewers its slice needs.
+A reviewer that fails (rate limit, error, no JSON) is resumed once, then relaunched once. The review
+cannot be recorded while a launched reviewer left no output; if you accept the gap, Claude runs
+`review record --allow-missing <name>` and you type the code it shows. Details:
+[recording a review](../concepts/gates-and-hooks.md#recording-a-review).
+
 ## See also
 
 [doc-review](doc-review.md) · [work](work.md) · [constitution](constitution.md) · [ship](ship.md)

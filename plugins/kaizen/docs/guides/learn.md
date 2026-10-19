@@ -19,7 +19,13 @@
 /kaizen:learn
 /kaizen:learn the UTF-8 BOM for Excel
 /kaizen:learn mode:auto                 # no questions (used by work, autopilot, debug)
+/kaizen:learn harvest                   # end of a long cycle: list every candidate, choose, write one at a time
 ```
+
+`harvest` reads the whole cycle (fix and revert commits, fixed review findings, plan amendments, dead
+ends in the conversation), applies the durability test to each candidate, finds the existing learnings
+to update, asks which to write, then writes them one complete run at a time — still one learning per
+document.
 
 ![How learnings are written, read back, measured and pruned](../media/diagrams/learnings-loop.svg)
 

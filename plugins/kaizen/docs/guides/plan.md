@@ -84,6 +84,12 @@ Every rule: [plans](../concepts/plans.md#everything-plan-check-verifies). Full e
   one line.
 - No trace of the process in the file ("in phase 2, I…").
 
+## Changing a ready plan
+
+A requirement added or changed after the plan is ready goes through `plan amend` (next free ID, no
+renumbering, who decided and why recorded). A unit that changes what is seen — shaders, styles,
+rendering — declares `visual: <views>` in its **Evidence**: `plan check` warns otherwise.
+
 ## See also
 
 [brainstorm](brainstorm.md) · [doc-review](doc-review.md) · [work](work.md) · [decide](decide.md)

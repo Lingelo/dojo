@@ -28,16 +28,20 @@ Every deterministic operation goes through the CLI, never through a hand-made re
 ```bash
 K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"
 node "$K" status [--json]          # where the repo stands in the loop + next command (read by help)
+node "$K" doctor --in-skill        # are the guard rails on? (entry skills, see "Guard rails")
 node "$K" models [--json] [--agent a]           # model of each agent (profile + config): pass it to the Agent tool
-node "$K" audit [--json] | audit fix <id>       # project SDLC maturity, scaffolds (ci, pr_template, dependabot, codeowners, gitignore_env, monitor_patrol, monitor_alert)
+node "$K" audit [--json] | audit fix <id>       # project SDLC maturity, scaffolds (ci, pr_template, dependabot, codeowners, gitignore_env, secret_scanning, monitor_patrol, monitor_alert, git_hooks, claude_settings)
 node "$K" deploy detect | deploy configure <id> # recognized deployment platform → config
 node "$K" root                     # paths: docs_root, plans, learnings, ideation (JSON)
 node "$K" config                   # effective configuration
 node "$K" init [--profile lean]    # creates .kaizen/config.json and the deliverable folders
 node "$K" detect                   # stack + verification commands
 node "$K" verify [--only test]     # runs the checks (exit 1 if red)
+node "$K" perf                     # performance budget, when configured (exit 1 over, 2 blind)
 node "$K" plan new --type feat --topic <slug>   # reserves the plan file (atomic)
 node "$K" plan latest | list
+node "$K" plan amend <p> --add-req "…" --covered-by U<n> --by "…" --reason "…"   # scope change, recorded
+node "$K" plan reviewed <p>        # marks the reviewed body (doc-review)
 node "$K" learnings search <words…> [--json]    # relevant learnings, ranked
 node "$K" learnings validate [files…] | list | stats
 node "$K" packs [--json]           # rules of the declared Kaizen Packs
@@ -63,6 +67,19 @@ node "$K" run-dir reviews         # local working folder for a run (ignored by g
 
 If `${CLAUDE_PLUGIN_ROOT}` is not resolved in a Bash command, find the plugin path from this file's
 path (the parent folder of `references/`).
+
+## Guard rails
+
+Kaizen's gates are hooks: when the plugin is not loaded, or its hooks do not fire, nothing is
+blocked and nothing says so. The entry skills (`help`, `work`, `setup`) therefore start with
+`node "$K" doctor --in-skill` and relay every ⚠ line to the user with its fix, in one short block,
+before anything else:
+- **hooks off** → say that the review, secret and quality gates are not running in this session, and
+  run them by hand at each step (`verify`, `secrets scan --staged` before a commit, `review check`
+  before a push) until the plugin is enabled;
+- **plugin not declared** → offer `node "$K" audit fix claude_settings` (a versioned file: ask first);
+- **branch pushed without a review** → `/kaizen:review` before anything else is pushed.
+No ⚠ → say nothing. The doctor never blocks: it informs.
 
 ## Adoption profile
 
@@ -100,7 +117,8 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
   request>"` prints a code; ask them to type `kaizen waive <code>` themselves (valid 30 min). You
   cannot confirm it for them, and a confirmed waiver appears in the PR ("Review waived" section). In
   non-interactive mode, no waiver: stop and say why;
-- the review state files (`.kaizen/state/reviews.json`, `review-evidence.json`, `waivers.json`) are
+- the review state files (`.kaizen/state/reviews.json`, `review-evidence.json`, `waivers.json`,
+  `hooks-seen.json`, `review-launches.json`) are
   only written by the CLI and the hooks. Never bypass or disable it (`review.require_before_push:
   false`) without the user asking.
 
@@ -219,4 +237,5 @@ compare `applies_when` semantically to the work, and only read the body of the r
 ## Tone of deliverables
 
 Conclusion first, reason next. No filler: an empty or obvious section is omitted. No trace of the
-process ("in phase 2 I…") in deliverables. Diagrams complement prose, they never replace it.
+process ("in phase 2 I…") in the body of deliverables (a plan's `reviewed:` and `amended:` frontmatter
+fields are decisions, not process). Diagrams complement prose, they never replace it.

@@ -91,6 +91,14 @@ Otherwise, it reports a blocker to you.
 - `gate off` records the cycle (duration, tokens of the session and its subagents per role, blocks)
   for `/kaizen:metrics`.
 
+## Guard rails, scope changes and visual evidence
+
+`work` starts with `kaizen doctor`: if Kaizen's hooks are not firing in this session, it says so and
+runs each gate by hand. A requirement you add or change mid-cycle goes through `plan amend` (recorded
+in the plan's frontmatter), never a hand edit. A unit whose evidence is `visual: <views>` is captured
+before and after the change; blank captures are rejected, and the captures go to the rendering
+reviewer.
+
 ## See also
 
 [plan](plan.md) · [review](review.md) · [ship](ship.md) · [Gate troubleshooting](../troubleshooting.md#the-quality-gate-blocks-the-end-of-the-session)

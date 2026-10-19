@@ -22,10 +22,22 @@ source: brainstorm                          # brainstorm | plan (who wrote the p
 jira: SHOP-412                              # optional: originating ticket
 origin: docs/ideation/…                     # optional: upstream document
 deepened: 2026-10-03                        # optional: deepening date
+reviewed: "2026-10-04 3f9a1c0b2d4e"         # written by `plan reviewed`: date + hash of the body
+amended:                                    # written by `plan amend`, one entry per amendment
+  - "2026-10-06 | Ana (PO) | R6 | audit: who exported what"
 ---
 ```
 
-No `status` field: progress is inferred from git, never from a mutable field.
+No `status` field: progress is inferred from git, never from a mutable field. `reviewed:` and
+`amended:` are not progress: they record decisions (a review of this exact body, a scope change and who
+made it), and only the CLI writes them.
+
+**Amending a ready plan.** A requirement added or changed mid-cycle goes through
+`node "$K" plan amend <path> --add-req "…" --covered-by U<n> --by "…" --reason "…"` (or
+`--replace-req R<n> "…"`), never a hand edit: IDs are append-only (the new requirement takes the next
+number, at the end of the requirements), so no citation ever changes. A new unit or AE is still written
+by `/kaizen:plan`. `plan check` warns about a plan never reviewed, or whose body changed since
+`reviewed:`.
 
 ## Sections and markers
 
@@ -130,11 +142,19 @@ Work packages sized for one commit each, ordered by dependency:
 - **Depends on:** —
 - **Files:** `app/exports/orders_csv.rb` (new), `spec/exports/orders_csv_spec.rb` (new)
 - **Approach:** … (follows `app/exports/customers_csv.rb`)
-- **Evidence:** test first | characterization first | exception (reason + replacement check)
+- **Evidence:** test first | characterization first | visual: <views> | exception (reason + replacement check)
 - **Test scenarios:** happy path; order without lines; accented characters (BOM, docs/learnings/…)
 - **Verification:** `bundle exec rspec spec/exports/orders_csv_spec.rb` green
 - **Slice:** S1
 ```
+
+**Visual evidence.** A unit that changes what is *seen* — shaders, styles, rendering code — declares
+`visual: <views>` (URLs, query strings or app states, e.g. ``visual: `/?weather=fog&hour=22`, the
+menu``), alone or with a test strategy (`test first + visual: …`). `/kaizen:work` captures each view
+before and after the change; `/kaizen:review` gives the captures to the rendering reviewer. `plan check`
+warns when a unit's **Files** match shader, style or render paths (`.glsl`, `.wgsl`, `.frag`, `.vert`,
+`.css`, `.scss`, `materials/`, `shaders/`, `render/`) without `visual:` — or an `exception` saying how
+the look is checked instead. Green tests do not see a broken image.
 
 **Slices**: one slice = **one PR**, under the `pr.max_lines` limit (400 reviewable lines by default).
 The DORA 2025 report shows AI makes PRs bigger and turns review into the bottleneck: split the plan

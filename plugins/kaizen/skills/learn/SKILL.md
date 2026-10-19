@@ -2,7 +2,7 @@
 name: learn
 description: Captures a solved problem as a durable learning in docs/learnings/ (validated frontmatter, corpus vocabulary, update rather than duplicate) so the next /kaizen:plan and the next /kaizen:review read it back — the step that makes each cycle make the next one easier. Use after verified work that produced non-obvious reasoning (a trap, a surprising cause, a decision costly to rediscover): "document this", "remember the lesson", /kaizen:learn. Not for a routine fix the code already explains.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
-argument-hint: "[short context] [mode:auto]"
+argument-hint: "[short context] [harvest] [mode:auto]"
 ---
 
 # Learn — capturing the learning
@@ -12,7 +12,22 @@ the current code, validated by the CLI, and findable by the next agent. If no le
 nothing is written and the report says why.
 
 **One learning per run.** A session that produced several = several successive runs, never a batch (a
-batch mixes vocabularies and produces catch-all documents).
+batch mixes vocabularies and produces catch-all documents). `harvest` organizes those runs.
+
+## `harvest` — every lesson of a cycle, one at a time
+
+At the end of a long cycle, lessons get lost: only the freshest is written. With `harvest`:
+1. **List candidates** from the whole cycle: the branch's `git log` (fix commits, reverts, commits that
+   undo an earlier one), review findings fixed (`.kaizen/state/reviews/*/`), debug notes, plan
+   amendments (`amended:`), and what the conversation shows was tried and failed. One line each:
+   symptom → cause, and the evidence (commit, file).
+2. **Filter**: apply the durability test (step 1) to each; for the survivors,
+   `node "$K" learnings search <words>` — an existing learning is an **update** candidate, not a new one.
+3. **Choose**: show the list (new / update / dropped and why) and ask which to write, in one question
+   (`multiSelect`). In `mode:auto`: every survivor.
+4. **Write** each chosen learning with steps 2 to 8, **one complete run per learning** (gather, look,
+   classify, write, validate), never a merged document.
+5. Report the paths written, updated and dropped.
 
 Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` and
 `${CLAUDE_PLUGIN_ROOT}/references/learnings-schema.md`.

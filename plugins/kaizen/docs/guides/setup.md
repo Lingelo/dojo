@@ -33,7 +33,7 @@ In depth: [state and files](../reference/state-and-files.md).
 each check `ok`, `warn`, `missing` or `unknown` with its evidence and a priority. Claude then offers to
 fix each point, **P1 first**, one by one, with your approval: scaffolds generated from your stack and
 never written over an existing file (`audit fix ci`, `pr_template`, `dependabot`, `codeowners`,
-`gitignore_env`, `secret_scanning`, `monitor_patrol`, `monitor_alert`), deployment through
+`gitignore_env`, `secret_scanning`, `monitor_patrol`, `monitor_alert`, `git_hooks`, `claude_settings`), deployment through
 `deploy detect`, the exact branch protection settings for you to apply. The audit is rerun at the end to
 show the before/after. Every check and scaffold: [SDLC audit](../reference/audit.md).
 
@@ -69,6 +69,14 @@ Config, detected checks, learnings, packs, constitution, gate, review state and 
 - What `setup` creates is to be **committed**: the config and the folders are shared by the team.
   `.kaizen/config.local.json` and `.kaizen/state/` are not versioned.
 - The scaffolds stay uncommitted: review them before committing.
+
+## Guard rails without the plugin
+
+Setup starts with `kaizen doctor`. It offers, with your consent: `audit fix claude_settings`
+(declares `kaizen@dojo` in the versioned `.claude/settings.json`, so every clone loads Kaizen) and
+`audit fix git_hooks` (git hooks that refuse an unreviewed push and a staged secret even when the plugin
+is not loaded; they refuse when the Kaizen CLI cannot be found — set `git config kaizen.cli
+<path>/scripts/kaizen.mjs` when Kaizen runs from a checkout rather than the plugin cache).
 
 ## See also
 

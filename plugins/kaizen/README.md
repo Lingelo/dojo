@@ -183,14 +183,14 @@ generated from your stack, monitoring workflows; deployment platform recognized 
 (Vercel, Netlify, Fly.io, Heroku, Kamal, Capistrano, Helm, Kustomize, Serverless, SAM, Firebase, GitHub
 Actions, Makefile/npm, Compose, Terraform).
 
-## Agents (21)
+## Agents (22)
 
 | Role | Agents |
 |---|---|
 | Research | `repo-researcher`, `learnings-researcher`, `git-historian`, `docs-researcher`, `flow-analyst` |
 | Plan review | `plan-coherence-reviewer`, `plan-feasibility-reviewer`, `plan-scope-reviewer`, `plan-security-reviewer`, `plan-adversarial-reviewer`, `plan-design-reviewer` |
 | Code review (baseline) | `correctness-reviewer`, `standards-reviewer` (constitution, standards, packs, learnings) |
-| Code review (depending on the diff) | `security-reviewer`, `testing-reviewer`, `performance-reviewer`, `reliability-reviewer`, `api-contract-reviewer`, `data-migration-reviewer`, `maintainability-reviewer`, `adversarial-reviewer` |
+| Code review (depending on the diff) | `security-reviewer`, `testing-reviewer`, `performance-reviewer`, `rendering-reviewer`, `reliability-reviewer`, `api-contract-reviewer`, `data-migration-reviewer`, `maintainability-reviewer`, `adversarial-reviewer` |
 
 All agents are read-only.
 - Code reviewers share [`references/review-contract.md`](references/review-contract.md): severity P0 to
@@ -245,17 +245,21 @@ K=plugins/kaizen/scripts/kaizen.mjs
 # Orientation and setup
 node $K status [--json]                        # where the repo stands in the loop, and the next command
 node $K root                                   # deliverable paths (JSON)
+node $K doctor [--in-skill] [--json] [--strict]   # are the guard rails on? plugin declared, hooks, git hooks, review
 node $K init [--docs-root d] [--language en] [--profile lean|standard|full]   # .kaizen/ and the folders
 node $K config                                 # effective configuration (JSON)
 node $K detect                                 # stack and verification commands (JSON)
 node $K audit [--json] [--no-github]           # SDLC maturity in five areas
-node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]
+node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert|git_hooks|claude_settings> [--owner @x] [--env e] [--ref sha]
+node $K githook pre-push|pre-commit            # run by .githooks/ (audit fix git_hooks): exit 1 refuses
 node $K models [--json] [--agent a]            # model of each agent per profile and config
 
 # Principles, plans, learnings
 node $K constitution [check] [--json]          # CONSTITUTION.md articles / validation
 node $K plan new --type feat --topic x | plan latest | plan list
-node $K plan check <path> [--json]             # structure, R/AE → U traceability, constitution, rollout
+node $K plan check <path> [--json]             # structure, R/AE → U traceability, constitution, rollout, review mark
+node $K plan amend <path> --add-req "…" [--covered-by U2] | --replace-req R3 "…"  --by "…" --reason "…"
+node $K plan reviewed <path>                   # marks the reviewed body (date + hash)
 node $K learnings search <words…> [--limit 8] [--json] | validate [files…] | list | stats
 node $K packs [--json] [--refresh]             # rules of the declared Kaizen Packs
 node $K pack new <name>                        # creates and declares a local pack
@@ -264,6 +268,7 @@ node $K postmortem new --title "…"             # reserves a postmortem (docs/p
 
 # Building and verifying
 node $K verify [--only test,lint|audit] [--json]   # runs the checks (exit 1 if red)
+node $K perf [--json]                          # performance budget (config perf): exit 1 over, 2 blind
 node $K gate on [--plan p] | off | status      # Stop-hook quality gate
 node $K size [--base ref] [--max n] [--json]   # diff size vs pr.max_lines (exit 1 if above)
 node $K secrets scan [--staged | --base ref] [--json]   # possible secrets in the changes (exit 1 if any)
@@ -271,8 +276,8 @@ node $K dev detect | dev probe --url <u> [--timeout-seconds 30]   # dev server (
 node $K run-dir <type>                         # local run folder (e.g. reviews), ignored by git
 
 # Review and PR
-node $K review record --verdict ready|concerns|blocked [--run d]   # requires reviewers that actually ran
-node $K review waive --reason "…" | review status | review check  # waiver = code typed by the user
+node $K review record --verdict ready|concerns|blocked [--run d] [--allow-missing a]   # requires reviewers that ran, and their outputs
+node $K review waive --reason "…" | review status | review check [--branch b --sha s]  # waiver = code typed by the user
 node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch [--pr n] [--repo o/r] …
 
 # Release, deployment, monitoring
@@ -296,8 +301,10 @@ Declared in [`hooks/hooks.json`](hooks/hooks.json); they work without any action
 
 | Event | Script | Role |
 |---|---|---|
+| `SessionStart` | `scripts/review-hooks.mjs --heartbeat` | Records that Kaizen's hooks run in this repo (`.kaizen/state/hooks-seen.json`), read by `kaizen doctor` |
 | `PreToolUse` (Bash) | `scripts/secret-gate.mjs` | Refuses a `git commit` whose changes (index, plus what a `git add` in the same command or `commit -a` brings in) carry a key or token, and `--no-verify`. Active in every git repo; `secrets.scan: false` turns it off |
 | `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | Refuses `git push` of a branch without a recorded review of the pushed tree, a direct deploy command of a protected environment, hand-made `deploy/…`, `rollback/…`, `incident/…` tags, and direct writes to Kaizen's review and deployment state |
+| `PreToolUse` (Agent/Task) | `scripts/review-hooks.mjs --launch` | Logs each Kaizen reviewer as it is launched (slice, run): `review record` refuses a run where one left no output |
 | `PostToolUse` (Bash) | `scripts/quality-gate.mjs --claim` | Ties the gate to the session that ran `gate on` |
 | `PostToolUse` (Agent/Task) | `scripts/review-hooks.mjs --evidence` | Logs the Kaizen reviewers actually launched (evidence required by `review record`) and the agents of the cycle |
 | `Stop` | `scripts/quality-gate.mjs` | Blocks the end of the turn while `verify` is red during `work`/`autopilot`; records the cycle's token usage |

@@ -3,8 +3,12 @@
 //
 //   node kaizen.mjs status [--json]              where the repo stands in the loop, and the next command
 //   node kaizen.mjs root                         deliverable paths (JSON)
+//   node kaizen.mjs githook pre-push|pre-commit   run by the git hooks of `audit fix git_hooks` (exit 1 refuses)
+//   node kaizen.mjs doctor [--in-skill] [--json] [--strict]   are the guard rails on (plugin declared, hooks
+//                                                 firing, git hooks wired, branch reviewed)? exit 1 with --strict
 //   node kaizen.mjs models [--json] [--agent a]  model of each agent per profile and config
 //   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   project SDLC maturity
+//                                                 (fix git_hooks: .githooks/ + core.hooksPath; claude_settings: kaizen@dojo declared)
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
 //                                                 deployment through the team's commands, deploy/<env>/… tag
 //   node kaizen.mjs deploy flag on|off <name> [--env e]    feature flag (deploy.flags)
@@ -19,15 +23,20 @@
 //   node kaizen.mjs init [--docs-root d] [--language en] [--profile lean|standard|full]   initializes .kaizen/ and the folders
 //   node kaizen.mjs detect                       stack and verification commands (JSON)
 //   node kaizen.mjs verify [--only test,lint] [--json]     runs the checks (exit 1 if red)
+//   node kaizen.mjs perf [--json]                performance budget (config perf): exit 0 pass, 1 over budget, 2 blind
 //   node kaizen.mjs plan new --type feat --topic export-csv   reserves a plan path
 //   node kaizen.mjs plan latest | list           existing plans
+//   node kaizen.mjs plan amend <path> --add-req "…" [--covered-by U2] | --replace-req R3 "…"  --by "…" --reason "…"
+//                                                 append-only requirement IDs, amendment recorded in the frontmatter
+//   node kaizen.mjs plan reviewed <path>          marks the plan reviewed (date + body hash; plan check warns otherwise)
 //   node kaizen.mjs learnings search <words…> [--limit 8] [--json]
 //   node kaizen.mjs learnings validate [files…]
 //   node kaizen.mjs learnings list | stats
 //   node kaizen.mjs packs [--json] [--refresh]   rules of the declared Kaizen Packs
 //   node kaizen.mjs pack new <name>              creates and declares a local pack
 //   node kaizen.mjs gate on [--plan p] | off | status      Stop-hook quality gate
-//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] | waive --reason "…" | status | check
+//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] [--allow-missing a,b] | waive --reason "…" | status
+//                  | check [--branch b --sha s]
 //                                                 reviewed state per branch, required by the hook before git push;
 //                                                 record requires reviewers that actually ran (except a light
 //                                                 review), waive waits for the confirmation typed by the user
@@ -50,6 +59,7 @@ import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { isDraft, loadConstitution, validateConstitution } from './constitution.mjs';
 import { checkPlan } from './plancheck.mjs';
+import { amendPlan, markReviewed } from './planamend.mjs';
 import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
 import { computeMetrics } from './metrics.mjs';
@@ -58,6 +68,9 @@ import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { audit, scaffold } from './audit.mjs';
+import { doctor, formatDoctor } from './doctor.mjs';
+import { preCommit, prePush } from './githooks.mjs';
+import { formatPerf, runPerf } from './perf.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
@@ -266,7 +279,20 @@ function cmdPlan(root, sub) {
     }
     process.exit(report.errors.length ? 1 : 0);
   }
-  die('usage: plan new --type <type> --topic <slug> | plan latest | plan list | plan check <path>');
+  if (sub === 'amend' || sub === 'reviewed') {
+    const target = positional[2];
+    if (!target) die(`usage: plan ${sub} <path>`);
+    const str = (v) => (typeof v === 'string' ? v : null);
+    if (sub === 'reviewed') out(markReviewed(resolve(target)));
+    else {
+      // --covered-by may be repeated or comma-separated.
+      const covered = argv.flatMap((a, i) => (a === '--covered-by' && argv[i + 1] ? argv[i + 1].split(',') : [])).map((u) => u.trim()).filter(Boolean);
+      const replace = str(flags['replace-req']);
+      out(amendPlan(resolve(target), { addReq: str(flags['add-req']), replaceReq: replace, text: replace ? positional[3] || null : null, coveredBy: covered, by: str(flags.by), reason: str(flags.reason) }));
+    }
+    return;
+  }
+  die('usage: plan new --type <type> --topic <slug> | plan latest | plan list | plan check <path> | plan amend <path> … | plan reviewed <path>');
 }
 
 // ---------------------------------------------------------------------------
@@ -676,11 +702,29 @@ try {
     case 'root':
       out(paths(requireRepo()));
       break;
+    case 'githook': {
+      // Run by .githooks/* (audit fix git_hooks): exit 1 refuses the push or the commit.
+      const root = requireRepo();
+      const r = sub === 'pre-push' ? prePush(root, readFileSync(0, 'utf8'), process.argv[1]) : sub === 'pre-commit' ? preCommit(root) : die('usage: githook pre-push|pre-commit');
+      if (r.message) process.stderr.write(r.message);
+      process.exit(r.code);
+    }
+    case 'perf': {
+      const r = runPerf(requireRepo());
+      out(flags.json ? r : formatPerf(r));
+      process.exit(r.status === 'pass' ? 0 : r.status === 'fail' ? 1 : 2);
+    }
+    case 'doctor': {
+      const r = doctor(requireRepo(), { inSkill: !!flags['in-skill'] });
+      out(flags.json ? r : formatDoctor(r));
+      if (flags.strict && r.status !== 'ok') process.exit(1);
+      break;
+    }
     case 'audit': {
       const root = requireRepo();
       if (sub === 'fix') {
         const id = positional[2];
-        if (!id) die('usage: audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]');
+        if (!id) die('usage: audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert|git_hooks|claude_settings> [--owner @x] [--env e] [--ref sha]');
         const str = (v) => (typeof v === 'string' ? v : undefined);
         out(scaffold(root, id, { owner: str(flags.owner), env: str(flags.env), ref: str(flags.ref) }));
         break;
@@ -846,14 +890,18 @@ try {
       break;
     case 'review': {
       const root = requireRepo();
-      if (sub === 'record') out(recordReview(root, { verdict: flags.verdict, run: typeof flags.run === 'string' ? flags.run : null }));
+      if (sub === 'record') {
+        const allowMissing = typeof flags['allow-missing'] === 'string' ? flags['allow-missing'].split(',').map((x) => x.trim().replace(/-reviewer$/, '')) : [];
+        out(recordReview(root, { verdict: flags.verdict, run: typeof flags.run === 'string' ? flags.run : null, allowMissing }));
+      }
       else if (sub === 'waive') out(requestWaiver(root, { reason: typeof flags.reason === 'string' ? flags.reason : null }));
       else if (sub === 'status') out(reviewStatus(root));
       else if (sub === 'check') {
-        const res = checkPush(root);
+        const str = (v) => (typeof v === 'string' ? v : null);
+        const res = checkPush(root, undefined, { branch: str(flags.branch), sha: str(flags.sha) });
         out(res);
         process.exit(res.allowed ? 0 : 1);
-      } else die('usage: review record --verdict ready|concerns|blocked [--run <folder>] | review waive --reason "…" | review status | review check');
+      } else die('usage: review record --verdict ready|concerns|blocked [--run <folder>] | review waive --reason "…" | review status | review check [--branch b --sha s]');
       break;
     }
     case 'constitution': {

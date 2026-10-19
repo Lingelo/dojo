@@ -12,7 +12,7 @@ export const MODELS = ['haiku', 'sonnet', 'opus', 'inherit'];
 
 export const ROLES = {
   research: ['repo-researcher', 'learnings-researcher', 'git-historian', 'docs-researcher', 'flow-analyst'],
-  review: ['correctness-reviewer', 'testing-reviewer', 'performance-reviewer', 'reliability-reviewer', 'api-contract-reviewer', 'maintainability-reviewer', 'standards-reviewer'],
+  review: ['correctness-reviewer', 'testing-reviewer', 'performance-reviewer', 'rendering-reviewer', 'reliability-reviewer', 'api-contract-reviewer', 'maintainability-reviewer', 'standards-reviewer'],
   review_critical: ['security-reviewer', 'data-migration-reviewer', 'adversarial-reviewer'],
   plan_review: ['plan-coherence-reviewer', 'plan-feasibility-reviewer', 'plan-scope-reviewer', 'plan-design-reviewer'],
   plan_review_critical: ['plan-security-reviewer', 'plan-adversarial-reviewer'],

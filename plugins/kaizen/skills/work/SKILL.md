@@ -32,10 +32,14 @@ verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
   - **Bounded** → infer 2 to 6 units yourself, announce them in 5 lines, then execute.
   - **Fuzzy or risky** → propose `/kaizen:plan` (or `/kaizen:brainstorm`) instead of improvising.
 - Do not renegotiate a validated plan: a decision to weigh becomes **one** question, not a return to
-  planning.
+  planning. A requirement the user adds or changes mid-cycle → `node "$K" plan amend` (`--by` the
+  user, `--reason` their words), never a hand edit; `plan check` then warns the plan changed since its
+  review — say so, and propose `/kaizen:doc-review` when the change is more than a clarification.
 
 ## Phase 1 — Workspace
 
+0. **Guard rails** — `node "$K" doctor --in-skill`, relay any ⚠ (conventions, "Guard rails"). Hooks
+   off → run each gate by hand during this cycle.
 1. `git status --short`: list the files **already modified** by the user. A unit needing one of these
    files → ask once whether to include or exclude it (in `mode:return`: `blocked` with the collision).
 2. **Branch** — if you are on the default branch (`main`, `master`, or

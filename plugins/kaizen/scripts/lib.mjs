@@ -48,6 +48,8 @@ export const DEFAULT_CONFIG = {
   models: { roles: {}, agents: {} },
   // Secret scan before every commit Claude makes (secret-gate hook); ignore = path globs.
   secrets: { scan: true, ignore: [] },
+  // Performance budget (kaizen perf): command printing name=value lines, thresholds per metric.
+  perf: { command: null, timeout_seconds: 600, thresholds: {} },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
   packs: [],
 };
@@ -73,6 +75,7 @@ export function loadConfig(root) {
   merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
   merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
   merged.deploy = { ...DEFAULT_CONFIG.deploy, ...(base.deploy || {}), ...(local.deploy || {}) };
+  merged.perf = { ...DEFAULT_CONFIG.perf, ...(base.perf || {}), ...(local.perf || {}) };
   merged.secrets = { ...DEFAULT_CONFIG.secrets, ...(base.secrets || {}), ...(local.secrets || {}) };
   merged.monitor = { ...DEFAULT_CONFIG.monitor, ...(base.monitor || {}), ...(local.monitor || {}) };
   merged.models = {
