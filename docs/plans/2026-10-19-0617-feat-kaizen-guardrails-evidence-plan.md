@@ -5,7 +5,7 @@ date: 2026-10-19
 topic: kaizen-guardrails-evidence
 artifact: kaizen-plan/v1
 source: plan
-reviewed: "2026-10-19 11ed21078ae5"
+reviewed: "2026-10-19 bed9bd3dc2e3"
 ---
 
 # Kaizen guard rails, visual evidence and resilient reviews - Plan
@@ -122,8 +122,8 @@ and only one learning could be written per run.
   declares the `dojo` marketplace and enables `kaizen@dojo`; `.githooks/` present but
   `core.hooksPath` unset (a fresh clone) → the wiring command; branch pushed (upstream exists) with
   no recorded review. Covers R1.
-- KTD3. **Git hooks run a pinned CLI and fail closed**: the CLI is `git config kaizen.cli` (written by
-  setup), else `$KAIZEN_CLI`, else the highest semver directory under
+- KTD3. **Git hooks run a pinned CLI and fail closed**: the CLI is `git config kaizen.cli` (set by the
+  user for a checkout install), else `$KAIZEN_CLI`, else the highest semver directory under
   `~/.claude/plugins/cache/dojo/kaizen/` whose `.claude-plugin/plugin.json` names `kaizen` — never a
   glob over other marketplaces. Version selection runs in `node -e`, not in shell. Not found → refuse
   with the fix (enable the plugin or set `kaizen.cli`): an opted-in guard rail that silently disappears

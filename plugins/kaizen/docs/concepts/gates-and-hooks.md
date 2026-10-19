@@ -7,14 +7,16 @@ legitimately.
 
 ## The hooks
 
-![Kaizen's six hook registrations along a Claude Code session: UserPromptSubmit on your messages, two PreToolUse before tools, two PostToolUse after tools, Stop at the end of a turn](../media/diagrams/hooks.svg)
+![Kaizen's main hook registrations along a Claude Code session: UserPromptSubmit on your messages, PreToolUse before tools, PostToolUse after tools, Stop at the end of a turn (the SessionStart heartbeat and the PreToolUse launch log are listed in the table below)](../media/diagrams/hooks.svg)
 
 Declared in [`hooks/hooks.json`](../../hooks/hooks.json):
 
 | Event | Matcher | Script | Timeout | Blocks? |
 |---|---|---|---|---|
+| `SessionStart` | — | `review-hooks.mjs --heartbeat` | 10 s | no |
 | `PreToolUse` | `Bash` | `secret-gate.mjs` | 30 s | yes (exit 2) |
 | `PreToolUse` | `Bash\|Write\|Edit\|MultiEdit\|NotebookEdit` | `review-gate.mjs` | 30 s | yes (exit 2) |
+| `PreToolUse` | `Agent\|Task` | `review-hooks.mjs --launch` | 15 s | no |
 | `PostToolUse` | `Bash` | `quality-gate.mjs --claim` | 10 s | no |
 | `PostToolUse` | `Agent\|Task` | `review-hooks.mjs --evidence` | 15 s | no |
 | `Stop` | — | `quality-gate.mjs` | 900 s | yes (exit 2) |
@@ -119,6 +121,16 @@ refused when no reviewer ran since the branch’s previous review, except:
 | `light` | no reviewer, but the whole branch diff is ≤ 20 lines (the skill reviews it itself) |
 | `update` | no reviewer, but ≤ `review.max_unreviewed_lines` (80) lines changed since the previously reviewed tree — the review’s own fixes; reviewers are carried over |
 
+Every reviewer must also **leave its output**. The PreToolUse hook on `Agent`/`Task` logs each reviewer
+as it is launched, with the `Slice:` and `Run:` lines of its prompt (`review-launches.json`): a reviewer
+that dies on a rate limit or an error never reaches PostToolUse, so only this log knows it was
+expected. The record is refused while a reviewer launched on this branch since its last record has no
+`<name>[-<slice>].json` holding the contract's `findings` array in the run folder **its own prompt**
+named — whatever `--run` says, so pointing at another folder hides nothing. A reviewer launched outside
+a review run (no `Run:` line) or on another branch does not count.
+`--allow-missing <name>` does not record: it creates a pending waiver whose code you type
+(`kaizen waive <code>`), and the review is then recorded with `gaps`.
+
 Plan reviewers (`plan-*`) never count as code review evidence. Verdicts `reserves` (2.x) are read as
 `concerns`.
 
@@ -142,6 +154,17 @@ Line counts exclude `pr.ignore` (lockfiles, minified, snapshots, generated files
 `node $K review check` runs the same decision without pushing (exit 1 if refused);
 `node $K review status` shows the recorded review, a pending waiver and the decision.
 
+### Without the plugin: git hooks
+
+These hooks only exist when Claude Code loads the plugin. In a clone or a cloud session where it does
+not, nothing is refused — `kaizen doctor` reports it (plugin not declared in `.claude/settings.json`, no
+heartbeat from the SessionStart hook, branch pushed without a review). Two opt-in fallbacks:
+`audit fix claude_settings` declares `kaizen@dojo` in the versioned settings, and `audit fix git_hooks`
+installs `.githooks/pre-push` (the same decision, for every branch the push updates, at the pushed
+commit — whatever the local refspec, `HEAD` included) and `.githooks/pre-commit` (staged secrets). They
+run a pinned CLI (`git config kaizen.cli`, `$KAIZEN_CLI`, or the dojo marketplace's plugin cache only)
+and refuse when it is missing. See [troubleshooting](../troubleshooting.md#the-git-hooks-refuse-kaizen-cli-not-found).
+
 ### Waiving the review — only you
 
 If you explicitly ask to skip the review:
@@ -160,8 +183,8 @@ Claude cannot type the code for you, and non-interactive modes never waive.
 
 The same PreToolUse hook refuses:
 
-- Bash commands or file writes touching `reviews.json`, `review-evidence.json`, `waivers.json`,
-  `deploy-approvals.json` or `deployments.jsonl` under `.kaizen/state/`, or calling `review-hooks.mjs`
+- Bash commands or file writes touching `reviews.json`, `review-evidence.json`, `review-launches.json`,
+  `hooks-seen.json`, `waivers.json`, `deploy-approvals.json` or `deployments.jsonl` under `.kaizen/state/`, or calling `review-hooks.mjs`
   by hand;
 - hand-made `deploy/…`, `rollback/…`, `incident/…` and `resolve/…` git tags (listing and deleting are
   allowed): they carry the DORA metrics and postmortem timelines;

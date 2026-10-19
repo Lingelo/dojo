@@ -54,6 +54,12 @@ Order of the inference:
 8. Requirements without a plan → `plan`. Ready plan → `work`.
 9. Otherwise → `brainstorm` (or `ideate`, `debug`).
 
+## Guard rails
+
+`help` runs `kaizen doctor` first and tells you when the guard rails are off: the plugin not declared
+for the repository, hooks not firing in this session, git hooks not wired, or a branch pushed without a
+review — each with the command that fixes it.
+
 ## See also
 
 [Plugin README](../../README.md) · [Getting started](../getting-started.md) · [Troubleshooting](../troubleshooting.md)

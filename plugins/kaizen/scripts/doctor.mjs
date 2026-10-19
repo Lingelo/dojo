@@ -7,7 +7,7 @@
 // "not verified"; from a skill (`--in-skill`) the session has started, so no heartbeat means "off".
 // Each check returns { id, title, status: ok|warn|info, evidence, fix }. Read-only.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { git, loadConfig, verifyCommands } from './lib.mjs';
 import { checkPush, currentBranch } from './review-state.mjs';
@@ -47,12 +47,20 @@ export function heartbeat(root) {
   return h && Date.parse(h.at) ? h : null;
 }
 
+// Kaizen's hooks in `.githooks/`, whether git runs them (core.hooksPath) and why not: a hook that is
+// not Kaizen's, or versioned without the executable bit (committed from Windows), is ignored by git.
 export function gitHooksState(root) {
   const dir = join(root, '.githooks');
   const present = ['pre-push', 'pre-commit'].filter((f) => existsSync(join(dir, f)));
   const hooksPath = git(root, ['config', '--get', 'core.hooksPath'], { allowFail: true }) || null;
-  const wired = present.length > 0 && hooksPath !== null && hooksPath.replace(/[\\/]+$/, '') === '.githooks';
-  return { present, hooksPath, wired };
+  const foreign = present.filter((f) => !readFileSync(join(dir, f), 'utf8').includes(`githook ${f}`));
+  const notExecutable = present.filter((f) => {
+    const staged = git(root, ['ls-files', '-s', `.githooks/${f}`], { allowFail: true });
+    if (staged) return staged.startsWith('100644');
+    return process.platform !== 'win32' && (statSync(join(dir, f)).mode & 0o111) === 0;
+  });
+  const wired = present.length > 0 && !foreign.length && !notExecutable.length && hooksPath !== null && hooksPath.replace(/[\\/]+$/, '') === '.githooks';
+  return { present, hooksPath, wired, foreign, notExecutable };
 }
 
 export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
@@ -89,6 +97,8 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
 
   const gh = gitHooksState(root);
   if (gh.wired) add('git_hooks', 'Git hooks', 'ok', `.githooks/ (${gh.present.join(', ')}) wired through core.hooksPath`);
+  else if (gh.notExecutable.length) add('git_hooks', 'Git hooks', 'warn', `${gh.notExecutable.join(', ')} not executable in git (committed from Windows?): git ignores them`, `git update-index --chmod=+x ${gh.notExecutable.map((f) => `.githooks/${f}`).join(' ')}`);
+  else if (gh.foreign.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/${gh.foreign.join(', ')} is not Kaizen's: the review and secret checks are not installed`, 'chain it: add  node "$K" githook <name> "$@" || exit 1  to that hook');
   else if (gh.present.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/ present but core.hooksPath is ${gh.hooksPath ? `"${gh.hooksPath}"` : 'unset'} (fresh clone?): the hooks do not run`, 'git config core.hooksPath .githooks');
   else add('git_hooks', 'Git hooks', 'info', 'not installed: without the plugin, nothing refuses an unreviewed push', 'node "$K" audit fix git_hooks');
 
@@ -103,7 +113,9 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     // What already left the machine: the upstream commit, checked like a push of it.
     const upstream = git(root, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'], { allowFail: true });
     const sha = upstream && git(root, ['rev-parse', '@{u}'], { allowFail: true });
-    if (sha) {
+    // A pushed commit inside the history of the recorded review was reviewed with it.
+    const covered = sha && push.review?.head && git(root, ['merge-base', '--is-ancestor', sha, push.review.head], { allowFail: true }) !== null;
+    if (sha && !covered) {
       const pushed = checkPush(root, config, { branch, sha });
       if (!pushed.allowed) add('pushed', `Pushed state of ${branch}`, 'warn', `${upstream} (${sha.slice(0, 7)}) was pushed without a recorded review: ${pushed.reason}`, '/kaizen:review, then push again');
     }

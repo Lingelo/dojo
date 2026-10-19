@@ -17,11 +17,11 @@ export function parseThreshold(spec) {
   return { op: m[1], value: Number(m[2]) };
 }
 
-// `name=value` or `name: value` per line; the last value of a name wins.
+// `name=value` or `name: value` per line, a unit may follow (`16.7ms`); the last value of a name wins.
 export function parseMetrics(stdout) {
   const out = {};
   for (const line of String(stdout).split(/\r?\n/)) {
-    const m = /^\s*([A-Za-z_][\w.-]*)\s*[=:]\s*(-?\d+(?:\.\d+)?)\b/.exec(line);
+    const m = /^\s*([A-Za-z_][\w.-]*)\s*[=:]\s*(-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)(?![\d.])/.exec(line);
     if (m) out[m[1]] = Number(m[2]);
   }
   return out;

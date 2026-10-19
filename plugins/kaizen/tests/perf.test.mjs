@@ -58,5 +58,6 @@ test('config merge keeps the defaults; metrics parse name=value and name: value'
   assert.equal(c.perf.timeout_seconds, 600);
   assert.deepEqual(c.perf.thresholds, {});
   assert.deepEqual(parseMetrics('fps=60\nnoise 3\nheap_mb: 120.5\nfps=58'), { fps: 58, heap_mb: 120.5 });
+  assert.deepEqual(parseMetrics('frame_ms=16.7ms\nheap=120.5MB'), { frame_ms: 16.7, heap: 120.5 }, 'units never truncate the value');
   cleanup(dir);
 });

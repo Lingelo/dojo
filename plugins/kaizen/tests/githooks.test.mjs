@@ -57,6 +57,20 @@ test('install: hooks already in use are never shadowed, the chaining line is giv
   cleanup(second.bare);
 });
 
+test('install from a linked worktree never shadows the main repo hooks', () => {
+  const { dir, bare } = featureRepo();
+  writeFileSync(join(dir, '.git', 'hooks', 'pre-commit'), '#!/bin/sh\n');
+  const wt = mkdtempSync(join(tmpdir(), 'kaizen-wt-'));
+  cleanup(wt);
+  gitc(dir, ['worktree', 'add', '-q', '-b', 'feat/wt', wt]);
+  const r = cli(wt, ['audit', 'fix', 'git_hooks']);
+  assert.equal(r.json.wired, false, JSON.stringify(r.json));
+  assert.match(r.json.reason, /pre-commit/);
+  cleanup(wt);
+  cleanup(dir);
+  cleanup(bare);
+});
+
 test('pre-push: an unreviewed branch is refused like the Claude Code gate; reviewed, deleted and tags pass (AE2)', () => {
   const { dir, bare } = featureRepo();
   cli(dir, ['audit', 'fix', 'git_hooks']);

@@ -216,27 +216,28 @@ test('files left untracked during the review are not counted as changed at push 
 
 // --- Launched reviewers must leave their output (R8, R9) ---------------------------------------------
 
-const launch = (dir, name, extra = '') =>
-  hook('launch', dir, { tool_name: 'Agent', tool_input: { subagent_type: `kaizen:${name}-reviewer`, prompt: `<review-context>\nReviewer: ${name}\n${extra}</review-context>` } });
+const launch = (dir, name, run, extra = '') =>
+  hook('launch', dir, { tool_name: 'Agent', tool_input: { subagent_type: `kaizen:${name}-reviewer`, prompt: `<review-context>\nReviewer: ${name}\nRun: ${run}\n${extra}</review-context>` } });
 
-function runWith(dir, outputs) {
-  const run = cli(dir, ['run-dir', 'reviews']).stdout.trim();
-  for (const [name, body] of Object.entries(outputs)) writeFiles(dir, { [`${run}/${name}.json`]: body });
-  return run;
-}
+const newRun = (dir) => cli(dir, ['run-dir', 'reviews']).stdout.trim();
+const ok = { reviewer: 'x', findings: [] };
 
 test('a launched reviewer without output blocks the record, named; the gap needs the user (AE6)', () => {
   const dir = bigBranch();
+  const run = newRun(dir);
   for (const n of ['correctness', 'testing', 'security', 'performance']) {
-    launch(dir, n);
-    if (n !== 'security') runReviewer(dir, `kaizen:${n}-reviewer`);
+    launch(dir, n, run);
+    if (n !== 'security') {
+      runReviewer(dir, `kaizen:${n}-reviewer`);
+      writeFiles(dir, { [`${run}/${n}.json`]: ok });
+    }
   }
-  const ok = { reviewer: 'x', findings: [] };
-  const run = runWith(dir, { correctness: ok, testing: ok, performance: ok });
   let r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]);
   assert.equal(r.code, 2);
   assert.match(r.stderr, /without a valid output in .*: security/);
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 2, '--run required once reviewers were launched');
+  const other = newRun(dir);
+  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', other]).stderr, /security/, 'another --run folder hides nothing');
+  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready']).stderr, /security/, 'nor does omitting --run');
   r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run, '--allow-missing', 'security']);
   assert.equal(r.code, 0);
   assert.equal(r.json.pending, true, 'only a code: the agent cannot accept the gap');
@@ -252,27 +253,38 @@ test('a launched reviewer without output blocks the record, named; the gap needs
 
 test('an output without the findings array does not count', () => {
   const dir = bigBranch();
-  launch(dir, 'correctness');
+  const run = newRun(dir);
+  launch(dir, 'correctness', run);
   runReviewer(dir, 'kaizen:correctness-reviewer');
-  const run = runWith(dir, { correctness: 'Rate limit reached, try later' });
+  writeFiles(dir, { [`${run}/correctness.json`]: 'Rate limit reached, try later' });
   assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).stderr, /correctness/);
-  writeFiles(dir, { [`${run}/correctness.json`]: { reviewer: 'correctness', findings: [] } });
+  writeFiles(dir, { [`${run}/correctness.json`]: ok });
   assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).code, 0);
   cleanup(dir);
 });
 
-test('a split review needs every slice output; launches of another run are ignored (AE9)', () => {
+test('a split review needs every slice output (AE9)', () => {
   const dir = bigBranch();
-  const run = runWith(dir, {});
-  launch(dir, 'correctness', `Slice: S1\nRun: ${run}\n`);
-  launch(dir, 'correctness', `Slice: S2\nRun: ${run}\n`);
-  launch(dir, 'testing', 'Run: .kaizen/state/reviews/20000101-000000\n');
+  const run = newRun(dir);
+  launch(dir, 'correctness', run, 'Slice: S1\n');
+  launch(dir, 'correctness', run, 'Slice: S2\n');
   runReviewer(dir, 'kaizen:correctness-reviewer');
-  writeFiles(dir, { [`${run}/correctness-S1.json`]: { findings: [] } });
-  let r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]);
-  assert.match(r.stderr, /: correctness-S2 —/);
-  writeFiles(dir, { [`${run}/correctness-S2.json`]: { findings: [] } });
-  r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]);
+  writeFiles(dir, { [`${run}/correctness-S1.json`]: ok });
+  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).stderr, /: correctness-S2 —/);
+  writeFiles(dir, { [`${run}/correctness-S2.json`]: ok });
+  const r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]);
+  assert.equal(r.code, 0, r.stderr);
+  cleanup(dir);
+});
+
+test('launches of another branch, or outside a review run, do not block a record', () => {
+  const dir = bigBranch();
+  gitc(dir, ['checkout', '-qb', 'feat/other']);
+  launch(dir, 'security', newRun(dir));
+  gitc(dir, ['checkout', '-q', 'feat/big']);
+  hook('launch', dir, { tool_name: 'Agent', tool_input: { subagent_type: 'kaizen:testing-reviewer', prompt: 'ad hoc' } });
+  runReviewer(dir, 'kaizen:correctness-reviewer');
+  const r = cli(dir, ['review', 'record', '--verdict', 'ready']);
   assert.equal(r.code, 0, r.stderr);
   cleanup(dir);
 });

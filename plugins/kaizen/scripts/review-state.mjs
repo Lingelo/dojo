@@ -18,7 +18,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { changedLines, defaultBranch, diffBase, git, loadConfig, worktreeTree } from './lib.mjs';
 
 export const VERDICTS = ['ready', 'concerns', 'blocked'];
@@ -110,7 +110,7 @@ export function addLaunch(root, toolInput = {}, { session = null } = {}) {
   const run = /^\s*Run\s*:\s*(\S+)/m.exec(prompt)?.[1] || null;
   const now = Date.now();
   const list = readJson(root, 'review-launches.json', []).filter((e) => now - Date.parse(e.at) < EVIDENCE_MAX_AGE_MS);
-  const entry = { reviewer, slice, run, session, at: new Date(now).toISOString() };
+  const entry = { reviewer, slice, run, branch: currentBranch(root), session, at: new Date(now).toISOString() };
   list.push(entry);
   writeJson(root, 'review-launches.json', list);
   return entry;
@@ -118,18 +118,18 @@ export function addLaunch(root, toolInput = {}, { session = null } = {}) {
 
 const outputName = (l) => `${l.reviewer.replace(/-reviewer$/, '')}${l.slice ? `-${l.slice}` : ''}`;
 
-// Launched reviewers of this run with no valid output in the run folder (`<name>[-<slice>].json`
-// holding the contract's `findings` array).
-export function missingOutputs(root, run, since) {
+// Reviewers launched by /kaizen:review on `branch` since `since` with no valid output in the run folder
+// their own prompt named (`<run>/<name>[-<slice>].json` holding the contract's `findings` array) —
+// never a folder the caller picks. Launches without a `Run:` line (an ad-hoc reviewer outside a review)
+// are not part of a run.
+export function missingOutputs(root, branch, since) {
   const from = Math.max(since ? Date.parse(since) : 0, Date.now() - EVIDENCE_MAX_AGE_MS);
-  const dir = join(root, run);
-  const runId = basename(run);
-  const launches = readJson(root, 'review-launches.json', []).filter((l) => Date.parse(l.at) > from && (!l.run || basename(l.run) === runId));
+  const launches = readJson(root, 'review-launches.json', []).filter((l) => l.run && l.branch === branch && Date.parse(l.at) > from);
   const missing = new Set();
   for (const l of launches) {
     const name = outputName(l);
-    const candidates = [`${name}.json`, `${l.reviewer}${l.slice ? `-${l.slice}` : ''}.json`];
-    const ok = candidates.some((f) => {
+    const dir = resolve(root, l.run);
+    const ok = [`${name}.json`, `${l.reviewer}${l.slice ? `-${l.slice}` : ''}.json`].some((f) => {
       try {
         return Array.isArray(JSON.parse(readFileSync(join(dir, f), 'utf8')).findings);
       } catch {
@@ -138,7 +138,7 @@ export function missingOutputs(root, run, since) {
     });
     if (!ok) missing.add(name);
   }
-  return { launched: launches.length, missing: [...missing].sort() };
+  return { launched: launches.length, runs: [...new Set(launches.map((l) => l.run))], missing: [...missing].sort() };
 }
 
 function evidenceSince(root, since) {
@@ -156,20 +156,15 @@ export function recordReview(root, { verdict, run = null, allowMissing = [] } = 
   const config = loadConfig(root);
   const state = readJson(root, 'reviews.json', {});
   const previous = state[branch];
-  // Every reviewer launched for this review left its output — or the user accepts the gap.
-  const launched = readJson(root, 'review-launches.json', []).some((l) => Date.parse(l.at) > Math.max(previous?.at ? Date.parse(previous.at) : 0, Date.now() - EVIDENCE_MAX_AGE_MS));
-  let gaps = [];
-  if (launched && !run) throw new Error('reviewers were launched: --run <folder> required, so that each one\'s output can be checked');
-  if (run) {
-    const { missing } = missingOutputs(root, run, previous?.at);
-    const unaccepted = missing.filter((m) => !allowMissing.includes(m));
-    if (unaccepted.length) {
-      throw new Error(
-        `launched reviewer(s) without a valid output in ${run}: ${unaccepted.join(', ')} — resume or relaunch them ` +
-          '(their JSON saved as <name>[-<slice>].json); if the user accepts the gap: --allow-missing <names>',
-      );
-    }
-    gaps = missing;
+  // Every reviewer launched for this branch since its last record left its output — or the user accepts
+  // the gap.
+  const { runs, missing: gaps } = missingOutputs(root, branch, previous?.at);
+  const unaccepted = gaps.filter((m) => !allowMissing.includes(m));
+  if (unaccepted.length) {
+    throw new Error(
+      `launched reviewer(s) without a valid output in ${runs.join(', ')}: ${unaccepted.join(', ')} — resume or relaunch them ` +
+        '(their JSON saved as <name>[-<slice>].json in that run folder); if the user accepts the gap: --allow-missing <names>',
+    );
   }
   const evidence = evidenceSince(root, previous?.at);
   const reviewers = [...new Set(evidence.map((e) => e.reviewer))].sort();

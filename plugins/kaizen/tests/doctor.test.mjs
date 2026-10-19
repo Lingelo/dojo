@@ -1,11 +1,11 @@
 // kaizen doctor: are the guard rails on?
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { REVIEW_GATE, REVIEW_HOOKS, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
+import { PLUGIN, REVIEW_GATE, REVIEW_HOOKS, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
 
 const check = (r, id) => r.json.checks.find((c) => c.id === id);
 
@@ -98,8 +98,11 @@ test('settings enabling the plugin without its marketplace are reported', () => 
   cleanup(dir);
 });
 
+const PRE_PUSH = readFileSync(join(PLUGIN, 'templates', 'githooks', 'pre-push'), 'utf8');
+
 test('git hooks present but not wired (fresh clone): the wiring command', () => {
-  const dir = featureRepo({ '.githooks/pre-push': '#!/bin/sh\n' });
+  const dir = featureRepo({ '.githooks/pre-push': PRE_PUSH });
+  gitc(dir, ['update-index', '--chmod=+x', '.githooks/pre-push'], ['commit', '-qm', 'chore: hook mode']);
   let r = cli(dir, ['doctor', '--json']);
   assert.equal(check(r, 'git_hooks').status, 'warn');
   assert.equal(check(r, 'git_hooks').fix, 'git config core.hooksPath .githooks');
@@ -107,6 +110,36 @@ test('git hooks present but not wired (fresh clone): the wiring command', () => 
   r = cli(dir, ['doctor', '--json']);
   assert.equal(check(r, 'git_hooks').status, 'ok');
   cleanup(dir);
+});
+
+test('git hooks that git ignores are not reported as wired: not executable, or not Kaizen\'s', () => {
+  const dir = featureRepo({ '.githooks/pre-push': PRE_PUSH });
+  gitc(dir, ['config', 'core.hooksPath', '.githooks']);
+  let r = cli(dir, ['doctor', '--json']);
+  assert.equal(check(r, 'git_hooks').status, 'warn', 'committed as 100644');
+  assert.match(check(r, 'git_hooks').fix, /update-index --chmod=\+x \.githooks\/pre-push/);
+  writeFiles(dir, { '.githooks/pre-push': '#!/bin/sh\nnpm run lint\n' });
+  gitc(dir, ['add', '.githooks/pre-push'], ['update-index', '--chmod=+x', '.githooks/pre-push'], ['commit', '-qm', 'chore: own hook']);
+  r = cli(dir, ['doctor', '--json']);
+  assert.match(check(r, 'git_hooks').evidence, /not Kaizen's/);
+  cleanup(dir);
+});
+
+test('a pushed commit inside the history of the recorded review is not reported', () => {
+  const dir = featureRepo();
+  const bare = mkdtempSync(join(tmpdir(), 'kaizen-bare-'));
+  gitc(bare, ['init', '-q', '--bare']);
+  gitc(dir, ['remote', 'add', 'origin', bare], ['push', '-q', 'origin', 'main']);
+  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  gitc(dir, ['push', '-q', '-u', 'origin', 'feat/x']);
+  writeFiles(dir, { 'big.js': Array.from({ length: 120 }, (_, i) => `l${i}`).join('\n') });
+  gitc(dir, ['add', '-A'], ['commit', '-qm', 'feat: more']);
+  spawnSync(process.execPath, [REVIEW_HOOKS, '--evidence'], { input: JSON.stringify({ cwd: dir, session_id: 'S1', tool_name: 'Agent', tool_input: { subagent_type: 'kaizen:correctness-reviewer' } }), encoding: 'utf8' });
+  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0, 'a new review of the larger branch');
+  const r = cli(dir, ['doctor', '--json']);
+  assert.equal(check(r, 'pushed'), undefined, JSON.stringify(r.json.checks));
+  cleanup(dir);
+  cleanup(bare);
 });
 
 test('a branch already pushed without a review is reported', () => {

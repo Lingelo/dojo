@@ -10,7 +10,7 @@
 // - `prePush` / `preCommit`: what the hooks run, through `kaizen.mjs githook <name>`.
 
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { git, loadConfig } from './lib.mjs';
 import { MARKETPLACE, PLUGIN_ID } from './doctor.mjs';
@@ -27,7 +27,8 @@ function activeHooks(root) {
   const dir = git(root, ['rev-parse', '--git-path', 'hooks'], { allowFail: true });
   if (!dir) return [];
   try {
-    return readdirSync(join(root, dir)).filter((f) => !f.endsWith('.sample'));
+    // Absolute in a linked worktree, relative otherwise.
+    return readdirSync(resolve(root, dir)).filter((f) => !f.endsWith('.sample'));
   } catch {
     return [];
   }

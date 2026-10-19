@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
+import { PLUGIN, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
 
 const CONSTITUTION = `---
 name: X
@@ -53,14 +53,14 @@ test('tooled project: every check green (branch protection not checked outside G
     'CLAUDE.md': '# Project\nLearnings: docs/learnings/\n',
     'CONSTITUTION.md': CONSTITUTION,
     '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true } },
-    '.githooks/pre-push': '#!/bin/sh\n',
+    '.githooks/pre-push': readFileSync(join(PLUGIN, 'templates', 'githooks', 'pre-push'), 'utf8'),
     '.kaizen/config.json': {
       deploy: { environments: { production: { command: 'make deploy', rollback: 'make rollback' } } },
       monitor: { signals: { health: { type: 'http', url: 'https://shop.example/health' } } },
     },
   });
   writeFiles(dir, {});
-  gitc(dir, ['config', 'core.hooksPath', '.githooks']);
+  gitc(dir, ['config', 'core.hooksPath', '.githooks'], ['update-index', '--chmod=+x', '.githooks/pre-push'], ['commit', '-qm', 'chore: hook mode']);
   const r = audit(dir);
   const notOk = r.checks.filter((c) => c.status !== 'ok').map((c) => `${c.id}:${c.status}`);
   assert.deepEqual(notOk, ['remote:missing', 'branch_protection:unknown']);

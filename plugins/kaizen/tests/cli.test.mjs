@@ -444,3 +444,14 @@ test('plan check: a rendering unit without visual evidence is warned (AE5)', () 
   assert.deepEqual(warns('`app/models/order.rb`', 'test first'), []);
   cleanup(dir);
 });
+
+test('plan check: visual evidence on the continuation line of **Evidence:** counts', () => {
+  const dir = tempRepo({ 'README.md': '#\n' });
+  const text = readFileSync(join(PLUGIN, 'templates/plan-example.md'), 'utf8').replace(/\r\n/g, '\n')
+    .replace('- **Files:** `app/exports/orders_csv.rb` (new)', '- **Files:** `src/render/sky.frag`, `app/exports/orders_csv.rb` (new)')
+    .replace(/(### U1\.[\s\S]*?- \*\*Evidence:\*\* )[^\n]*/, '$1test first, then\n  visual: `/?hour=22`');
+  writeFileSync(join(dir, 'plan.md'), text);
+  const r = cli(dir, ['plan', 'check', 'plan.md', '--json']);
+  assert.deepEqual(r.json.warnings.filter((w) => /visual evidence/.test(w)), []);
+  cleanup(dir);
+});

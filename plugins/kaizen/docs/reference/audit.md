@@ -55,6 +55,8 @@ protects first).
 | `kaizen` | Kaizen initialized | `.kaizen/config.json` | 1 |
 | `constitution` | engineering constitution | `CONSTITUTION.md` valid (`warn` if invalid) | 2 |
 | `learnings` | learnings findable by agents | `CLAUDE.md` mentions the learnings | 3 |
+| `claude_settings` | plugin declared for every clone (initialized repos) | `.claude/settings.json` declares the `dojo` marketplace and enables `kaizen@dojo` | 2 |
+| `git_hooks` | git hooks: review and secrets without the plugin (initialized repos) | `.githooks/` wired through `core.hooksPath` (`warn` when present but not wired) | 3 |
 
 **Area score** = (ok + ½ warn) / checks with a known status, as a percentage. The `next` list sorts
 everything `missing` or `warn` by priority, with the fix, the scaffold id and the skill to run.
@@ -71,6 +73,8 @@ everything `missing` or `warn` by priority, with the fix, the scaffold id and th
 | `secret_scanning` | `.github/workflows/kaizen-secrets.yml` | `secrets scan --base origin/<target branch>` on every PR (`--ref <sha>` pins the Kaizen checkout) |
 | `monitor_patrol` | `.github/workflows/kaizen-patrol.yml` | scheduled `monitor patrol` (`--env`, default production or the first environment; `--ref <sha>` pins the Kaizen checkout) |
 | `monitor_alert` | `.github/workflows/kaizen-alert.yml` | `repository_dispatch` entry point passing the payload to `monitor alert` through the environment (no script injection) |
+| `git_hooks` | `.githooks/pre-push`, `.githooks/pre-commit`, `core.hooksPath` | refuse an unreviewed push and a staged secret without the plugin; an existing hook is never overwritten, and when hooks are already in use (`core.hooksPath`, `.git/hooks`) the path is left alone and `chain` gives the line to add |
+| `claude_settings` | merges into `.claude/settings.json` | declares the `dojo` marketplace and enables `kaizen@dojo`, keeping every other key; refused on invalid JSON |
 
 Every scaffold stays **uncommitted**, for you to review. `/kaizen:setup audit` walks the list one item
 at a time — fix (recommended), later, never for this repo — reruns the audit at the end and shows the

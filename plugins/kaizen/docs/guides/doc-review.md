@@ -49,6 +49,12 @@ example: "Cœur de ß" → `coeur-de-ss`.
 - Fixes are made **in the document's format**, without a stacked "corrections" section.
 - Reviewer contract: [`references/doc-review-contract.md`](../../references/doc-review-contract.md).
 
+## The review mark
+
+Once the decisions are settled, the review runs `plan reviewed <path>`: the plan's frontmatter records
+the date and a hash of the reviewed body. `plan check` then warns if the plan is changed afterwards —
+amended or edited by hand — until it is reviewed again.
+
 ## See also
 
 In depth: [review](../concepts/review.md#plan-review).

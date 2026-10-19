@@ -127,7 +127,7 @@ export function checkPlanText(text, { constitution = null, stage = 'auto' } = {}
     }
     // A rendering unit proves itself with captures (visual: <views>), or says why not (exception).
     const files = /\*\*(Files|Fichiers)\s*:\*\*([\s\S]*?)(?=\n\s*-\s+\*\*|$)/i.exec(b)?.[2] || '';
-    const evidence = /\*\*(Evidence|Proof|Preuve)\s*:\*\*([^\n]*)/i.exec(b)?.[2] || '';
+    const evidence = /\*\*(Evidence|Proof|Preuve)\s*:\*\*([\s\S]*?)(?=\n\s*-\s+\*\*|$)/i.exec(b)?.[2] || '';
     if (RENDERING_FILE.test(files) && !/visual\s*:|exception/i.test(evidence)) {
       warnings.push(`${id}: renders (shader, style or render files) without visual evidence — **Evidence:** visual: <views to capture before and after>`);
     }
