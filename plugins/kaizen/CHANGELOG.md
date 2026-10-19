@@ -2,6 +2,39 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.3.0] - 2026-10-19
+
+Drawn from a real cycle (a Three.js game) where the plugin was not loaded: 17 commits pushed with no
+recorded review, visual defects through 200+ green tests, a plan edited by hand, reviewers lost to a
+rate limit on a 6000-line diff, performance required but never measured.
+
+### Added
+- **`kaizen doctor`**: are the guard rails on? Plugin declared in the versioned `.claude/settings.json`,
+  Claude Code hooks firing (new `SessionStart` heartbeat), git hooks wired, branch — or what was already
+  pushed — without a review; each finding with its fix. `help`, `work` and `setup` run it first
+  (`--in-skill`: no heartbeat means the gates are off in this session).
+- **Git hooks as a fallback** (`audit fix git_hooks`): `.githooks/pre-push` refuses an unreviewed
+  branch (checked at the pushed commit; deletions and tags pass) and `pre-commit` a staged secret, even
+  without the plugin. They run a pinned CLI (`git config kaizen.cli`, `$KAIZEN_CLI`, or the dojo
+  marketplace's cache only, never another marketplace's `kaizen`) and refuse when it is missing. Hooks
+  already in use (husky, `.git/hooks`) are never shadowed. `audit fix claude_settings` declares
+  `kaizen@dojo` for every clone. `review check --branch --sha`.
+- **`plan amend`**: add a requirement (next free ID, never renumbering) or replace one's text, attach it
+  to its units, record date, author and reason in `amended:`; refused if it breaks the plan.
+  **`plan reviewed`** records the reviewed body's hash; `plan check` warns about a plan never reviewed
+  or changed since. `doc-review` marks the plan.
+- **Visual evidence**: `**Evidence:** visual: <views>`; `plan check` warns about a unit touching
+  shader, style or render files without it. `work` captures each view before and after and rejects
+  blank captures. New **`rendering-reviewer`** (22 agents), which opens the captures.
+- **Resilient reviews**: a `PreToolUse` hook logs each reviewer as it is launched (slice, run);
+  `review record --run` refuses a run where one left no valid JSON, and `--allow-missing` only prints a
+  code the user types. The review skill splits diffs above 1500 lines by slice, reviews slices in
+  sequence with at most 4 reviewers, and resumes or relaunches a failed reviewer once.
+- **`kaizen perf`**: a declared performance budget (`perf.command`, `perf.thresholds`), pass, fail or
+  blind — an unmeasured budget is never a pass.
+- **`/kaizen:learn harvest`**: every candidate lesson of a cycle, filtered and chosen, then written one
+  run at a time.
+
 ## [3.2.1] - 2026-10-07
 
 ### Changed
