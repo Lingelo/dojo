@@ -34,7 +34,7 @@
 //   node kaizen.mjs packs [--json] [--refresh]   rules of the declared Kaizen Packs
 //   node kaizen.mjs pack new <name>              creates and declares a local pack
 //   node kaizen.mjs gate on [--plan p] | off | status      Stop-hook quality gate
-//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] | waive --reason "…" | status
+//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] [--allow-missing a,b] | waive --reason "…" | status
 //                  | check [--branch b --sha s]
 //                                                 reviewed state per branch, required by the hook before git push;
 //                                                 record requires reviewers that actually ran (except a light
@@ -883,7 +883,10 @@ try {
       break;
     case 'review': {
       const root = requireRepo();
-      if (sub === 'record') out(recordReview(root, { verdict: flags.verdict, run: typeof flags.run === 'string' ? flags.run : null }));
+      if (sub === 'record') {
+        const allowMissing = typeof flags['allow-missing'] === 'string' ? flags['allow-missing'].split(',').map((x) => x.trim().replace(/-reviewer$/, '')) : [];
+        out(recordReview(root, { verdict: flags.verdict, run: typeof flags.run === 'string' ? flags.run : null, allowMissing }));
+      }
       else if (sub === 'waive') out(requestWaiver(root, { reason: typeof flags.reason === 'string' ? flags.reason : null }));
       else if (sub === 'status') out(reviewStatus(root));
       else if (sub === 'check') {

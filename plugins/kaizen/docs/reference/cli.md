@@ -172,11 +172,15 @@ Reserves `<docs_root>/postmortems/YYYY-MM-DD-<title>.md` (`-2`, `-3`… if taken
 
 ## Review
 
-### `review record --verdict ready|concerns|blocked [--run <folder>]`
+### `review record --verdict ready|concerns|blocked [--run <folder>] [--allow-missing a,b]`
 
 Records the reviewed tree of the current branch. Refused without evidence of a reviewer since the
 previous review, except a light review (branch ≤ 20 lines) or an update after fixes (≤
-`review.max_unreviewed_lines` since the reviewed tree). Prints the entry: branch, head, tree, verdict,
+`review.max_unreviewed_lines` since the reviewed tree). Refused too when a reviewer launched for this
+run (logged by the PreToolUse hook on Agent, with its `Slice:` and `Run:` lines) left no
+`<run>/<name>[-<slice>].json` holding a `findings` array — `--run` is then required. `--allow-missing`
+does not record: it prints a code the user types (`kaizen waive <code>`), and the review is then
+recorded with `gaps`. Prints the entry: branch, head, tree, verdict,
 depth (`agents` | `light` | `update`), reviewers, models, run, at. `reserves` is accepted for
 `concerns`.
 

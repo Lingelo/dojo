@@ -4,6 +4,8 @@
 //   --evidence  (PostToolUse, Agent/Task tool): logs every Kaizen code reviewer actually launched;
 //               `review record` requires it. During a work/autopilot cycle (gate active), also logs
 //               every subagent (role, model, id) to break the cycle's cost down.
+//   --launch    (PreToolUse, Agent/Task tool): logs every Kaizen code reviewer as it is launched, with
+//               its slice and run folder; `review record --run` then requires each one's output.
 //   --heartbeat (SessionStart): records that Claude Code runs Kaizen's hooks in this repo
 //               (`.kaizen/state/hooks-seen.json`), read by `kaizen doctor`.
 //   --confirm   (UserPromptSubmit): a user message containing `kaizen waive <code>` confirms the review
@@ -18,12 +20,12 @@ try {
   input = JSON.parse(readFileSync(0, 'utf8') || '{}');
 } catch {}
 
-const mode = process.argv.includes('--confirm') ? 'confirm' : process.argv.includes('--heartbeat') ? 'heartbeat' : 'evidence';
+const mode = ['confirm', 'heartbeat', 'launch'].find((m) => process.argv.includes(`--${m}`)) || 'evidence';
 const WAIVE = /\bkaizen\s+(waive|deploy)\s+([A-F0-9]{6})\b/i;
 
 // Cheap filters before any import: these hooks see every message and every subagent.
 if (mode === 'confirm' && !WAIVE.test(String(input.prompt || ''))) process.exit(0);
-if (mode === 'evidence' && !/^(Agent|Task)$/.test(String(input.tool_name || ''))) process.exit(0);
+if ((mode === 'evidence' || mode === 'launch') && !/^(Agent|Task)$/.test(String(input.tool_name || ''))) process.exit(0);
 
 try {
   const { existsSync } = await import('node:fs');
@@ -33,7 +35,9 @@ try {
   if (!root) process.exit(0);
   const state = await import('./review-state.mjs');
 
-  if (mode === 'heartbeat') {
+  if (mode === 'launch') {
+    if (existsSync(join(root, '.kaizen', 'config.json'))) state.addLaunch(root, input.tool_input, { session: input.session_id || null });
+  } else if (mode === 'heartbeat') {
     if (existsSync(join(root, '.kaizen', 'config.json'))) state.recordHeartbeat(root, { session: input.session_id || null, source: input.source || null });
   } else if (mode === 'evidence') {
     const reviewer = state.reviewerOf(input.tool_input);
@@ -59,7 +63,10 @@ try {
     const entry = state.confirmWaiver(root, code, { session: input.session_id || null });
     // On UserPromptSubmit, standard output is added to Claude's context.
     process.stdout.write(
-      entry
+      entry?.gaps
+        ? `[kaizen] Review of ${entry.branch} recorded with the gap accepted by the user (${entry.gaps.join(', ')} without output). ` +
+            'The PR must name the missing reviewers in its review section.\n'
+        : entry
         ? `[kaizen] Review waiver confirmed by the user for ${entry.branch} (reason: ${entry.reason}). ` +
             'The push is allowed; the PR must say so in a "Review waived" section.\n'
         : `[kaizen] Waiver code ${code} unknown or expired (30 min): run \`review waive --reason\` again if the user still wants it.\n`,

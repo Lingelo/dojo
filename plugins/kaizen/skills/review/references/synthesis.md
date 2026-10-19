@@ -14,6 +14,9 @@ Merge: keep the highest severity, the best evidence, the most concrete fix, and 
 ("security + adversarial"). Two independent reviewers converging raise confidence (+1 anchor, capped at
 100) — it is a signal, not evidence.
 
+Split review: merge the slices' outputs first (`<name>-<slice>.json`); the same finding reported in two
+slices (a shared helper, a repeated pattern) is one finding listing every location.
+
 Two **contradictory** findings on the same line (one wants to add, the other to remove): keep both,
 report the tension, do not decide without evidence.
 

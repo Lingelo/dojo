@@ -72,6 +72,8 @@ single message** (`Agent` tool, `subagent_type: "kaizen:<name>"`, `model` read f
 </contract>
 <review-context>
 Reviewer: <name>
+Run: <run folder>
+Slice: <S<n>, only in a split review>
 Intent: <intent summary>
 Plan (relevant R/AE/KTD excerpts): <… or "none">
 Changed files: <list>
@@ -82,9 +84,23 @@ Captures (rendering only): <before/after PNG paths from the commits' "Visual:" l
 Return only the contract's JSON.
 ```
 
-Large diff (> ~1500 lines): write it into `<run>/diff.patch` and pass the path. Wait for **all**
-returns; an error or non-JSON return = failed reviewer (noted in the coverage, never silently ignored).
-Save each return in `<run>/<name>.json`.
+Wait for **all** returns and save each one as `<run>/<name>.json` (`<run>/<name>-<slice>.json` in a
+split review). A hook logs every reviewer **as it is launched**: `review record` refuses a run where a
+launched reviewer left no valid JSON.
+
+**Large diff — split it.** Above 1500 changed lines (excluded files aside), one reviewer cannot read
+it all: it skims, or dies on its context or a rate limit. Split by **slice** (the plan's **Slice:**
+units, through their commits), else by unit commit range, else by directory. Write each part to
+`<run>/diff-<slice>.patch`. Review the slices **one after the other**, at most 4 reviewers in parallel,
+with only the reviewers relevant to that slice (a slice without SQL gets no data-migration reviewer).
+Merge all slices in step 5; a finding seen in two slices is one finding.
+
+**A reviewer fails** (error, rate limit, a return that is not the contract's JSON): resume it once
+(`SendMessage` to the same agent: "return the contract's JSON for what you reviewed"), else relaunch it
+once with the same prompt — after the others finished, never in parallel with a rate limit. Still
+nothing → it is a gap: the report names it in the coverage and the verdict cannot be ✅. Recording then
+needs `--allow-missing <name>`, which only prints a code: ask the user to type `kaizen waive <code>`
+themselves if they accept the gap.
 
 ## Step 5 — Merge, filter, validate
 
@@ -125,6 +141,8 @@ incomplete; ✅ otherwise.
 ⚠️ → `concerns`, ⛔ → `blocked`). That is what the push hook requires; a review of another PR or another
 branch is not recorded. Recording is refused if no reviewer actually ran (a hook logs every `Agent` call
 to a code reviewer) — except at light depth (≤ 20 lines): do not work around it, launch the reviewers.
+It is refused too when a launched reviewer left no output in the run folder (named in the error):
+resume or relaunch it; a gap the user accepts goes through `--allow-missing` and their typed code.
 
 ## Step 7 — Apply (only with `apply`)
 

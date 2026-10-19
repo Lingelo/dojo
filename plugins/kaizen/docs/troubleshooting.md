@@ -36,6 +36,7 @@ That is the review hook: in a Kaizen repo, a branch does not leave without a rev
 | "the last review returned ⛔" | fix the blocking findings, then rerun the review |
 | You want to push without a review (hotfix, throwaway branch) | ask Claude: it runs `node $K review waive --reason "…"` and gives you a code; type `kaizen waive <code>` yourself |
 | "no Kaizen reviewer launched" at `review record` time | the review did not launch its reviewers (or they ran more than 12 h ago in another session): rerun `/kaizen:review` |
+| "launched reviewer(s) without a valid output" at `review record` time | a reviewer died (rate limit, error) or its JSON was not saved: rerun it (the review skill resumes it once); if you accept the gap, Claude runs `--allow-missing <name>` and you type the code |
 | "the reviewed tree cannot be found (history rewritten?)" | the branch was rebased or amended after the review: rerun `/kaizen:review` |
 | You do not want this rule in this repo | `"review": { "require_before_push": false }` |
 

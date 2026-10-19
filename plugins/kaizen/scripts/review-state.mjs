@@ -18,7 +18,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { changedLines, defaultBranch, diffBase, git, loadConfig, worktreeTree } from './lib.mjs';
 
 export const VERDICTS = ['ready', 'concerns', 'blocked'];
@@ -99,6 +99,48 @@ export function addEvidence(root, { reviewer, session = null, model = null }) {
   writeJson(root, 'review-evidence.json', list);
 }
 
+// Launches (PreToolUse on Agent): a reviewer that dies (rate limit, error) never reaches PostToolUse,
+// so only the launch log knows it was expected. Its prompt may name a slice ("Slice: S2") and the run
+// folder ("Run: <dir>").
+export function addLaunch(root, toolInput = {}, { session = null } = {}) {
+  const reviewer = reviewerOf(toolInput);
+  if (!reviewer) return null;
+  const prompt = String(toolInput.prompt || '');
+  const slice = /^\s*Slice\s*:\s*(S\d+)\b/m.exec(prompt)?.[1] || null;
+  const run = /^\s*Run\s*:\s*(\S+)/m.exec(prompt)?.[1] || null;
+  const now = Date.now();
+  const list = readJson(root, 'review-launches.json', []).filter((e) => now - Date.parse(e.at) < EVIDENCE_MAX_AGE_MS);
+  const entry = { reviewer, slice, run, session, at: new Date(now).toISOString() };
+  list.push(entry);
+  writeJson(root, 'review-launches.json', list);
+  return entry;
+}
+
+const outputName = (l) => `${l.reviewer.replace(/-reviewer$/, '')}${l.slice ? `-${l.slice}` : ''}`;
+
+// Launched reviewers of this run with no valid output in the run folder (`<name>[-<slice>].json`
+// holding the contract's `findings` array).
+export function missingOutputs(root, run, since) {
+  const from = Math.max(since ? Date.parse(since) : 0, Date.now() - EVIDENCE_MAX_AGE_MS);
+  const dir = join(root, run);
+  const runId = basename(run);
+  const launches = readJson(root, 'review-launches.json', []).filter((l) => Date.parse(l.at) > from && (!l.run || basename(l.run) === runId));
+  const missing = new Set();
+  for (const l of launches) {
+    const name = outputName(l);
+    const candidates = [`${name}.json`, `${l.reviewer}${l.slice ? `-${l.slice}` : ''}.json`];
+    const ok = candidates.some((f) => {
+      try {
+        return Array.isArray(JSON.parse(readFileSync(join(dir, f), 'utf8')).findings);
+      } catch {
+        return false;
+      }
+    });
+    if (!ok) missing.add(name);
+  }
+  return { launched: launches.length, missing: [...missing].sort() };
+}
+
 function evidenceSince(root, since) {
   const from = Math.max(since ? Date.parse(since) : 0, Date.now() - EVIDENCE_MAX_AGE_MS);
   return readJson(root, 'review-evidence.json', []).filter((e) => Date.parse(e.at) > from);
@@ -106,7 +148,7 @@ function evidenceSince(root, since) {
 
 // --- Recording a review ----------------------------------------------------------------------------
 
-export function recordReview(root, { verdict, run = null } = {}) {
+export function recordReview(root, { verdict, run = null, allowMissing = [] } = {}) {
   verdict = VERDICT_ALIASES[verdict] || verdict;
   const branch = currentBranch(root);
   if (!branch) throw new Error('detached HEAD: a review is recorded on a branch');
@@ -114,6 +156,21 @@ export function recordReview(root, { verdict, run = null } = {}) {
   const config = loadConfig(root);
   const state = readJson(root, 'reviews.json', {});
   const previous = state[branch];
+  // Every reviewer launched for this review left its output — or the user accepts the gap.
+  const launched = readJson(root, 'review-launches.json', []).some((l) => Date.parse(l.at) > Math.max(previous?.at ? Date.parse(previous.at) : 0, Date.now() - EVIDENCE_MAX_AGE_MS));
+  let gaps = [];
+  if (launched && !run) throw new Error('reviewers were launched: --run <folder> required, so that each one\'s output can be checked');
+  if (run) {
+    const { missing } = missingOutputs(root, run, previous?.at);
+    const unaccepted = missing.filter((m) => !allowMissing.includes(m));
+    if (unaccepted.length) {
+      throw new Error(
+        `launched reviewer(s) without a valid output in ${run}: ${unaccepted.join(', ')} — resume or relaunch them ` +
+          '(their JSON saved as <name>[-<slice>].json); if the user accepts the gap: --allow-missing <names>',
+      );
+    }
+    gaps = missing;
+  }
   const evidence = evidenceSince(root, previous?.at);
   const reviewers = [...new Set(evidence.map((e) => e.reviewer))].sort();
   // Model actually requested for each reviewer (`model` parameter of the Agent call, otherwise the one
@@ -138,6 +195,8 @@ export function recordReview(root, { verdict, run = null } = {}) {
     );
   }
   const entry = { ...snapshot(root, branch), verdict, depth: reviewers.length ? 'agents' : 'light', reviewers, models, run, at: new Date().toISOString() };
+  // A gap is the user's call, never the agent's: it goes through the same typed code as a waiver.
+  if (gaps.length) return requestWaiver(root, { reason: `review recorded without ${gaps.join(', ')}`, gap: { ...entry, gaps } });
   state[branch] = entry;
   writeJson(root, 'reviews.json', state);
   return entry;
@@ -145,14 +204,14 @@ export function recordReview(root, { verdict, run = null } = {}) {
 
 // --- Waiver: requested by the agent, confirmed by the user ----------------------------------------
 
-export function requestWaiver(root, { reason }) {
+export function requestWaiver(root, { reason, gap = null }) {
   const branch = currentBranch(root);
   if (!branch) throw new Error('detached HEAD: a waiver applies to a branch');
   if (!reason) throw new Error('review waive requires --reason "<the user\'s request>"');
   const code = randomBytes(4).toString('hex').slice(0, 6).toUpperCase();
   const now = Date.now();
   const pending = readJson(root, 'waivers.json', []).filter((w) => now - Date.parse(w.at) < WAIVER_MAX_AGE_MS && w.branch !== branch);
-  pending.push({ code, reason, ...snapshot(root, branch), at: new Date(now).toISOString() });
+  pending.push({ code, reason, ...snapshot(root, branch), ...(gap ? { kind: 'gap', review: gap } : {}), at: new Date(now).toISOString() });
   writeJson(root, 'waivers.json', pending);
   return {
     pending: true,
@@ -170,7 +229,7 @@ export function confirmWaiver(root, code, { session = null } = {}) {
   const w = pending.find((x) => x.code === String(code).toUpperCase() && now - Date.parse(x.at) < WAIVER_MAX_AGE_MS);
   if (!w) return null;
   const state = readJson(root, 'reviews.json', {});
-  const entry = {
+  const entry = w.kind === 'gap' ? { ...w.review, confirmed_by: 'user (message)', session, at: new Date(now).toISOString() } : {
     branch: w.branch,
     head: w.head,
     tree: w.tree,

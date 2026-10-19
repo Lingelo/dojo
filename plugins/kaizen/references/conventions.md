@@ -117,7 +117,7 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
   cannot confirm it for them, and a confirmed waiver appears in the PR ("Review waived" section). In
   non-interactive mode, no waiver: stop and say why;
 - the review state files (`.kaizen/state/reviews.json`, `review-evidence.json`, `waivers.json`,
-  `hooks-seen.json`) are
+  `hooks-seen.json`, `review-launches.json`) are
   only written by the CLI and the hooks. Never bypass or disable it (`review.require_before_push:
   false`) without the user asking.
 
