@@ -164,7 +164,8 @@ and `release notes` copies the section into the production checklist. Recognized
 Warnings (exit 0): title without the ` - Plan` suffix; `[NEEDS CLARIFICATION]` left in a requirements
 plan; `kaizen:rollout` missing, or without **Rollback**, without **Signal**, or with a signal that has
 no threshold; some units with a **Slice** and others without; a constitutional exception without a
-visible justification.
+visible justification; an implementation-ready plan never reviewed (no `reviewed:` mark), or whose body
+changed since its review (amended with `plan amend` or edited by hand).
 
 The output summarizes the stage and the counts:
 `✔ docs/plans/…-plan.md — implementation-ready · 5 R · 3 AE · 3 U · 2 slice(s)`.

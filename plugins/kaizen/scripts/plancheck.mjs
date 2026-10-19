@@ -2,6 +2,7 @@
 // Checks the structure; judging the substance is left to /kaizen:doc-review.
 // French field names from plans written before Kaizen 3.0 are still accepted.
 
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { isDraft } from './constitution.mjs';
 import { parseFrontmatter } from './lib.mjs';
@@ -33,8 +34,24 @@ function definedIds(text, prefix) {
   return out;
 }
 
-export function checkPlan(file, { constitution = null, stage = 'auto' } = {}) {
-  const text = readFileSync(file, 'utf8');
+// Fingerprint of the plan body (everything after the frontmatter), recorded by `plan reviewed`.
+export function bodyHash(text) {
+  const { body } = parseFrontmatter(text);
+  return createHash('sha256').update(body.replace(/\r\n/g, '\n')).digest('hex').slice(0, 12);
+}
+
+// `reviewed: "<date> <hash>"` → was the plan reviewed, and is the body still the reviewed one?
+export function reviewState(data, text) {
+  const mark = typeof data.reviewed === 'string' ? /^(\S+)\s+([0-9a-f]{6,})$/.exec(data.reviewed.trim()) : null;
+  if (!mark) return { reviewed: false };
+  return { reviewed: true, date: mark[1], current: mark[2] === bodyHash(text) };
+}
+
+export function checkPlan(file, opts = {}) {
+  return checkPlanText(readFileSync(file, 'utf8'), opts);
+}
+
+export function checkPlanText(text, { constitution = null, stage = 'auto' } = {}) {
   const { data, body, error } = parseFrontmatter(text);
   const errors = [];
   const warnings = [];
@@ -79,6 +96,12 @@ export function checkPlan(file, { constitution = null, stage = 'auto' } = {}) {
     if (!r.signal) warnings.push('kaizen:rollout: **Signal** missing (what to watch after deploying)');
     else if (!/[<>≤≥]|seuil|threshold|%|\d+\s*(ms|s|min|h)\b|au-del[àa]|plus de|more than|above|below|exceed/i.test(r.signal)) warnings.push('kaizen:rollout: **Signal** without a threshold — at what value do we roll back?');
   }
+
+  // A plan implemented without review, or changed since (amended or by hand): a warning, never a gate.
+  const review = reviewState(data, text);
+  report.reviewed = review.reviewed ? review.date : null;
+  if (!review.reviewed) warnings.push('plan never reviewed: /kaizen:doc-review, then `plan reviewed <path>`');
+  else if (!review.current) warnings.push(`plan changed since its review on ${review.date}: /kaizen:doc-review again (or \`plan reviewed <path>\` if the change was reviewed)`);
 
   const units = sectionText(body, 'units') || '';
   const unitIds = definedIds(units, 'U');

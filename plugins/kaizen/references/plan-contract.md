@@ -22,10 +22,22 @@ source: brainstorm                          # brainstorm | plan (who wrote the p
 jira: SHOP-412                              # optional: originating ticket
 origin: docs/ideation/…                     # optional: upstream document
 deepened: 2026-10-03                        # optional: deepening date
+reviewed: "2026-10-04 3f9a1c0b2d4e"         # written by `plan reviewed`: date + hash of the body
+amended:                                    # written by `plan amend`, one entry per amendment
+  - "2026-10-06 | Ana (PO) | R6 | audit: who exported what"
 ---
 ```
 
-No `status` field: progress is inferred from git, never from a mutable field.
+No `status` field: progress is inferred from git, never from a mutable field. `reviewed:` and
+`amended:` are not progress: they record decisions (a review of this exact body, a scope change and who
+made it), and only the CLI writes them.
+
+**Amending a ready plan.** A requirement added or changed mid-cycle goes through
+`node "$K" plan amend <path> --add-req "…" --covered-by U<n> --by "…" --reason "…"` (or
+`--replace-req R<n> "…"`), never a hand edit: IDs are append-only (the new requirement takes the next
+number, at the end of the requirements), so no citation ever changes. A new unit or AE is still written
+by `/kaizen:plan`. `plan check` warns about a plan never reviewed, or whose body changed since
+`reviewed:`.
 
 ## Sections and markers
 

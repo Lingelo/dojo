@@ -39,6 +39,8 @@ node "$K" detect                   # stack + verification commands
 node "$K" verify [--only test]     # runs the checks (exit 1 if red)
 node "$K" plan new --type feat --topic <slug>   # reserves the plan file (atomic)
 node "$K" plan latest | list
+node "$K" plan amend <p> --add-req "…" --covered-by U<n> --by "…" --reason "…"   # scope change, recorded
+node "$K" plan reviewed <p>        # marks the reviewed body (doc-review)
 node "$K" learnings search <words…> [--json]    # relevant learnings, ranked
 node "$K" learnings validate [files…] | list | stats
 node "$K" packs [--json]           # rules of the declared Kaizen Packs
@@ -234,4 +236,5 @@ compare `applies_when` semantically to the work, and only read the body of the r
 ## Tone of deliverables
 
 Conclusion first, reason next. No filler: an empty or obvious section is omitted. No trace of the
-process ("in phase 2 I…") in deliverables. Diagrams complement prose, they never replace it.
+process ("in phase 2 I…") in the body of deliverables (a plan's `reviewed:` and `amended:` frontmatter
+fields are decisions, not process). Diagrams complement prose, they never replace it.

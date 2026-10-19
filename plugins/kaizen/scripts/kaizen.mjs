@@ -25,6 +25,9 @@
 //   node kaizen.mjs verify [--only test,lint] [--json]     runs the checks (exit 1 if red)
 //   node kaizen.mjs plan new --type feat --topic export-csv   reserves a plan path
 //   node kaizen.mjs plan latest | list           existing plans
+//   node kaizen.mjs plan amend <path> --add-req "…" [--covered-by U2] | --replace-req R3 "…"  --by "…" --reason "…"
+//                                                 append-only requirement IDs, amendment recorded in the frontmatter
+//   node kaizen.mjs plan reviewed <path>          marks the plan reviewed (date + body hash; plan check warns otherwise)
 //   node kaizen.mjs learnings search <words…> [--limit 8] [--json]
 //   node kaizen.mjs learnings validate [files…]
 //   node kaizen.mjs learnings list | stats
@@ -55,6 +58,7 @@ import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { isDraft, loadConstitution, validateConstitution } from './constitution.mjs';
 import { checkPlan } from './plancheck.mjs';
+import { amendPlan, markReviewed } from './planamend.mjs';
 import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
 import { computeMetrics } from './metrics.mjs';
@@ -273,7 +277,20 @@ function cmdPlan(root, sub) {
     }
     process.exit(report.errors.length ? 1 : 0);
   }
-  die('usage: plan new --type <type> --topic <slug> | plan latest | plan list | plan check <path>');
+  if (sub === 'amend' || sub === 'reviewed') {
+    const target = positional[2];
+    if (!target) die(`usage: plan ${sub} <path>`);
+    const str = (v) => (typeof v === 'string' ? v : null);
+    if (sub === 'reviewed') out(markReviewed(resolve(target)));
+    else {
+      // --covered-by may be repeated or comma-separated.
+      const covered = argv.flatMap((a, i) => (a === '--covered-by' && argv[i + 1] ? argv[i + 1].split(',') : [])).map((u) => u.trim()).filter(Boolean);
+      const replace = str(flags['replace-req']);
+      out(amendPlan(resolve(target), { addReq: str(flags['add-req']), replaceReq: replace, text: replace ? positional[3] || null : null, coveredBy: covered, by: str(flags.by), reason: str(flags.reason) }));
+    }
+    return;
+  }
+  die('usage: plan new --type <type> --topic <slug> | plan latest | plan list | plan check <path> | plan amend <path> … | plan reviewed <path>');
 }
 
 // ---------------------------------------------------------------------------

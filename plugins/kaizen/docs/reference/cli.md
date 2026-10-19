@@ -116,6 +116,18 @@ if taken) and prints the path. Type and topic are slugified (accents removed, 60
 `latest`: the most recently modified plan (exit 1 if none). `list`: JSON of every plan with `path`,
 `title`, `stage` (`requirements` | `implementation-ready`) and `updated`.
 
+### `plan amend <path> --add-req "…" [--covered-by U<n>]… --by "…" --reason "…"` · `plan amend <path> --replace-req R<n> "…" --by "…" --reason "…"`
+
+Changes a plan's scope without a hand edit. IDs are append-only: `--add-req` writes the next free
+requirement at the end of the requirements and appends it to each `--covered-by` unit's **Covers:**;
+`--replace-req` rewrites the text and keeps the ID. The amendment is recorded in the frontmatter
+(`amended:` — `"<date> | <by> | <R id> | <reason>"`). The result is checked like `plan check`: an
+amendment that adds an error (an uncovered requirement, an unknown unit) writes nothing.
+
+### `plan reviewed <path>`
+
+Writes `reviewed: "<date> <hash>"` (SHA-256 prefix of the body). Run by `/kaizen:doc-review`.
+
 ### `plan check <path> [--json]`
 
 The structural check of a plan — every error and warning is listed in

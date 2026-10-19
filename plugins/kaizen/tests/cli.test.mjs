@@ -165,7 +165,7 @@ test('constitution and plan written in French before Kaizen 3.0 are still accept
   });
   const r = cli(dir, ['plan', 'check', 'plan.md', '--json']);
   assert.equal(r.code, 0, JSON.stringify(r.json));
-  assert.deepEqual(r.json.warnings, []);
+  assert.deepEqual(r.json.warnings.filter((w) => !/never reviewed/.test(w)), []);
   cleanup(dir);
 });
 

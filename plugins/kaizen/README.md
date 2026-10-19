@@ -257,7 +257,9 @@ node $K models [--json] [--agent a]            # model of each agent per profile
 # Principles, plans, learnings
 node $K constitution [check] [--json]          # CONSTITUTION.md articles / validation
 node $K plan new --type feat --topic x | plan latest | plan list
-node $K plan check <path> [--json]             # structure, R/AE → U traceability, constitution, rollout
+node $K plan check <path> [--json]             # structure, R/AE → U traceability, constitution, rollout, review mark
+node $K plan amend <path> --add-req "…" [--covered-by U2] | --replace-req R3 "…"  --by "…" --reason "…"
+node $K plan reviewed <path>                   # marks the reviewed body (date + hash)
 node $K learnings search <words…> [--limit 8] [--json] | validate [files…] | list | stats
 node $K packs [--json] [--refresh]             # rules of the declared Kaizen Packs
 node $K pack new <name>                        # creates and declares a local pack
