@@ -23,6 +23,7 @@
 //   node kaizen.mjs init [--docs-root d] [--language en] [--profile lean|standard|full]   initializes .kaizen/ and the folders
 //   node kaizen.mjs detect                       stack and verification commands (JSON)
 //   node kaizen.mjs verify [--only test,lint] [--json]     runs the checks (exit 1 if red)
+//   node kaizen.mjs perf [--json]                performance budget (config perf): exit 0 pass, 1 over budget, 2 blind
 //   node kaizen.mjs plan new --type feat --topic export-csv   reserves a plan path
 //   node kaizen.mjs plan latest | list           existing plans
 //   node kaizen.mjs plan amend <path> --add-req "…" [--covered-by U2] | --replace-req R3 "…"  --by "…" --reason "…"
@@ -69,6 +70,7 @@ import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { audit, scaffold } from './audit.mjs';
 import { doctor, formatDoctor } from './doctor.mjs';
 import { preCommit, prePush } from './githooks.mjs';
+import { formatPerf, runPerf } from './perf.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
@@ -706,6 +708,11 @@ try {
       const r = sub === 'pre-push' ? prePush(root, readFileSync(0, 'utf8'), process.argv[1]) : sub === 'pre-commit' ? preCommit(root) : die('usage: githook pre-push|pre-commit');
       if (r.message) process.stderr.write(r.message);
       process.exit(r.code);
+    }
+    case 'perf': {
+      const r = runPerf(requireRepo());
+      out(flags.json ? r : formatPerf(r));
+      process.exit(r.status === 'pass' ? 0 : r.status === 'fail' ? 1 : 2);
     }
     case 'doctor': {
       const r = doctor(requireRepo(), { inSkill: !!flags['in-skill'] });

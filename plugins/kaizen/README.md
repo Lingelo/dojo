@@ -268,6 +268,7 @@ node $K postmortem new --title "…"             # reserves a postmortem (docs/p
 
 # Building and verifying
 node $K verify [--only test,lint|audit] [--json]   # runs the checks (exit 1 if red)
+node $K perf [--json]                          # performance budget (config perf): exit 1 over, 2 blind
 node $K gate on [--plan p] | off | status      # Stop-hook quality gate
 node $K size [--base ref] [--max n] [--json]   # diff size vs pr.max_lines (exit 1 if above)
 node $K secrets scan [--staged | --base ref] [--json]   # possible secrets in the changes (exit 1 if any)

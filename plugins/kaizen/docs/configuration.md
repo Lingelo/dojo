@@ -189,6 +189,23 @@ DORA 2025's finding: AI makes PRs bigger, and review becomes the bottleneck.
 Details in [Gates and hooks](concepts/gates-and-hooks.md#the-secret-scan-before-git-commit-pretooluse). Adding
 a path to `ignore` is the user's decision: Claude proposes it, it does not do it on its own.
 
+### `perf` — the performance budget
+
+| Key | Default | Role |
+|---|---|---|
+| `command` | `null` | prints `name=value` (or `name: value`) lines — a benchmark, a headless FPS probe, a Lighthouse run |
+| `thresholds` | `{}` | per metric: `">= 55"`, `"<= 18"`, `"< 200"`… |
+| `timeout_seconds` | `600` | the command's whole process tree is killed beyond it |
+
+```json
+"perf": { "command": "npm run bench", "thresholds": { "fps": ">= 55", "frame_ms": "<= 18" } }
+```
+
+`kaizen perf` exits 0 within budget, 1 over budget (naming the metric), 2 **blind**: the command crashed,
+timed out, or did not print a metric that has a threshold — an unmeasured budget is never a pass. It is
+trusted like the `verify` commands (same file, same reviewers). Run it where a plan requires performance;
+it is not part of the Stop-hook gate.
+
 ### `deploy` — deployment and rollback
 
 Optional. The commands `/kaizen:deploy` releases with: Kaizen knows no platform and never guesses a

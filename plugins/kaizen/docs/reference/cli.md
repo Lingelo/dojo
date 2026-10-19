@@ -74,6 +74,13 @@ See [Agents and models](../concepts/agents-and-models.md#the-model-policy).
 
 ## Checks
 
+### `perf [--json]`
+
+Runs `perf.command` (see [configuration](../configuration.md#perf--the-performance-budget)), reads its
+`name=value` lines and holds each metric to its threshold. `--json`:
+`{ status: pass|fail|blind, metrics: { name: { value, threshold, ok } }, detail, seconds }`. Exit 0 pass,
+1 over budget, 2 blind (crash, timeout, a metric not printed, or no `perf.command`).
+
 ### `verify [--only test,lint,…|audit] [--json]`
 
 Runs the verification commands (`detect`) sequentially, each bounded by `gate.timeout_seconds` (its

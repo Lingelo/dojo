@@ -37,6 +37,7 @@ node "$K" config                   # effective configuration
 node "$K" init [--profile lean]    # creates .kaizen/config.json and the deliverable folders
 node "$K" detect                   # stack + verification commands
 node "$K" verify [--only test]     # runs the checks (exit 1 if red)
+node "$K" perf                     # performance budget, when configured (exit 1 over, 2 blind)
 node "$K" plan new --type feat --topic <slug>   # reserves the plan file (atomic)
 node "$K" plan latest | list
 node "$K" plan amend <p> --add-req "…" --covered-by U<n> --by "…" --reason "…"   # scope change, recorded
