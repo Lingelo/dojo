@@ -3,10 +3,12 @@
 //
 //   node kaizen.mjs status [--json]              where the repo stands in the loop, and the next command
 //   node kaizen.mjs root                         deliverable paths (JSON)
+//   node kaizen.mjs githook pre-push|pre-commit   run by the git hooks of `audit fix git_hooks` (exit 1 refuses)
 //   node kaizen.mjs doctor [--in-skill] [--json] [--strict]   are the guard rails on (plugin declared, hooks
 //                                                 firing, git hooks wired, branch reviewed)? exit 1 with --strict
 //   node kaizen.mjs models [--json] [--agent a]  model of each agent per profile and config
 //   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   project SDLC maturity
+//                                                 (fix git_hooks: .githooks/ + core.hooksPath; claude_settings: kaizen@dojo declared)
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
 //                                                 deployment through the team's commands, deploy/<env>/… tag
 //   node kaizen.mjs deploy flag on|off <name> [--env e]    feature flag (deploy.flags)
@@ -62,6 +64,7 @@ import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { audit, scaffold } from './audit.mjs';
 import { doctor, formatDoctor } from './doctor.mjs';
+import { preCommit, prePush } from './githooks.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
@@ -680,6 +683,13 @@ try {
     case 'root':
       out(paths(requireRepo()));
       break;
+    case 'githook': {
+      // Run by .githooks/* (audit fix git_hooks): exit 1 refuses the push or the commit.
+      const root = requireRepo();
+      const r = sub === 'pre-push' ? prePush(root, readFileSync(0, 'utf8'), process.argv[1]) : sub === 'pre-commit' ? preCommit(root) : die('usage: githook pre-push|pre-commit');
+      if (r.message) process.stderr.write(r.message);
+      process.exit(r.code);
+    }
     case 'doctor': {
       const r = doctor(requireRepo(), { inSkill: !!flags['in-skill'] });
       out(flags.json ? r : formatDoctor(r));
@@ -690,7 +700,7 @@ try {
       const root = requireRepo();
       if (sub === 'fix') {
         const id = positional[2];
-        if (!id) die('usage: audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]');
+        if (!id) die('usage: audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert|git_hooks|claude_settings> [--owner @x] [--env e] [--ref sha]');
         const str = (v) => (typeof v === 'string' ? v : undefined);
         out(scaffold(root, id, { owner: str(flags.owner), env: str(flags.env), ref: str(flags.ref) }));
         break;

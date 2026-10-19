@@ -77,15 +77,8 @@ try {
   if (res.allowed) process.exit(0);
 
   const { fileURLToPath } = await import('node:url');
-  const K = fileURLToPath(new URL('./kaizen.mjs', import.meta.url));
-  process.stderr.write(
-    `[kaizen] Push refused on ${res.branch}: ${res.reason}.\n` +
-      'A review is mandatory before any push (Kaizen cycle constitution).\n' +
-      `- Run /kaizen:review (it records the reviewed state via \`node "${K}" review record\`), apply the P0/P1 fixes, then push.\n` +
-      `- If the user explicitly asked to skip it: \`node "${K}" review waive --reason "<their request>"\`, ` +
-      "then ask them to type the displayed confirmation message themselves (kaizen waive <code>); you cannot confirm it for them.\n" +
-      'Do not bypass this gate any other way, and do not disable it without an explicit request.\n',
-  );
+  const { pushRefusal } = await import('./review-state.mjs');
+  process.stderr.write(pushRefusal(res, fileURLToPath(new URL('./kaizen.mjs', import.meta.url))));
   process.exit(2);
 } catch (err) {
   process.stderr.write(`[kaizen] review-gate: ${err.message} — push let through.\n`);

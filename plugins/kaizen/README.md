@@ -250,7 +250,8 @@ node $K init [--docs-root d] [--language en] [--profile lean|standard|full]   # 
 node $K config                                 # effective configuration (JSON)
 node $K detect                                 # stack and verification commands (JSON)
 node $K audit [--json] [--no-github]           # SDLC maturity in five areas
-node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert> [--owner @x] [--env e] [--ref sha]
+node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert|git_hooks|claude_settings> [--owner @x] [--env e] [--ref sha]
+node $K githook pre-push|pre-commit            # run by .githooks/ (audit fix git_hooks): exit 1 refuses
 node $K models [--json] [--agent a]            # model of each agent per profile and config
 
 # Principles, plans, learnings

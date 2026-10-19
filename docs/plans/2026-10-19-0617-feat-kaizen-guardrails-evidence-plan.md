@@ -130,7 +130,8 @@ and only one learning could be written per run.
   `core.hooksPath`; when `core.hooksPath` is already set (husky…) or `.git/hooks/pre-push` exists,
   setup writes nothing and prints the line to chain instead. Rejected: an absolute path written at
   install (breaks on every plugin update); fail open (defeats R3). Covers R3.
-- KTD4. **`review check --branch <name> --sha <sha>`**: the pre-push hook reads git's stdin
+- KTD4. **`review check --branch <name> --sha <sha>`**: the pre-push hook (`kaizen.mjs githook
+  pre-push`, `githook pre-commit` for secrets) reads git's stdin
   (`<local ref> <local sha> <remote ref> <remote sha>`), skips deletions (zero sha) and tags, and checks
   each pushed `refs/heads/*` by name and sha passed as arguments, never interpolated into a shell
   command; `checkPush(root, config, { branch, sha })` defaults to `HEAD`. Covers R3.
@@ -261,7 +262,7 @@ and only one learning could be written per run.
   (new), `plugins/kaizen/skills/setup/SKILL.md`, `plugins/kaizen/docs/troubleshooting.md`
 - **Approach:** KTD3, KTD4; scaffolds `git_hooks` and `claude_settings` (merges the marketplace and
   `kaizen@dojo` into `.claude/settings.json` without removing keys) with audit checks; hooks call
-  `review check --branch --sha` and `secrets scan --staged`.
+  `githook pre-push` (the `checkPush({ branch, sha })` rule) and `githook pre-commit` (staged secrets).
 - **Evidence:** test first.
 - **Test scenarios:** push of an unreviewed branch to a bare repo refused (AE2); reviewed branch
   allowed; branch deletion and tag push allowed; CLI not found → refused with the fix; a decoy

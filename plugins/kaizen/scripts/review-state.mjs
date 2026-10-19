@@ -224,6 +224,18 @@ export function checkPush(root, config = loadConfig(root), { branch = null, sha 
   return { allowed: true, branch, reason, review: rec, unreviewed_lines: since };
 }
 
+// The refusal both push gates print (Claude Code hook and git pre-push hook).
+export function pushRefusal(res, K) {
+  return (
+    `[kaizen] Push refused on ${res.branch}: ${res.reason}.\n` +
+    'A review is mandatory before any push (Kaizen cycle constitution).\n' +
+    `- Run /kaizen:review (it records the reviewed state via \`node "${K}" review record\`), apply the P0/P1 fixes, then push.\n` +
+    `- If the user explicitly asked to skip it: \`node "${K}" review waive --reason "<their request>"\`, ` +
+    'then ask them to type the displayed confirmation message themselves (kaizen waive <code>); you cannot confirm it for them.\n' +
+    'Do not bypass this gate any other way, and do not disable it without an explicit request.\n'
+  );
+}
+
 export function reviewStatus(root) {
   const branch = currentBranch(root);
   const pending = readJson(root, 'waivers.json', []).filter((w) => w.branch === branch && Date.now() - Date.parse(w.at) < WAIVER_MAX_AGE_MS);
