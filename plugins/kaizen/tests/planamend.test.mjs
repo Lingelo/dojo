@@ -8,7 +8,8 @@ import { PLUGIN, cleanup, cli, tempRepo } from './helpers.mjs';
 
 function planRepo() {
   const dir = tempRepo({ 'README.md': '#\n' });
-  writeFileSync(join(dir, 'plan.md'), readFileSync(join(PLUGIN, 'templates/plan-example.md'), 'utf8'));
+  // LF whatever the checkout (autocrlf on Windows); CRLF has its own test.
+  writeFileSync(join(dir, 'plan.md'), readFileSync(join(PLUGIN, 'templates/plan-example.md'), 'utf8').replace(/\r\n/g, '\n'));
   return dir;
 }
 const read = (dir) => readFileSync(join(dir, 'plan.md'), 'utf8');
@@ -82,5 +83,17 @@ test('review mark: never reviewed → warning; reviewed → none; changed after 
   cli(dir, ['plan', 'reviewed', 'plan.md']);
   cli(dir, ['plan', 'amend', 'plan.md', '--add-req', 'A.', '--covered-by', 'U1', '--by', 'X', '--reason', 'y']);
   assert.match(warn(), /plan changed since its review/);
+  cleanup(dir);
+});
+
+test('a CRLF plan stays CRLF after an amendment and a review mark', () => {
+  const dir = planRepo();
+  writeFileSync(join(dir, 'plan.md'), read(dir).replace(/\n/g, '\r\n'));
+  assert.equal(cli(dir, ['plan', 'amend', 'plan.md', '--add-req', 'A.', '--covered-by', 'U1', '--by', 'X', '--reason', 'y']).code, 0);
+  cli(dir, ['plan', 'reviewed', 'plan.md']);
+  const text = read(dir);
+  assert.match(text, /- R6\. A\.\r\n/);
+  assert.equal(text.replace(/\r\n/g, '').includes('\n'), false, 'no bare LF introduced');
+  assert.equal(cli(dir, ['plan', 'check', 'plan.md']).code, 0);
   cleanup(dir);
 });

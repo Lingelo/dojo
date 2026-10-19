@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { git, loadConfig } from './lib.mjs';
 import { MARKETPLACE, PLUGIN_ID } from './doctor.mjs';
-import { checkPush, pushRefusal } from './review-state.mjs';
+import { checkPush, currentBranch, pushRefusal } from './review-state.mjs';
 import { formatFindings, scan } from './secrets.mjs';
 
 export const HOOKS = ['pre-push', 'pre-commit'];
@@ -81,14 +81,20 @@ export function declarePlugin(root) {
 }
 
 // git pre-push: stdin lists `<local ref> <local sha> <remote ref> <remote sha>` per pushed ref.
-// Each pushed branch is checked at the pushed commit; deletions and tags publish no new code.
+// What decides is the remote ref: every update of a remote branch is checked at the pushed commit,
+// whatever the local side (`HEAD`, a sha, a tag: `git push origin HEAD` must not slip through).
+// Deletions and tags publish no new branch code. The review is looked up under the local branch name
+// (`HEAD` → the current branch), else the remote one.
 export function prePush(root, stdin, K) {
   if (!existsSync(join(root, '.kaizen', 'config.json'))) return { code: 0 };
   const config = loadConfig(root);
   for (const line of String(stdin).split(/\r?\n/)) {
-    const [localRef, localSha] = line.trim().split(/\s+/);
-    if (!localRef || !localSha || ZERO.test(localSha) || !localRef.startsWith('refs/heads/')) continue;
-    const res = checkPush(root, config, { branch: localRef.slice('refs/heads/'.length), sha: localSha });
+    const [localRef, localSha, remoteRef] = line.trim().split(/\s+/);
+    if (!localRef || !localSha || ZERO.test(localSha) || !remoteRef?.startsWith('refs/heads/')) continue;
+    const branch = localRef.startsWith('refs/heads/')
+      ? localRef.slice('refs/heads/'.length)
+      : (localRef === 'HEAD' && currentBranch(root)) || remoteRef.slice('refs/heads/'.length);
+    const res = checkPush(root, config, { branch, sha: localSha });
     if (!res.allowed) return { code: 1, message: pushRefusal(res, K) };
   }
   return { code: 0 };

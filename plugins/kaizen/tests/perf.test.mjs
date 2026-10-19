@@ -5,11 +5,13 @@ import { loadConfig } from '../scripts/lib.mjs';
 import { parseMetrics } from '../scripts/perf.mjs';
 import { cleanup, cli, tempRepo } from './helpers.mjs';
 
-const node = (code) => `node -e ${JSON.stringify(code)}`;
+// One console.log per line and single quotes inside: the command also runs through cmd.exe on Windows.
+const node = (...lines) => `node -e "${lines.map((l) => `console.log('${l}')`).join(';')}"`;
+const nodeRaw = (code) => `node -e "${code}"`;
 const repo = (perf) => tempRepo({ '.kaizen/config.json': { perf } });
 
 test('within budget → pass, exit 0', () => {
-  const dir = repo({ command: node('console.log("fps=61\\nframe_ms: 14.2")'), thresholds: { fps: '>= 55', frame_ms: '<= 18' } });
+  const dir = repo({ command: node('fps=61', 'frame_ms: 14.2'), thresholds: { fps: '>= 55', frame_ms: '<= 18' } });
   const r = cli(dir, ['perf', '--json']);
   assert.equal(r.code, 0, r.stdout);
   assert.equal(r.json.status, 'pass');
@@ -18,7 +20,7 @@ test('within budget → pass, exit 0', () => {
 });
 
 test('a missed threshold → exit 1 with the metric (AE7)', () => {
-  const dir = repo({ command: node('console.log("warming up\\nfps=41")'), thresholds: { fps: '>= 55' } });
+  const dir = repo({ command: node('warming up', 'fps=41'), thresholds: { fps: '>= 55' } });
   const r = cli(dir, ['perf']);
   assert.equal(r.code, 1);
   assert.match(r.stdout, /over budget: fps/);
@@ -28,9 +30,9 @@ test('a missed threshold → exit 1 with the metric (AE7)', () => {
 
 test('crash, silence or timeout → blind (exit 2), never a pass (AE7)', () => {
   for (const [perf, detail] of [
-    [{ command: node('process.exit(3)'), thresholds: { fps: '>= 55' } }, /command failed \(exit 3\)/],
-    [{ command: node('console.log("done")'), thresholds: { fps: '>= 55' } }, /not printed: fps/],
-    [{ command: node('setTimeout(() => {}, 20000)'), timeout_seconds: 1, thresholds: { fps: '>= 55' } }, /timeout/],
+    [{ command: nodeRaw('process.exit(3)'), thresholds: { fps: '>= 55' } }, /command failed \(exit 3\)/],
+    [{ command: node('done'), thresholds: { fps: '>= 55' } }, /not printed: fps/],
+    [{ command: nodeRaw('setTimeout(() => {}, 20000)'), timeout_seconds: 1, thresholds: { fps: '>= 55' } }, /timeout/],
   ]) {
     const dir = repo(perf);
     const r = cli(dir, ['perf', '--json']);

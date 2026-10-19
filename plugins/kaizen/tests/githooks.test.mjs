@@ -90,6 +90,22 @@ test('pre-push checks the pushed commit, not HEAD', () => {
   cleanup(bare);
 });
 
+test('pre-push: HEAD, sha and tag refspecs onto a branch are checked too', () => {
+  const { dir, bare } = featureRepo();
+  cli(dir, ['audit', 'fix', 'git_hooks']);
+  gitc(dir, ['config', 'kaizen.cli', CLI], ['tag', 'v2']);
+  const sha = git(dir, ['rev-parse', 'HEAD']).stdout.trim();
+  for (const spec of ['HEAD', 'HEAD:feat/x', `${sha}:refs/heads/feat/z`, 'v2:refs/heads/feat/t']) {
+    const r = git(dir, ['push', 'origin', spec]);
+    assert.notEqual(r.status, 0, `${spec} must be refused`);
+    assert.match(r.stderr, /Push refused/, spec);
+  }
+  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  assert.equal(git(dir, ['push', 'origin', 'HEAD']).status, 0, 'reviewed: HEAD passes');
+  cleanup(dir);
+  cleanup(bare);
+});
+
 test('CLI not found: the hook refuses (fail closed) and a decoy marketplace is never run', () => {
   const { dir, bare } = featureRepo();
   cli(dir, ['audit', 'fix', 'git_hooks']);
