@@ -29,6 +29,16 @@ its stage and `plan check` errors, number of learnings, gate state, deploy envir
 commits, open incidents and resolved ones without a postmortem, review state and push decision, and the
 ordered `next` list ([decision order](../concepts/the-loop.md#knowing-where-you-are)).
 
+### `doctor [--in-skill] [--json] [--strict]`
+
+Are the guard rails on? Checks, each with the command that fixes it: `.kaizen/config.json` present;
+the versioned `.claude/settings.json` declares the `dojo` marketplace and enables `kaizen@dojo` (else a
+fresh clone or a cloud session runs without Kaizen); Claude Code hooks firing (heartbeat written by the
+SessionStart hook — absent means "not verified" from a terminal, "off" with `--in-skill`, which the
+entry skills pass); git hooks in `.githooks/` wired through `core.hooksPath`; verification commands
+detected; the branch's review state, and whether its upstream was pushed without a review. Exit 0, or 1
+with `--strict` when anything needs attention.
+
 ### `root`
 
 JSON of the deliverable paths: `repo`, `docs_root`, `plans`, `learnings`, `ideation`, `debug`,
@@ -163,10 +173,11 @@ depth (`agents` | `light` | `update`), reviewers, models, run, at. `reserves` is
 Creates a pending waiver for the branch and prints `{ code, expires_in_minutes: 30, instruction }`. Only
 your message `kaizen waive <code>` confirms it.
 
-### `review status` · `review check`
+### `review status` · `review check [--branch <name> --sha <sha>]`
 
 `status`: the recorded review, a pending waiver, and the push decision. `check`: the push decision
-alone, exit 1 when a push would be refused. See
+alone, exit 1 when a push would be refused; `--branch`/`--sha` check a given commit of a branch instead
+of `HEAD` (what the git pre-push hook passes). See
 [the decision at push time](../concepts/gates-and-hooks.md#the-decision-at-push-time).
 
 ### `run-dir <type>`

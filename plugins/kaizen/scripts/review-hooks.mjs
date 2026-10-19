@@ -4,6 +4,8 @@
 //   --evidence  (PostToolUse, Agent/Task tool): logs every Kaizen code reviewer actually launched;
 //               `review record` requires it. During a work/autopilot cycle (gate active), also logs
 //               every subagent (role, model, id) to break the cycle's cost down.
+//   --heartbeat (SessionStart): records that Claude Code runs Kaizen's hooks in this repo
+//               (`.kaizen/state/hooks-seen.json`), read by `kaizen doctor`.
 //   --confirm   (UserPromptSubmit): a user message containing `kaizen waive <code>` confirms the review
 //               waiver requested by `review waive`; `kaizen deploy <code>` approves the deployment to a
 //               protected environment requested by `deploy request`.
@@ -16,7 +18,7 @@ try {
   input = JSON.parse(readFileSync(0, 'utf8') || '{}');
 } catch {}
 
-const mode = process.argv.includes('--confirm') ? 'confirm' : 'evidence';
+const mode = process.argv.includes('--confirm') ? 'confirm' : process.argv.includes('--heartbeat') ? 'heartbeat' : 'evidence';
 const WAIVE = /\bkaizen\s+(waive|deploy)\s+([A-F0-9]{6})\b/i;
 
 // Cheap filters before any import: these hooks see every message and every subagent.
@@ -31,7 +33,9 @@ try {
   if (!root) process.exit(0);
   const state = await import('./review-state.mjs');
 
-  if (mode === 'evidence') {
+  if (mode === 'heartbeat') {
+    if (existsSync(join(root, '.kaizen', 'config.json'))) state.recordHeartbeat(root, { session: input.session_id || null, source: input.source || null });
+  } else if (mode === 'evidence') {
     const reviewer = state.reviewerOf(input.tool_input);
     if (existsSync(join(root, '.kaizen', 'state', 'gate.json'))) {
       const { recordLaunch } = await import('./cycle-agents.mjs');

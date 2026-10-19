@@ -20,7 +20,7 @@ const command = String(input.tool_input?.command || '');
 const filePath = String(input.tool_input?.file_path || input.tool_input?.notebook_path || '');
 // Cheap filters before any import: this hook sees every Bash command and every write.
 const PUSH = /(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+push(\s|$)/;
-const TAMPER = /(reviews|review-evidence|waivers|deploy-approvals)\.json|deployments\.jsonl|review-hooks\.mjs/;
+const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals)\.json|deployments\.jsonl|review-hooks\.mjs/;
 // Hand-made deployment tags: they would distort DORA metrics and postmortems.
 const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback|incident|resolve)\//;
 const tamper = input.tool_name === 'Bash'
@@ -40,7 +40,7 @@ try {
   if (!root || !existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
   if (tamper) {
     process.stderr.write(
-      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, waivers.json, ' +
+      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, ' +
         'deploy-approvals.json, deployments.jsonl) is only written ' +
         'by the CLI and the hooks. To read the state: `review status`. To waive the review: `review waive --reason`, ' +
         'confirmed by the user.\n',

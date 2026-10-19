@@ -3,6 +3,8 @@
 //
 //   node kaizen.mjs status [--json]              where the repo stands in the loop, and the next command
 //   node kaizen.mjs root                         deliverable paths (JSON)
+//   node kaizen.mjs doctor [--in-skill] [--json] [--strict]   are the guard rails on (plugin declared, hooks
+//                                                 firing, git hooks wired, branch reviewed)? exit 1 with --strict
 //   node kaizen.mjs models [--json] [--agent a]  model of each agent per profile and config
 //   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   project SDLC maturity
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
@@ -27,7 +29,8 @@
 //   node kaizen.mjs packs [--json] [--refresh]   rules of the declared Kaizen Packs
 //   node kaizen.mjs pack new <name>              creates and declares a local pack
 //   node kaizen.mjs gate on [--plan p] | off | status      Stop-hook quality gate
-//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] | waive --reason "…" | status | check
+//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] | waive --reason "…" | status
+//                  | check [--branch b --sha s]
 //                                                 reviewed state per branch, required by the hook before git push;
 //                                                 record requires reviewers that actually ran (except a light
 //                                                 review), waive waits for the confirmation typed by the user
@@ -58,6 +61,7 @@ import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { audit, scaffold } from './audit.mjs';
+import { doctor, formatDoctor } from './doctor.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
@@ -676,6 +680,12 @@ try {
     case 'root':
       out(paths(requireRepo()));
       break;
+    case 'doctor': {
+      const r = doctor(requireRepo(), { inSkill: !!flags['in-skill'] });
+      out(flags.json ? r : formatDoctor(r));
+      if (flags.strict && r.status !== 'ok') process.exit(1);
+      break;
+    }
     case 'audit': {
       const root = requireRepo();
       if (sub === 'fix') {
@@ -850,10 +860,11 @@ try {
       else if (sub === 'waive') out(requestWaiver(root, { reason: typeof flags.reason === 'string' ? flags.reason : null }));
       else if (sub === 'status') out(reviewStatus(root));
       else if (sub === 'check') {
-        const res = checkPush(root);
+        const str = (v) => (typeof v === 'string' ? v : null);
+        const res = checkPush(root, undefined, { branch: str(flags.branch), sha: str(flags.sha) });
         out(res);
         process.exit(res.allowed ? 0 : 1);
-      } else die('usage: review record --verdict ready|concerns|blocked [--run <folder>] | review waive --reason "…" | review status | review check');
+      } else die('usage: review record --verdict ready|concerns|blocked [--run <folder>] | review waive --reason "…" | review status | review check [--branch b --sha s]');
       break;
     }
     case 'constitution': {

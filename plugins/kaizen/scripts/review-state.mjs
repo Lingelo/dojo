@@ -28,7 +28,7 @@ export const LIGHT_MAX_LINES = 20;
 const EVIDENCE_MAX_AGE_MS = 12 * 3600 * 1000;
 const WAIVER_MAX_AGE_MS = 30 * 60 * 1000;
 // State files only the CLI and the hooks write (the PreToolUse hook refuses direct writes).
-export const PROTECTED_STATE = ['reviews.json', 'review-evidence.json', 'waivers.json'];
+export const PROTECTED_STATE = ['reviews.json', 'review-evidence.json', 'waivers.json', 'hooks-seen.json', 'review-launches.json'];
 
 function stateDir(root) {
   const dir = join(root, '.kaizen', 'state');
@@ -55,9 +55,21 @@ export function currentBranch(root) {
   return b && b !== 'HEAD' ? b : null;
 }
 
-function branchLines(root, config) {
-  const base = diffBase(root);
-  return base ? changedLines(root, base, 'HEAD', config.pr.ignore) ?? 0 : 0;
+// Merge base of `ref` with the default branch (diffBase is HEAD's).
+function baseOf(root, ref) {
+  if (ref === 'HEAD') return diffBase(root);
+  const def = defaultBranch(root);
+  if (!def) return null;
+  for (const b of [`origin/${def}`, def]) {
+    const mb = git(root, ['merge-base', ref, b], { allowFail: true });
+    if (mb) return mb;
+  }
+  return null;
+}
+
+function branchLines(root, config, ref = 'HEAD') {
+  const base = baseOf(root, ref);
+  return base ? changedLines(root, base, ref, config.pr.ignore) ?? 0 : 0;
 }
 
 function snapshot(root, branch) {
@@ -175,16 +187,24 @@ export function confirmWaiver(root, code, { session = null } = {}) {
   return entry;
 }
 
+// --- Heartbeat: proof that Claude Code runs Kaizen's hooks here -----------------------------------
+
+export function recordHeartbeat(root, { session = null, source = null } = {}) {
+  writeJson(root, 'hooks-seen.json', { at: new Date().toISOString(), session, source });
+}
+
 // --- Decision at push time ---------------------------------------------------------------------------
 
-// Decides whether the branch's current state may be pushed. Always { allowed, reason, ... }.
-export function checkPush(root, config = loadConfig(root)) {
+// Decides whether a branch state may be pushed: the current branch at HEAD by default, or the
+// `branch` and commit `sha` a git pre-push hook received. Always { allowed, reason, ... }.
+export function checkPush(root, config = loadConfig(root), { branch = null, sha = null } = {}) {
   if (config.review.require_before_push === false) return { allowed: true, reason: 'review.require_before_push disabled' };
-  const branch = currentBranch(root);
+  branch = branch || currentBranch(root);
+  const ref = sha || 'HEAD';
   if (!branch) return { allowed: true, reason: 'detached HEAD' };
   if (branch === defaultBranch(root)) return { allowed: true, reason: 'default branch (guarded by the git plugin)' };
-  if (!diffBase(root)) return { allowed: true, reason: 'base not found' };
-  const lines = branchLines(root, config);
+  if (!baseOf(root, ref)) return { allowed: true, reason: 'base not found' };
+  const lines = branchLines(root, config, ref);
   if (!lines) return { allowed: true, reason: 'no code change on the branch' };
 
   const max = Number(config.review.max_unreviewed_lines ?? 80);
@@ -192,7 +212,7 @@ export function checkPush(root, config = loadConfig(root)) {
   if (!rec) return { allowed: false, branch, reason: 'no review recorded for this branch', branch_lines: lines };
   // Only what is pushed counts: a file the review read while untracked (a plan, a constitution) and HEAD never
   // contained shows up as a full deletion between the reviewed tree and HEAD — it is not part of the push.
-  const since = changedLines(root, rec.tree, 'HEAD', config.pr.ignore, { onlyIn: 'HEAD' });
+  const since = changedLines(root, rec.tree, ref, config.pr.ignore, { onlyIn: ref });
   if (since === null) return { allowed: false, branch, reason: 'the reviewed tree cannot be found (history rewritten?)', review: rec };
   if (rec.verdict === 'blocked' && since === 0) {
     return { allowed: false, branch, reason: 'the last review returned ⛔ and nothing changed since', review: rec, unreviewed_lines: 0 };

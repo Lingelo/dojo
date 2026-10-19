@@ -12,9 +12,12 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 
 Prerequisites: Node ≥ 18 and a git repository. Otherwise, say what is missing and stop.
 
+Every mode starts with `node "$K" doctor --in-skill` (conventions, "Guard rails"); its findings are part
+of what setup fixes.
+
 ## `check` — health check only (no writes)
 
-`node "$K" root`, `node "$K" config`, `node "$K" detect`, `node "$K" learnings validate`,
+`node "$K" doctor`, `node "$K" root`, `node "$K" config`, `node "$K" detect`, `node "$K" learnings validate`,
 `node "$K" packs`, `node "$K" constitution check`, `node "$K" gate status`, `node "$K" review status`,
 `node "$K" models` (warnings) → report: ✔/⚠ per point, with the proposed fix.
 A gate left active without work in progress (`gate status` active) → propose `gate off`.

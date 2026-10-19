@@ -15,6 +15,7 @@ behalf. Answer in the user's language.
 
 ## 1. Diagnose
 
+`node "$K" doctor --in-skill` first ([guard rails](../../references/conventions.md#guard-rails)), then
 `node "$K" status --json` (outside a git repo: say so, and only answer on the substance). It gives
 initialization, profile, constitution, latest plan and its stage, the gate, the branch's review state,
 open incidents or incidents without a postmortem, and `next`: the next step inferred from the state.

@@ -245,6 +245,7 @@ K=plugins/kaizen/scripts/kaizen.mjs
 # Orientation and setup
 node $K status [--json]                        # where the repo stands in the loop, and the next command
 node $K root                                   # deliverable paths (JSON)
+node $K doctor [--in-skill] [--json] [--strict]   # are the guard rails on? plugin declared, hooks, git hooks, review
 node $K init [--docs-root d] [--language en] [--profile lean|standard|full]   # .kaizen/ and the folders
 node $K config                                 # effective configuration (JSON)
 node $K detect                                 # stack and verification commands (JSON)
@@ -272,7 +273,7 @@ node $K run-dir <type>                         # local run folder (e.g. reviews)
 
 # Review and PR
 node $K review record --verdict ready|concerns|blocked [--run d]   # requires reviewers that actually ran
-node $K review waive --reason "…" | review status | review check  # waiver = code typed by the user
+node $K review waive --reason "…" | review status | review check [--branch b --sha s]  # waiver = code typed by the user
 node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch [--pr n] [--repo o/r] …
 
 # Release, deployment, monitoring
@@ -296,6 +297,7 @@ Declared in [`hooks/hooks.json`](hooks/hooks.json); they work without any action
 
 | Event | Script | Role |
 |---|---|---|
+| `SessionStart` | `scripts/review-hooks.mjs --heartbeat` | Records that Kaizen's hooks run in this repo (`.kaizen/state/hooks-seen.json`), read by `kaizen doctor` |
 | `PreToolUse` (Bash) | `scripts/secret-gate.mjs` | Refuses a `git commit` whose changes (index, plus what a `git add` in the same command or `commit -a` brings in) carry a key or token, and `--no-verify`. Active in every git repo; `secrets.scan: false` turns it off |
 | `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | Refuses `git push` of a branch without a recorded review of the pushed tree, a direct deploy command of a protected environment, hand-made `deploy/…`, `rollback/…`, `incident/…` tags, and direct writes to Kaizen's review and deployment state |
 | `PostToolUse` (Bash) | `scripts/quality-gate.mjs --claim` | Ties the gate to the session that ran `gate on` |

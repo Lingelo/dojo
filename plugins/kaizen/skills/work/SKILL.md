@@ -36,6 +36,8 @@ verification: [{name, ok}], decisions_flagged: […], blockers: […] }`.
 
 ## Phase 1 — Workspace
 
+0. **Guard rails** — `node "$K" doctor --in-skill`, relay any ⚠ (conventions, "Guard rails"). Hooks
+   off → run each gate by hand during this cycle.
 1. `git status --short`: list the files **already modified** by the user. A unit needing one of these
    files → ask once whether to include or exclude it (in `mode:return`: `blocked` with the collision).
 2. **Branch** — if you are on the default branch (`main`, `master`, or
