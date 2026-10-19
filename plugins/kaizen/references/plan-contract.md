@@ -142,11 +142,19 @@ Work packages sized for one commit each, ordered by dependency:
 - **Depends on:** —
 - **Files:** `app/exports/orders_csv.rb` (new), `spec/exports/orders_csv_spec.rb` (new)
 - **Approach:** … (follows `app/exports/customers_csv.rb`)
-- **Evidence:** test first | characterization first | exception (reason + replacement check)
+- **Evidence:** test first | characterization first | visual: <views> | exception (reason + replacement check)
 - **Test scenarios:** happy path; order without lines; accented characters (BOM, docs/learnings/…)
 - **Verification:** `bundle exec rspec spec/exports/orders_csv_spec.rb` green
 - **Slice:** S1
 ```
+
+**Visual evidence.** A unit that changes what is *seen* — shaders, styles, rendering code — declares
+`visual: <views>` (URLs, query strings or app states, e.g. ``visual: `/?weather=fog&hour=22`, the
+menu``), alone or with a test strategy (`test first + visual: …`). `/kaizen:work` captures each view
+before and after the change; `/kaizen:review` gives the captures to the rendering reviewer. `plan check`
+warns when a unit's **Files** match shader, style or render paths (`.glsl`, `.wgsl`, `.frag`, `.vert`,
+`.css`, `.scss`, `materials/`, `shaders/`, `render/`) without `visual:` — or an `exception` saying how
+the look is checked instead. Green tests do not see a broken image.
 
 **Slices**: one slice = **one PR**, under the `pr.max_lines` limit (400 reviewable lines by default).
 The DORA 2025 report shows AI makes PRs bigger and turns review into the bottleneck: split the plan

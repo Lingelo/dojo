@@ -98,7 +98,9 @@ expensive to add later (stored data, public interface, money, security) — and 
 - Otherwise: `node "$K" plan new --type <type> --topic <slug>`, then capsule + product contract
   (`source: plan`) + planning sections.
 - No trace of the process in the body (frontmatter `reviewed:`/`amended:` are written by the CLI).
-  A ready plan whose scope changes later is amended with `plan amend`, never by hand. Relative paths. Configured language (`config.language`); the
+  A ready plan whose scope changes later is amended with `plan amend`, never by hand.
+- A unit that changes what is seen (shaders, styles, rendering) declares `visual: <views>` in its
+  **Evidence** (plan contract, "Visual evidence"): the views that show the change. Relative paths. Configured language (`config.language`); the
   field names the tools read (`**Covers:**`, `**Files:**`, `**Evidence:**`, `**Verification:**`,
   `**Slice:**`, `**Rollback**`, `**Signal**`) stay as in the contract.
 

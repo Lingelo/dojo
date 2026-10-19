@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs';
 import { isDraft } from './constitution.mjs';
 import { parseFrontmatter } from './lib.mjs';
 
+// Files whose change is seen rather than asserted: shaders, styles, rendering code.
+export const RENDERING_FILE = /\.(glsl|wgsl|frag|vert|css|scss|sass|less)\b|(^|[\/`\s])(materials|shaders|render)\//i;
 const CLARIFY_RE = /\[(NEEDS CLARIFICATION|À CLARIFIER|A CLARIFIER)\s*:[^\]]*\]/gi;
 
 export function sectionText(body, id) {
@@ -122,6 +124,12 @@ export function checkPlanText(text, { constitution = null, stage = 'auto' } = {}
       ['Verification', /\*\*(Verification|Vérification)\s*:/i],
     ]) {
       if (!re.test(b)) errors.push(`${id}: field **${label}:** missing`);
+    }
+    // A rendering unit proves itself with captures (visual: <views>), or says why not (exception).
+    const files = /\*\*(Files|Fichiers)\s*:\*\*([\s\S]*?)(?=\n\s*-\s+\*\*|$)/i.exec(b)?.[2] || '';
+    const evidence = /\*\*(Evidence|Proof|Preuve)\s*:\*\*([^\n]*)/i.exec(b)?.[2] || '';
+    if (RENDERING_FILE.test(files) && !/visual\s*:|exception/i.test(evidence)) {
+      warnings.push(`${id}: renders (shader, style or render files) without visual evidence — **Evidence:** visual: <views to capture before and after>`);
     }
   }
 

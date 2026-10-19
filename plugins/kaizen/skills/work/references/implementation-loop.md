@@ -31,6 +31,7 @@ ask or block.
 | New behavior, natural test location | new test that fails first |
 | Existing code without tests that will be changed | **characterization** test first (capture what exists) |
 | Rename, pure config, style, generated files, manual surface | exception: record the reason and the replacement check |
+| The unit declares `visual: <views>` (rendering) | capture each view **before** touching the code, then after (see "Visual evidence") — in addition to any test |
 
 Rules:
 - Never write the test and the implementation in the same step in test-first mode.
@@ -89,6 +90,17 @@ A unit applying a learning cited by the plan adds to the commit body
 key extracted from the branch (`[A-Z][A-Z0-9]+-\d+`), otherwise `<type>: …`. No file from the user's
 work in progress in a commit without their approval. Commit messages follow the repo's existing
 language and conventions.
+
+## Visual evidence
+
+For a unit whose **Evidence** declares `visual: <views>`: with the Playwright MCP server Kaizen ships
+(or another browser tool), capture each view at a fixed size and state (seed, time, weather, camera)
+**before** the first change and **after** the unit, into the run folder
+(`node "$K" run-dir visual` → `<view>-before.png`, `<view>-after.png`). Open each capture yourself
+(Read) before moving on: a blank, black or uniform image, or one identical before and after a change
+meant to show, is a failed capture — fix the capture (wait for the first frames, the right state), never
+record it as evidence. List the capture paths in the unit's recorded evidence and the commit body
+(`-m "Visual: <run>/<view>-after.png"`); `/kaizen:review` hands them to the rendering reviewer.
 
 ## User interface
 

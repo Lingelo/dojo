@@ -25,6 +25,7 @@ costs time and adds noise.
 | `performance` | `kaizen:performance-reviewer` | database/ORM query shape, algorithmic complexity, heavy transformations in loops, fan-out, caching policy with real impact |
 | `reliability` | `kaizen:reliability-reviewer` | error handling, retries, timeouts, background jobs, async handlers, webhooks, calls to external services |
 | `api-contract` | `kaizen:api-contract-reviewer` | an **externally consumed** boundary: routes and request/response shapes, serializers, published event schemas, versioning, a package's public signature with proven callers |
+| `rendering` | `kaizen:rendering-reviewer` | shaders (`.glsl`, `.frag`, `.vert`, `.wgsl`, GLSL strings, `onBeforeCompile`, `ShaderMaterial`), materials, blending, fog, post-processing, canvas/WebGL code (`getContext('webgl…`, `<canvas`), geometry generation, CSS that changes layout or visibility. Pass it the before/after captures when the work recorded some |
 | `data-migration` | `kaizen:data-migration-reviewer` | migration files, schema dumps, backfills, data transformations — not a mere model or query change without a migration |
 | `adversarial` | `kaizen:adversarial-reviewer` | ≥ 50 lines of changed code; or auth/payment; persistent writes or event publishing; retries, partial failures, concurrency or ordering; external APIs; or a verification mechanism that could wrongly go green (CI, gate, infra mocks) |
 

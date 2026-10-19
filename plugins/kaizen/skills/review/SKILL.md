@@ -77,6 +77,7 @@ Plan (relevant R/AE/KTD excerpts): <… or "none">
 Changed files: <list>
 Diff: <inline diff, or path of a .patch file in the run folder to read if it is large>
 Rules to apply (standards only): <standards quotes, pack rules, learnings>
+Captures (rendering only): <before/after PNG paths from the commits' "Visual:" lines or the work run, or "none">
 </review-context>
 Return only the contract's JSON.
 ```

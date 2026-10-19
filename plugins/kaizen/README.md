@@ -183,14 +183,14 @@ generated from your stack, monitoring workflows; deployment platform recognized 
 (Vercel, Netlify, Fly.io, Heroku, Kamal, Capistrano, Helm, Kustomize, Serverless, SAM, Firebase, GitHub
 Actions, Makefile/npm, Compose, Terraform).
 
-## Agents (21)
+## Agents (22)
 
 | Role | Agents |
 |---|---|
 | Research | `repo-researcher`, `learnings-researcher`, `git-historian`, `docs-researcher`, `flow-analyst` |
 | Plan review | `plan-coherence-reviewer`, `plan-feasibility-reviewer`, `plan-scope-reviewer`, `plan-security-reviewer`, `plan-adversarial-reviewer`, `plan-design-reviewer` |
 | Code review (baseline) | `correctness-reviewer`, `standards-reviewer` (constitution, standards, packs, learnings) |
-| Code review (depending on the diff) | `security-reviewer`, `testing-reviewer`, `performance-reviewer`, `reliability-reviewer`, `api-contract-reviewer`, `data-migration-reviewer`, `maintainability-reviewer`, `adversarial-reviewer` |
+| Code review (depending on the diff) | `security-reviewer`, `testing-reviewer`, `performance-reviewer`, `rendering-reviewer`, `reliability-reviewer`, `api-contract-reviewer`, `data-migration-reviewer`, `maintainability-reviewer`, `adversarial-reviewer` |
 
 All agents are read-only.
 - Code reviewers share [`references/review-contract.md`](references/review-contract.md): severity P0 to

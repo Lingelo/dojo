@@ -424,3 +424,23 @@ test('status surfaces a draft constitution waiting for ratification', () => {
   assert.ok(st.next.some((n) => /\/kaizen:constitution/.test(n.command)), 'ratifying it is proposed');
   cleanup(dir);
 });
+
+test('plan check: a rendering unit without visual evidence is warned (AE5)', () => {
+  const dir = tempRepo({ 'README.md': '#\n' });
+  const base = readFileSync(join(PLUGIN, 'templates/plan-example.md'), 'utf8').replace(/\r\n/g, '\n');
+  const warns = (files, evidence) => {
+    const text = base
+      .replace('- **Files:** `app/exports/orders_csv.rb` (new)', `- **Files:** ${files}, \`app/exports/orders_csv.rb\` (new)`)
+      .replace(/(### U1\.[\s\S]*?- \*\*Evidence:\*\* )[^\n]*/, `$1${evidence}`);
+    writeFileSync(join(dir, 'plan.md'), text);
+    const r = cli(dir, ['plan', 'check', 'plan.md', '--json']);
+    assert.equal(r.code, 0, JSON.stringify(r.json.errors));
+    return r.json.warnings.filter((w) => /visual evidence/.test(w));
+  };
+  assert.equal(warns('`src/render/materials/fog.glsl`', 'test first').length, 1);
+  assert.match(warns('`app/assets/orders.css`', 'test first')[0], /^U1: renders/);
+  assert.deepEqual(warns('`src/render/fog.ts`', 'visual: `/?weather=fog` at night'), []);
+  assert.deepEqual(warns('`src/shaders/sky.frag`', 'exception (pixel output covered by the e2e snapshot) — replacement check: e2e'), []);
+  assert.deepEqual(warns('`app/models/order.rb`', 'test first'), []);
+  cleanup(dir);
+});

@@ -52,7 +52,7 @@ In-depth pages: what each mechanism does exactly, with its rules, limits and dia
 | [Production](concepts/production.md) | release notes and SemVer, deployment and approval, platform detection, signals, watch/patrol/alert, incidents, postmortems |
 | [Learnings](concepts/learnings.md) | durability test, schema, validation, search scoring, read vs applied, pruning, packs |
 | [Metrics](concepts/metrics.md) | every DORA, loop and cycle-cost indicator and how it is computed |
-| [Agents and models](concepts/agents-and-models.md) | the 21 agents, when each runs, the model policy per profile |
+| [Agents and models](concepts/agents-and-models.md) | the 22 agents, when each runs, the model policy per profile |
 
 ## Reference
 

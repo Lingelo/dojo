@@ -41,6 +41,7 @@ Share the [reviewer contract](../../references/review-contract.md); selection ru
 | `security-reviewer` | the exploitable path: injection, access control, secrets, deserialization, SSRF, crypto, feature-flag leaks |
 | `testing-reviewer` | tests that do not prove the behavior: untested branches, hollow assertions, implementation coupling, non-determinism |
 | `performance-reviewer` | N+1, unbounded memory, missing pagination, hot-path allocations, blocking I/O, at the expected scale |
+| `rendering-reviewer` | shaders, blending and fog, render passes, geometry, canvas/WebGL and CSS that changes what is seen; opens the before/after captures |
 | `reliability-reviewer` | unhandled I/O errors, retries without backoff, missing timeouts, leaks on error, failure cascades |
 | `api-contract-reviewer` | breaking changes to consumed interfaces, missing versioning, inconsistent errors (Hyrum’s law) |
 | `data-migration-reviewer` | locks on large tables, irreversible migrations, non-idempotent backfills, deploy/migration ordering |
@@ -61,7 +62,7 @@ plan decisions) get the strongest model.
 | Role | Agents | `lean` | `standard` | `full` |
 |---|---|---|---|---|
 | `research` | the five researchers | haiku | sonnet | sonnet |
-| `review` | correctness, testing, performance, reliability, api-contract, maintainability, standards | sonnet | sonnet | opus |
+| `review` | correctness, testing, performance, rendering, reliability, api-contract, maintainability, standards | sonnet | sonnet | opus |
 | `review_critical` | security, data-migration, adversarial | sonnet | opus | opus |
 | `plan_review` | plan-coherence, plan-feasibility, plan-scope, plan-design | haiku | sonnet | opus |
 | `plan_review_critical` | plan-security, plan-adversarial | sonnet | opus | opus |
