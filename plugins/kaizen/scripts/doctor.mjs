@@ -8,12 +8,15 @@
 // Each check returns { id, title, status: ok|warn|info, evidence, fix }. Read-only.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { git, loadConfig, verifyCommands } from './lib.mjs';
 import { checkPush, currentBranch } from './review-state.mjs';
 
 export const MARKETPLACE = 'dojo';
 export const PLUGIN_ID = `kaizen@${MARKETPLACE}`;
+// Since Kaizen 4.0 the production commands (deploy, monitor, postmortem) live in a second plugin.
+export const OPS_ID = `kaizen-ops@${MARKETPLACE}`;
 const DAY_MS = 24 * 3600 * 1000;
 
 function readJson(path) {
@@ -40,6 +43,21 @@ export function pluginDeclared(root) {
   if (!enabled) return { declared: false, why: `${PLUGIN_ID} not enabled in .claude/settings.json` };
   if (!market) return { declared: false, why: `marketplace "${MARKETPLACE}" not declared in .claude/settings.json` };
   return { declared: true };
+}
+
+// Does this repository use Kaizen's production commands? Declared environments or signals say so.
+export function opsNeeded(config) {
+  return Object.keys(config.deploy?.environments || {}).length > 0 || Object.keys(config.monitor?.signals || {}).length > 0;
+}
+
+// Is kaizen-ops enabled for this repository: project settings, local settings or the user's settings.
+export function opsDeclared(root, env = process.env) {
+  const files = [
+    join(root, '.claude', 'settings.json'),
+    join(root, '.claude', 'settings.local.json'),
+    join(env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude'), 'settings.json'),
+  ];
+  return files.some((f) => readJson(f)?.enabledPlugins?.[OPS_ID] === true);
 }
 
 export function heartbeat(root) {
@@ -84,6 +102,19 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     decl.declared ? `.claude/settings.json enables ${PLUGIN_ID}` : `${decl.why}: a fresh clone or a cloud session runs without Kaizen`,
     decl.declared ? null : 'node "$K" audit fix claude_settings',
   );
+
+  if (opsNeeded(config)) {
+    const on = opsDeclared(root);
+    add(
+      'ops_plugin',
+      'Production commands (kaizen-ops)',
+      on ? 'ok' : 'warn',
+      on
+        ? `${OPS_ID} enabled: /kaizen-ops:deploy, /kaizen-ops:monitor, /kaizen-ops:postmortem`
+        : `this repo declares deployments or signals, but the production commands moved to kaizen-ops in Kaizen 4.0 and ${OPS_ID} is not enabled`,
+      on ? null : `"enabledPlugins": { "${OPS_ID}": true } in .claude/settings.json (node "$K" audit fix claude_settings), then a new session`,
+    );
+  }
 
   const h = heartbeat(root);
   if (h) {

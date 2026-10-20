@@ -186,3 +186,16 @@ test('claude_settings: declares kaizen@dojo, keeps existing keys, never twice', 
   assert.match(cli(dir, ['audit', 'fix', 'claude_settings']).stderr, /not valid JSON/);
   cleanup(dir);
 });
+
+test('claude_settings: a repository with signals also gets kaizen-ops@dojo, added to an existing declaration', () => {
+  const dir = tempRepo({
+    '.kaizen/config.json': { monitor: { signals: { health: { url: 'https://shop.example/health' } } } },
+    '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true } },
+  });
+  const r = cli(dir, ['audit', 'fix', 'claude_settings']);
+  assert.equal(r.code, 0, r.stderr);
+  const s = JSON.parse(readFileSync(join(dir, '.claude', 'settings.json'), 'utf8'));
+  assert.deepEqual(s.enabledPlugins, { 'kaizen@dojo': true, 'kaizen-ops@dojo': true });
+  assert.match(cli(dir, ['audit', 'fix', 'claude_settings']).stderr, /kaizen@dojo and kaizen-ops@dojo already declared/);
+  cleanup(dir);
+});
