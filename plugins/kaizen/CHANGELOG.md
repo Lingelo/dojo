@@ -2,6 +2,18 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [4.1.0] - 2026-10-20
+
+### Removed
+- The `/kaizen:deploy`, `/kaizen:monitor` and `/kaizen:postmortem` stubs and their guides (deprecated
+  in 4.0.0): Kaizen's command list no longer carries the production commands. They are
+  `/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem` in the kaizen-ops plugin;
+  `kaizen doctor` still tells a repository that declares deployments or signals to enable it.
+
+### Changed
+- Contract tests: a changelog keeps the command names of its time; elsewhere a former `/kaizen:<name>`
+  may only appear as a migration note, on the line that names its `/kaizen-ops:<name>`.
+
 ## [4.0.0] - 2026-10-20
 
 ### Breaking

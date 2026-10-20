@@ -58,11 +58,18 @@ test('every kaizen:<name> reference names an existing skill or agent', () => {
   const known = new Set([...skills, ...agents]);
   // Plan section markers (kaizen:goal…) and artifact contracts: not skills.
   const markers = new Set(['goal', 'product', 'relationships', 'planning', 'constitution', 'threats', 'rollout', 'units', 'verification', 'done', 'id', 'section', 'name']);
+  // Commands moved to kaizen-ops in 4.0: a changelog keeps them as history; elsewhere an old name may
+  // only appear as a migration note, on the line that names its /kaizen-ops: replacement.
+  const moved = new Set(['deploy', 'monitor', 'postmortem']);
   const bad = [];
   for (const { file, text } of docs) {
-    for (const m of text.matchAll(/kaizen:([a-z][a-z-]*)/g)) {
-      if (markers.has(m[1]) || known.has(m[1])) continue;
-      bad.push(`${file} → kaizen:${m[1]}`);
+    if (file.endsWith('CHANGELOG.md')) continue;
+    for (const line of text.split('\n')) {
+      for (const m of line.matchAll(/(?<![\w-])kaizen:([a-z][a-z-]*)/g)) {
+        if (markers.has(m[1]) || known.has(m[1])) continue;
+        if (moved.has(m[1]) && line.includes(`kaizen-ops:${m[1]}`)) continue;
+        bad.push(`${file} → kaizen:${m[1]}`);
+      }
     }
   }
   assert.deepEqual(bad, []);
