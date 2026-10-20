@@ -41,6 +41,8 @@ export const DEFAULT_CONFIG = {
   tracker: 'auto',
   verify: {},
   profile: 'product',
+  // Risk surfaces raise the profile one step for the cycle (scripts/risk.mjs): team globs per surface.
+  risk: { escalate: true, paths: {}, ignore: [] },
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
   review: { require_before_push: true, max_unreviewed_lines: 80 },
   // Deployment and monitoring: the team's commands, Kaizen knows no platform.
@@ -79,6 +81,7 @@ export function loadConfig(root) {
   merged.deploy = { ...DEFAULT_CONFIG.deploy, ...(base.deploy || {}), ...(local.deploy || {}) };
   merged.perf = { ...DEFAULT_CONFIG.perf, ...(base.perf || {}), ...(local.perf || {}) };
   merged.secrets = { ...DEFAULT_CONFIG.secrets, ...(base.secrets || {}), ...(local.secrets || {}) };
+  merged.risk = { ...DEFAULT_CONFIG.risk, ...(base.risk || {}), ...(local.risk || {}) };
   merged.monitor = { ...DEFAULT_CONFIG.monitor, ...(base.monitor || {}), ...(local.monitor || {}) };
   merged.models = {
     roles: { ...(base.models?.roles || {}), ...(local.models?.roles || {}) },

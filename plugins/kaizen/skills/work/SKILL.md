@@ -61,7 +61,8 @@ conventions, targeted verification, evidence recorded, **unit commit** (the unit
 conventional format with Jira). A unit's independent reads go out in a single message.
 
 Many **independent** units (no shared file, no dependency): you may hand some to `general-purpose`
-subagents in parallel (`model`: `node "$K" models --json` → `roles.implement.model`), each with a
+subagents in parallel (`model`: `node "$K" models --json --profile <effective>` → `roles.implement.model`, `effective` from
+`node "$K" profile --json --plan <plan>`), each with a
 self-contained package (full unit, files, pattern to imitate, verification command, no committing
 allowed). You remain the integrator: inspect the real diff of each result, rerun the verification, and
 make the commits yourself. At the slightest conflict, go back to serial.

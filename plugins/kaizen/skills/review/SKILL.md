@@ -55,7 +55,8 @@ Per `persona-catalog.md`: `correctness` always (outside light depth), then only 
 is **present in the diff** — by judgment on the diff, not by keywords. For `standards`: gather
 `CONSTITUTION.md` (`node "$K" constitution --json`), the standards files, `node "$K" packs --json` (rules
 whose `applies_when` matches) and `node "$K" learnings search <diff terms>` (relevant learnings). The
-**profile** (`node "$K" config` → `profile`, see `conventions.md`) adjusts the selection: `prototype` = core
+**profile** of the cycle (`node "$K" profile --json` → `effective`: raised one step when the diff touches a
+risk surface, see `conventions.md`) adjusts the selection: `prototype` = core
 (`correctness`, `standards`) + `security` on a risk surface; `critical` = `adversarial` from targeted depth.
 Announce in one line per reviewer why it was kept.
 
@@ -64,7 +65,7 @@ Announce in one line per reviewer why it was kept.
 Read `${CLAUDE_PLUGIN_ROOT}/references/review-contract.md`. Create the run folder with
 `node "$K" run-dir reviews` (it prints the path; ignored by git). Launch **all** kept reviewers **in a
 single message** (`Agent` tool, `subagent_type: "kaizen:<name>"`, `model` read from
-`node "$K" models --json` → `agents.<name>.model`, omitted if `inherit`), each with this prompt:
+`node "$K" models --json --profile <effective>` → `agents.<name>.model`, omitted if `inherit`), each with this prompt:
 
 ```
 <contract>

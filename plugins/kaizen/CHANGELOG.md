@@ -2,6 +2,18 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.5.0] - 2026-10-20
+
+### Added
+- **The profile is a floor, the risk raises it**: a change touching a risk surface runs one profile up
+  for its cycle (`prototype` → `product` → `critical`), so the billing module of an internal tool is no
+  longer reviewed like a spike. Detection is deterministic, from paths (`scripts/risk.mjs`): auth,
+  payment, sensitive data, migrations, public APIs, dependencies, plus the team's `risk.paths`;
+  `risk.ignore` drops paths, `risk.escalate: false` reports without raising.
+- **`kaizen profile [--plan p | --files a,b]`**: the cycle's profile and why (branch diff by default, a
+  plan's **Files:**, or a list). `models --profile <p>` resolves the models for it; `status` shows an
+  escalation. `plan`, `doc-review`, `review`, `work` and `autopilot` read it instead of the repo's profile.
+
 ## [3.4.0] - 2026-10-20
 
 ### Changed
