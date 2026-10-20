@@ -43,7 +43,9 @@ forwards every call to core's CLI. It looks, in order:
 An explicit pointer (1 or 2) that is not Kaizen core is refused rather than replaced. A core older than
 the version in [`scripts/requires.json`](scripts/requires.json) is refused with both versions and the
 fix. The resolver answers two commands itself: `core-root` (where core's references and docs live)
-and `--version`.
+and `--version` (also with an incompatible core, flagged `INCOMPATIBLE`). A missing
+`requires.json` refuses every call, and a core killed by a signal exits `128 + signal` with a message —
+never `1`, which core uses for a monitor verdict.
 
 ## Installation
 

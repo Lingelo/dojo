@@ -2,6 +2,15 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [1.0.1] - 2026-10-20
+
+### Fixed
+- A core killed by a signal exits `128 + signal` with a message instead of `1`, which core uses for a
+  monitor verdict (breach or blind).
+- A missing or unreadable `scripts/requires.json` refuses every call instead of accepting any core.
+- `--version` answers even with an incompatible core, flagged `INCOMPATIBLE` (exit 1).
+- Tests read the plugin and required versions instead of hard-coding them.
+
 ## [1.0.0] - 2026-10-20
 
 ### Added

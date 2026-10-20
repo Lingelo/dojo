@@ -124,7 +124,9 @@ test('every CLI command cited in the docs exists', () => {
   assert.deepEqual(bad, []);
 });
 
-test('core never needs kaizen-ops: no script or hook refers to it (gates stay whole without it)', () => {
+// Core may name kaizen-ops (its plugin id, /kaizen-ops:<command> in messages) but never loads, imports or
+// resolves a path into it: every gate must work with core alone.
+test('core never loads kaizen-ops: no script or hook imports or resolves a path into it', () => {
   const sources = [...readdirSync(join(PLUGIN, 'scripts')).filter((f) => f.endsWith('.mjs')).map((f) => join('scripts', f)), join('hooks', 'hooks.json')];
   const bad = sources.filter((f) => /kaizen-ops[\\/]|\.\.[\\/]kaizen-ops/.test(readFileSync(join(PLUGIN, f), 'utf8')));
   assert.deepEqual(bad, [], 'a core script or hook reaching into kaizen-ops');
