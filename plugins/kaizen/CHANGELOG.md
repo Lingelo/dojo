@@ -2,6 +2,24 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [4.1.1] - 2026-10-20
+
+Fixes from the Kaizen review of the core/ops split (#36–#38).
+
+### Fixed
+- **Migration notes only in `old → new` form.** The 4.1.0 contracts accepted a moved command name on any
+  line that also named its kaizen-ops replacement, so a skill could again send Claude to
+  `/kaizen:deploy`. A former name now passes only as `/kaizen:deploy` → `/kaizen-ops:deploy`, never in skills or
+  agents; changelogs are exempt for the three moved names only. A new contract checks scripts, hooks and
+  evals for the old names.
+- **`ops_plugin` covers a production history.** `kaizen doctor` also warns when the repo has postmortems
+  or `deploy/`, `rollback/`, `incident/`, `resolve/` tags — a team that only used `/kaizen:postmortem`
+  and upgrades straight to 4.1 was told nothing. The warning names the reason.
+- **`audit` agrees with `doctor`**: `claude_settings` is no longer ok when `kaizen-ops@dojo` is needed but
+  not declared for every clone.
+- The "core never refers to kaizen-ops" contract is renamed to what it checks (no import or path into
+  kaizen-ops; its plugin id and command names are fine).
+
 ## [4.1.0] - 2026-10-20
 
 ### Removed

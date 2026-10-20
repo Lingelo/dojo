@@ -374,6 +374,8 @@ Measured coupling (3.10.0):
 - [x] Every R covered by its tests or evals above; CI green on the matrix for each slice.
 - [x] No `/kaizen:deploy`, `/kaizen:monitor` or `/kaizen:postmortem` outside the CHANGELOGs and
   `old → new` migration notes (contract-enforced).
-- [ ] Review recorded with no open P0/P1 on each slice.
+- [x] Kaizen review run on all three slices (10 reviewers, 2026-10-20): no P0/P1; P2/P3 fixed in
+  4.1.1 / kaizen-ops 1.0.1, except the shared core lookup between the git hooks and the resolver
+  (maintainability, manual — decision pending). Not recorded: the reviewed work was already merged.
 - [x] Learning captured: `docs/solutions/architecture-patterns/plugin-reaching-another-plugins-cli.md`
   (resolver shim, resolution order, gates kept in core, macOS realpath, stubs and rename detection).

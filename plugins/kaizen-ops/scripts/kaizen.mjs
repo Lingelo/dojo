@@ -15,7 +15,7 @@
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { constants, homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -96,24 +96,31 @@ export function main(args, { env = process.env, cwd = process.cwd() } = {}) {
   if (found.error) return fail(found.error);
   const { core } = found;
   const own = manifest(OPS_ROOT) || {};
-  let required = '0.0.0';
+  // The minimum core version: a missing or broken requires.json refuses (fail closed), never "any core".
+  let required = null;
   try {
-    required = JSON.parse(readFileSync(join(OPS_ROOT, 'scripts', 'requires.json'), 'utf8')).kaizen || required;
+    required = JSON.parse(readFileSync(join(OPS_ROOT, 'scripts', 'requires.json'), 'utf8')).kaizen;
   } catch {}
-  if (compareSemver(core.version, required) < 0) {
-    return fail(`kaizen-ops ${own.version} needs Kaizen ≥ ${required} (found ${core.version}): update kaizen@dojo`);
+  if (!/^\d+\.\d+\.\d+/.test(String(required || ''))) return fail('scripts/requires.json is missing or unreadable: reinstall kaizen-ops');
+  const compatible = compareSemver(core.version, required) >= 0;
+  // --version answers even when incompatible: it is what one runs to diagnose a mismatch.
+  if (args[0] === '--version') {
+    process.stdout.write(`kaizen-ops ${own.version} (Kaizen ${core.version}, ${core.source}: ${core.root})${compatible ? '' : ` — INCOMPATIBLE: needs Kaizen ≥ ${required}`}\n`);
+    return compatible ? 0 : 1;
   }
+  if (!compatible) return fail(`kaizen-ops ${own.version} needs Kaizen ≥ ${required} (found ${core.version}): update kaizen@dojo`);
   if (args[0] === 'core-root') {
     process.stdout.write(`${core.root}\n`);
     return 0;
   }
-  if (args[0] === '--version') {
-    process.stdout.write(`kaizen-ops ${own.version} (Kaizen ${core.version}, ${core.source}: ${core.root})\n`);
-    return 0;
-  }
   const r = spawnSync(process.execPath, [core.cli, ...args], { cwd, env, stdio: 'inherit' });
   if (r.error) return fail(`could not run ${core.cli}: ${r.error.message}`);
-  return r.status ?? 1;
+  // Killed by a signal (OOM, kill): never exit 1, which core uses for a verdict (monitor: breach or blind).
+  if (r.status === null) {
+    fail(`Kaizen core was terminated by ${r.signal || 'a signal'}: no result — run the command again`);
+    return 128 + (constants.signals[r.signal] || 1);
+  }
+  return r.status;
 }
 
 // Run as a script, not when imported (tests). Real paths: macOS tmp dirs are symlinks (/var → /private/var).

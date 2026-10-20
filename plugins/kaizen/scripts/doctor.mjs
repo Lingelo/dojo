@@ -7,10 +7,10 @@
 // "not verified"; from a skill (`--in-skill`) the session has started, so no heartbeat means "off".
 // Each check returns { id, title, status: ok|warn|info, evidence, fix }. Read-only.
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { git, loadConfig, verifyCommands } from './lib.mjs';
+import { docsRoot, git, loadConfig, verifyCommands } from './lib.mjs';
 import { checkPush, currentBranch } from './review-state.mjs';
 
 export const MARKETPLACE = 'dojo';
@@ -45,9 +45,22 @@ export function pluginDeclared(root) {
   return { declared: true };
 }
 
-// Does this repository use Kaizen's production commands? Declared environments or signals say so.
-export function opsNeeded(config) {
-  return Object.keys(config.deploy?.environments || {}).length > 0 || Object.keys(config.monitor?.signals || {}).length > 0;
+// Why this repository needs Kaizen's production commands (kaizen-ops), or null: declared environments
+// or signals, or a production history — postmortems, deployment or incident tags — left by the
+// commands that moved in 4.0 (a team that only wrote postmortems declares no deployment).
+export function opsNeeded(root, config = loadConfig(root)) {
+  if (Object.keys(config.deploy?.environments || {}).length) return 'declares deployment environments';
+  if (Object.keys(config.monitor?.signals || {}).length) return 'declares production signals';
+  try {
+    if (readdirSync(join(docsRoot(root, config), 'postmortems')).some((f) => f.endsWith('.md'))) return 'has postmortems';
+  } catch {}
+  const tags = git(root, ['tag', '-l', 'deploy/*', 'rollback/*', 'incident/*', 'resolve/*'], { allowFail: true });
+  return tags ? 'has deployment or incident tags' : null;
+}
+
+// Is kaizen-ops enabled in the versioned project settings (what every clone gets)?
+export function opsDeclaredForClones(root) {
+  return readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins?.[OPS_ID] === true;
 }
 
 // Is kaizen-ops enabled for this repository: project settings, local settings or the user's settings.
@@ -103,7 +116,8 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     decl.declared ? null : 'node "$K" audit fix claude_settings',
   );
 
-  if (opsNeeded(config)) {
+  const why = opsNeeded(root, config);
+  if (why) {
     const on = opsDeclared(root);
     add(
       'ops_plugin',
@@ -111,7 +125,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
       on ? 'ok' : 'warn',
       on
         ? `${OPS_ID} enabled: /kaizen-ops:deploy, /kaizen-ops:monitor, /kaizen-ops:postmortem`
-        : `this repo declares deployments or signals, but the production commands moved to kaizen-ops in Kaizen 4.0 and ${OPS_ID} is not enabled`,
+        : `this repo ${why}, but the production commands moved to kaizen-ops in Kaizen 4.0 and ${OPS_ID} is not enabled`,
       on ? null : `"enabledPlugins": { "${OPS_ID}": true } in .claude/settings.json (node "$K" audit fix claude_settings), then a new session`,
     );
   }

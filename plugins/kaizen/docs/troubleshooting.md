@@ -58,7 +58,7 @@ does not run them — `git config core.hooksPath .githooks`.
 
 | Message | What to do |
 |---|---|
-| `/kaizen:deploy` (or monitor, postmortem) is unknown, or `/kaizen-ops:deploy` is unknown | since Kaizen 4.0 the production commands are in the kaizen-ops plugin (`/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`): `"enabledPlugins": { "kaizen-ops@dojo": true }` in `.claude/settings.json` (`node $K audit fix claude_settings` does it), then a new session; `kaizen doctor` reports it |
+| `/kaizen:deploy` → `/kaizen-ops:deploy` (same for monitor and postmortem): the command is unknown | since Kaizen 4.0 the production commands are in the kaizen-ops plugin (`/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`): `"enabledPlugins": { "kaizen-ops@dojo": true }` in `.claude/settings.json` (`node $K audit fix claude_settings` does it), then a new session; `kaizen doctor` reports it |
 | "Direct deployment of production refused" | go through `/kaizen-ops:deploy production`: it asks for your approval, creates the tag and watches |
 | "production is protected: approval required" | type the displayed code yourself: `kaizen deploy <code>` (30 min, for this commit) |
 | "unknown environment" | declare it in `.kaizen/config.json` → `deploy.environments` ([configuration](configuration.md#deploy--deployment-and-rollback)), or `node $K deploy detect` |

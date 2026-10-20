@@ -5,6 +5,7 @@ import { dirname, join, relative } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { parseFrontmatter } from '../../kaizen/scripts/lib.mjs';
+import { compareSemver } from '../scripts/kaizen.mjs';
 
 const OPS = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CORE = join(OPS, '..', 'kaizen');
@@ -31,8 +32,7 @@ test('registered in the marketplace next to Kaizen, requiring the core version K
   assert.equal(entry.source, './plugins/kaizen-ops');
   const req = JSON.parse(readFileSync(join(OPS, 'scripts', 'requires.json'), 'utf8')).kaizen;
   const core = JSON.parse(readFileSync(join(CORE, '.claude-plugin', 'plugin.json'), 'utf8')).version;
-  const [a, b] = [req, core].map((v) => v.split('.').map(Number));
-  assert.ok(b[0] > a[0] || (b[0] === a[0] && (b[1] > a[1] || (b[1] === a[1] && b[2] >= a[2]))), `Kaizen ${core} is older than the ${req} kaizen-ops requires`);
+  assert.ok(compareSemver(core, req) >= 0, `Kaizen ${core} is older than the ${req} kaizen-ops requires`);
 });
 
 test('manifest and core requirement', () => {
@@ -64,11 +64,10 @@ test('every cited path exists: ${CLAUDE_PLUGIN_ROOT} in this plugin, core-root i
 test('every command reference names an existing skill, here or in core', () => {
   for (const { file, text } of docs) {
     for (const [, s] of text.matchAll(/\/kaizen-ops:([a-z-]+)/g)) assert.ok(skills.includes(s), `${file}: /kaizen-ops:${s} does not exist`);
-    if (file.endsWith('CHANGELOG.md')) continue; // history keeps the names of its time
     for (const line of text.split('\n')) {
       for (const [, s] of line.matchAll(/(?<![\w-])kaizen:([a-z][a-z-]*)/g)) {
-        // A former /kaizen:<name> is fine as a migration note next to its /kaizen-ops:<name>.
-        if (skills.includes(s) && line.includes(`kaizen-ops:${s}`)) continue;
+        // A former /kaizen:<name>: history in a changelog, or an `old → new` note outside the skills.
+        if (skills.includes(s) && (file.endsWith('CHANGELOG.md') || (!/^skills[\\/]/.test(file) && new RegExp(`/kaizen:${s}\`?\\s*→\\s*\`?/kaizen-ops:${s}\\b`).test(line)))) continue;
         assert.ok(coreSkills.includes(s) || coreAgents.includes(s), `${file}: kaizen:${s} is not a Kaizen core skill or agent`);
       }
     }

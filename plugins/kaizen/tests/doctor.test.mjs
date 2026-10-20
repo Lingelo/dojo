@@ -169,3 +169,14 @@ test('a repository that deploys with Kaizen is told to enable kaizen-ops (AE5 of
   assert.equal(check(cli(plain, ['doctor', '--json'], { env }), 'ops_plugin'), undefined, 'no deployment, no signal: nothing to say');
   for (const d of [home, dir, plain]) cleanup(d);
 });
+
+test('ops_plugin also fires on a production history without config: postmortems, deployment or incident tags', () => {
+  const home = tempRepo({});
+  const env = { CLAUDE_CONFIG_DIR: home };
+  const pm = tempRepo({ '.kaizen/config.json': {}, 'docs/postmortems/2026-10-01-vat.md': '# VAT\n' });
+  assert.match(check(cli(pm, ['doctor', '--json'], { env }), 'ops_plugin').evidence, /this repo has postmortems/);
+  const tagged = tempRepo({ '.kaizen/config.json': {}, 'a.js': '1\n' });
+  gitc(tagged, ['tag', '-a', 'incident/production/20261001T000000Z', '-m', '{}']);
+  assert.match(check(cli(tagged, ['doctor', '--json'], { env }), 'ops_plugin').evidence, /deployment or incident tags/);
+  for (const d of [home, pm, tagged]) cleanup(d);
+});

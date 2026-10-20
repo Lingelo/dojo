@@ -12,7 +12,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statS
 import { dirname, join } from 'node:path';
 import { loadConstitution, validateConstitution } from './constitution.mjs';
 import { detectDeploy } from './deploydetect.mjs';
-import { pluginDeclared, gitHooksState } from './doctor.mjs';
+import { OPS_ID, gitHooksState, opsDeclaredForClones, opsNeeded, pluginDeclared } from './doctor.mjs';
 import { declarePlugin, installGitHooks } from './githooks.mjs';
 import { defaultBranch, ghCommand, git, loadConfig, verifyCommands } from './lib.mjs';
 
@@ -166,7 +166,11 @@ export function audit(root, { github = true } = {}) {
   add('constitution', 'Kaizen loop', 'Engineering constitution', c ? (valid ? 'ok' : 'warn') : 'missing', c ? `v${c.meta.version} — ${c.articles.length} article(s)${valid ? '' : ', invalid'}` : 'no CONSTITUTION.md', { how: '/kaizen:constitution', skill: '/kaizen:constitution' }, 2);
   if (initialized) {
     const decl = pluginDeclared(root);
-    add('claude_settings', 'Kaizen loop', 'Plugin declared for every clone', decl.declared ? 'ok' : 'missing', decl.declared ? '.claude/settings.json enables kaizen@dojo' : decl.why, { how: 'declare the dojo marketplace and kaizen@dojo in the versioned .claude/settings.json', scaffold: 'claude_settings' }, 2);
+    // A repository with production use also needs kaizen-ops for every clone (doctor: ops_plugin).
+    const opsWhy = opsNeeded(root, config);
+    const opsMissing = decl.declared && opsWhy && !opsDeclaredForClones(root);
+    const evidence = !decl.declared ? decl.why : opsMissing ? `${OPS_ID} not enabled although this repo ${opsWhy}` : `.claude/settings.json enables kaizen@dojo${opsWhy ? ` and ${OPS_ID}` : ''}`;
+    add('claude_settings', 'Kaizen loop', 'Plugin declared for every clone', decl.declared && !opsMissing ? 'ok' : 'missing', evidence, { how: 'declare the dojo marketplace, kaizen@dojo (and kaizen-ops@dojo when the repo deploys with Kaizen) in the versioned .claude/settings.json', scaffold: 'claude_settings' }, 2);
     const hooks = gitHooksState(root);
     add('git_hooks', 'Kaizen loop', 'Git hooks (review and secrets without the plugin)', hooks.wired ? 'ok' : hooks.present.length ? 'warn' : 'missing', hooks.wired ? '.githooks/ wired' : hooks.present.length ? '.githooks/ present, core.hooksPath unset' : 'none: without the plugin, nothing refuses an unreviewed push', { how: 'git hooks that refuse an unreviewed push and a staged secret', scaffold: 'git_hooks' }, 3);
   }
@@ -268,7 +272,7 @@ ${eco.map((e) => `  - package-ecosystem: ${e}\n    directory: /\n    schedule:\n
 `;
 }
 
-// Continuous detection workflows (docs/guides/monitor.md, "Continuous monitoring"). The Kaizen CLI,
+// Continuous detection workflows (the monitor guide, "Continuous monitoring"). The Kaizen CLI,
 // dependency-free, comes from the marketplace repository: pin `ref` to a commit (sha) rather than a
 // branch. Incident tags are pushed by the CLI: it needs write access and a git identity.
 const KAIZEN_SOURCE = 'Lingelo/dojo';
