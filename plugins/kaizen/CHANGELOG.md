@@ -2,6 +2,19 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.10.0] - 2026-10-20
+
+### Changed
+- **A four-command path to start**: `/kaizen:setup` → `/kaizen:plan` → `/kaizen:work` → `/kaizen:ship`,
+  then merge — `plan` chains the plan review and `ship` the code review when missing, and every gate is
+  on from the first cycle. The README opens with it ("Start here: four commands", three shortcuts:
+  `debug`, `autopilot`, `help`) before the full list of 23; getting started marks constitution and
+  brainstorm as optional; `/kaizen:help` gives newcomers this path instead of the full list; `/kaizen:setup`
+  ends on it and mentions the constitution as optional, never as a prerequisite.
+- **`kaizen status`** recommends `/kaizen:plan <what to build>` when nothing else is pending (was
+  `/kaizen:brainstorm`), and puts a missing or draft constitution **after** the next step instead of
+  before it.
+
 ## [3.9.0] - 2026-10-20
 
 ### Added

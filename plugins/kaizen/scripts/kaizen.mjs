@@ -628,8 +628,11 @@ function repoStatus(root) {
   for (const i of incidentsState?.open || []) say(`/kaizen:monitor ${i.env}`, `open incident on ${i.env} since ${i.detected_at}${i.summary ? ` (${i.summary})` : ''}: restore (rollback), then /kaizen:postmortem`);
   for (const i of incidentsState?.without_postmortem || []) say('/kaizen:postmortem', `${i.env} incident of ${i.detected_at} resolved (${i.resolved_by}) without a postmortem`);
   if (!initialized) say('/kaizen:setup', 'Kaizen is not initialized in this repo');
-  else if (!constitution.exists) say('/kaizen:constitution', 'no CONSTITUTION.md: plan and review only have generic rules');
-  else if (constitution.draft) say('/kaizen:constitution', 'the constitution is a draft written without the team: review and ratify it (until then it blocks nothing)');
+  // The constitution sharpens plan and review, but never stands between a new user and the four-command
+  // path (setup → plan → work → ship): it comes after the next step.
+  const later = [];
+  if (initialized && !constitution.exists) later.push({ command: '/kaizen:constitution', why: 'optional, once: no CONSTITUTION.md yet, so plan and review only have generic rules' });
+  else if (initialized && constitution.draft) later.push({ command: '/kaizen:constitution', why: 'the constitution is a draft written without the team: review and ratify it (until then it blocks nothing)' });
   if (gate.active) say('/kaizen:work', `work in progress under the quality gate${gate.plan ? ` (${gate.plan})` : ''}: resume it, or \`gate off\` if it was abandoned`);
   else if (branch && branch !== def && (ahead || dirty)) {
     if (review?.pending_waiver) say('kaizen waive <code>', 'a review waiver awaits your confirmation (to type yourself)');
@@ -640,9 +643,10 @@ function repoStatus(root) {
     say(`/kaizen:deploy ${u.env}`, `${u.commits} commit(s) of ${def} not yet deployed to ${u.env}${u.last ? ` (last: ${u.last})` : ''}`);
   } else if (latest?.stage === 'requirements') say(`/kaizen:plan ${latest.path}`, 'requirements are waiting for their implementation plan');
   else if (latest?.stage === 'implementation-ready' && !latest.errors) say(`/kaizen:work ${latest.path}`, 'a ready plan is waiting to be executed (if not done already)');
-  if (!next.length || (initialized && constitution.exists && !gate.active && !(branch && branch !== def && (ahead || dirty)))) {
-    say('/kaizen:brainstorm <idea>', 'define the next feature (or /kaizen:ideate to find what to do, /kaizen:debug for a bug)');
+  if (initialized && !next.length) {
+    say('/kaizen:plan <what to build>', 'the next feature: plan, then work, then ship (a fuzzy idea → /kaizen:brainstorm, a bug → /kaizen:debug, no idea → /kaizen:ideate)');
   }
+  next.push(...later);
   return {
     repo: basename(root),
     branch,

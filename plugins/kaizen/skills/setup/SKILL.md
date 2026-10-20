@@ -71,10 +71,13 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    ## Kaizen
    - Before planning or debugging, look for the project's learnings in `docs/learnings/`
      (frontmatter: module, tags, symptoms, applies_when).
-   - Plans in `docs/plans/`; loop: /kaizen:brainstorm → plan → work → review → learn.
+   - Plans in `docs/plans/`; a feature: /kaizen:plan → /kaizen:work → /kaizen:ship (a bug: /kaizen:debug).
+     /kaizen:help names the next command.
    ```
-7. **Constitution** — no `CONSTITUTION.md` → propose `/kaizen:constitution` (Recommended): without it,
-   plan and review only have generic rules. Present → `node "$K" constitution check`.
+7. **Constitution** — no `CONSTITUTION.md` → mention `/kaizen:constitution` as **optional**: without it,
+   plan and review only have generic rules, and it pays most once a first cycle showed what the team
+   cares about. Run it now only if the user wants to; never make it a step before the first plan.
+   Present → `node "$K" constitution check`.
 8. **PR size** — `pr.max_lines` (400 by default): ask whether the team has another limit.
 9. **Deployment and monitoring** (optional) — if the team wants Kaizen to drive production releases
    too: `node "$K" deploy detect` recognizes the platform (Vercel, Netlify, Fly.io, Heroku, Kamal,
@@ -108,9 +111,10 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    else: e.g. "Profile **prototype**: code review on sonnet, critical review on sonnet (opus in product) — change
    it with `profile` in `.kaizen/config.json`". It decides the price and depth of every later review, so it
    is never buried among the assumptions, least of all when it was chosen without asking. Then the health
-   check above and the command to run next
-   (`/kaizen:brainstorm <idea>` or `/kaizen:ideate`); remind that `/kaizen:help` says at any time what
-   to do next.
+   check above and the **four-command path**: next is `/kaizen:plan <what to build>`, then
+   `/kaizen:work <plan>`, then `/kaizen:ship` (a fuzzy idea → `/kaizen:brainstorm` first, a bug →
+   `/kaizen:debug`). The constitution is offered as optional, once, not as a prerequisite; remind that
+   `/kaizen:help` says at any time what to do next.
 
 ## `pack:<name>` — create a Kaizen Pack
 

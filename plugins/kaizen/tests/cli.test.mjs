@@ -372,9 +372,11 @@ test('status: loop diagnosis and next step', () => {
   const next = () => cli(dir, ['status', '--json']).json.next.map((n) => n.command.split(' ')[0]);
   assert.deepEqual(next(), ['/kaizen:setup']);
   cli(dir, ['init']);
-  writeFiles(dir, { 'CONSTITUTION.md': CONSTITUTION });
   gitc(dir, ['add', '-A'], ['commit', '-qm', 'chore: kaizen']);
-  assert.deepEqual(next(), ['/kaizen:brainstorm']);
+  assert.deepEqual(next(), ['/kaizen:plan', '/kaizen:constitution'], 'the four-command path first, the constitution as an option');
+  writeFiles(dir, { 'CONSTITUTION.md': CONSTITUTION });
+  gitc(dir, ['add', '-A'], ['commit', '-qm', 'chore: constitution']);
+  assert.deepEqual(next(), ['/kaizen:plan']);
   gitc(dir, ['checkout', '-qb', 'feat/x']);
   writeFiles(dir, { 'a.js': '2\n' });
   assert.deepEqual(next(), ['/kaizen:review'], 'uncommitted, unreviewed changes');

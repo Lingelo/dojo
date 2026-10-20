@@ -54,14 +54,33 @@ of the conversation). Plans and constitutions written in French with Kaizen 2.x 
 { "enabledPlugins": { "kaizen@dojo": true } }
 ```
 
-Prerequisites: Node ≥ 18 and git; `gh` for PRs. No npm dependency. In a repo:
+Prerequisites: Node ≥ 18 and git; `gh` for PRs. No npm dependency.
 
-```
-/kaizen:setup
-/kaizen:constitution
-```
+## Start here: four commands
 
-## The commands (23 skills)
+You do not need the 23 commands to start. A feature goes through four, and each one chains what it
+needs:
+
+| # | Command | What you do | What it runs for you |
+|---|---|---|---|
+| 1 | `/kaizen:setup` | once per repo: check the verification commands it found, pick the profile | config, stack and deployment detection |
+| 2 | `/kaizen:plan <what to build>` | answer its questions, approve the plan | research, `plan check`, the plan review (`doc-review`) |
+| 3 | `/kaizen:work <plan>` | follow along, answer when asked | test first, one commit per unit, the quality gate |
+| 4 | `/kaizen:ship` | read the PR it opens | the code review if not done (`review`), size check, PR description |
+
+Then **merge** — that stays yours. Every gate (green tests, review before push, secret scan) is on from
+the first cycle, whatever you skipped.
+
+Three shortcuts cover most of the rest:
+- **A bug**: `/kaizen:debug <symptom>` instead of plan and work, then `/kaizen:ship`.
+- **Hands off**: after the plan, `/kaizen:autopilot <plan>` runs work, review, ship and the PR follow-up.
+- **Lost**: `/kaizen:help` looks at where the repo stands and names the next command.
+
+The other commands answer needs you will meet later — sharper rules (`constitution`), a fuzzy idea
+(`brainstorm`), review comments (`address-feedback`), production (`deploy`, `monitor`), measuring
+(`metrics`, `kaizen cost`). Reach for them when the need shows up.
+
+## All the commands (23 skills)
 
 Lost? **`/kaizen:help`** explains Kaizen, looks at where your repo stands and tells you which command to
 run next.
