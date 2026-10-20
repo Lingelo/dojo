@@ -31,6 +31,10 @@ rework rate, batch size, the **Kaizen loop** (learnings read and applied, consti
 and the **cycle cost** of `work`/`autopilot` runs. How each is computed:
 [metrics](../concepts/metrics.md).
 
+To follow cost over time, `node $K metrics dashboard` writes a self-contained HTML page
+(`.kaizen/state/cost-dashboard.html`): cost and tokens per cycle, by role and by model, over 7, 30, 90
+days or everything. `/kaizen:metrics` offers it when the cycle cost is part of the question.
+
 ## Reading honestly
 
 With [`/kaizen:deploy`](deploy.md), the indicators come from **real** deployments and incidents;

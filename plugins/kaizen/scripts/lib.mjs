@@ -539,9 +539,19 @@ export function usageTotal(usage) {
   return usage ? USAGE_KEYS.reduce((n, k) => n + (Number(usage[k]) || 0), 0) : 0;
 }
 
+// Model family of a transcript message (`claude-opus-…` → opus): what its tokens cost.
+export function modelFamily(model) {
+  return /(fable|opus|sonnet|haiku)/i.exec(String(model || ''))?.[1].toLowerCase() || 'other';
+}
+
 function addUsage(into, usage) {
   for (const k of USAGE_KEYS) into[k] += Number(usage[k]) || 0;
   into.messages += usage.messages ?? 1;
+  // Per model family, when known (cost dashboard): merged the same way.
+  for (const [m, u] of Object.entries(usage.by_model || {})) {
+    into.by_model ||= {};
+    into.by_model[m] = addUsage(into.by_model[m] || emptyUsage(), u);
+  }
   return into;
 }
 
@@ -559,7 +569,7 @@ function readUsage(text, from, seen, usage = emptyUsage()) {
     const id = msg.id || entry.uuid;
     if (id && seen.has(id)) continue;
     if (id) seen.add(id);
-    addUsage(usage, msg.usage);
+    addUsage(usage, msg.model ? { ...msg.usage, by_model: { [modelFamily(msg.model)]: msg.usage } } : msg.usage);
   }
   return usage;
 }

@@ -48,6 +48,7 @@
 //   node kaizen.mjs secrets scan [--staged | --base <ref>] [--json]   possible secrets in the changes (exit 1 if any)
 //   node kaizen.mjs dev detect | probe --url U    dev server (polish)
 //   node kaizen.mjs metrics [--since 90d] [--no-github]   approximated DORA metrics + loop health
+//   node kaizen.mjs metrics dashboard [--out file]   self-contained HTML cost dashboard over the recorded cycles
 //   node kaizen.mjs adr new --title "…" | adr list        architecture decisions (docs/adr)
 //   node kaizen.mjs postmortem new --title "…"            reserves a postmortem (docs/postmortems)
 //   node kaizen.mjs release notes [--from <tag>]          release notes + proposed SemVer version
@@ -69,7 +70,8 @@ import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { effectiveProfile } from './risk.mjs';
-import { estimateReview } from './estimate.mjs';
+import { DEFAULT_WEIGHTS, estimateReview } from './estimate.mjs';
+import { cycleRows, readCycles, renderDashboard } from './dashboard.mjs';
 import { audit, scaffold } from './audit.mjs';
 import { doctor, formatDoctor } from './doctor.mjs';
 import { preCommit, prePush } from './githooks.mjs';
@@ -1011,6 +1013,15 @@ try {
     }
     case 'metrics': {
       const root = requireRepo();
+      if (sub === 'dashboard') {
+        const weights = { ...DEFAULT_WEIGHTS, ...(loadConfig(root).review?.cost_weights || {}) };
+        const rows = cycleRows(readCycles(root), weights);
+        const file = typeof flags.out === 'string' ? resolve(root, flags.out) : join(ensureStateDir(root), 'cost-dashboard.html');
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, renderDashboard({ repo: basename(root), rows, weights }));
+        out({ file, cycles: rows.length, priced: rows.filter((r) => r.cost !== null).length });
+        break;
+      }
       out(computeMetrics(root, { since: flags.since || '90d', useGitHub: !flags['no-github'] }));
       break;
     }

@@ -284,6 +284,15 @@ refuses a protected environment without a confirmed approval for that commit.
 JSON with `window`, `deployments`, `changes`, `throughput`, `instability`, `batch_size`, `kaizen_loop`,
 `cycle_cost`. Every computation: [Metrics](../concepts/metrics.md).
 
+### `metrics dashboard [--out <file>]`
+
+Writes one self-contained HTML page (no dependency, no network) over the cycles recorded in
+`.kaizen/state/cycles.jsonl`, to `.kaizen/state/cost-dashboard.html` by default: period filter (7, 30,
+90 days, all), cost, cycles, tokens, subagent share and gate blocks, tokens per cycle stacked by role,
+cost by model, tokens by role, and the table of cycles. Cost is in the relative units of
+`review.cost_weights` and only for cycles that recorded tokens per model (Kaizen 3.7+). Prints
+`{ file, cycles, priced }`.
+
 ### `dev detect` · `dev probe --url <url> [--timeout-seconds 30]`
 
 `detect`: dev server candidates `{ name, framework, command, cwd, port, url, source }` — Node projects

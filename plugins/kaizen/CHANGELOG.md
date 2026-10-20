@@ -2,6 +2,17 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.7.0] - 2026-10-20
+
+### Added
+- **Cost dashboard** — `kaizen metrics dashboard [--out file]` writes one self-contained HTML page (no
+  dependency, no network, light and dark) over the recorded cycles: period filter, cost, tokens,
+  subagent share, gate blocks, tokens per cycle stacked by role, cost by model, tokens by role, table
+  of cycles. Default `.kaizen/state/cost-dashboard.html`. `/kaizen:metrics` offers it when cost is the
+  question.
+- Cycles record tokens per **model family** (`usage.by_model`, from each transcript message's model),
+  which prices them in the units of `review.cost_weights`.
+
 ## [3.6.0] - 2026-10-20
 
 ### Added

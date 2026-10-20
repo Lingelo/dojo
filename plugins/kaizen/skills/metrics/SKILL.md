@@ -50,7 +50,9 @@ production, target the costly step instead (`models.roles`, `gate.targeted`). A 
 slow or unstable (`gate.targeted`), or units too big. Read `tokens_by_role` with the model policy
 (`node "$K" models`): a role weighing heavily on a strong model is the first savings lever (`prototype`
 profile or `models.roles`). Say the measurement is local, and that an `unknown` role designates
-subagents not matched to their launch.
+subagents not matched to their launch. When cost is the question (or on request), also run
+`node "$K" metrics dashboard` and give the path of the page it writes (cost per cycle, by role and by
+model, period filter) — it is local, never commit it.
 
 ## 3. Conclude
 
