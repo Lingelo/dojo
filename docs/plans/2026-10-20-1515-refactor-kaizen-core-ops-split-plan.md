@@ -189,8 +189,7 @@ Measured coupling (3.10.0):
   stubs, the doctor check, regenerated diagrams and changelogs may exceed 400 reviewable lines. S2 must
   stay one merge (rollout order); if `kaizen size` goes over, the PR says so and its reviewer guide reads
   it commit by commit (U3 → U7), rather than splitting the release.
-- **Two-plugin evals** — if `claude --plugin-dir` cannot be repeated, the ops scenarios run with a
-  temporary marketplace directory holding both plugins.
+- **Two-plugin evals** — resolved: `claude --plugin-dir` is repeatable (`claude --help`), the evals pass both.
 
 <!-- kaizen:threats -->
 ## Threats
@@ -276,11 +275,11 @@ Measured coupling (3.10.0):
 - **Depends on:** U3
 - **Files:** `plugins/kaizen/skills/{deploy,monitor,postmortem}/SKILL.md` (new stubs),
   `plugins/kaizen/docs/guides/{deploy,monitor,postmortem}.md` (new short guides)
-- **Approach:** one-line description ("Moved to kaizen-ops in 4.0 — …"), `allowed-tools: Read`, body: give
+- **Approach:** short description ("Moved in Kaizen 4.0 — … Use when the user types /kaizen:<command>"), `allowed-tools: Read`, body: give
   `/kaizen-ops:<command>`, the settings line `"kaizen-ops@dojo": true`, and stop; never run the CLI.
 - **Evidence:** test first
-- **Test scenarios:** stub frontmatter valid; description under 120 characters; no `$K` and no `Bash`
-  in a stub.
+- **Test scenarios:** stub frontmatter valid against core's skill contract (description of 120 to 1024
+  characters, "Use when"); no `$K` and no `Bash` in a stub; its body asks for no tool beyond `Read`.
 - **Verification:** `node --test plugins/kaizen/tests/contracts.test.mjs` green
 - **Slice:** S2
 

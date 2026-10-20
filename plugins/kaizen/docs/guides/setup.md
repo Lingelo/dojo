@@ -52,7 +52,7 @@ show the before/after. Every check and scaffold: [SDLC audit](../reference/audit
 7. **Constitution**: proposed if missing, checked if it exists.
 8. **PR size**: `pr.max_lines` (400 by default).
 9. **Deployment and monitoring** (optional): `deploy detect` recognizes your platform and proposes
-   commands, rollback and health-check; you choose. See [deploy](deploy.md).
+   commands, rollback and health-check; you choose. See [deploy](../../../kaizen-ops/docs/guides/deploy.md).
 10. **Profile**, by the repo's stakes: `prototype` (spike, internal tool), `product` (product in
     production) or `critical` (regulated or critical domains). It also sets each agent's model.
     See [Configuration](../configuration.md#profile) and

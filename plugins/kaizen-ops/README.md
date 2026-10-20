@@ -2,14 +2,24 @@
 
 **Kaizen's production commands, for teams that deploy with Kaizen.**
 
-> Not published yet: kaizen-ops is being split out of Kaizen core
-> ([plan](../../docs/plans/2026-10-20-1515-refactor-kaizen-core-ops-split-plan.md)). Until Kaizen
-> 4.0.0, the production commands live in [Kaizen](../kaizen/README.md) itself.
-
 Kaizen core runs the development loop — plan, work, review, ship — with its gates. kaizen-ops adds
 the production part: watched deployments with typed approval and rollback, production signals and
 incidents, blameless postmortems. Enable it only if your team deploys through Kaizen; Kaizen core
 stays complete without it.
+
+## The commands (3 skills)
+
+| Command | Role |
+|---|---|
+| `/kaizen-ops:deploy` | Deploys through **your** commands (`deploy.environments`, recognized by `deploy detect`): preconditions, approval you type for production, `deploy/<env>/…` tag, watch of the plan's signals, **rollback** if a threshold is breached. Feature flags (`deploy flag`). |
+| `/kaizen-ops:monitor` | Production signals (native HTTP health-check or any command printing a number) against the thresholds of the config and of shipped plans. Threshold breached → dated incident, rollback, then postmortem. Continuous monitoring beyond the deployment: scheduled check (`patrol`) or the team's alerts (`alert`: Alertmanager, PagerDuty, Datadog, plain JSON). |
+| `/kaizen-ops:postmortem` | Blameless postmortem: timeline from git, CI and deployment tags, contributing factors, actions with owners. Then learning, pack rule and constitution amendment. |
+
+Guides: [deploy](docs/guides/deploy.md) · [monitor](docs/guides/monitor.md) ·
+[postmortem](docs/guides/postmortem.md) — index in [docs/](docs/README.md).
+
+Until Kaizen 4.0 these commands were `/kaizen:deploy`, `/kaizen:monitor` and `/kaizen:postmortem`;
+in Kaizen 4.0.x those names only answer where the command went.
 
 ## How it works
 

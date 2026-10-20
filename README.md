@@ -6,7 +6,8 @@ A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen), motion
 
 | Plugin | Description | Components |
 |---|---|---|
-| [**kaizen**](plugins/kaizen/README.md) | AI-assisted SDLC (adapted from Compound Engineering): engineering constitution enforced as checks, brainstorm → plan (traceability, threats, rollback, PR-sized slices) → doc-review → work (quality gate) → multi-agent review → ship → watch-pr, UI polish, learnings/ADRs/postmortems read back every cycle, DORA metrics and cycle cost, release; review enforced by a hook before any push, watched deployment with rollback (`/kaizen:deploy`, `/kaizen:monitor`), prototype/product/critical profiles, `/kaizen:help` to find your way | 23 skills, 22 agents, hooks (incl. secret scan before commit), CLI, Playwright MCP |
+| [**kaizen**](plugins/kaizen/README.md) | AI-assisted SDLC (adapted from Compound Engineering): engineering constitution enforced as checks, brainstorm → plan (traceability, threats, rollback, PR-sized slices) → doc-review → work (quality gate) → multi-agent review → ship → watch-pr, UI polish, learnings/ADRs/postmortems read back every cycle, DORA metrics and cycle cost, release; review enforced by a hook before any push, prototype/product/critical profiles, `/kaizen:help` to find your way | 20 skills, 22 agents, hooks (incl. secret scan before commit), CLI, Playwright MCP |
+| [**kaizen-ops**](plugins/kaizen-ops/README.md) | Kaizen's production commands, for teams that deploy with Kaizen: watched deployment with typed approval and rollback (`/kaizen-ops:deploy`), production signals and incidents (`/kaizen-ops:monitor`), blameless postmortems (`/kaizen-ops:postmortem`). Requires Kaizen ≥ 4.0.0; its CLI and gates stay in Kaizen | 3 skills, CLI resolver |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design as code: HTML/CSS/SVG/Canvas → MP4/WebM/GIF frame by frame, synced sound, voice-over and subtitles (Playwright + ffmpeg) | Skill, scripts |
 | [**slide-studio**](plugins/slide-studio/README.md) | Presentation decks as one HTML file: 19 layouts, 3 themes (`ink`, `paper`, `kaizen`) + brand tokens, presenter mode (steps, notes, overview), every slide audited in headless Chromium (overflow, collisions, contrast, density), export to PDF/PNG/contact sheet | Skill, scripts |
 
@@ -42,6 +43,7 @@ Or interactively:
 ```bash
 /plugin install motion-studio@dojo
 /plugin install kaizen@dojo
+/plugin install kaizen-ops@dojo      # only if you deploy with Kaizen
 /plugin install slide-studio@dojo
 ```
 
@@ -61,6 +63,7 @@ Add to your project's `.claude/settings.json` to configure every team member aut
   },
   "enabledPlugins": {
     "kaizen@dojo": true,
+    "kaizen-ops@dojo": true,
     "motion-studio@dojo": true,
     "slide-studio@dojo": true
   }
@@ -98,7 +101,7 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 /kaizen:ship                                    # reviewable PR, then /kaizen:watch-pr until "ready"
 /kaizen:learn                                   # the learning, read back by the next plan
 /kaizen:autopilot                               # or chain everything after the brainstorm
-/kaizen:deploy production                       # approved, watched production release, rollback ready
+/kaizen-ops:deploy production                   # approved, watched production release, rollback ready (kaizen-ops)
 ```
 
 Documentation: [getting started](plugins/kaizen/docs/getting-started.md) ·

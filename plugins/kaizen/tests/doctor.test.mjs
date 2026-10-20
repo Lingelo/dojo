@@ -153,3 +153,19 @@ test('a branch already pushed without a review is reported', () => {
   cleanup(dir);
   cleanup(bare);
 });
+
+test('a repository that deploys with Kaizen is told to enable kaizen-ops (AE5 of the split plan)', () => {
+  const home = tempRepo({});
+  const env = { CLAUDE_CONFIG_DIR: home };
+  const dir = tempRepo({ '.kaizen/config.json': { deploy: { environments: { production: { command: 'make deploy' } } } }, 'a.js': '1\n' });
+  let ops = check(cli(dir, ['doctor', '--json'], { env }), 'ops_plugin');
+  assert.equal(ops.status, 'warn');
+  assert.match(ops.evidence, /moved to kaizen-ops in Kaizen 4\.0/);
+  assert.match(ops.fix, /"kaizen-ops@dojo": true/);
+  writeFiles(home, { 'settings.json': { enabledPlugins: { 'kaizen-ops@dojo': true } } });
+  ops = check(cli(dir, ['doctor', '--json'], { env }), 'ops_plugin');
+  assert.equal(ops.status, 'ok', 'enabled in the user settings counts');
+  const plain = tempRepo({ '.kaizen/config.json': {}, 'a.js': '1\n' });
+  assert.equal(check(cli(plain, ['doctor', '--json'], { env }), 'ops_plugin'), undefined, 'no deployment, no signal: nothing to say');
+  for (const d of [home, dir, plain]) cleanup(d);
+});

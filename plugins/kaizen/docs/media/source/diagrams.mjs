@@ -535,7 +535,7 @@ written.push(
 // 8. Deployment
 // ---------------------------------------------------------------------------------------------------
 written.push(
-  diagram('deploy-flow', 1100, 620, 'A watched deployment (/kaizen:deploy)', 'Your commands, your approval for production, a shared tag, the plan’s signals watched, rollback first when a threshold is breached.', (d) => {
+  diagram('deploy-flow', 1100, 620, 'A watched deployment (/kaizen-ops:deploy)', 'Your commands, your approval for production, a shared tag, the plan’s signals watched, rollback first when a threshold is breached.', (d) => {
     d.box('pre', 36, 90, 250, 112, 'gate', 'Preconditions', 'merged commit, CI green\nshipped plans: rollback + signal\nrollback declared for the env\nsignals already healthy');
     d.box('req', 320, 90, 230, 56, 'skill', 'deploy request <env>', 'protected env: 6-char code, 30 min');
     d.box('you', 320, 166, 230, 56, 'outside', 'you: kaizen deploy 7C1E0B', 'UserPromptSubmit approves');
@@ -554,7 +554,7 @@ written.push(
     d.box('inc', 584, 370, 230, 56, 'artifact', 'incident/<env>/<detected>', 'opened at detection');
     d.box('rb', 320, 370, 230, 76, 'skill', 'deploy rollback <env>', 'no approval needed · automatic\nif deploy.auto_rollback · target =\nprevious successful deploy');
     d.box('rbtag', 36, 370, 250, 56, 'artifact', 'rollback/<env>/<stamp>', 'resolves the incident');
-    d.box('pm', 36, 470, 250, 56, 'skill', '/kaizen:postmortem', 'timeline from the tags');
+    d.box('pm', 36, 470, 250, 56, 'skill', '/kaizen-ops:postmortem', 'timeline from the tags');
     d.arrow(['watch.b', 'inc.t'], { tone: 'bad', label: 'breach', anchor: 'start', dx: 8, dy: 4 });
     d.arrow(['inc.l', 'rb.r@0.3'], { tone: 'bad' });
     d.arrow(['rb.l@0.3', 'rbtag.r'], { tone: 'bad' });
@@ -612,7 +612,7 @@ written.push(
     d.text(346, 186, 'docs/learnings/<category>/<slug>.md', 'small mono');
     d.text(346, 210, 'title · date · module · problem_type\ncomponent · severity · tags (≤ 8)\nbug: symptoms · root_cause · resolution_type\nknowledge: applies_when (≤ 5)', 'small');
     d.arrow(['learn.r', [330, 224]], { tone: 'blue', label: 'yes · validated', dy: -8 });
-    d.box('pm', 36, 384, 220, 56, 'skill', '/kaizen:postmortem', 'incident → learning');
+    d.box('pm', 36, 384, 220, 56, 'skill', '/kaizen-ops:postmortem', 'incident → learning');
     d.arrow(['pm.r', [300, 412], [300, 262], 'file.l@0.8'], { tone: 'blue' });
     d.box('pack', 330, 330, 210, 56, 'artifact', 'kaizen-packs/<pack>/', 'team-wide → pack rule (approved)');
     d.arrow([[420, 288], [420, 330]], { tone: 'blue', dashed: true });
@@ -691,18 +691,18 @@ written.push(
 written.push(
   diagram('help-routing', 1100, 600, 'What /kaizen:help recommends next', 'node $K status reads the repo and returns the first situation that applies, in this order.', (d) => {
     const rules = [
-      ['open incident on an environment', '/kaizen:monitor <env>', 'bad'],
-      ['incident resolved < 14 days ago, no postmortem', '/kaizen:postmortem', 'bad'],
+      ['open incident on an environment', '/kaizen-ops:monitor <env>', 'bad'],
+      ['incident resolved < 14 days ago, no postmortem', '/kaizen-ops:postmortem', 'bad'],
       ['Kaizen not initialized', '/kaizen:setup', null],
-      ['no CONSTITUTION.md', '/kaizen:constitution', null],
       ['quality gate active', '/kaizen:work (resume) or gate off', null],
       ['feature branch with changes · waiver pending', 'kaizen waive <code> (you type it)', null],
       ['feature branch · reviewed, committed, clean', '/kaizen:ship', 'ok'],
       ['feature branch · not reviewed or changed since', '/kaizen:review', null],
-      ['default branch · commits not deployed', '/kaizen:deploy <env>', null],
+      ['default branch · commits not deployed', '/kaizen-ops:deploy <env>', null],
       ['latest plan is requirements only', '/kaizen:plan <plan>', null],
       ['latest plan is ready', '/kaizen:work <plan>', null],
-      ['otherwise', '/kaizen:brainstorm <idea> · ideate · debug', 'ok'],
+      ['otherwise', '/kaizen:plan <what to build> · brainstorm · debug', 'ok'],
+      ['then, as an option: no or draft CONSTITUTION.md', '/kaizen:constitution', null],
     ];
     rules.forEach(([cond, cmd, tone], i) => {
       const y = 84 + i * 40;
@@ -711,7 +711,7 @@ written.push(
       d.arrow([`c${i}.r`, `n${i}.l`], { tone: tone || undefined });
       d.text(24, y + 21, String(i + 1), 'small', 'end');
     });
-    d.text(36, 580, 'The first two are added before everything else; "otherwise" is also added when the repo is in a normal state. /kaizen:help explains the result and can also answer “what is Kaizen?”.', 'small');
+    d.text(36, 580, 'The first two come before everything else; "otherwise" applies when nothing is pending; the constitution is only offered after the next step. /kaizen:help explains the result.', 'small');
   }),
 );
 

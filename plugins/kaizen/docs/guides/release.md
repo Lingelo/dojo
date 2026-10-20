@@ -11,7 +11,7 @@
 | **When to use it** | "Prepare the release", "release notes", "which version?", "changelog" |
 | **When not to use it** | Shipping a PR (→ [ship](ship.md)) |
 | **What it produces** | Release notes, proposed version, `CHANGELOG.md` entry (Keep a Changelog format), checklist |
-| **What next** | `publish` to tag and create the GitHub release, after confirmation; then [deploy](deploy.md) |
+| **What next** | `publish` to tag and create the GitHub release, after confirmation; then [deploy](../../../kaizen-ops/docs/guides/deploy.md) |
 
 ## Examples
 
@@ -47,8 +47,8 @@
    3. annotated tag;
    4. push;
    5. `gh release create`.
-6. **Deployment**: `release` does not deploy; it proposes `/kaizen:deploy <env> vX.Y.Z`
-   ([deploy](deploy.md)) when environments are configured.
+6. **Deployment**: `release` does not deploy; it proposes `/kaizen-ops:deploy <env> vX.Y.Z`
+   ([deploy](../../../kaizen-ops/docs/guides/deploy.md)) when environments are configured.
 
 ## Good to know
 
@@ -60,4 +60,4 @@
 In depth: [production](../concepts/production.md#release).
 
 
-[ship](ship.md) · [deploy](deploy.md) · [metrics](metrics.md)
+[ship](ship.md) · [deploy](../../../kaizen-ops/docs/guides/deploy.md) · [metrics](metrics.md)

@@ -1,4 +1,4 @@
-// /kaizen:deploy staging when the environment is not declared: a deploy script sits right there in
+// /kaizen-ops:deploy staging when the environment is not declared: a deploy script sits right there in
 // package.json, but Kaizen never guesses a deploy command — it explains the configuration and stops.
 import { HEADLESS, SHOP } from '../fixtures.mjs';
 
@@ -14,7 +14,7 @@ export default {
     },
     '.kaizen/config.json': { verify: { test: 'node --test' } },
   },
-  prompt: `${HEADLESS} /kaizen:deploy staging`,
+  prompt: `${HEADLESS} /kaizen-ops:deploy staging`,
   checks: [
     ['nothing deployed, no tag', (_, c) => !c.read('deployed.log') && !c.git('tag', '-l', 'deploy/*').trim()],
     ['explains how to declare the environment', (out) => /deploy\.environments|environments/i.test(out)],

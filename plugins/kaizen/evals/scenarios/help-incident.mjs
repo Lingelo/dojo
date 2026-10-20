@@ -19,7 +19,7 @@ export default {
   ],
   prompt: "/kaizen:help I'd like to start on the next feature, what do I run?",
   checks: [
-    ['points to the open incident first', (out) => /\/kaizen:monitor production|incident/i.test(out) && /restor|roll ?back/i.test(out)],
+    ['points to the open incident first', (out) => /\/kaizen-ops:monitor production|incident/i.test(out) && /restor|roll ?back/i.test(out)],
     ['quotes the incident symptom', (out) => /payment|7\s?%/i.test(out)],
     ['nothing changed, the incident stays open', (_, c) => c.git('status', '--porcelain').trim() === '' && !/resolve\//.test(c.git('tag', '-l', 'resolve/*'))],
   ],

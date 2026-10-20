@@ -2,6 +2,33 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [4.0.0] - 2026-10-20
+
+### Breaking
+- **The production commands moved to the kaizen-ops plugin**: `/kaizen:deploy` → `/kaizen-ops:deploy`,
+  `/kaizen:monitor` → `/kaizen-ops:monitor`, `/kaizen:postmortem` → `/kaizen-ops:postmortem`, with
+  their guides and the postmortem template. Teams that deploy with Kaizen enable it next to Kaizen:
+  `"enabledPlugins": { "kaizen@dojo": true, "kaizen-ops@dojo": true }`. Nothing else changes: the CLI
+  (`deploy`, `monitor`, `metrics`), the configuration (`deploy`, `monitor`), the deployment tags, DORA
+  metrics and every gate — typed approval for protected environments, refusal of raw deploy commands
+  and forged tags — stay in Kaizen, so no protection depends on kaizen-ops being enabled.
+  Plan: `docs/plans/2026-10-20-1515-refactor-kaizen-core-ops-split-plan.md`.
+
+### Added
+- `kaizen doctor` → `ops_plugin`: a repository that declares deployments or signals without
+  `kaizen-ops@dojo` enabled (project, local or user settings) is told so, with the settings line;
+  `audit fix claude_settings` enables it alongside `kaizen@dojo`.
+- Contract test: no core script or hook may refer to kaizen-ops.
+
+### Deprecated
+- `/kaizen:deploy`, `/kaizen:monitor` and `/kaizen:postmortem` remain as stubs that only say where
+  the command went (they run nothing); removed in 4.1.0.
+
+### Changed
+- `status` next steps, hook messages, `help`, skills, docs and diagrams name `/kaizen-ops:…`; the
+  `help` routing diagram follows 3.10's order (plan first, the constitution as an option after it).
+- Evals load both plugins (`--plugin-dir` twice).
+
 ## [3.10.0] - 2026-10-20
 
 ### Changed

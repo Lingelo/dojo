@@ -54,7 +54,7 @@ try {
     process.stderr.write('[kaizen] deploy/…, rollback/…, incident/… and resolve/… tags are only created by `kaizen.mjs deploy` and `kaizen.mjs monitor`: they carry DORA metrics and postmortem timelines.\n');
     process.exit(2);
   }
-  // Direct deployment of a protected environment: it goes through /kaizen:deploy (approval typed by
+  // Direct deployment of a protected environment: it goes through /kaizen-ops:deploy (approval typed by
   // the user, tag, watch), never through its raw command.
   if (!/kaizen\.mjs/.test(command)) {
     const { loadConfig } = await import('./lib.mjs');
@@ -64,7 +64,7 @@ try {
       if (prot && e.command && command.includes(e.command)) {
         logFriction(root, { gate: 'deploy', kind: 'refused', env: name, source: 'claude' });
         process.stderr.write(
-          `[kaizen] Direct deployment of ${name} refused: go through /kaizen:deploy ${name} ` +
+          `[kaizen] Direct deployment of ${name} refused: go through /kaizen-ops:deploy ${name} ` +
             '(approval the user types themselves, deployment tag, signal watch, rollback ready).\n',
         );
         process.exit(2);

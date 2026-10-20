@@ -234,9 +234,9 @@ it is not part of the Stop-hook gate.
 
 ### `deploy` — deployment and rollback
 
-Optional. The commands `/kaizen:deploy` releases with: Kaizen knows no platform and never guesses a
+Optional. The commands `/kaizen-ops:deploy` releases with: Kaizen knows no platform and never guesses a
 command. `node $K deploy detect` recognizes the common platforms and `node $K deploy configure <id>`
-writes the proposed commands here (see [deploy](guides/deploy.md)).
+writes the proposed commands here (see [deploy](../../kaizen-ops/docs/guides/deploy.md)).
 
 | Key | Default | Role |
 |---|---|---|
@@ -264,7 +264,7 @@ writes the proposed commands here (see [deploy](guides/deploy.md)).
 
 ### `monitor` — production signals
 
-Optional. The signals `/kaizen:monitor` and `/kaizen:deploy` compare to their thresholds.
+Optional. The signals `/kaizen-ops:monitor` and `/kaizen-ops:deploy` compare to their thresholds.
 
 | Key | Default | Role |
 |---|---|---|
@@ -277,7 +277,7 @@ Optional. The signals `/kaizen:monitor` and `/kaizen:deploy` compare to their th
 
 Incidents (detected by `monitor watch`, `monitor patrol` or an alert received by `monitor alert`) are
 recorded as `incident/<env>/…` tags, resolved by a rollback or a `resolve/<env>/…` tag. See
-[monitor](guides/monitor.md#continuous-monitoring).
+[monitor](../../kaizen-ops/docs/guides/monitor.md#continuous-monitoring).
 
 ### `models` — the right model for each task
 

@@ -160,7 +160,8 @@ Line counts exclude `pr.ignore` (lockfiles, minified, snapshots, generated files
 These hooks only exist when Claude Code loads the plugin. In a clone or a cloud session where it does
 not, nothing is refused — `kaizen doctor` reports it (plugin not declared in `.claude/settings.json`, no
 heartbeat from the SessionStart hook, branch pushed without a review). Two opt-in fallbacks:
-`audit fix claude_settings` declares `kaizen@dojo` in the versioned settings, and `audit fix git_hooks`
+`audit fix claude_settings` declares `kaizen@dojo` in the versioned settings (and `kaizen-ops@dojo`
+when the repo declares deployments or signals — the doctor's `ops_plugin` check), and `audit fix git_hooks`
 installs `.githooks/pre-push` (the same decision, for every branch the push updates, at the pushed
 commit — whatever the local refspec, `HEAD` included) and `.githooks/pre-commit` (staged secrets). They
 run a pinned CLI (`git config kaizen.cli`, `$KAIZEN_CLI`, or the dojo marketplace's plugin cache only)

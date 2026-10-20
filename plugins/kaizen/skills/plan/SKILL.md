@@ -71,7 +71,7 @@ settling it in one KTD line.
   (raised one step on a risk surface): apply that one, not the repo's.
 - **Rollout**: `kaizen:rollout` section — exposure (flag?), order, rollback, what is irreversible,
   signal to watch. Cite the signal by its name declared in `monitor.signals` (`node "$K" config`) with
-  its threshold, `` `error_rate` > 1 % → rollback ``: that is what `/kaizen:deploy` will watch after the
+  its threshold, `` `error_rate` > 1 % → rollback ``: that is what `/kaizen-ops:deploy` will watch after the
   release. Signal needed but not declared → say so in the plan (to add to the config). `prototype` profile:
   only if the change reaches production in a way that is hard to undo (migration, public API, data);
   otherwise one line is enough.

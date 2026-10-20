@@ -1,4 +1,4 @@
-// /kaizen:monitor production while the metrics tool is broken (expired token): the measurement is
+// /kaizen-ops:monitor production while the metrics tool is broken (expired token): the measurement is
 // blind, not the service down. Nothing is rolled back, no incident is opened, the signal is reported
 // to repair.
 import { HEADLESS, SHOP } from '../fixtures.mjs';
@@ -22,7 +22,7 @@ export default {
     },
   },
   steps: [{ run: ['deploy', 'run', 'production'] }, { files: { 'src/v2.js': 'export const v = 2;\n' }, commit: 'feat: v2' }, { run: ['deploy', 'run', 'production'] }],
-  prompt: `${HEADLESS} /kaizen:monitor production patrol`,
+  prompt: `${HEADLESS} /kaizen-ops:monitor production patrol`,
   checks: [
     ['no rollback', (_, c) => !c.git('tag', '-l', 'rollback/*').trim() && !/^rollback /m.test(c.read('deployed.log'))],
     ['no incident', (_, c) => !c.git('tag', '-l', 'incident/*').trim()],

@@ -1,4 +1,4 @@
-// /kaizen:monitor receives an Alertmanager alert fired after the last deployment: the incident is
+// /kaizen-ops:monitor receives an Alertmanager alert fired after the last deployment: the incident is
 // recorded with the alert's time, the rollback follows (prudent default with nobody to answer), then
 // the postmortem is proposed.
 import { HEADLESS, SHOP } from '../fixtures.mjs';
@@ -28,7 +28,7 @@ export default {
     },
   },
   steps: [{ run: ['deploy', 'run', 'production'] }, { files: { 'src/v2.js': 'export const v = 2;\n' }, commit: 'feat: v2' }, { run: ['deploy', 'run', 'production'] }],
-  prompt: `${HEADLESS} /kaizen:monitor production — an alert from the team just arrived, its payload is in alert.json.`,
+  prompt: `${HEADLESS} /kaizen-ops:monitor production — an alert from the team just arrived, its payload is in alert.json.`,
   checks: [
     ['incident recorded, dated by the alert', (_, c) => {
       const list = JSON.parse(c.kaizen('monitor', 'incident', 'list', '--env', 'production').out || '[]');

@@ -37,7 +37,7 @@ path** before anything else: `/kaizen:setup` → `/kaizen:plan <what to build>` 
 `/kaizen:ship`, then merge. Say what each one chains on its own (`plan` → plan review, `ship` → code review
 if missing) and that every gate is on from the first cycle. Name the three shortcuts (`debug` for a bug,
 `autopilot` after the plan, `help` when lost) and present every other command as something to reach for
-when its need shows up — never the full list of 23 to someone who has not shipped a first PR. Constitution
+when its need shows up — never the full list of 20 to someone who has not shipped a first PR. Constitution
 and brainstorm are recommended **after** the first cycle, not as prerequisites.
 
 **With a question or a situation** — match it to the table below. Answer with the command (exact
@@ -86,11 +86,11 @@ autopilot: from request to ready PR, autonomously
 | A decision that is hard to undo | `/kaizen:decide <question>` | options compared on evidence, then an ADR |
 | A non-obvious problem was just solved | `/kaizen:learn` | a learning the next plan and the next review will read |
 | Many or stale learnings | `/kaizen:prune-learnings` | keep, update, merge, delete |
-| A production incident | `/kaizen:postmortem` | blameless: timeline, factors, actions, learnings |
+| A production incident | `/kaizen-ops:postmortem` | blameless: timeline, factors, actions, learnings |
 | Prepare a release | `/kaizen:release` | notes, SemVer, CHANGELOG, production checklist |
-| Deploy to production, or roll back | `/kaizen:deploy <env> [ref]`, `/kaizen:deploy rollback <env>` | the team's commands, typed approval for production, tag, watch, rollback |
-| Is production healthy? | `/kaizen:monitor [env] [watch n]` | declared signals against the config's and plans' thresholds |
-| Detect incidents continuously, an alert just fired | `/kaizen:monitor production continuous`, `/kaizen:monitor production incidents` | scheduled check (`patrol`) or the team's alerts wired in, dated incidents |
+| Deploy to production, or roll back | `/kaizen-ops:deploy <env> [ref]`, `/kaizen-ops:deploy rollback <env>` | the team's commands, typed approval for production, tag, watch, rollback |
+| Is production healthy? | `/kaizen-ops:monitor [env] [watch n]` | declared signals against the config's and plans' thresholds |
+| Detect incidents continuously, an alert just fired | `/kaizen-ops:monitor production continuous`, `/kaizen-ops:monitor production incidents` | scheduled check (`patrol`) or the team's alerts wired in, dated incidents |
 | Know whether things improve | `/kaizen:metrics` | approximated DORA, learning reuse, cycle cost |
 | Push refused, gate blocking, skill not triggering | — | `docs/troubleshooting.md`, then `/kaizen:setup check` |
 

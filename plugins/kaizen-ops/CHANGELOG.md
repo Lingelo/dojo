@@ -2,7 +2,16 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [1.0.0] - 2026-10-20
+
+### Added
+- `/kaizen-ops:deploy`, `/kaizen-ops:monitor` and `/kaizen-ops:postmortem`, moved from Kaizen 3.10
+  (`/kaizen:deploy`, `/kaizen:monitor`, `/kaizen:postmortem`) with unchanged behaviour, their guides
+  and the postmortem template. The skills read Kaizen core's conventions and configuration through
+  `node "$K" core-root`.
+- Registered in the dojo marketplace; requires Kaizen ≥ 4.0.0.
+
+## [0.1.0] - 2026-10-20 (unpublished)
 
 ### Added
 - Plugin skeleton, not yet registered in the marketplace: the resolver `scripts/kaizen.mjs`, which finds

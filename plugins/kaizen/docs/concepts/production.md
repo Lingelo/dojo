@@ -4,8 +4,8 @@ Kaizen does not stop at the merged PR. A plan says how it reaches production and
 release turns merged work into a version and a checklist; a deployment runs **your** commands, waits for
 **your** approval on protected environments, records a shared tag and watches the plan’s signals; an
 incident is a dated tag that feeds the metrics and the postmortem. Guides:
-[`release`](../guides/release.md), [`deploy`](../guides/deploy.md), [`monitor`](../guides/monitor.md),
-[`postmortem`](../guides/postmortem.md); configuration:
+[`release`](../guides/release.md), [`deploy`](../../../kaizen-ops/docs/guides/deploy.md), [`monitor`](../../../kaizen-ops/docs/guides/monitor.md),
+[`postmortem`](../../../kaizen-ops/docs/guides/postmortem.md); configuration:
 [`deploy`](../configuration.md#deploy--deployment-and-rollback) and
 [`monitor`](../configuration.md#monitor--production-signals).
 
@@ -30,7 +30,7 @@ incident is a dated tag that feeds the metrics and the postmortem. Guides:
 `/kaizen:release` then checks hidden breaking changes in public interfaces, compares the project’s
 version files, writes user-facing notes and the CHANGELOG (Keep a Changelog), builds the production
 checklist, and only with `publish` and your approval: version bump, `chore(release): vX.Y.Z`, annotated
-tag, push, `gh release create`. It proposes `/kaizen:deploy` but never deploys.
+tag, push, `gh release create`. It proposes `/kaizen-ops:deploy` but never deploys.
 
 ## Deploy
 
@@ -73,7 +73,7 @@ the chosen candidate without overwriting an existing environment (`--force` to r
 
 ### The run
 
-1. **Preconditions** (by `/kaizen:deploy`): merged commit, CI green, what ships since the last
+1. **Preconditions** (by `/kaizen-ops:deploy`): merged commit, CI green, what ships since the last
    deployment (commits and plans, each with its rollback and signal — a plan without them blocks a
    protected deployment), a declared rollback, signals already healthy (no deploying on top of an
    incident).
@@ -92,7 +92,7 @@ the chosen candidate without overwriting an existing environment (`--force` to r
 5. **Breach** → an incident tag, then **rollback first**: `node $K deploy rollback <env> [--reason …]
    [--to ref]` runs your rollback command towards the previous successful deployment (or `--to`), needs
    no approval (it restores service and it is urgent), and creates a `rollback/<env>/…` tag. With
-   `deploy.auto_rollback`, `monitor watch` rolls back by itself. Then `/kaizen:postmortem`.
+   `deploy.auto_rollback`, `monitor watch` rolls back by itself. Then `/kaizen-ops:postmortem`.
 
 `node $K deploy list [--env e]` rebuilds the history from the tags (shared with the team);
 `node $K deploy flag on|off <name> [--env e]` runs your feature flag commands (`{flag}`, `{env}`
@@ -173,7 +173,7 @@ Recognized alert payloads:
 
 ## Postmortem
 
-`/kaizen:postmortem` gathers the facts (your account, `git log` over the window, CI runs, merged PRs,
+`/kaizen-ops:postmortem` gathers the facts (your account, `git log` over the window, CI runs, merged PRs,
 releases, `deploy/`, `rollback/` and `incident/` tags, `monitor.jsonl`, provided logs), asks the missing
 questions one at a time, and writes `docs/postmortems/YYYY-MM-DD-<title>.md`: summary, impact, timeline
 (UTC, each line sourced), contributing factors (plural), what went well, near misses, 3–7 actions with

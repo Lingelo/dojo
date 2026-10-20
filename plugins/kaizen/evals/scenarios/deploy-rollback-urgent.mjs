@@ -1,4 +1,4 @@
-// /kaizen:deploy rollback production on a protected environment: restoring service is urgent and needs
+// /kaizen-ops:deploy rollback production on a protected environment: restoring service is urgent and needs
 // no approval code, unlike a deployment. The rollback runs and is traced; the postmortem is proposed.
 import { HEADLESS, SHOP } from '../fixtures.mjs';
 
@@ -20,7 +20,7 @@ export default {
     { run: ['deploy', 'run', 'production'] },
     { files: { '.kaizen/config.json': env(true) }, commit: 'chore: protect production' },
   ],
-  prompt: `${HEADLESS} Checkout is failing for customers since the last release: /kaizen:deploy rollback production checkout errors`,
+  prompt: `${HEADLESS} Checkout is failing for customers since the last release: /kaizen-ops:deploy rollback production checkout errors`,
   checks: [
     ['rollback run and traced', (_, c) => /rollback\/production\//.test(c.git('tag', '-l', 'rollback/*')) && /^rollback /m.test(c.read('deployed.log'))],
     ['no new deployment', (_, c) => c.read('deployed.log').split('\n').filter((l) => l.startsWith('deploy ')).length === 2],

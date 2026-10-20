@@ -324,14 +324,14 @@ test('status: open incident first, then missing postmortem', () => {
   const detected = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
   cli(dir, ['monitor', 'incident', 'open', '--env', 'production', '--at', detected, '--summary', 'lenteurs']);
   const st = () => cli(dir, ['status', '--json']).json;
-  assert.equal(st().next[0].command, '/kaizen:monitor production');
+  assert.equal(st().next[0].command, '/kaizen-ops:monitor production');
   assert.match(st().next[0].why, /lenteurs/);
   assert.equal(st().incidents.open, 1);
   cli(dir, ['monitor', 'incident', 'resolve', '--env', 'production']);
-  assert.equal(st().next[0].command, '/kaizen:postmortem');
+  assert.equal(st().next[0].command, '/kaizen-ops:postmortem');
   const docs = cli(dir, ['root']).json.docs_root || 'docs';
   writeFiles(dir, { [`${docs}/postmortems/2026-pm.md`]: `---\ntitle: Lenteurs\ndetected: ${detected}\nresolved: ${detected}\n---\n` });
-  assert.ok(!st().next.some((n) => n.command === '/kaizen:postmortem'), 'postmortem written');
+  assert.ok(!st().next.some((n) => n.command === '/kaizen-ops:postmortem'), 'postmortem written');
   cleanup(dir);
 });
 
@@ -339,7 +339,7 @@ test('gates: raw production command refused, forged deployment tag refused', () 
   const dir = shopRepo();
   const direct = preTool(dir, `cd . && ${MARK} # prod`);
   assert.equal(direct.status, 2);
-  assert.match(direct.stderr, /\/kaizen:deploy production/);
+  assert.match(direct.stderr, /\/kaizen-ops:deploy production/);
   assert.equal(preTool(dir, MARK).status, 0, 'staging, unprotected');
   assert.equal(preTool(dir, `node "${CLI}" deploy run production`).status, 0, 'through the CLI');
   assert.equal(preTool(dir, 'git tag -a deploy/production/20260101T000000Z -m x').status, 2);
@@ -359,14 +359,14 @@ test('release notes ignore deployment tags as a starting point', () => {
   cleanup(dir);
 });
 
-test('status: default-branch commits not yet deployed → /kaizen:deploy', () => {
+test('status: default-branch commits not yet deployed → /kaizen-ops:deploy', () => {
   const dir = shopRepo({ deploy: { environments: { production: { command: MARK, protected: false } } } });
   const next = () => cli(dir, ['status', '--json']).json.next.map((n) => n.command);
-  assert.ok(next().includes('/kaizen:deploy production'), next().join(', '));
+  assert.ok(next().includes('/kaizen-ops:deploy production'), next().join(', '));
   cli(dir, ['deploy', 'run', 'production']);
-  assert.ok(!next().some((c) => c.startsWith('/kaizen:deploy')), 'everything is deployed');
+  assert.ok(!next().some((c) => c.startsWith('/kaizen-ops:deploy')), 'everything is deployed');
   writeFiles(dir, { 'app.js': '3\n' });
   gitc(dir, ['commit', '-qam', 'fix: v3']);
-  assert.match(cli(dir, ['status', '--json']).json.next.find((n) => n.command.startsWith('/kaizen:deploy')).why, /1 commit\(s\) of main not yet deployed/);
+  assert.match(cli(dir, ['status', '--json']).json.next.find((n) => n.command.startsWith('/kaizen-ops:deploy')).why, /1 commit\(s\) of main not yet deployed/);
   cleanup(dir);
 });
