@@ -1,6 +1,6 @@
 ---
 name: postmortem
-description: Runs a blameless incident postmortem — rebuilds the timeline from git, CI, deployments and the logs provided, measures the impact, analyzes the contributing factors (not a single cause or a person), lists actions with owners, then closes the Kaizen loop (learning, pack rule, constitution amendment, regression test). Use after an incident, a production regression or a near miss: "postmortem", "look back at the outage", "incident analysis", /kaizen:postmortem.
+description: Runs a blameless incident postmortem — rebuilds the timeline from git, CI, deployments and the logs provided, measures the impact, analyzes the contributing factors (not a single cause or a person), lists actions with owners, then closes the Kaizen loop (learning, pack rule, constitution amendment, regression test). Use after an incident, a production regression or a near miss: "postmortem", "look back at the outage", "incident analysis", /kaizen-ops:postmortem.
 allowed-tools: Bash(node:*), Bash(git:*), Bash(gh:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
 argument-hint: "[incident description, ticket, or link] [near-miss]"
 ---
@@ -11,9 +11,9 @@ argument-hint: "[incident description, ticket, or link] [near-miss]"
 the analysis (what made the error easy and invisible?), never the conclusion. A postmortem is worth its
 **followed-up actions**, not its prose.
 
-Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. Template:
+`K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"` — this plugin's resolver: it runs Kaizen core's CLI (kaizen@dojo is required).
+Read `$(node "$K" core-root)/references/conventions.md` (Kaizen core's conventions). Template:
 `${CLAUDE_PLUGIN_ROOT}/templates/postmortem.md`.
-`K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
 **Secrets and personal data**: incident logs are full of them. Sanitized excerpts only (`<REDACTED>`),
 never a customer id, token or email in the document.

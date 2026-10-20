@@ -1,4 +1,4 @@
-# `/kaizen:deploy`
+# `/kaizen-ops:deploy`
 
 > Release a commit to production through **your** deploy commands, with your approval for production,
 > then watch its signals and roll back if a threshold is breached.
@@ -9,17 +9,17 @@
 |---|---|
 | **What it does** | Preconditions (green CI, checklist of the shipped plans, rollback ready, healthy signals) → approval typed by you for a protected environment → deployment → `deploy/<env>/…` tag → signal watch → rollback if a threshold is breached |
 | **When to use it** | Releasing a version or the default branch to staging or production; rolling back |
-| **When not to use it** | Opening a PR (→ [ship](ship.md)); preparing a release (→ [release](release.md)) |
+| **When not to use it** | Opening a PR (→ [ship](../../../kaizen/docs/guides/ship.md)); preparing a release (→ [release](../../../kaizen/docs/guides/release.md)) |
 | **What it produces** | The deployed commit, a shared git tag, a record of the signals during the watch window; on a problem, a `rollback/<env>/…` tag and the postmortem timeline |
 | **What next** | Nothing if all is well; otherwise [postmortem](postmortem.md) |
 
 ## Examples
 
 ```text
-/kaizen:deploy staging
-/kaizen:deploy production v2.3.0
-/kaizen:deploy rollback production 5xx errors after v2.3.0
-/kaizen:deploy flag off export_csv production
+/kaizen-ops:deploy staging
+/kaizen-ops:deploy production v2.3.0
+/kaizen-ops:deploy rollback production 5xx errors after v2.3.0
+/kaizen-ops:deploy flag off export_csv production
 ```
 
 ## Configure
@@ -33,12 +33,12 @@ node $K deploy detect              # recognizes how the project deploys: command
 node $K deploy configure fly       # writes the chosen candidate (without overwriting an existing environment)
 ```
 
-Recognized setups and the full configuration: [production](../concepts/production.md#configuration) ·
-[Configuration](../configuration.md#deploy--deployment-and-rollback).
+Recognized setups and the full configuration: [production](../../../kaizen/docs/concepts/production.md#configuration) ·
+[Configuration](../../../kaizen/docs/configuration.md#deploy--deployment-and-rollback).
 
-![A watched deployment from preconditions to rollback and postmortem](../media/diagrams/deploy-flow.svg)
+![A watched deployment from preconditions to rollback and postmortem](../../../kaizen/docs/media/diagrams/deploy-flow.svg)
 
-In depth: [production](../concepts/production.md#deploy).
+In depth: [production](../../../kaizen/docs/concepts/production.md#deploy).
 
 ## How it goes
 
@@ -63,11 +63,11 @@ In depth: [production](../concepts/production.md#deploy).
 - Running a protected environment's deploy command directly is **refused** by a hook: it would bypass
   the approval, the tag and the watch.
 - `deploy/…`, `rollback/…`, `incident/…` and `resolve/…` tags are only created by Kaizen. They feed the
-  **real** DORA metrics of [metrics](metrics.md) (frequency, commit → production lead time, failure
+  **real** DORA metrics of [metrics](../../../kaizen/docs/guides/metrics.md) (frequency, commit → production lead time, failure
   rate, time to restore) and the postmortem timelines.
 - A rollback needs no approval: it restores, and it is urgent.
 - `autopilot` never deploys.
 
 ## See also
 
-[monitor](monitor.md) · [release](release.md) · [postmortem](postmortem.md) · [metrics](metrics.md)
+[monitor](monitor.md) · [release](../../../kaizen/docs/guides/release.md) · [postmortem](postmortem.md) · [metrics](../../../kaizen/docs/guides/metrics.md)

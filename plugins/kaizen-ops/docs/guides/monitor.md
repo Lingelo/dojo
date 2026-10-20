@@ -1,4 +1,4 @@
-# `/kaizen:monitor`
+# `/kaizen-ops:monitor`
 
 > Know whether an environment is healthy **according to your signals and thresholds**, and what to do
 > otherwise.
@@ -11,16 +11,16 @@
 | **When to use it** | "Is production healthy?", watching a sensitive moment, checking a plan's signals, wiring continuous incident detection |
 | **When not to use it** | Right after a deployment: [deploy](deploy.md) already watches |
 | **What it produces** | A record per signal (value, threshold, source), kept in `.kaizen/state/monitor.jsonl`; on a breach, a dated incident (`incident/<env>/…` tag) |
-| **What next** | Nothing, or `/kaizen:deploy rollback` then [postmortem](postmortem.md) |
+| **What next** | Nothing, or `/kaizen-ops:deploy rollback` then [postmortem](postmortem.md) |
 
 ## Examples
 
 ```text
-/kaizen:monitor production
-/kaizen:monitor production watch 30
-/kaizen:monitor staging plan:docs/plans/2026-10-04-feat-orders-csv-export-plan.md
-/kaizen:monitor production incidents
-/kaizen:monitor production continuous
+/kaizen-ops:monitor production
+/kaizen-ops:monitor production watch 30
+/kaizen-ops:monitor staging plan:docs/plans/2026-10-04-feat-orders-csv-export-plan.md
+/kaizen-ops:monitor production incidents
+/kaizen-ops:monitor production continuous
 ```
 
 ## Declaring signals
@@ -32,8 +32,8 @@ Each signal is an HTTP health-check (`type: "http"`) or any command whose output
 "monitor": { "signals": { "error_rate": { "command": "./scripts/error-rate.sh {env}", "max": 0.01 } } }
 ```
 
-Every option: [production](../concepts/production.md#signals) ·
-[Configuration](../configuration.md#monitor--production-signals).
+Every option: [production](../../../kaizen/docs/concepts/production.md#signals) ·
+[Configuration](../../../kaizen/docs/configuration.md#monitor--production-signals).
 
 ## Plan thresholds
 
@@ -48,13 +48,13 @@ cited by a plan but not declared is reported: it is a monitoring gap.
 
 ## Incidents
 
-![Incident lifecycle from detection sources to resolution and consumers](../media/diagrams/incident-lifecycle.svg)
+![Incident lifecycle from detection sources to resolution and consumers](../../../kaizen/docs/media/diagrams/incident-lifecycle.svg)
 
 
 A breach confirmed by `watch` or `patrol`, or an alert received by `monitor alert`, opens an
 **incident**: an `incident/<env>/<detection>` tag on the deployed commit, resolved by the rollback or by
 `monitor incident resolve`. Its dated detection feeds the [postmortem](postmortem.md) timeline and the
-[metrics](metrics.md). Rules (idempotence, dating, consumers): [production](../concepts/production.md#incidents).
+[metrics](../../../kaizen/docs/guides/metrics.md). Rules (idempotence, dating, consumers): [production](../../../kaizen/docs/concepts/production.md#incidents).
 
 ## Continuous monitoring
 
@@ -70,8 +70,8 @@ Both workflows below are generated with `node "$K" audit fix monitor_patrol` and
 `patrol` measures the signals; a red signal is measured again up to `monitor.consecutive` samples before
 opening an incident. Exit 1 on a breach: the scheduler reports it.
 
-- **Claude Code routine**: `/schedule` every 30 minutes with "run `/kaizen:monitor production patrol`;
-  on a breach, propose the rollback then `/kaizen:postmortem`".
+- **Claude Code routine**: `/schedule` every 30 minutes with "run `/kaizen-ops:monitor production patrol`;
+  on a breach, propose the rollback then `/kaizen-ops:postmortem`".
 - **Scheduled CI workflow** (shared tags, no machine left on):
 
 ```yaml
@@ -92,7 +92,7 @@ jobs:
 
 The alerts the team already has (Prometheus Alertmanager, PagerDuty, Datadog…) call an entry point that
 passes the payload to `monitor alert` (Alertmanager, PagerDuty v3, Datadog and plain JSON payloads are
-recognized: [formats](../concepts/production.md#watch-patrol-alert)).
+recognized: [formats](../../../kaizen/docs/concepts/production.md#watch-patrol-alert)).
 
 Example of a serverless entry point: a `repository_dispatch` workflow that the alerting tool (or a small
 relay) calls through the GitHub API.
@@ -125,4 +125,4 @@ The detection time is the alert's, not the reception's.
 
 ## See also
 
-[deploy](deploy.md) · [plan](plan.md) · [postmortem](postmortem.md)
+[deploy](deploy.md) · [plan](../../../kaizen/docs/guides/plan.md) · [postmortem](postmortem.md)

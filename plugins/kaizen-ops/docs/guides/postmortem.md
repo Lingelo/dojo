@@ -1,4 +1,4 @@
-# `/kaizen:postmortem`
+# `/kaizen-ops:postmortem`
 
 > Learn from an incident without looking for a culprit, and close the loop: learning, pack rule,
 > constitution amendment, regression test.
@@ -12,21 +12,21 @@ conclusion. A postmortem is worth its **tracked actions**, not its prose.
 |---|---|
 | **What it does** | Gathers the facts (git, CI, deployments, PRs, provided logs), rebuilds the timeline and the impact, analyzes the contributing factors, sets the actions and their owners, closes the Kaizen loop |
 | **When to use it** | After a production incident, a shipped regression, or a near miss |
-| **When not to use it** | To fix the current bug (→ [debug](debug.md); `postmortem` calls it for diagnosis if the cause is not established yet) |
+| **When not to use it** | To fix the current bug (→ [debug](../../../kaizen/docs/guides/debug.md); `postmortem` calls it for diagnosis if the cause is not established yet) |
 | **What it produces** | `docs/postmortems/YYYY-MM-DD-<title>.md`, and usually a learning, a test, possibly an amendment proposal |
 | **What next** | The actions are tracked in your ticketing tool; the time to restore feeds `/kaizen:metrics` |
 
 ## Examples
 
 ```text
-/kaizen:postmortem CSV exports outage on November 3, ~2 h, all store managers
-/kaizen:postmortem #512
-/kaizen:postmortem near miss on the orders table migration
+/kaizen-ops:postmortem CSV exports outage on November 3, ~2 h, all store managers
+/kaizen-ops:postmortem #512
+/kaizen-ops:postmortem near miss on the orders table migration
 ```
 
-![Incidents feed the postmortem timeline](../media/diagrams/incident-lifecycle.svg)
+![Incidents feed the postmortem timeline](../../../kaizen/docs/media/diagrams/incident-lifecycle.svg)
 
-In depth: [production](../concepts/production.md#postmortem).
+In depth: [production](../../../kaizen/docs/concepts/production.md#postmortem).
 
 ## How it goes
 
@@ -70,4 +70,4 @@ What went well · Near misses · Actions · Kaizen loop. Template:
 
 ## See also
 
-[debug](debug.md) · [learn](learn.md) · [constitution](constitution.md) · [metrics](metrics.md) · [monitor](monitor.md)
+[debug](../../../kaizen/docs/guides/debug.md) · [learn](../../../kaizen/docs/guides/learn.md) · [constitution](../../../kaizen/docs/guides/constitution.md) · [metrics](../../../kaizen/docs/guides/metrics.md) · [monitor](monitor.md)

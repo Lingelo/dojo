@@ -1,6 +1,6 @@
 ---
 name: monitor
-description: Checks or watches the production signals declared by the team (.kaizen/config.json → monitor.signals: native HTTP health-check, or any command printing a number — Prometheus, Datadog, CloudWatch, logs) against the thresholds of the config and the shipped plans, and says what to do if a threshold is breached (rollback, postmortem). Read-only, except a requested or automatic rollback. Records incidents (dated detection, resolution) detected outside the post-deployment window: schedulable check (patrol) or an alert from the team's tool. Use when the user asks "is production healthy?", "watch production for 30 minutes", "check the plan's signals", "set up continuous monitoring", "an alert just fired", /kaizen:monitor [env] [check|watch|patrol|incidents] [minutes].
+description: Checks or watches the production signals declared by the team (.kaizen/config.json → monitor.signals: native HTTP health-check, or any command printing a number — Prometheus, Datadog, CloudWatch, logs) against the thresholds of the config and the shipped plans, and says what to do if a threshold is breached (rollback, postmortem). Read-only, except a requested or automatic rollback. Records incidents (dated detection, resolution) detected outside the post-deployment window: schedulable check (patrol) or an alert from the team's tool. Use when the user asks "is production healthy?", "watch production for 30 minutes", "check the plan's signals", "set up continuous monitoring", "an alert just fired", /kaizen-ops:monitor [env] [check|watch|patrol|incidents] [minutes].
 allowed-tools: Bash(node:*), Bash(git:*), Read, Glob, Grep, AskUserQuestion
 argument-hint: "[env] [check | watch [minutes] | patrol | incidents | continuous] [plan:<path>]"
 ---
@@ -10,13 +10,13 @@ argument-hint: "[env] [check | watch [minutes] | patrol | incidents | continuous
 **Outcome:** the user knows whether the environment is healthy **according to the declared signals and
 thresholds**, and, if it is not, what to do now.
 
-Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
-`K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
+`K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"` — this plugin's resolver: it runs Kaizen core's CLI (kaizen@dojo is required).
+Read `$(node "$K" core-root)/references/conventions.md` (Kaizen core's conventions).
 
 ## 1. What to watch
 
 `node "$K" config` → `monitor.signals`. No declared signal → do not improvise a measurement: explain
-how to declare one (`${CLAUDE_PLUGIN_ROOT}/docs/configuration.md`, `monitor` section), propose an HTTP
+how to declare one (`$(node "$K" core-root)/docs/configuration.md`, `monitor` section), propose an HTTP
 health-check on the environment's `url` if it exists, and stop.
 
 Thresholds: those of the config, replaced by those of the plans shipped in the environment's last
@@ -43,7 +43,7 @@ the outage itself.
 ## 3. If a threshold is breached
 
 1. Is the last deployment (`node "$K" deploy list --env <env>`) recent and related? Show it.
-2. Restoring comes before understanding: propose `/kaizen:deploy rollback <env>` (or the flag to turn
+2. Restoring comes before understanding: propose `/kaizen-ops:deploy rollback <env>` (or the flag to turn
    off that the plan provides). Rollback is the prudent default when nobody can answer (non-interactive
    mode) **or** when `deploy.auto_rollback` is on — either one suffices; otherwise one question.
    Exception: the incident targets a commit (the incident's `sha`) older than the last deployment —
@@ -52,7 +52,7 @@ the outage itself.
    `node "$K" monitor incident open --env <env> --summary "…"`, with `--at` if the real detection is
    earlier). The rollback resolves it; a deployed fix, or a restoration without a deployment, is
    recorded with `node "$K" monitor incident resolve --env <env>`.
-4. Then `/kaizen:postmortem`: the timeline (deployment, detection, rollback, resolution) is in
+4. Then `/kaizen-ops:postmortem`: the timeline (deployment, detection, rollback, resolution) is in
    `deploy list`, `monitor incident list` and `.kaizen/state/monitor.jsonl`.
 
 ## 4. Continuous monitoring (`continuous`)
