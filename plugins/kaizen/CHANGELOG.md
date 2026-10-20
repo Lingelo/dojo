@@ -2,6 +2,19 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [4.1.2] - 2026-10-20
+
+### Fixed
+- **Git hooks check what an explicit pointer points to.** `git config kaizen.cli` and `$KAIZEN_CLI`
+  were accepted when they named any file; the hooks now require Kaizen core (its `plugin.json` names
+  `kaizen`), like the kaizen-ops resolver, and refuse a wrong pointer with its path instead of running it.
+  Hooks already installed keep the old lookup: delete `.githooks/` and rerun `audit fix git_hooks`.
+
+### Added
+- A parity test in kaizen-ops runs the hooks' lookup and the resolver's on the same fake worlds (cache
+  order, foreign entries, decoy marketplace, explicit pointers) and requires the same answer, so the two
+  self-contained copies cannot drift.
+
 ## [4.1.1] - 2026-10-20
 
 Fixes from the Kaizen review of the core/ops split (#36–#38).

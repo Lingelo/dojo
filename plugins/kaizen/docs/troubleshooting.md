@@ -45,11 +45,15 @@ That is the review hook: in a Kaizen repo, a branch does not leave without a rev
 The hooks installed by `audit fix git_hooks` look for the CLI in `git config kaizen.cli`, then
 `$KAIZEN_CLI`, then the newest `kaizen` of the `dojo` marketplace in the Claude Code plugin cache
 (`~/.claude/plugins/cache/dojo/kaizen/<version>/`, or under `$CLAUDE_CONFIG_DIR`). They never run a
-`kaizen` from another marketplace, and refuse rather than let a push through unchecked.
+`kaizen` from another marketplace, and refuse rather than let a push through unchecked. Each candidate
+must be Kaizen core (its `.claude-plugin/plugin.json` names `kaizen`); a `git config kaizen.cli` or
+`$KAIZEN_CLI` that points elsewhere is refused with its path, never replaced by the cache.
 
 - Enable the plugin in Claude Code (`/plugin`), or point to a checkout:
   `git config kaizen.cli /path/to/dojo/plugins/kaizen/scripts/kaizen.mjs`.
 - To remove them: delete `.githooks/` and run `git config --unset core.hooksPath`.
+- Hooks installed before 4.1.2 check only that an explicit pointer is a file: delete `.githooks/` and run
+  `audit fix git_hooks` again to get the stricter lookup (install never overwrites a hook).
 
 `kaizen doctor` says "`.githooks/` present but core.hooksPath unset": this clone has the hooks but
 does not run them — `git config core.hooksPath .githooks`.
