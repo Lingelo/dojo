@@ -2,7 +2,7 @@
 // Each test lays out a fake world (plugins, plugin cache, git config) under a folder with a space.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -60,6 +60,10 @@ function run(w, resolver, args, { env = {}, input } = {}) {
   return { code: r.status, stdout: r.stdout, stderr: r.stderr, json };
 }
 
+// Paths compared by their real path: on macOS the tmp dir is a symlink (/var → /private/var), and Node
+// locates the resolver — hence its sibling checkout — by its real path.
+const real = (p) => realpathSync(p);
+
 const cache = (w, version, opts) => core(join(w.home, 'plugins', 'cache', 'dojo', 'kaizen', version), { version, ...opts });
 
 test('compareSemver: numeric, not lexical', () => {
@@ -73,7 +77,7 @@ test('forwards arguments, stdin and exit code to the core CLI', () => {
   const cli = cache(w, '4.0.0');
   const r = run(w, ops(join(w.base, 'ops')), ['deploy', 'list', '--env', 'production with space'], { input: 'payload', env: { KAIZEN_FAKE_EXIT: '3' } });
   assert.equal(r.code, 3);
-  assert.deepEqual(r.json, { core: cli, args: ['deploy', 'list', '--env', 'production with space'], stdin: 'payload' });
+  assert.deepEqual({ ...r.json, core: real(r.json.core) }, { core: real(cli), args: ['deploy', 'list', '--env', 'production with space'], stdin: 'payload' });
   rmSync(w.base, { recursive: true, force: true });
 });
 
@@ -85,17 +89,17 @@ test('resolution order: git config, then KAIZEN_CLI, then the sibling checkout, 
   const newest = cache(w, '4.10.0');
   cache(w, '4.2.0');
   core(join(w.home, 'plugins', 'cache', 'dojo', 'kaizen', '9.0.0'), { name: 'not-kaizen', version: '9.0.0' });
-  assert.equal(run(w, resolver, ['x']).json.core, newest, 'newest semver whose plugin.json is kaizen');
+  assert.equal(real(run(w, resolver, ['x']).json.core), real(newest), 'newest semver whose plugin.json is kaizen');
 
   const sibling = core(join(plugins, 'kaizen'));
-  assert.equal(run(w, resolver, ['x']).json.core, sibling, 'the sibling checkout wins over the cache');
+  assert.equal(real(run(w, resolver, ['x']).json.core), real(sibling), 'the sibling checkout wins over the cache');
 
   const fromEnv = core(join(w.base, 'env core'));
-  assert.equal(run(w, resolver, ['x'], { env: { KAIZEN_CLI: fromEnv } }).json.core, fromEnv);
+  assert.equal(real(run(w, resolver, ['x'], { env: { KAIZEN_CLI: fromEnv } }).json.core), real(fromEnv));
 
   const fromGit = core(join(w.base, 'git core'));
   spawnSync('git', ['config', 'kaizen.cli', fromGit], { cwd: w.repo });
-  assert.equal(run(w, resolver, ['x'], { env: { KAIZEN_CLI: fromEnv } }).json.core, fromGit, 'git config first, as the git hooks');
+  assert.equal(real(run(w, resolver, ['x'], { env: { KAIZEN_CLI: fromEnv } }).json.core), real(fromGit), 'git config first, as the git hooks');
   rmSync(w.base, { recursive: true, force: true });
 });
 
@@ -105,7 +109,7 @@ test('core-root and --version are answered without running the core', () => {
   const resolver = ops(join(w.base, 'ops'));
   const root = run(w, resolver, ['core-root']);
   assert.equal(root.code, 0);
-  assert.equal(root.stdout.trim(), dirname(dirname(cli)));
+  assert.equal(real(root.stdout.trim()), real(dirname(dirname(cli))));
   assert.match(run(w, resolver, ['--version']).stdout, /^kaizen-ops 1\.0\.0 \(Kaizen 4\.1\.0, /);
   rmSync(w.base, { recursive: true, force: true });
 });
