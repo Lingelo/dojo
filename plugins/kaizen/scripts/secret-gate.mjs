@@ -30,7 +30,9 @@ try {
   const config = loadConfig(root);
   if (config.secrets.scan === false) process.exit(0);
 
+  const { logFriction } = await import('./lib.mjs');
   if (plan.noVerify) {
+    logFriction(root, { gate: 'secrets', kind: 'no_verify', source: 'claude' });
     process.stderr.write(
       '[kaizen] `git commit --no-verify` refused: the repo\'s commit hooks (lint, secrets, tests) are not skipped by Claude. ' +
         'Fix what the hook reports; if the user really wants to skip it, they run the commit themselves.\n',
@@ -40,6 +42,7 @@ try {
 
   const findings = scan(cwd, { ...plan, ignore: config.secrets.ignore });
   if (!findings.length) process.exit(0);
+  logFriction(root, { gate: 'secrets', kind: 'refused', findings: findings.length, source: 'claude' });
   process.stderr.write(
     `[kaizen] Commit refused: ${findings.length} possible secret(s) in the changes about to be committed.\n` +
       `${formatFindings(findings.slice(0, 20))}${findings.length > 20 ? `\n  … and ${findings.length - 20} more` : ''}\n` +

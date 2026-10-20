@@ -282,16 +282,16 @@ refuses a protected environment without a confirmed approval for that commit.
 ### `metrics [--since 90d] [--no-github]`
 
 JSON with `window`, `deployments`, `changes`, `throughput`, `instability`, `batch_size`, `kaizen_loop`,
-`cycle_cost`. Every computation: [Metrics](../concepts/metrics.md).
+`cycle_cost`, `friction`. Every computation: [Metrics](../concepts/metrics.md).
 
 ### `metrics dashboard [--out <file>]`
 
 Writes one self-contained HTML page (no dependency, no network) over the cycles recorded in
 `.kaizen/state/cycles.jsonl`, to `.kaizen/state/cost-dashboard.html` by default: period filter (7, 30,
-90 days, all), cost, cycles, tokens, subagent share and gate blocks, tokens per cycle stacked by role,
-cost by model, tokens by role, and the table of cycles. Cost is in the relative units of
+90 days, all), cost, cycles, tokens, subagent share, stops and waivers, tokens per cycle stacked by
+role, cost by model, tokens by role, the guard rails' stops and lifts, and the table of cycles. Cost is in the relative units of
 `review.cost_weights` and only for cycles that recorded tokens per model (Kaizen 3.7+). Prints
-`{ file, cycles, priced }`.
+`{ file, cycles, priced, friction_events }`.
 
 ### `dev detect` · `dev probe --url <url> [--timeout-seconds 30]`
 

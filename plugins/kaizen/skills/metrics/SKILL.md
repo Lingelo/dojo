@@ -37,12 +37,23 @@ than 10 changes → trends not significant).
 | Time to restore | from recorded incidents (`monitor`, detection → resolution) when there are real deployments, otherwise from postmortems (`detected` → `resolved`) |
 | Batch size | median and share above `pr.max_lines` — the first lever according to DORA |
 | Kaizen loop | new learnings, **read** (cited by a recent plan), **applied** (cited by a commit), never cited, constitution exceptions |
+| Friction | `friction`: push refusals by reason (`no_review`, `stale`, `blocked_verdict`) and source, median minutes blocked on push (`unblocked_median_minutes`), branches still blocked, waivers and their share of cleared pushes, quality gate blocks per check and releases (`max_blocks` reached), secrets refused — local to the machine |
 | Cycle cost | `cycle_cost`: closed work/autopilot cycles, median duration and tokens (main session + subagents), subagent share (`subagent_share`), tokens per role (`tokens_by_role`), share of cycles where the gate blocked — local to the machine |
 
 **Learning reuse**: this is Kaizen's own metric. Learnings written but never cited by a plan = the loop
 does not close (learnings not findable, badly tagged, or `learnings-researcher` not launched) →
 `/kaizen:prune-learnings` (starting with `learnings_never_cited_sample`) and check findability from
 `CLAUDE.md`.
+
+**Friction**: a guard rail is worth what it catches minus what it taxes. Read it with the outcomes
+(failure rate, rework): a rising **waiver share** means the review is felt as a tax — find out why
+(slow reviews → `review estimate` and the profile; reviewers raising noise → their findings) rather than
+loosening the gate. Long `unblocked_median_minutes` → reviews are run late: run `/kaizen:review` before
+the push, not after the refusal. Most push refusals `stale` → many changes after the review: review later
+in the cycle or raise `review.max_unreviewed_lines` slightly. The same check in most quality gate blocks →
+slow or unstable (`gate.targeted`, fix the flake); `released` events → the gate gave up, the work shipped
+red. Repeated secret refusals on the same path → a fixture (`secrets.ignore`) or a real habit to fix.
+Never propose disabling a gate from these numbers alone.
 
 **Cost**: weigh it against the gain. Long or expensive cycles with a failure rate that does not drop →
 the ceremony does not pay off: on a low-stakes repo, propose the `prototype` profile; on a repo in

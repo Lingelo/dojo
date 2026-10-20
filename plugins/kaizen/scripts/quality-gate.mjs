@@ -15,7 +15,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readLaunches } from './cycle-agents.mjs';
-import { changedFiles, loadConfig, repoRoot, runVerify, subagentUsage, transcriptUsage, withFiles } from './lib.mjs';
+import { changedFiles, loadConfig, logFriction, repoRoot, runVerify, subagentUsage, transcriptUsage, withFiles } from './lib.mjs';
 
 function readStdin() {
   try {
@@ -101,7 +101,9 @@ const report = failed
   .map((r) => `✘ ${r.name} — \`${r.command}\` (exit ${r.exit})\n${r.output.split('\n').slice(-25).join('\n')}`)
   .join('\n\n');
 
+const checks = failed.map((r) => r.name);
 if (blocks > max) {
+  logFriction(root, { gate: 'quality', kind: 'released', checks, plan: state.plan || null });
   process.stderr.write(
     `[kaizen] Quality gate: ${failed.length} check(s) still red after ${max} attempts — letting you finish.\n` +
       `Tell the user explicitly what is still red and why, without claiming the work is verified.\n`,
@@ -109,6 +111,7 @@ if (blocks > max) {
   process.exit(0);
 }
 
+logFriction(root, { gate: 'quality', kind: 'blocked', checks, plan: state.plan || null });
 process.stderr.write(
   `[kaizen] Quality gate (${blocks}/${max}): the work in progress is not green.\n\n${report}\n\n` +
     `Fix the root cause (not the test), then finish. If the failure is outside the plan's scope, ` +

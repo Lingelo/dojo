@@ -60,9 +60,14 @@ export function cycleRows(cycles, weights = DEFAULT_WEIGHTS) {
     .sort((a, b) => Date.parse(a.ended) - Date.parse(b.ended));
 }
 
-export function renderDashboard({ repo, rows, weights, generated = new Date().toISOString() }) {
+// Friction events reduced to what the page shows (no branch names or plan paths needed).
+export function frictionRows(events) {
+  return events.map((e) => ({ at: e.at, gate: e.gate, kind: e.kind }));
+}
+
+export function renderDashboard({ repo, rows, weights, friction = [], generated = new Date().toISOString() }) {
   // JSON inside <script>: `<` escaped so no data (a plan name) can close the tag.
-  const data = JSON.stringify({ repo, rows, weights, generated, groups: GROUPS }).replace(/</g, '\\u003c');
+  const data = JSON.stringify({ repo, rows, weights, friction, generated, groups: GROUPS }).replace(/</g, '\\u003c');
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -153,6 +158,11 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     <section class="card"><h2>Cost by model</h2><p class="desc">Relative cost units, from the tokens of each model family.</p><div id="models"></div></section>
     <section class="card"><h2>Tokens by role</h2><p class="desc">Where the tokens of the period went.</p><div id="roles"></div></section>
   </div>
+  <section class="card">
+    <h2>Guard rails</h2>
+    <p class="desc">Stops by the gates, and what lifted them, in the period (.kaizen/state/friction.jsonl).</p>
+    <div id="friction"></div>
+  </section>
   <section class="card">
     <h2>Cycles</h2>
     <div class="table-wrap"><table id="table"></table></div>
@@ -282,6 +292,10 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     const rows = D.rows.filter((r) => Date.parse(r.ended) >= from);
     for (const b of document.querySelectorAll('.filters button')) b.setAttribute('aria-pressed', String(Number(b.dataset.days) === days));
     const priced = rows.filter((r) => r.cost !== null);
+    const fr = (D.friction || []).filter((e) => Date.parse(e.at) >= from);
+    const n = (gate, kind) => fr.filter((e) => (!gate || e.gate === gate) && e.kind === kind).length;
+    const stops = fr.filter((e) => ['refused', 'blocked', 'no_verify'].includes(e.kind)).length;
+    const waived = n('push', 'waiver_confirmed'), reviewed = n('push', 'review_recorded');
     const tokens = rows.reduce((n, r) => n + r.tokens, 0);
     const sub = rows.reduce((n, r) => n + r.tokens - r.groups.main, 0);
     $('tiles').replaceChildren(
@@ -289,8 +303,18 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
       tile('Cycles', String(rows.length), rows.length ? 'median ' + Math.round(median(rows.map((r) => r.minutes))) + ' min' : ''),
       tile('Tokens', compact(tokens), rows.length ? 'median ' + compact(median(rows.map((r) => r.tokens))) + ' per cycle' : ''),
       tile('Subagent share', tokens ? Math.round((sub / tokens) * 100) + '%' : '—', 'of tokens'),
-      tile('Gate blocks', String(rows.reduce((n, r) => n + r.gate_blocks, 0)), rows.length ? rows.filter((r) => r.gate_blocks).length + ' cycle(s) blocked' : ''),
+      tile('Stops', String(stops), n('push', 'refused') + ' push · ' + n('quality', 'blocked') + ' quality · ' + n('secrets', 'refused') + ' secrets'),
+      tile('Waivers', String(waived), reviewed + waived ? Math.round((waived / (reviewed + waived)) * 100) + '% of pushes cleared' : 'no review recorded'),
     );
+    hbars($('friction'), [
+      { label: 'Push refused', value: n('push', 'refused') },
+      { label: 'Quality gate', value: n('quality', 'blocked') },
+      { label: 'Gate released', value: n('quality', 'released') },
+      { label: 'Secrets refused', value: n('secrets', 'refused') + n('secrets', 'no_verify') },
+      { label: 'Other refusals', value: fr.filter((e) => ['deploy', 'state', 'tag'].includes(e.gate)).length },
+      { label: 'Reviews recorded', value: reviewed },
+      { label: 'Waivers', value: waived },
+    ].map((it) => ({ ...it, detail: 'Events' })), (v) => String(v), 'No stop logged in this period.');
     const legend = $('legend');
     legend.replaceChildren();
     for (const g of D.groups) {

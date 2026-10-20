@@ -2,7 +2,7 @@
 // Repo root, configuration, YAML frontmatter (subset), stack detection.
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -439,6 +439,29 @@ export function diffBase(root, explicit) {
     if (mb) return mb;
   }
   return null;
+}
+
+// Friction log: each time a guard rail stops the work, and what lifts it (review recorded, waiver).
+// `metrics` → friction reads it. Never throws: logging must never change what a gate decides.
+export const FRICTION = join('.kaizen', 'state', 'friction.jsonl');
+
+export function logFriction(root, event) {
+  try {
+    // The secret gate runs in every repo: only a Kaizen repo keeps a log.
+    if (!existsSync(join(root, '.kaizen', 'config.json'))) return;
+    const dir = join(root, '.kaizen', 'state');
+    mkdirSync(dir, { recursive: true });
+    if (!existsSync(join(dir, '.gitignore'))) writeFileSync(join(dir, '.gitignore'), '*\n');
+    appendFileSync(join(root, FRICTION), `${JSON.stringify({ at: new Date().toISOString(), ...event })}\n`);
+  } catch {}
+}
+
+// Why a push was refused, as a stable key for metrics (checkPush's reason is a sentence).
+export function pushReasonKey(res) {
+  if (!res.review) return 'no_review';
+  if (res.unreviewed_lines > 0 && /lines changed since the review/.test(res.reason)) return 'stale';
+  if (/⛔/.test(res.reason)) return 'blocked_verdict';
+  return 'other';
 }
 
 export function globToRegex(glob) {

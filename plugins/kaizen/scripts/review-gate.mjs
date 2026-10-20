@@ -38,7 +38,9 @@ try {
   const { repoRoot } = await import('./lib.mjs');
   const root = repoRoot(input.cwd || process.cwd());
   if (!root || !existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
+  const { logFriction } = await import('./lib.mjs');
   if (tamper) {
+    logFriction(root, { gate: 'state', kind: 'refused', source: 'claude' });
     process.stderr.write(
       '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, ' +
         'deploy-approvals.json, deployments.jsonl) is only written ' +
@@ -48,6 +50,7 @@ try {
     process.exit(2);
   }
   if (forged) {
+    logFriction(root, { gate: 'tag', kind: 'refused', source: 'claude' });
     process.stderr.write('[kaizen] deploy/…, rollback/…, incident/… and resolve/… tags are only created by `kaizen.mjs deploy` and `kaizen.mjs monitor`: they carry DORA metrics and postmortem timelines.\n');
     process.exit(2);
   }
@@ -59,6 +62,7 @@ try {
     for (const [name, e] of Object.entries(envs)) {
       const prot = e.protected ?? name === 'production';
       if (prot && e.command && command.includes(e.command)) {
+        logFriction(root, { gate: 'deploy', kind: 'refused', env: name, source: 'claude' });
         process.stderr.write(
           `[kaizen] Direct deployment of ${name} refused: go through /kaizen:deploy ${name} ` +
             '(approval the user types themselves, deployment tag, signal watch, rollback ready).\n',
@@ -78,6 +82,8 @@ try {
 
   const { fileURLToPath } = await import('node:url');
   const { pushRefusal } = await import('./review-state.mjs');
+  const { pushReasonKey } = await import('./lib.mjs');
+  logFriction(root, { gate: 'push', kind: 'refused', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
   process.stderr.write(pushRefusal(res, fileURLToPath(new URL('./kaizen.mjs', import.meta.url))));
   process.exit(2);
 } catch (err) {
