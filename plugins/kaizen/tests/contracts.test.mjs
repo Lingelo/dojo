@@ -54,25 +54,55 @@ test('every file cited through ${CLAUDE_PLUGIN_ROOT} exists', () => {
   assert.deepEqual(missing, []);
 });
 
+// Commands moved to kaizen-ops in 4.0. An old name is only allowed as a migration note in the user docs:
+// `/kaizen:x → /kaizen-ops:x` on one line, never in a skill or an agent (what Claude executes); a
+// changelog keeps the three names as history.
+const MOVED = new Set(['deploy', 'monitor', 'postmortem']);
+export function migrationNote(file, line, name) {
+  if (!MOVED.has(name) || /^(skills|agents)[\\/]/.test(file)) return false;
+  if (/(^|[\\/])CHANGELOG\.md$/.test(file)) return true;
+  return new RegExp(`/kaizen:${name}\`?\\s*→\\s*\`?/kaizen-ops:${name}\\b`).test(line);
+}
+
+test('migration notes: only `old → new` in the user docs, never in skills or agents', () => {
+  assert.ok(migrationNote('README.md', '- `/kaizen:deploy` → `/kaizen-ops:deploy`', 'deploy'));
+  assert.ok(migrationNote('CHANGELOG.md', '`/kaizen:monitor` was moved', 'monitor'), 'history');
+  assert.ok(!migrationNote('README.md', 'run `/kaizen:deploy` (see /kaizen-ops:deploy)', 'deploy'), 'co-occurrence is not a note');
+  assert.ok(!migrationNote('skills/release/SKILL.md', '`/kaizen:deploy` → `/kaizen-ops:deploy`', 'deploy'), 'never in a skill');
+  assert.ok(!migrationNote('agents/x.md', '`/kaizen:deploy` → `/kaizen-ops:deploy`', 'deploy'), 'never in an agent');
+  assert.ok(!migrationNote('README.md', '`/kaizen:deploy` → `/kaizen-ops:monitor`', 'deploy'), 'the note names its own replacement');
+  assert.ok(!migrationNote('CHANGELOG.md', '`/kaizen:reveiw`', 'reveiw'), 'a changelog typo is still caught');
+});
+
 test('every kaizen:<name> reference names an existing skill or agent', () => {
   const known = new Set([...skills, ...agents]);
   // Plan section markers (kaizen:goal…) and artifact contracts: not skills.
   const markers = new Set(['goal', 'product', 'relationships', 'planning', 'constitution', 'threats', 'rollout', 'units', 'verification', 'done', 'id', 'section', 'name']);
-  // Commands moved to kaizen-ops in 4.0: a changelog keeps them as history; elsewhere an old name may
-  // only appear as a migration note, on the line that names its /kaizen-ops: replacement.
-  const moved = new Set(['deploy', 'monitor', 'postmortem']);
   const bad = [];
   for (const { file, text } of docs) {
-    if (file.endsWith('CHANGELOG.md')) continue;
     for (const line of text.split('\n')) {
       for (const m of line.matchAll(/(?<![\w-])kaizen:([a-z][a-z-]*)/g)) {
         if (markers.has(m[1]) || known.has(m[1])) continue;
-        if (moved.has(m[1]) && line.includes(`kaizen-ops:${m[1]}`)) continue;
+        if (migrationNote(file, line, m[1])) continue;
         bad.push(`${file} → kaizen:${m[1]}`);
       }
     }
   }
   assert.deepEqual(bad, []);
+});
+
+test('no script, hook or eval sends anyone to a command moved to kaizen-ops', () => {
+  const files = [];
+  const walkCode = (dir) => {
+    for (const e of readdirSync(join(PLUGIN, dir), { withFileTypes: true })) {
+      const rel = join(dir, e.name);
+      if (e.isDirectory()) walkCode(rel);
+      else if (/\.(mjs|js|json|sh)$/.test(e.name)) files.push(rel);
+    }
+  };
+  for (const d of ['scripts', 'hooks', 'evals']) walkCode(d);
+  const bad = files.filter((f) => /(?<![\w-])\/kaizen:(deploy|monitor|postmortem)\b/.test(readFileSync(join(PLUGIN, f), 'utf8')));
+  assert.deepEqual(bad, [], 'status next steps, hook messages and eval prompts must name /kaizen-ops:<command>');
 });
 
 test('every cited plan section marker is documented in the contract', () => {
