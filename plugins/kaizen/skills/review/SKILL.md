@@ -60,6 +60,12 @@ risk surface, see `conventions.md`) adjusts the selection: `prototype` = core
 (`correctness`, `standards`) + `security` on a risk surface; `critical` = `adversarial` from targeted depth.
 Announce in one line per reviewer why it was kept.
 
+**Price before launch.** `node "$K" review estimate --reviewers <kept, comma-separated> --profile <effective>`
+gives tokens and relative cost per model. Add one line to the announcement: `~<tokens> tokens, <cost>
+cost units (opus ×n, sonnet ×m)`. When `confirm` is true (above `review.confirm_above_cost`), stop and ask:
+launch as is, or drop the conditional reviewers with the weakest reason (name them and the new estimate) —
+never drop `correctness`, `standards`, or `security` on a risk surface. Otherwise go on without asking.
+
 ## Step 4 — Launch in parallel
 
 Read `${CLAUDE_PLUGIN_ROOT}/references/review-contract.md`. Create the run folder with

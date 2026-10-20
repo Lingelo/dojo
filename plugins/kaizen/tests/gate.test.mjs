@@ -171,6 +171,7 @@ test('cycle cost: subagents counted and broken down by role', () => {
     Object.fromEntries(Object.entries(off.cycle.subagents.by_role).map(([r, u]) => [r, u.output_tokens])),
     { review_critical: 20, implement: 30, unknown: 40 },
   );
+  assert.equal(off.cycle.subagents.by_role.review_critical.agents, 1, 'agents counted per role (review estimate history)');
   assert.equal(existsSync(join(dir, '.kaizen/state/agent-runs.jsonl')), false, 'launch log cleared by gate off');
 
   const cost = cli(dir, ['metrics', '--no-github']).json.cycle_cost;

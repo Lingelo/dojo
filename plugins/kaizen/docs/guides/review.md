@@ -63,6 +63,9 @@ lost last page as **P1**.
   hook), except for a light review of 20 lines at most.
 - The profile (`prototype`, `product`, `critical`) adjusts the number of reviewers, never the review
   obligation.
+- Before launching, the review announces its **price**: tokens and relative cost per model
+  (`node $K review estimate`). Above `review.confirm_above_cost` it asks first, proposing which
+  conditional reviewers to drop.
 - **Report only by default**, never a push. A PR passed as argument sets the **scope**, not the
   permission to switch branches.
 - The reviewers' raw returns are kept in `.kaizen/state/reviews/<timestamp>/`.

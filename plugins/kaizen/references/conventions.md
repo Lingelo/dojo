@@ -49,6 +49,7 @@ node "$K" packs [--json]           # rules of the declared Kaizen Packs
 node "$K" pack new <name>          # creates and declares a local pack
 node "$K" gate on --plan <p> | off | status     # Stop-hook quality gate
 node "$K" review record --verdict ready|concerns|blocked [--run <d>]   # reviewed state, required before git push
+node "$K" review estimate --reviewers a,b [--profile p]   # tokens and relative cost of a review before launching it
 node "$K" review waive --reason "…" | review status | review check   # waiver (confirmed by the user) / state
 node "$K" constitution [check] [--json]         # CONSTITUTION.md articles / validation
 node "$K" plan check <path>        # structural check of a plan (R/AE → U traceability, constitution)

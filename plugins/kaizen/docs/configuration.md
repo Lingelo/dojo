@@ -173,6 +173,8 @@ session and subagents, per role), logged by `gate off` for [`metrics`](guides/me
 |---|---|---|
 | `require_before_push` | `true` | a `PreToolUse` hook refuses `git push` of a branch until a review has recorded the pushed state |
 | `max_unreviewed_lines` | `80` | lines changed since the last review that are tolerated (small CI or feedback fixes); beyond, a new review |
+| `cost_weights` | `{}` | weight of a million tokens per model for `review estimate`, over the defaults `haiku` 1, `sonnet` 3, `opus` 5 (relative units); put your blended price per million tokens to read it in your currency |
+| `confirm_above_cost` | `null` | `/kaizen:review` asks before launching a selection estimated above this cost, proposing which conditional reviewers to drop; `null` never asks |
 
 Only active in an initialized repo (`.kaizen/config.json`), never on the default branch (guarded by the
 `git` plugin), nor for a branch deletion or a tags-only push. `/kaizen:review` records the tree it read
