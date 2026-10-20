@@ -5,6 +5,7 @@ import { dirname, join, relative } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { parseFrontmatter } from '../../kaizen/scripts/lib.mjs';
+import { compareSemver } from '../scripts/kaizen.mjs';
 
 const OPS = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CORE = join(OPS, '..', 'kaizen');
@@ -31,8 +32,7 @@ test('registered in the marketplace next to Kaizen, requiring the core version K
   assert.equal(entry.source, './plugins/kaizen-ops');
   const req = JSON.parse(readFileSync(join(OPS, 'scripts', 'requires.json'), 'utf8')).kaizen;
   const core = JSON.parse(readFileSync(join(CORE, '.claude-plugin', 'plugin.json'), 'utf8')).version;
-  const [a, b] = [req, core].map((v) => v.split('.').map(Number));
-  assert.ok(b[0] > a[0] || (b[0] === a[0] && (b[1] > a[1] || (b[1] === a[1] && b[2] >= a[2]))), `Kaizen ${core} is older than the ${req} kaizen-ops requires`);
+  assert.ok(compareSemver(core, req) >= 0, `Kaizen ${core} is older than the ${req} kaizen-ops requires`);
 });
 
 test('manifest and core requirement', () => {
