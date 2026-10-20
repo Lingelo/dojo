@@ -2,6 +2,18 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.8.0] - 2026-10-20
+
+### Added
+- **Friction measured**: every guard rail that stops the work — push refused (Claude Code hook and git
+  pre-push), quality gate block or release, secret refused, `--no-verify`, direct deploy, state write or
+  forged tag — appends an event to `.kaizen/state/friction.jsonl`, and so do what lifts it (`review
+  record`, waiver requested and confirmed). Logging never changes a gate's decision.
+- **`metrics` → `friction`**: push refusals by reason and source, median minutes blocked on push, branches
+  still blocked, waivers and their share of cleared pushes, quality gate blocks per check, secrets
+  refused. `/kaizen:metrics` reads it against outcomes, never to disable a gate.
+- The cost dashboard shows **Stops**, **Waivers** and a **Guard rails** card.
+
 ## [3.7.0] - 2026-10-20
 
 ### Added

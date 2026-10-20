@@ -12,7 +12,7 @@
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { git, loadConfig } from './lib.mjs';
+import { git, loadConfig, logFriction, pushReasonKey } from './lib.mjs';
 import { MARKETPLACE, PLUGIN_ID } from './doctor.mjs';
 import { checkPush, currentBranch, pushRefusal } from './review-state.mjs';
 import { formatFindings, scan } from './secrets.mjs';
@@ -96,7 +96,10 @@ export function prePush(root, stdin, K) {
       ? localRef.slice('refs/heads/'.length)
       : (localRef === 'HEAD' && currentBranch(root)) || remoteRef.slice('refs/heads/'.length);
     const res = checkPush(root, config, { branch, sha: localSha });
-    if (!res.allowed) return { code: 1, message: pushRefusal(res, K) };
+    if (!res.allowed) {
+      logFriction(root, { gate: 'push', kind: 'refused', reason: pushReasonKey(res), branch, source: 'git' });
+      return { code: 1, message: pushRefusal(res, K) };
+    }
   }
   return { code: 0 };
 }
@@ -107,6 +110,7 @@ export function preCommit(root) {
   if (config.secrets.scan === false) return { code: 0 };
   const findings = scan(root, { staged: true, ignore: config.secrets.ignore });
   if (!findings.length) return { code: 0 };
+  logFriction(root, { gate: 'secrets', kind: 'refused', findings: findings.length, source: 'git' });
   return {
     code: 1,
     message: `[kaizen] Commit refused: ${findings.length} possible secret(s) in the staged changes.\n${formatFindings(findings)}\n` +

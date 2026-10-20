@@ -64,14 +64,14 @@ import { checkPlan } from './plancheck.mjs';
 import { amendPlan, markReviewed } from './planamend.mjs';
 import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
-import { computeMetrics } from './metrics.mjs';
+import { computeMetrics, readFriction } from './metrics.mjs';
 import { releaseNotes } from './release.mjs';
 import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs';
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { effectiveProfile } from './risk.mjs';
 import { DEFAULT_WEIGHTS, estimateReview } from './estimate.mjs';
-import { cycleRows, readCycles, renderDashboard } from './dashboard.mjs';
+import { cycleRows, frictionRows, readCycles, renderDashboard } from './dashboard.mjs';
 import { audit, scaffold } from './audit.mjs';
 import { doctor, formatDoctor } from './doctor.mjs';
 import { preCommit, prePush } from './githooks.mjs';
@@ -1018,8 +1018,9 @@ try {
         const rows = cycleRows(readCycles(root), weights);
         const file = typeof flags.out === 'string' ? resolve(root, flags.out) : join(ensureStateDir(root), 'cost-dashboard.html');
         mkdirSync(dirname(file), { recursive: true });
-        writeFileSync(file, renderDashboard({ repo: basename(root), rows, weights }));
-        out({ file, cycles: rows.length, priced: rows.filter((r) => r.cost !== null).length });
+        const friction = frictionRows(readFriction(root));
+        writeFileSync(file, renderDashboard({ repo: basename(root), rows, weights, friction }));
+        out({ file, cycles: rows.length, priced: rows.filter((r) => r.cost !== null).length, friction_events: friction.length });
         break;
       }
       out(computeMetrics(root, { since: flags.since || '90d', useGitHub: !flags['no-github'] }));

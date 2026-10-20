@@ -84,6 +84,13 @@ Each cycle also records its tokens per **model family** (`opus`, `sonnet`, `haik
 of every transcript message), which prices it in the relative units of `review.cost_weights`.
 `node $K metrics dashboard` turns the cycles into one HTML page to follow cost over time.
 
+**Friction** (`friction`): every time a guard rail stops the work — push refused, quality gate block,
+secret refused, direct deploy or state write refused — the hook appends an event to
+`.kaizen/state/friction.jsonl`, and so do what lifts it (review recorded, waiver confirmed). Metrics
+reads the refusals by reason, the median time a branch stays blocked on push (first refusal → next
+review or waiver), the waiver share of cleared pushes, and the checks that block the quality gate most.
+The dashboard shows them as **Stops**, **Waivers** and **Guard rails**.
+
 The question it answers: **does the ceremony pay back more than it costs?** Compare cycle cost with
 batch size, rework and failure rate before and after changing a practice, a profile or a model.
 

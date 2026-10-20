@@ -19,7 +19,7 @@
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { changedLines, defaultBranch, diffBase, git, loadConfig, worktreeTree } from './lib.mjs';
+import { changedLines, defaultBranch, diffBase, git, loadConfig, logFriction, worktreeTree } from './lib.mjs';
 
 export const VERDICTS = ['ready', 'concerns', 'blocked'];
 // Verdict names used before Kaizen 3.0, still accepted.
@@ -181,6 +181,7 @@ export function recordReview(root, { verdict, run = null, allowMissing = [] } = 
     const entry = { ...snapshot(root, branch), verdict, depth: 'update', reviewers: previous.reviewers || [], run: run || previous.run || null, updated_lines: sincePrevious, at: new Date().toISOString() };
     state[branch] = entry;
     writeJson(root, 'reviews.json', state);
+    logFriction(root, { gate: 'push', kind: 'review_recorded', depth: 'update', branch });
     return entry;
   }
   if (!reviewers.length && lines > LIGHT_MAX_LINES) {
@@ -194,6 +195,7 @@ export function recordReview(root, { verdict, run = null, allowMissing = [] } = 
   if (gaps.length) return requestWaiver(root, { reason: `review recorded without ${gaps.join(', ')}`, gap: { ...entry, gaps } });
   state[branch] = entry;
   writeJson(root, 'reviews.json', state);
+  logFriction(root, { gate: 'push', kind: 'review_recorded', depth: entry.depth, branch });
   return entry;
 }
 
@@ -208,6 +210,7 @@ export function requestWaiver(root, { reason, gap = null }) {
   const pending = readJson(root, 'waivers.json', []).filter((w) => now - Date.parse(w.at) < WAIVER_MAX_AGE_MS && w.branch !== branch);
   pending.push({ code, reason, ...snapshot(root, branch), ...(gap ? { kind: 'gap', review: gap } : {}), at: new Date(now).toISOString() });
   writeJson(root, 'waivers.json', pending);
+  logFriction(root, { gate: 'push', kind: 'waiver_requested', gap: Boolean(gap), branch });
   return {
     pending: true,
     branch,
@@ -238,6 +241,7 @@ export function confirmWaiver(root, code, { session = null } = {}) {
   state[w.branch] = entry;
   writeJson(root, 'reviews.json', state);
   writeJson(root, 'waivers.json', pending.filter((x) => x !== w));
+  logFriction(root, { gate: 'push', kind: 'waiver_confirmed', gap: w.kind === 'gap', branch: w.branch });
   return entry;
 }
 
