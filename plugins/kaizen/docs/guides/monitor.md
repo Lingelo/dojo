@@ -1,0 +1,10 @@
+# monitor — moved to kaizen-ops
+
+Since Kaizen 4.0, `/kaizen:monitor` is **`/kaizen-ops:monitor`**, in the
+[kaizen-ops](../../../kaizen-ops/README.md) plugin: see its
+[monitor guide](../../../kaizen-ops/docs/guides/monitor.md). Enable it with
+`"kaizen-ops@dojo": true` in `.claude/settings.json`; `kaizen doctor` reports when a repository that
+declares deployments or production signals does not.
+
+The CLI behind it (`node $K monitor …`), the gates and the configuration stay in Kaizen
+core. `/kaizen:monitor` only answers where the command went until Kaizen 4.1.0 removes it.

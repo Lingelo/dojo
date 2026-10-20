@@ -86,13 +86,12 @@ In-depth pages: what each mechanism does exactly, with its rules, limits and dia
 - [address-feedback](guides/address-feedback.md) — handle review feedback
 - [watch-pr](guides/watch-pr.md) — drive a PR to "ready"
 - [release](guides/release.md) — prepare a version
-- [deploy](guides/deploy.md) — release to production, watch, roll back
-- [monitor](guides/monitor.md) — production signals against their thresholds, incidents
+- [deploy](guides/deploy.md), [monitor](guides/monitor.md) — moved to [kaizen-ops](../../kaizen-ops/docs/README.md) in 4.0
 
 **Learn and measure**
 - [learn](guides/learn.md) — capture a learning
 - [prune-learnings](guides/prune-learnings.md) — maintain the learnings
-- [postmortem](guides/postmortem.md) — learn from an incident
+- [postmortem](guides/postmortem.md) — moved to [kaizen-ops](../../kaizen-ops/docs/README.md) in 4.0
 - [metrics](guides/metrics.md) — measure delivery and the compounding effect
 
 **Orchestrate**
