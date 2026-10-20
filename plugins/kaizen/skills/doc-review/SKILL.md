@@ -31,8 +31,8 @@ from the table when the verdict is obvious); the others become decisions.
 
 ## 3. Reviewers
 
-Depending on the **profile** (`node "$K" config` → `profile`): `lean` → `plan check` + coherence only;
-`full` → always add `kaizen:plan-adversarial-reviewer`. In `standard` (default): always
+Depending on the **profile** (`node "$K" config` → `profile`): `prototype` → `plan check` + coherence only;
+`critical` → always add `kaizen:plan-adversarial-reviewer`. In `product` (default): always
 `kaizen:plan-coherence-reviewer` and `kaizen:plan-feasibility-reviewer`, plus:
 
 | Reviewer | When |

@@ -47,7 +47,7 @@ By judgment on the actual diff, not by keywords:
 | `data-migration` | migrations, schema dumps, backfills, data transformations |
 | `adversarial` | ≥ 50 changed lines, or auth/payment, persistent writes, events, retries, concurrency, external APIs, or a check that could wrongly go green (CI, gates, mocks) |
 
-The profile adjusts it: `lean` keeps correctness and standards, plus security on a risk surface; `full`
+The profile adjusts it: `prototype` keeps correctness and standards, plus security on a risk surface; `critical`
 adds adversarial from targeted depth. For `standards`, Claude gathers the constitution
 (`constitution --json`), the matching pack rules (`packs --json`) and the relevant learnings
 (`learnings search <diff terms>`). Each kept reviewer is announced with its reason.
@@ -148,10 +148,10 @@ recorded again with the post-fix verdict. `manual` findings stay listed with the
 [`/kaizen:doc-review`](../guides/doc-review.md) applies the same principles to a plan:
 
 1. `plan check` first: its errors are certain findings (confidence 100); mechanical ones are fixed.
-2. Reviewers by profile — `lean`: plan check + coherence; `standard`: coherence and feasibility always,
+2. Reviewers by profile — `prototype`: plan check + coherence; `product`: coherence and feasibility always,
    plus scope (every ready plan, or requirements with > 8 items), security (auth, sessions, exposed
    endpoints, sensitive data, integrations), adversarial (high-stakes areas, new abstractions, plan
-   without a brainstorm, widened scope), design (screens, journeys, accessibility); `full`: adversarial
+   without a brainstorm, widened scope), design (screens, journeys, accessibility); `critical`: adversarial
    always.
 3. Each receives the [document reviewer contract](../../references/doc-review-contract.md), the plan
    path, the constitution, the pack rules and the **settled decisions** — which they do not re-judge

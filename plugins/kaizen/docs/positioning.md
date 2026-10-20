@@ -99,7 +99,7 @@ What Kaizen adds, and what it costs:
 | --- | --- |
 | Guarantees enforced by code: green tests before the end of the work, push only after a proven review, production only with your code | more friction; Claude Code only |
 | The second half of the SDLC: platform-aware deployment, rollback, monitoring, measured DORA | platform detection through heuristics, to validate project by project |
-| Governance: constitution with checks and approvers, maturity audit, model per agent role, measured cost | more concepts to learn (the `lean` profile lightens it on low-stakes repos) |
+| Governance: constitution with checks and approvers, maturity audit, model per agent role, measured cost | more concepts to learn (the `prototype` profile lightens it on low-stakes repos) |
 | — | a single maintainer |
 
 ## Recommendation
@@ -109,8 +109,8 @@ more complete and better controlled SDLC, but younger and tied to Claude Code.
 
 - **Choose Compound Engineering** for a multi-tool team, or one that wants to start light.
 - **Choose Kaizen** for a team on Claude Code that wants quality guarantees up to production.
-- **Pick the profile by stakes, not by team experience:** `lean` for a prototype or internal tool,
-  `standard` for a product in production, `full` for regulated or critical domains. Then measure the
+- **Pick the profile by stakes, not by team experience:** `prototype` for a prototype or internal tool,
+  `product` for a product in production, `critical` for regulated or critical domains. Then measure the
   effect with `/kaizen:metrics` (real DORA, cycle cost, learnings applied).
 
 ## Sources

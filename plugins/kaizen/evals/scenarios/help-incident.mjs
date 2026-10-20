@@ -11,7 +11,7 @@ export default {
     ...SHOP,
     'CONSTITUTION.md': CONSTITUTION,
     '.gitignore': 'deployed.log\n',
-    '.kaizen/config.json': { profile: 'lean', verify: { test: 'node --test' }, deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } } },
+    '.kaizen/config.json': { profile: 'prototype', verify: { test: 'node --test' }, deploy: { environments: { production: { command: MARK, rollback: MARK, protected: false } } } },
   },
   steps: [
     { run: ['deploy', 'run', 'production'] },

@@ -44,7 +44,7 @@ example: "Cœur de ß" → `coeur-de-ss`.
 ## Good to know
 
 - ⛔ if a P0 remains or `plan check` still fails.
-- The **profile** sets the team: `lean` = `plan check` + coherence only; `full` = adversarial reviewer
+- The **profile** sets the team: `prototype` = `plan check` + coherence only; `critical` = adversarial reviewer
   always. See [Configuration](../configuration.md#profile).
 - Fixes are made **in the document's format**, without a stacked "corrections" section.
 - Reviewer contract: [`references/doc-review-contract.md`](../../references/doc-review-contract.md).

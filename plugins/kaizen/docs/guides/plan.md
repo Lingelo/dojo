@@ -50,8 +50,8 @@ In depth: [plans](../concepts/plans.md).
      **with its threshold** (`` `error_rate` > 1 % → revert ``). `plan check` reports a missing
      rollback or signal, and a signal without a threshold; `/kaizen:release` turns it into the
      production checklist and `/kaizen:deploy` watches it.
-   - The **profile** adjusts the ceremony: in `lean`, threats and rollout only if the change touches a
-     risk surface or production; in `full`, always.
+   - The **profile** adjusts the ceremony: in `prototype`, threats and rollout only if the change touches a
+     risk surface or production; in `critical`, always.
 5. **Units** U1…: goal, `Covers`, files, approach (cited pattern), **evidence** (test first by
    default), test scenarios, executable verification, **slice**. A slice is a PR under
    `pr.max_lines`, which leaves the default branch healthy.

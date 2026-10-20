@@ -16,17 +16,17 @@ test('every plugin agent has a role, and every role a valid model in every profi
     assert.deepEqual(Object.keys(roles).sort(), Object.keys(ROLES).sort(), `profile ${p}`);
     for (const m of Object.values(roles)) assert.ok(MODELS.includes(m), `${p} : ${m}`);
   }
-  assert.equal(PROFILE_MODELS.standard.review_critical, 'opus', 'costly judgments get the strongest model');
-  assert.equal(PROFILE_MODELS.lean.research, 'haiku', 'bulk research is cheap in lean');
+  assert.equal(PROFILE_MODELS.product.review_critical, 'opus', 'costly judgments get the strongest model');
+  assert.equal(PROFILE_MODELS.prototype.research, 'haiku', 'bulk research is cheap in prototype');
 });
 
 test('models: profile, override per role and per agent, invalid values reported', () => {
-  const dir = tempRepo({ '.kaizen/config.json': { profile: 'lean' } });
+  const dir = tempRepo({ '.kaizen/config.json': { profile: 'prototype' } });
   let m = cli(dir, ['models', '--json']).json;
-  assert.equal(m.profile, 'lean');
+  assert.equal(m.profile, 'prototype');
   assert.equal(m.agents['learnings-researcher'].model, 'haiku');
   assert.equal(m.agents['security-reviewer'].role, 'review_critical');
-  writeFiles(dir, { '.kaizen/config.json': { profile: 'lean', models: { roles: { review_critical: 'opus', research: 'gpt-5' }, agents: { 'performance-reviewer': 'opus', 'unknown-reviewer': 'haiku' } } } });
+  writeFiles(dir, { '.kaizen/config.json': { profile: 'prototype', models: { roles: { review_critical: 'opus', research: 'gpt-5' }, agents: { 'performance-reviewer': 'opus', 'unknown-reviewer': 'haiku' } } } });
   m = cli(dir, ['models', '--json']).json;
   assert.equal(m.agents['adversarial-reviewer'].model, 'opus');
   assert.equal(m.agents['adversarial-reviewer'].source, 'config');

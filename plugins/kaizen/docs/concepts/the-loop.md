@@ -108,7 +108,7 @@ No deliverable carries a mutable status ("in progress", "done"): progress is rea
 
 `profile` in `.kaizen/config.json` scales the **ceremony**, never the gates:
 
-| | `lean` | `standard` (default) | `full` |
+| | `prototype` | `product` (default) | `critical` |
 |---|---|---|---|
 | Plan | requirements, units, verification; threats and rollout only on a risk surface or production change | complete | complete, threats and rollout always |
 | doc-review | plan check + coherence | coherence, feasibility + conditional reviewers | every relevant reviewer, adversarial always |
@@ -120,7 +120,7 @@ No deliverable carries a mutable status ("in progress", "done"): progress is rea
 A **risk surface** is auth, sessions, permissions, personal or payment data, migrations, public APIs or
 dependencies. The Stop-hook gate, `verify`, `size`, `plan check` and the review required before
 `git push` stay active in every profile. Choose it by the stakes of the repo, not by the team's
-experience: `lean` for a prototype or internal tool, `standard` for a product in production, `full` for
+experience: `prototype` for a prototype or internal tool, `product` for a product in production, `critical` for
 regulated or critical domains. See [Agents and models](agents-and-models.md) for the model side.
 
 ## Language

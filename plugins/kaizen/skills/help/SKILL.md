@@ -91,8 +91,8 @@ Tie-breakers:
 - **debug or work**: unknown cause → `debug`; obvious fix → `work`.
 - **brainstorm or plan**: not sure yet exactly what → `brainstorm`; known → `plan`.
 - **Profile**: it follows the repo's stakes. Too much ceremony on a low-stakes repo (prototype,
-  internal tool) → `lean` profile (`.kaizen/config.json`), which lightens plan and review without
-  touching the gates; a repo that went to production or handles sensitive data → `standard` or `full`.
+  internal tool) → `prototype` profile (`.kaizen/config.json`), which lightens plan and review without
+  touching the gates; a repo that went to production or handles sensitive data → `product` or `critical`.
 
 ## What help does not do
 

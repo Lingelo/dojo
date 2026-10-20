@@ -54,8 +54,8 @@ Claude creates `.kaizen/config.json` and the `docs/plans`, `docs/learnings` and 
 folders. It detects the stack and shows you the verification commands it found (`npm test`,
 `npm run -s lint`…). **Check them**: they are what the quality gate will run. It then offers a short
 section in `CLAUDE.md`, so that any agent knows where to find the learnings, then a **profile**, chosen by
-the repo's stakes: `lean` for a prototype or internal tool, `standard` for a product in production,
-`full` for regulated or critical domains (all three keep the same gates).
+the repo's stakes: `prototype` for a prototype or internal tool, `product` for a product in production,
+`critical` for regulated or critical domains (all three keep the same gates).
 
 What changes in the repo: `.kaizen/config.json`, `docs/…/.gitkeep`, one line in `.gitignore`. Commit
 them.

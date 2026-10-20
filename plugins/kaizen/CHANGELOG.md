@@ -2,6 +2,18 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.4.0] - 2026-10-20
+
+### Changed
+- **Profiles named after the repo's stakes**: `lean` → `prototype`, `standard` → `product`, `full` →
+  `critical`. The former names described the amount of ceremony, which invited picking by taste ("more
+  is better", "we are experienced") instead of by what a shipped defect costs; `lean` also read as a
+  contradiction in a plugin rooted in Lean. Default is now `product`.
+
+### Deprecated
+- `lean`, `standard` and `full` are still read and applied as their new names; `node $K config` reports
+  them in `profile_warning` with the name to use. `init --profile` accepts them and writes the new name.
+
 ## [3.3.0] - 2026-10-19
 
 Drawn from a real cycle (a Three.js game) where the plugin was not loaded: 17 commits pushed with no
