@@ -24,6 +24,17 @@ function walk(dir, out = []) {
 }
 const docs = walk(OPS).map((f) => ({ file: relative(OPS, f), path: f, text: readFileSync(f, 'utf8') }));
 
+test('registered in the marketplace next to Kaizen, requiring the core version Kaizen ships', () => {
+  const market = JSON.parse(readFileSync(join(OPS, '..', '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
+  const entry = market.plugins.find((p) => p.name === 'kaizen-ops');
+  assert.ok(entry, 'kaizen-ops missing from marketplace.json');
+  assert.equal(entry.source, './plugins/kaizen-ops');
+  const req = JSON.parse(readFileSync(join(OPS, 'scripts', 'requires.json'), 'utf8')).kaizen;
+  const core = JSON.parse(readFileSync(join(CORE, '.claude-plugin', 'plugin.json'), 'utf8')).version;
+  const [a, b] = [req, core].map((v) => v.split('.').map(Number));
+  assert.ok(b[0] > a[0] || (b[0] === a[0] && (b[1] > a[1] || (b[1] === a[1] && b[2] >= a[2]))), `Kaizen ${core} is older than the ${req} kaizen-ops requires`);
+});
+
 test('manifest and core requirement', () => {
   const m = JSON.parse(readFileSync(join(OPS, '.claude-plugin', 'plugin.json'), 'utf8'));
   for (const k of ['name', 'version', 'description', 'author']) assert.ok(m[k], k);
@@ -36,7 +47,7 @@ test('manifest and core requirement', () => {
 test('every skill: complete frontmatter, name = folder, useful description', () => {
   for (const s of skills) {
     const { data, error } = parseFrontmatter(readFileSync(join(OPS, 'skills', s, 'SKILL.md'), 'utf8'));
-    assert.equal(error, undefined, `${s}: ${error}`);
+    assert.equal(error, null, `${s}: ${error}`);
     assert.equal(data.name, s);
     assert.ok(String(data.description || '').length > 80, `${s}: description too short`);
     assert.ok(data['allowed-tools'], `${s}: allowed-tools`);
