@@ -58,7 +58,8 @@ does not run them — `git config core.hooksPath .githooks`.
 
 | Message | What to do |
 |---|---|
-| "Direct deployment of production refused" | go through `/kaizen:deploy production`: it asks for your approval, creates the tag and watches |
+| `/kaizen:deploy` (or monitor, postmortem) only says "moved", or `/kaizen-ops:deploy` is unknown | since Kaizen 4.0 the production commands are in the kaizen-ops plugin: `"enabledPlugins": { "kaizen-ops@dojo": true }` in `.claude/settings.json` (`node $K audit fix claude_settings` does it), then a new session; `kaizen doctor` reports it |
+| "Direct deployment of production refused" | go through `/kaizen-ops:deploy production`: it asks for your approval, creates the tag and watches |
 | "production is protected: approval required" | type the displayed code yourself: `kaizen deploy <code>` (30 min, for this commit) |
 | "unknown environment" | declare it in `.kaizen/config.json` → `deploy.environments` ([configuration](configuration.md#deploy--deployment-and-rollback)), or `node $K deploy detect` |
 | "deploy/…, rollback/…, incident/… and resolve/… tags are only created by kaizen.mjs" | do not create these tags by hand: they carry the DORA metrics and the incident timelines |

@@ -89,7 +89,7 @@
 <rect class="pill" x="242.25" y="205" width="101.5" height="17" rx="4"/>
 <text class="edge" x="293" y="216" text-anchor="middle">yes · validated</text>
 <rect class="skill" x="36" y="384" width="220" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="146" y="409" text-anchor="middle">/kaizen:postmortem</text>
+<text class="label" x="146" y="409" text-anchor="middle">/kaizen-ops:postmortem</text>
 <text class="sub" x="146" y="424" text-anchor="middle">incident → learning</text>
 <path class="line blue" d="M256,412 L300,412 L300,262 L330,262.4" marker-end="url(#h-blue)"/>
 <rect class="artifact" x="330" y="330" width="210" height="56" rx="8" stroke-width="1.5"/>

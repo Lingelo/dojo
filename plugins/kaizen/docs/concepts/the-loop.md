@@ -38,9 +38,9 @@ Two consequences shape everything else:
 | Follow | [`watch-pr`](../guides/watch-pr.md), [`address-feedback`](../guides/address-feedback.md) | Is the PR ready to merge? | feedback handled, CI repaired, a true final state |
 | **You merge** | — | — | Kaizen never merges |
 | Release | [`release`](../guides/release.md) | Which version, what changed, how to go live? | notes, SemVer, CHANGELOG, checklist |
-| Deploy | [`deploy`](../guides/deploy.md) | Release it, watch it, roll back if needed | `deploy/<env>/…` tag, signal watch |
-| Operate | [`monitor`](../guides/monitor.md) | Is production healthy? | samples, incidents (`incident/<env>/…`) |
-| Learn | [`learn`](../guides/learn.md), [`postmortem`](../guides/postmortem.md) | What should the next cycle know? | learnings, pack rules, amendments |
+| Deploy | [`deploy`](../../../kaizen-ops/docs/guides/deploy.md) | Release it, watch it, roll back if needed | `deploy/<env>/…` tag, signal watch |
+| Operate | [`monitor`](../../../kaizen-ops/docs/guides/monitor.md) | Is production healthy? | samples, incidents (`incident/<env>/…`) |
+| Learn | [`learn`](../guides/learn.md), [`postmortem`](../../../kaizen-ops/docs/guides/postmortem.md) | What should the next cycle know? | learnings, pack rules, amendments |
 
 Around the loop: [`debug`](../guides/debug.md) (cause before fix), [`polish`](../guides/polish.md)
 (user-guided UI touch-ups on a running dev server), [`decide`](../guides/decide.md) (hard decisions as

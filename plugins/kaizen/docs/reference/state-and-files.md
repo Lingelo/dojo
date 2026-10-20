@@ -13,7 +13,7 @@ Under `docs_root` (`docs/` by default; `.kaizen/docs` or `engineering/` if `docs
 | `plans/YYYY-MM-DD-HHMM-<type>-<topic>-plan.md` | brainstorm, plan | [plan](../concepts/plans.md) |
 | `learnings/<category>/<slug>.md` | learn, prune-learnings | [learning](../concepts/learnings.md#format) |
 | `adr/NNNN-<title>.md` | decide | ADR ([template](../../templates/adr.md)): context, options (including *do nothing*), decision, consequences, review signal |
-| `postmortems/YYYY-MM-DD-<title>.md` | postmortem | [template](../../templates/postmortem.md); `detected`/`resolved` feed metrics |
+| `postmortems/YYYY-MM-DD-<title>.md` | postmortem | [template](../../../kaizen-ops/templates/postmortem.md); `detected`/`resolved` feed metrics |
 | `ideation/…` | ideate | ranked ideas with their grounding |
 | `metrics/YYYY-MM-DD.md` | metrics (on request) | trend reports |
 

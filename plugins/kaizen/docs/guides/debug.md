@@ -9,7 +9,7 @@
 |---|---|
 | **What it does** | Triage → investigation (reproduction, environment, backward tracing, history, learnings) → root cause → test-first fix → handover |
 | **When to use it** | "It crashes", "this test fails", "it is slow", "why does X…?", a bug ticket, a red CI |
-| **When not to use it** | A feature to build (→ [plan](plan.md)); a production incident to analyze after the fact (→ [postmortem](postmortem.md)) |
+| **When not to use it** | A feature to build (→ [plan](plan.md)); a production incident to analyze after the fact (→ [postmortem](../../../kaizen-ops/docs/guides/postmortem.md)) |
 | **What it produces** | A debug summary (problem, root cause with `file:line`, tests, fix, prevention, confidence); if you choose it, a fix committed on `fix/…` |
 | **What next** | Review of the fix, commit, PR if possible, and `/kaizen:learn` if the cause was surprising |
 
@@ -68,4 +68,4 @@
 In depth: [learnings](../concepts/learnings.md#read-back).
 
 
-[postmortem](postmortem.md) · [learn](learn.md) · [watch-pr](watch-pr.md)
+[postmortem](../../../kaizen-ops/docs/guides/postmortem.md) · [learn](learn.md) · [watch-pr](watch-pr.md)

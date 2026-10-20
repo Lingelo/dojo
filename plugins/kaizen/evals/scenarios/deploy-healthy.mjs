@@ -1,4 +1,4 @@
-// /kaizen:deploy staging on the happy path: the deployment goes out, the signals stay within their
+// /kaizen-ops:deploy staging on the happy path: the deployment goes out, the signals stay within their
 // thresholds for the whole watch, and nothing is rolled back — a watch must not cry wolf.
 import { HEADLESS, SHOP } from '../fixtures.mjs';
 
@@ -17,7 +17,7 @@ export default {
     },
   },
   steps: [{ files: { 'src/loyalty.js': 'export const discount = (t) => t * 0.95;\n' }, commit: 'feat(SHOP-21): loyalty discount' }],
-  prompt: `${HEADLESS} /kaizen:deploy staging`,
+  prompt: `${HEADLESS} /kaizen-ops:deploy staging`,
   checks: [
     ['deployed once and traced by a tag', (_, c) => {
       const log = c.read('deployed.log').trim().split('\n').filter(Boolean);

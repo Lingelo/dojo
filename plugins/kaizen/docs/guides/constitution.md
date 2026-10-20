@@ -95,4 +95,4 @@ refuses a version without an amendment approved by one of them. Steps and govern
 
 ## See also
 
-[plan](plan.md) · [review](review.md) · [postmortem](postmortem.md) · [Kaizen Packs](../packs.md)
+[plan](plan.md) · [review](review.md) · [postmortem](../../../kaizen-ops/docs/guides/postmortem.md) · [Kaizen Packs](../packs.md)

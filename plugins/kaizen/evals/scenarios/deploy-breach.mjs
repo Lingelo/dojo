@@ -1,4 +1,4 @@
-// /kaizen:deploy staging: the deployment goes out, the plan's signal degrades afterwards, the watch
+// /kaizen-ops:deploy staging: the deployment goes out, the plan's signal degrades afterwards, the watch
 // sees it and the rollback follows, then the postmortem is proposed.
 import { HEADLESS, SHOP } from '../fixtures.mjs';
 
@@ -34,7 +34,7 @@ export default {
     },
   },
   steps: [{ files: { 'docs/plans/2026-10-01-feat-loyalty-discount-plan.md': PLAN, 'src/loyalty.js': 'export const discount = (t) => t * 0.95;\n' }, commit: 'feat(SHOP-20): loyalty discount\n\nUnit U1 of plan docs/plans/2026-10-01-feat-loyalty-discount-plan.md' }],
-  prompt: `${HEADLESS} /kaizen:deploy staging`,
+  prompt: `${HEADLESS} /kaizen-ops:deploy staging`,
   checks: [
     ['deployed and traced by a tag', (_, c) => /deploy\/staging\//.test(c.git('tag', '-l', 'deploy/*'))],
     ['plan threshold breach detected', (_, c) => c.read('.kaizen/state/monitor.jsonl').includes('"ok":false')],

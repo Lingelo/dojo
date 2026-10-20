@@ -173,13 +173,13 @@ turn it into a test.
 ## What next
 
 - Deploy: declare your commands and signals (`/kaizen:setup`, or `node $K deploy detect`), then
-  `/kaizen:deploy staging` and `/kaizen:deploy production`. The signals cited by the plan are watched
-  after the deployment, with a rollback if a threshold is breached. See [deploy](guides/deploy.md) and
-  [monitor](guides/monitor.md).
+  `/kaizen-ops:deploy staging` and `/kaizen-ops:deploy production`. The signals cited by the plan are watched
+  after the deployment, with a rollback if a threshold is breached. See [deploy](../../kaizen-ops/docs/guides/deploy.md) and
+  [monitor](../../kaizen-ops/docs/guides/monitor.md).
 - Lost about what to run: `/kaizen:help` looks at the repo's state (`node $K status`) and recommends
   the next command.
 - Chain everything: after a brainstorm, `/kaizen:autopilot` executes the plan, the review, the
   delivery and the PR follow-up without interrupting you.
 - Measure after a few weeks: `/kaizen:metrics` (PR size, lead time, rework rate, learnings actually
   reused, cycle cost).
-- An incident? `/kaizen:postmortem`. A heavy decision? `/kaizen:decide`.
+- An incident? `/kaizen-ops:postmortem`. A heavy decision? `/kaizen:decide`.

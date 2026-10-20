@@ -127,7 +127,7 @@ carrying it) or accepted risk (and by whom). No theoretical threat without a pat
 - **Signal** — what is watched after deploying to know it works (log, metric, error) and the
   **threshold** that triggers the rollback (`> 1 %`, `p95 > 10 s`). Written
   `` `error_rate` > 1 % `` (name declared in `monitor.signals`, between backticks), the threshold is
-  applied as is by `monitor watch` after `/kaizen:deploy`. `plan check` reports a missing rollback or
+  applied as is by `monitor watch` after `/kaizen-ops:deploy`. `plan check` reports a missing rollback or
   signal, and a signal without a threshold; `release notes` carries these fields into the production
   checklist.
 

@@ -37,7 +37,7 @@ days or everything. `/kaizen:metrics` offers it when the cycle cost is part of t
 
 ## Reading honestly
 
-With [`/kaizen:deploy`](deploy.md), the indicators come from **real** deployments and incidents;
+With [`/kaizen-ops:deploy`](../../../kaizen-ops/docs/guides/deploy.md), the indicators come from **real** deployments and incidents;
 without them, they are **approximations** from the default branch, and each indicator shows its method.
 Learnings written but never cited mean the loop does not close: see
 [Troubleshooting](../troubleshooting.md#the-learnings-are-not-reused).
@@ -47,4 +47,4 @@ Learnings written but never cited mean the loop does not close: see
 In depth: [metrics](../concepts/metrics.md).
 
 
-[postmortem](postmortem.md) · [prune-learnings](prune-learnings.md) · [release](release.md) · [deploy](deploy.md)
+[postmortem](../../../kaizen-ops/docs/guides/postmortem.md) · [prune-learnings](prune-learnings.md) · [release](release.md) · [deploy](../../../kaizen-ops/docs/guides/deploy.md)

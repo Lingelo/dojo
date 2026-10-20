@@ -87,7 +87,7 @@ and CI are skipped. That is not an error.
 11. `node "$K" gate off`, then the final report and `DONE`.
 
 **No deployment.** The run stops at the ready PR; releasing to production goes through
-`/kaizen:deploy`, with the approval typed by the user for a protected environment.
+`/kaizen-ops:deploy`, with the approval typed by the user for a protected environment.
 
 ## Stops (say why)
 

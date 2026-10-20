@@ -38,7 +38,7 @@ Four precise limits, to know before adopting it.
 - **Not an observability platform.** Kaizen neither collects nor stores metrics and does no on-call:
   it reads your signals and receives your alerts. Beyond the post-deployment window, continuous
   detection relies on a scheduled check (`monitor patrol`) or on your alerts wired to `monitor alert`;
-  without either, a late incident only surfaces through `/kaizen:monitor`.
+  without either, a late incident only surfaces through `/kaizen-ops:monitor`.
 - **Guardrails against forgetfulness, not against a malicious agent.** An intermediate script is enough
   to bypass them.
 - **Claude Code only.** The guarantees rest on Claude Code's hooks; another agent gets the skills'
@@ -63,7 +63,7 @@ Claude Code.
 
 | Criterion | [Spec Kit](https://github.com/github/spec-kit) (GitHub) | Kiro (AWS) | BMAD | [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin) (Every) | Kaizen |
 | --- | --- | --- | --- | --- | --- |
-| Shape | toolkit, commands | IDE (VS Code fork) | role-based method | plugin, 36 skills | plugin, 23 skills |
+| Shape | toolkit, commands | IDE (VS Code fork) | role-based method | plugin, 36 skills | plugin, 20 skills (+ 3 in kaizen-ops) |
 | Strength | spec → plan → tasks, constitution | specs, project rules, IDE hooks | personas (analyst, PM, architect, QA), detailed stories | learning loop, adoption, portability | guarantees enforced by code, from repo to production |
 | Code review | through the convergence step | no (hooks) | QA agent | multi-agent | multi-agent, enforced and proven |
 | Deployment, monitoring | no | no | no | no | yes |

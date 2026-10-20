@@ -625,8 +625,8 @@ function repoStatus(root) {
   const next = [];
   const say = (command, why) => next.push({ command, why });
   // Restoring comes before everything else; a resolved incident without a postmortem comes right after.
-  for (const i of incidentsState?.open || []) say(`/kaizen:monitor ${i.env}`, `open incident on ${i.env} since ${i.detected_at}${i.summary ? ` (${i.summary})` : ''}: restore (rollback), then /kaizen:postmortem`);
-  for (const i of incidentsState?.without_postmortem || []) say('/kaizen:postmortem', `${i.env} incident of ${i.detected_at} resolved (${i.resolved_by}) without a postmortem`);
+  for (const i of incidentsState?.open || []) say(`/kaizen-ops:monitor ${i.env}`, `open incident on ${i.env} since ${i.detected_at}${i.summary ? ` (${i.summary})` : ''}: restore (rollback), then /kaizen-ops:postmortem`);
+  for (const i of incidentsState?.without_postmortem || []) say('/kaizen-ops:postmortem', `${i.env} incident of ${i.detected_at} resolved (${i.resolved_by}) without a postmortem`);
   if (!initialized) say('/kaizen:setup', 'Kaizen is not initialized in this repo');
   // The constitution sharpens plan and review, but never stands between a new user and the four-command
   // path (setup → plan → work → ship): it comes after the next step.
@@ -640,7 +640,7 @@ function repoStatus(root) {
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   } else if (branch && branch === def && undeployed(root, config)) {
     const u = undeployed(root, config);
-    say(`/kaizen:deploy ${u.env}`, `${u.commits} commit(s) of ${def} not yet deployed to ${u.env}${u.last ? ` (last: ${u.last})` : ''}`);
+    say(`/kaizen-ops:deploy ${u.env}`, `${u.commits} commit(s) of ${def} not yet deployed to ${u.env}${u.last ? ` (last: ${u.last})` : ''}`);
   } else if (latest?.stage === 'requirements') say(`/kaizen:plan ${latest.path}`, 'requirements are waiting for their implementation plan');
   else if (latest?.stage === 'implementation-ready' && !latest.errors) say(`/kaizen:work ${latest.path}`, 'a ready plan is waiting to be executed (if not done already)');
   if (initialized && !next.length) {

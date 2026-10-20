@@ -68,13 +68,13 @@
 <rect class="gate" x="36" y="84" width="480" height="32" rx="6" stroke-width="1.5"/>
 <text class="label" x="48" y="104" text-anchor="start">open incident on an environment</text>
 <rect class="skill" x="600" y="84" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="104" text-anchor="start">/kaizen:monitor &lt;env&gt;</text>
+<text class="label mono" x="612" y="104" text-anchor="start">/kaizen-ops:monitor &lt;env&gt;</text>
 <path class="line bad" d="M516,100 L600,100" marker-end="url(#h-bad)"/>
 <text class="small" x="24" y="105" text-anchor="end">1</text>
 <rect class="gate" x="36" y="124" width="480" height="32" rx="6" stroke-width="1.5"/>
 <text class="label" x="48" y="144" text-anchor="start">incident resolved &lt; 14 days ago, no postmortem</text>
 <rect class="skill" x="600" y="124" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="144" text-anchor="start">/kaizen:postmortem</text>
+<text class="label mono" x="612" y="144" text-anchor="start">/kaizen-ops:postmortem</text>
 <path class="line bad" d="M516,140 L600,140" marker-end="url(#h-bad)"/>
 <text class="small" x="24" y="145" text-anchor="end">2</text>
 <rect class="gate" x="36" y="164" width="480" height="32" rx="6" stroke-width="1.5"/>
@@ -84,58 +84,58 @@
 <path class="line" d="M516,180 L600,180" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="185" text-anchor="end">3</text>
 <rect class="gate" x="36" y="204" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="224" text-anchor="start">no CONSTITUTION.md</text>
+<text class="label" x="48" y="224" text-anchor="start">quality gate active</text>
 <rect class="skill" x="600" y="204" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="224" text-anchor="start">/kaizen:constitution</text>
+<text class="label mono" x="612" y="224" text-anchor="start">/kaizen:work (resume) or gate off</text>
 <path class="line" d="M516,220 L600,220" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="225" text-anchor="end">4</text>
 <rect class="gate" x="36" y="244" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="264" text-anchor="start">quality gate active</text>
+<text class="label" x="48" y="264" text-anchor="start">feature branch with changes · waiver pending</text>
 <rect class="skill" x="600" y="244" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="264" text-anchor="start">/kaizen:work (resume) or gate off</text>
+<text class="label mono" x="612" y="264" text-anchor="start">kaizen waive &lt;code&gt; (you type it)</text>
 <path class="line" d="M516,260 L600,260" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="265" text-anchor="end">5</text>
 <rect class="gate" x="36" y="284" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="304" text-anchor="start">feature branch with changes · waiver pending</text>
+<text class="label" x="48" y="304" text-anchor="start">feature branch · reviewed, committed, clean</text>
 <rect class="skill" x="600" y="284" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="304" text-anchor="start">kaizen waive &lt;code&gt; (you type it)</text>
-<path class="line" d="M516,300 L600,300" marker-end="url(#h-default)"/>
+<text class="label mono" x="612" y="304" text-anchor="start">/kaizen:ship</text>
+<path class="line ok" d="M516,300 L600,300" marker-end="url(#h-ok)"/>
 <text class="small" x="24" y="305" text-anchor="end">6</text>
 <rect class="gate" x="36" y="324" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="344" text-anchor="start">feature branch · reviewed, committed, clean</text>
+<text class="label" x="48" y="344" text-anchor="start">feature branch · not reviewed or changed since</text>
 <rect class="skill" x="600" y="324" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="344" text-anchor="start">/kaizen:ship</text>
-<path class="line ok" d="M516,340 L600,340" marker-end="url(#h-ok)"/>
+<text class="label mono" x="612" y="344" text-anchor="start">/kaizen:review</text>
+<path class="line" d="M516,340 L600,340" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="345" text-anchor="end">7</text>
 <rect class="gate" x="36" y="364" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="384" text-anchor="start">feature branch · not reviewed or changed since</text>
+<text class="label" x="48" y="384" text-anchor="start">default branch · commits not deployed</text>
 <rect class="skill" x="600" y="364" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="384" text-anchor="start">/kaizen:review</text>
+<text class="label mono" x="612" y="384" text-anchor="start">/kaizen-ops:deploy &lt;env&gt;</text>
 <path class="line" d="M516,380 L600,380" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="385" text-anchor="end">8</text>
 <rect class="gate" x="36" y="404" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="424" text-anchor="start">default branch · commits not deployed</text>
+<text class="label" x="48" y="424" text-anchor="start">latest plan is requirements only</text>
 <rect class="skill" x="600" y="404" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="424" text-anchor="start">/kaizen:deploy &lt;env&gt;</text>
+<text class="label mono" x="612" y="424" text-anchor="start">/kaizen:plan &lt;plan&gt;</text>
 <path class="line" d="M516,420 L600,420" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="425" text-anchor="end">9</text>
 <rect class="gate" x="36" y="444" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="464" text-anchor="start">latest plan is requirements only</text>
+<text class="label" x="48" y="464" text-anchor="start">latest plan is ready</text>
 <rect class="skill" x="600" y="444" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="464" text-anchor="start">/kaizen:plan &lt;plan&gt;</text>
+<text class="label mono" x="612" y="464" text-anchor="start">/kaizen:work &lt;plan&gt;</text>
 <path class="line" d="M516,460 L600,460" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="465" text-anchor="end">10</text>
 <rect class="gate" x="36" y="484" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="504" text-anchor="start">latest plan is ready</text>
+<text class="label" x="48" y="504" text-anchor="start">otherwise</text>
 <rect class="skill" x="600" y="484" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="504" text-anchor="start">/kaizen:work &lt;plan&gt;</text>
-<path class="line" d="M516,500 L600,500" marker-end="url(#h-default)"/>
+<text class="label mono" x="612" y="504" text-anchor="start" style="font-size:13.2px">/kaizen:plan &lt;what to build&gt; · brainstorm · debug</text>
+<path class="line ok" d="M516,500 L600,500" marker-end="url(#h-ok)"/>
 <text class="small" x="24" y="505" text-anchor="end">11</text>
 <rect class="gate" x="36" y="524" width="480" height="32" rx="6" stroke-width="1.5"/>
-<text class="label" x="48" y="544" text-anchor="start">otherwise</text>
+<text class="label" x="48" y="544" text-anchor="start">then, as an option: no or draft CONSTITUTION.md</text>
 <rect class="skill" x="600" y="524" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="544" text-anchor="start">/kaizen:brainstorm &lt;idea&gt; · ideate · debug</text>
-<path class="line ok" d="M516,540 L600,540" marker-end="url(#h-ok)"/>
+<text class="label mono" x="612" y="544" text-anchor="start">/kaizen:constitution</text>
+<path class="line" d="M516,540 L600,540" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="545" text-anchor="end">12</text>
-<text class="small" x="36" y="580" text-anchor="start">The first two are added before everything else; "otherwise" is also added when the repo is in a normal state. /kaizen:help explains the result and can also answer “what is Kaizen?”.</text>
+<text class="small" x="36" y="580" text-anchor="start">The first two come before everything else; "otherwise" applies when nothing is pending; the constitution is only offered after the next step. /kaizen:help explains the result.</text>
 </svg>

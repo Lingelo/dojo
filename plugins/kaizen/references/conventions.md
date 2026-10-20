@@ -80,6 +80,9 @@ before anything else:
   run them by hand at each step (`verify`, `secrets scan --staged` before a commit, `review check`
   before a push) until the plugin is enabled;
 - **plugin not declared** → offer `node "$K" audit fix claude_settings` (a versioned file: ask first);
+- **production commands moved (`ops_plugin`)** → the repo deploys or watches signals with Kaizen: say the
+  commands are now `/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`, and offer
+  `node "$K" audit fix claude_settings`, which enables `kaizen-ops@dojo` (ask first);
 - **branch pushed without a review** → `/kaizen:review` before anything else is pushed.
 No ⚠ → say nothing. The doctor never blocks: it informs.
 
@@ -133,7 +136,7 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
 
 ## Deployment
 
-Kaizen only deploys through `/kaizen:deploy`, with the commands the team declared
+Kaizen only deploys through `/kaizen-ops:deploy`, with the commands the team declared
 (`deploy.environments`), never guessed ones. A protected environment (`production` by default)
 requires a code the user types themselves (`kaizen deploy <code>`); its raw command is refused by the
 hook, and `deploy/…` / `rollback/…` / `incident/…` / `resolve/…` tags are only created by the CLI.

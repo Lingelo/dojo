@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Kaizen — end-to-end evaluations: each scenario prepares a trapped repo, runs a skill in a headless
-// Claude Code session (`claude -p --plugin-dir`), then checks the result.
+// Claude Code session (`claude -p --plugin-dir`, Kaizen core and kaizen-ops), then checks the result.
 //
 //   node evals/run.mjs                 every scenario
 //   node evals/run.mjs review-injection plan-valid
@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PLUGIN = join(HERE, '..');
+// The production scenarios run /kaizen-ops:<command>: both plugins are loaded (--plugin-dir repeats).
+const OPS = join(PLUGIN, '..', 'kaizen-ops');
 const CLI = join(PLUGIN, 'scripts', 'kaizen.mjs');
 
 function sh(cwd, cmd, args) {
@@ -58,7 +60,7 @@ function makeRepo(files, steps) {
 
 function runClaude(dir, prompt, timeoutMs) {
   return new Promise((resolve) => {
-    const args = ['--plugin-dir', PLUGIN, '-p', prompt, '--allowedTools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Agent', 'Skill', 'TaskCreate', 'TaskUpdate'];
+    const args = ['--plugin-dir', PLUGIN, '--plugin-dir', OPS, '-p', prompt, '--allowedTools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Agent', 'Skill', 'TaskCreate', 'TaskUpdate'];
     // Isolated session: otherwise, a claude -p launched from a Claude Code session inherits its id and
     // writes into its task list.
     const env = { ...process.env };

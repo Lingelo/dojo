@@ -58,7 +58,7 @@ Prerequisites: Node ≥ 18 and git; `gh` for PRs. No npm dependency.
 
 ## Start here: four commands
 
-You do not need the 23 commands to start. A feature goes through four, and each one chains what it
+You do not need all 20 commands to start. A feature goes through four, and each one chains what it
 needs:
 
 | # | Command | What you do | What it runs for you |
@@ -80,7 +80,7 @@ The other commands answer needs you will meet later — sharper rules (`constitu
 (`brainstorm`), review comments (`address-feedback`), production (`deploy`, `monitor`), measuring
 (`metrics`, `kaizen cost`). Reach for them when the need shows up.
 
-## All the commands (23 skills)
+## All the commands (20 skills)
 
 Lost? **`/kaizen:help`** explains Kaizen, looks at where your repo stands and tells you which command to
 run next.
@@ -114,12 +114,15 @@ run next.
 | `/kaizen:watch-pr` | Drives a PR to "looks ready": feedback **before** CI, CI repair (never a disabled test). Update from the base only on GitHub's signal, check that no review is still on its way, 8 h budget. **Never merges.** |
 | `/kaizen:release` | Release notes from conventional commits, checked SemVer version, CHANGELOG, production checklist. Never tags without approval. |
 
-### Deploy and monitor
+### Deploy and monitor — in kaizen-ops
 
-| Command | Role |
-|---|---|
-| `/kaizen:deploy` | Deploys through **your** commands (`deploy.environments`, recognized by `deploy detect`): preconditions, approval you type for production, `deploy/<env>/…` tag, watch of the plan's signals, **rollback** if a threshold is breached. Feature flags (`deploy flag`). |
-| `/kaizen:monitor` | Production signals (native HTTP health-check or any command printing a number) against the thresholds of the config and of shipped plans. Threshold breached → dated incident, rollback, then postmortem. Continuous monitoring beyond the deployment: scheduled check (`patrol`) or the team's alerts (`alert`: Alertmanager, PagerDuty, Datadog, plain JSON). |
+Since 4.0 the production commands live in the [**kaizen-ops**](../kaizen-ops/README.md) plugin, for
+teams that deploy through Kaizen: `/kaizen:deploy` → `/kaizen-ops:deploy`, `/kaizen:monitor` →
+`/kaizen-ops:monitor`, `/kaizen:postmortem` → `/kaizen-ops:postmortem` (until 4.1.0 the old names only
+answer where the command went). Enable it next to Kaizen:
+`"enabledPlugins": { "kaizen@dojo": true, "kaizen-ops@dojo": true }`. The CLI, the configuration and
+every gate behind them — typed approval for protected environments, deployment tags, DORA from real
+deployments — stay here, so nothing is weaker without it.
 
 ### Learn and measure
 
@@ -127,7 +130,6 @@ run next.
 |---|---|
 | `/kaizen:learn` | Captures **one** durable learning in `docs/learnings/`, if it passes the test "without this document, would we make the mistake again?". |
 | `/kaizen:prune-learnings` | Audits the learnings against the current code: keep, update, merge, replace or delete, with evidence. |
-| `/kaizen:postmortem` | Blameless postmortem: timeline from git, CI and deployment tags, contributing factors, actions with owners. Then learning, pack rule and constitution amendment. |
 | `/kaizen:metrics` | DORA metrics, real from tracked deployments or approximated from git and GitHub (frequency, lead time, rework rate, failure rate, time to restore), batch size, **learnings reuse**, cycle cost. |
 
 ### Orchestrate
