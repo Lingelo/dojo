@@ -375,5 +375,5 @@ Measured coupling (3.10.0):
 - [x] No `/kaizen:deploy`, `/kaizen:monitor` or `/kaizen:postmortem` outside the CHANGELOGs and
   `old → new` migration notes (contract-enforced).
 - [ ] Review recorded with no open P0/P1 on each slice.
-- [ ] A learning captured if the split taught something durable (e.g. how a plugin reaches another one's
-  CLI).
+- [x] Learning captured: `docs/solutions/architecture-patterns/plugin-reaching-another-plugins-cli.md`
+  (resolver shim, resolution order, gates kept in core, macOS realpath, stubs and rename detection).
