@@ -80,6 +80,10 @@ How subagents are attributed: during a cycle, the PostToolUse hook on the `Agent
 hook reads the subagent transcripts next to the session transcript and matches each one to its launch
 by agent id, otherwise by the start of its first prompt; unmatched transcripts count as `unknown`.
 
+Each cycle also records its tokens per **model family** (`opus`, `sonnet`, `haiku`, read from the model
+of every transcript message), which prices it in the relative units of `review.cost_weights`.
+`node $K metrics dashboard` turns the cycles into one HTML page to follow cost over time.
+
 The question it answers: **does the ceremony pay back more than it costs?** Compare cycle cost with
 batch size, rework and failure rate before and after changing a practice, a profile or a model.
 

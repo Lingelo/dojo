@@ -295,6 +295,7 @@ node $K monitor patrol --env e [--interval 60] # confirmed check → incident (e
 node $K monitor alert [--env e] [--file f|-]   # alert payload → incident opened/resolved
 node $K monitor incident open|resolve --env e [--at iso] [--summary …] | monitor incident list [--env e]
 node $K metrics [--since 90d] [--no-github]    # DORA, batch size, Kaizen loop, cycle cost
+node $K metrics dashboard [--out file]         # self-contained HTML cost dashboard (.kaizen/state/cost-dashboard.html)
 ```
 
 Exit codes: 0 = OK, 1 = red check (verify, size, plan check, deploy, monitor breach…), 2 = usage error.
