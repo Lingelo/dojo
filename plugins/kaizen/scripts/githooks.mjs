@@ -74,7 +74,7 @@ export function declarePlugin(root) {
   const markets = (settings.extraKnownMarketplaces ||= {});
   const plugins = (settings.enabledPlugins ||= {});
   // A repository that deploys with Kaizen also needs the production commands (kaizen-ops, since 4.0).
-  const wanted = opsNeeded(loadConfig(root)) ? [PLUGIN_ID, OPS_ID] : [PLUGIN_ID];
+  const wanted = opsNeeded(root) ? [PLUGIN_ID, OPS_ID] : [PLUGIN_ID];
   const missing = wanted.filter((id) => plugins[id] !== true);
   if (markets[MARKETPLACE] && !missing.length) throw new Error(`${wanted.join(' and ')} already declared`);
   markets[MARKETPLACE] ||= { source: { source: 'github', repo: KAIZEN_SOURCE } };

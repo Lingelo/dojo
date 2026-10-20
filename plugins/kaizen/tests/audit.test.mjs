@@ -52,7 +52,7 @@ test('tooled project: every check green (branch protection not checked outside G
     '.gitleaks.toml': 'title = "gitleaks"\n',
     'CLAUDE.md': '# Project\nLearnings: docs/learnings/\n',
     'CONSTITUTION.md': CONSTITUTION,
-    '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true } },
+    '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true, 'kaizen-ops@dojo': true } },
     '.githooks/pre-push': readFileSync(join(PLUGIN, 'templates', 'githooks', 'pre-push'), 'utf8'),
     '.kaizen/config.json': {
       deploy: { environments: { production: { command: 'make deploy', rollback: 'make rollback' } } },
@@ -175,5 +175,16 @@ test('secret scanning: Kaizen scan in CI counts, scaffolded per PR, never overwr
   assert.equal(check().status, 'ok');
   assert.notEqual(cli(dir, ['audit', 'fix', 'secret_scanning']).code, 0, 'nothing is overwritten');
   assert.notEqual(cli(dir, ['audit', 'fix', 'secret_scanning', '--ref', 'x; rm -rf /']).code, 0);
+  cleanup(dir);
+});
+
+test('claude_settings: a repo that deploys with Kaizen but lacks kaizen-ops@dojo is not ok for every clone', () => {
+  const dir = tempRepo({
+    '.kaizen/config.json': { deploy: { environments: { production: { command: 'make deploy' } } } },
+    '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true } },
+  });
+  const item = cli(dir, ['audit', '--json', '--no-github']).json.checks.find((c) => c.id === 'claude_settings');
+  assert.equal(item.status, 'missing');
+  assert.match(item.evidence, /kaizen-ops@dojo not enabled although this repo declares deployment environments/);
   cleanup(dir);
 });
