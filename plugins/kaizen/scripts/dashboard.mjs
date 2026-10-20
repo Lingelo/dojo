@@ -65,9 +65,27 @@ export function frictionRows(events) {
   return events.map((e) => ({ at: e.at, gate: e.gate, kind: e.kind }));
 }
 
-export function renderDashboard({ repo, rows, weights, friction = [], generated = new Date().toISOString() }) {
+// Ledger turns folded per work item and day: enough to sum any period client-side.
+export function ledgerRows(entries) {
+  const by = new Map();
+  for (const e of entries) {
+    const day = e.at.slice(0, 10);
+    const key = `${e.item}\u0000${day}`;
+    const r = by.get(key) || { day, item: e.item, kind: e.kind || 'other', title: e.title || null, tokens: 0, models: {} };
+    if (e.title) r.title = e.title;
+    if (e.kind && e.kind !== 'other') r.kind = e.kind;
+    for (const u of [e.usage, e.subagents?.usage]) {
+      r.tokens += usageTotal(u);
+      for (const [m, mu] of Object.entries(u?.by_model || {})) r.models[m] = (r.models[m] || 0) + usageTotal(mu);
+    }
+    by.set(key, r);
+  }
+  return [...by.values()];
+}
+
+export function renderDashboard({ repo, rows, weights, friction = [], items = [], generated = new Date().toISOString() }) {
   // JSON inside <script>: `<` escaped so no data (a plan name) can close the tag.
-  const data = JSON.stringify({ repo, rows, weights, friction, generated, groups: GROUPS }).replace(/</g, '\\u003c');
+  const data = JSON.stringify({ repo, rows, weights, friction, items, generated, groups: GROUPS }).replace(/</g, '\\u003c');
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -107,7 +125,9 @@ header p { margin: 0; color: var(--ink-2); }
 .tile, .card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 14px 16px; }
 .tile .label { color: var(--ink-2); font-size: 13px; }
 .tile .value { font-size: 26px; font-weight: 600; margin-top: 2px; }
+.tile.hero { grid-column: span 2; }
 .tile.hero .value { font-size: 48px; line-height: 1.1; }
+@media (max-width: 360px) { .tile.hero { grid-column: auto; } .tile.hero .value { font-size: 36px; } }
 .tile .sub { color: var(--muted); font-size: 12px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-top: 12px; }
 .card { margin-top: 12px; }
@@ -139,7 +159,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
 <main>
   <header>
     <h1>Kaizen cost — <span id="repo"></span></h1>
-    <p>Work and autopilot cycles closed by <code>gate off</code> on this machine. Generated <span id="gen"></span>.</p>
+    <p>Work items, work/autopilot cycles and guard rails recorded on this machine. Generated <span id="gen"></span>.</p>
   </header>
   <div class="filters" role="group" aria-label="Period">
     <button data-days="7">Last 7 days</button>
@@ -148,6 +168,11 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     <button data-days="0">All</button>
   </div>
   <section class="tiles" id="tiles"></section>
+  <section class="card">
+    <h2>Cost per work item</h2>
+    <p class="desc" id="items-desc">Every turn charged to its Jira key, plan or branch: what each feature or fix cost, end to end.</p>
+    <div id="items"></div>
+  </section>
   <section class="card">
     <h2>Tokens per cycle</h2>
     <p class="desc">Main session and subagents, by role. Hover a column for the breakdown.</p>
@@ -292,6 +317,22 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     const rows = D.rows.filter((r) => Date.parse(r.ended) >= from);
     for (const b of document.querySelectorAll('.filters button')) b.setAttribute('aria-pressed', String(Number(b.dataset.days) === days));
     const priced = rows.filter((r) => r.cost !== null);
+    // Work items (ledger): every turn of the period, summed per item.
+    const weightOf = (m) => D.weights[m] ?? Math.max(...Object.values(D.weights));
+    const fromDay = from ? new Date(from).toISOString().slice(0, 10) : '';
+    const perItem = new Map();
+    for (const r of (D.items || []).filter((x) => x.day >= fromDay)) {
+      const it = perItem.get(r.item) || { item: r.item, kind: r.kind, title: r.title, tokens: 0, cost: 0 };
+      it.tokens += r.tokens;
+      it.cost += Object.entries(r.models).reduce((n, [m, t]) => n + (t / 1e6) * weightOf(m), 0);
+      if (r.title) it.title = r.title;
+      if (r.kind !== 'other') it.kind = r.kind;
+      perItem.set(r.item, it);
+    }
+    const items = [...perItem.values()].sort((a, b) => b.cost - a.cost);
+    const itemsCost = items.reduce((n, i) => n + i.cost, 0);
+    const kinds = {};
+    for (const i of items.filter((x) => x.item !== 'unattributed')) (kinds[i.kind] ||= []).push(i.cost);
     const fr = (D.friction || []).filter((e) => Date.parse(e.at) >= from);
     const n = (gate, kind) => fr.filter((e) => (!gate || e.gate === gate) && e.kind === kind).length;
     const stops = fr.filter((e) => ['refused', 'blocked', 'no_verify'].includes(e.kind)).length;
@@ -299,13 +340,18 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     const tokens = rows.reduce((n, r) => n + r.tokens, 0);
     const sub = rows.reduce((n, r) => n + r.tokens - r.groups.main, 0);
     $('tiles').replaceChildren(
-      tile('Cost', priced.length ? priced.reduce((n, r) => n + r.cost, 0).toFixed(2) : '—', priced.length < rows.length ? priced.length + ' of ' + rows.length + ' cycles priced' : 'relative units', true),
+      items.length
+        ? tile('Cost', itemsCost.toFixed(2), 'all work · ' + items.filter((i) => i.item !== 'unattributed').length + ' item(s)', true)
+        : tile('Cost', priced.length ? priced.reduce((n, r) => n + r.cost, 0).toFixed(2) : '—', priced.length < rows.length ? priced.length + ' of ' + rows.length + ' cycles priced' : 'cycles · relative units', true),
       tile('Cycles', String(rows.length), rows.length ? 'median ' + Math.round(median(rows.map((r) => r.minutes))) + ' min' : ''),
-      tile('Tokens', compact(tokens), rows.length ? 'median ' + compact(median(rows.map((r) => r.tokens))) + ' per cycle' : ''),
+      tile('Cycle tokens', compact(tokens), rows.length ? 'median ' + compact(median(rows.map((r) => r.tokens))) + ' per cycle' : ''),
       tile('Subagent share', tokens ? Math.round((sub / tokens) * 100) + '%' : '—', 'of tokens'),
       tile('Stops', String(stops), n('push', 'refused') + ' push · ' + n('quality', 'blocked') + ' quality · ' + n('secrets', 'refused') + ' secrets'),
       tile('Waivers', String(waived), reviewed + waived ? Math.round((waived / (reviewed + waived)) * 100) + '% of pushes cleared' : 'no review recorded'),
     );
+    $('items-desc').textContent = 'Every turn charged to its Jira key, plan or branch: what each feature or fix cost, end to end.' +
+      (Object.keys(kinds).length ? ' Median: ' + Object.entries(kinds).map(([k, xs]) => k + ' ' + median(xs).toFixed(2) + ' (' + xs.length + ')').join(' · ') + '.' : '');
+    hbars($('items'), items.slice(0, 10).map((i) => ({ label: i.item.length > 16 ? i.item.slice(0, 15) + '…' : i.item, value: i.cost, detail: [i.title, i.kind, compact(i.tokens) + ' tokens'].filter(Boolean).join(' · ') })), (v) => v.toFixed(2), 'No turn recorded yet: the ledger fills at the end of every turn (Kaizen 3.9+).');
     hbars($('friction'), [
       { label: 'Push refused', value: n('push', 'refused') },
       { label: 'Quality gate', value: n('quality', 'blocked') },
@@ -325,7 +371,6 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     stackedColumns($('cycles'), rows);
     const models = {};
     for (const r of rows) for (const [m, t] of Object.entries(r.models)) models[m] = (models[m] || 0) + t;
-    const weightOf = (m) => D.weights[m] ?? Math.max(...Object.values(D.weights));
     hbars($('models'), Object.entries(models).map(([m, t]) => ({ label: m, value: (t / 1e6) * weightOf(m), detail: compact(t) + ' tokens × ' + weightOf(m) })).sort((a, b) => b.value - a.value), (v) => v.toFixed(2), 'No cycle recorded tokens per model yet (Kaizen 3.7+).');
     hbars($('roles'), D.groups.map((g) => ({ label: NAMES[g], value: rows.reduce((n, r) => n + r.groups[g], 0), detail: 'Tokens' })).sort((a, b) => b.value - a.value), compact, 'No cycle in this period.');
     const table = $('table');

@@ -48,6 +48,7 @@
 //   node kaizen.mjs secrets scan [--staged | --base <ref>] [--json]   possible secrets in the changes (exit 1 if any)
 //   node kaizen.mjs dev detect | probe --url U    dev server (polish)
 //   node kaizen.mjs metrics [--since 90d] [--no-github]   approximated DORA metrics + loop health
+//   node kaizen.mjs cost [item | current] [--since 90d] [--json]   what each feature or fix cost, end to end
 //   node kaizen.mjs metrics dashboard [--out file]   self-contained HTML cost dashboard over the recorded cycles
 //   node kaizen.mjs adr new --title "…" | adr list        architecture decisions (docs/adr)
 //   node kaizen.mjs postmortem new --title "…"            reserves a postmortem (docs/postmortems)
@@ -64,14 +65,15 @@ import { checkPlan } from './plancheck.mjs';
 import { amendPlan, markReviewed } from './planamend.mjs';
 import * as prmod from './pr.mjs';
 import { detectDevServers, probe } from './devserver.mjs';
-import { computeMetrics, readFriction } from './metrics.mjs';
+import { computeMetrics, parseSince, readFriction, workItems } from './metrics.mjs';
 import { releaseNotes } from './release.mjs';
 import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs';
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { effectiveProfile } from './risk.mjs';
 import { DEFAULT_WEIGHTS, estimateReview } from './estimate.mjs';
-import { cycleRows, frictionRows, readCycles, renderDashboard } from './dashboard.mjs';
+import { cycleRows, frictionRows, ledgerRows, readCycles, renderDashboard } from './dashboard.mjs';
+import { itemCosts, readLedger, workItem } from './ledger.mjs';
 import { audit, scaffold } from './audit.mjs';
 import { doctor, formatDoctor } from './doctor.mjs';
 import { preCommit, prePush } from './githooks.mjs';
@@ -1011,6 +1013,40 @@ try {
       else out(findings.length ? `✘ ${findings.length} possible secret(s):\n${formatFindings(findings)}` : '✔ no secret found');
       process.exit(findings.length ? 1 : 0);
     }
+    case 'cost': {
+      // What a feature or a fix cost, end to end: `cost` lists the work items, `cost <item>` details one,
+      // `cost current` says what the turns are charged to right now.
+      const root = requireRepo();
+      const config = loadConfig(root);
+      if (sub === 'current') {
+        out(workItem(root));
+        break;
+      }
+      const { from } = parseSince(typeof flags.since === 'string' ? flags.since : '90d');
+      const weights = { ...DEFAULT_WEIGHTS, ...(config.review?.cost_weights || {}) };
+      const items = itemCosts(readLedger(root).filter((e) => Date.parse(e.at) >= from.getTime()), weights);
+      if (sub) {
+        const it = items.find((i) => i.item.toLowerCase() === String(sub).toLowerCase() || i.item === `plan:${sub}` || i.item === `branch:${sub}`);
+        if (!it) die(`no cost recorded for "${sub}" in the window (kaizen cost lists the work items)`);
+        out(it);
+        break;
+      }
+      if (flags.json) {
+        out({ items, summary: workItems(root, from, config) });
+        break;
+      }
+      if (!items.length) {
+        out('No turn recorded yet: the ledger fills at the end of every turn in this repo (Stop hook).');
+        break;
+      }
+      const k = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : `${Math.round(n / 1000)}k`);
+      out(`Cost per work item (relative units, ${Object.entries(weights).map(([m, w]) => `${m} ${w}`).join(', ')})`);
+      for (const it of items.slice(0, 20)) {
+        out(`  ${it.item.padEnd(28)} ${it.kind.padEnd(9)} ${String(it.cost).padStart(8)}  ${k(it.tokens).padStart(6)} tokens  ${it.sessions} session(s)${it.title ? `  ${it.title}` : ''}${it.priced_share !== null && it.priced_share < 1 ? `  (${Math.round(it.priced_share * 100)}% priced)` : ''}`);
+      }
+      for (const [kind, v] of Object.entries(workItems(root, from, config)?.by_kind || {})) out(`  · ${kind}: median ${v.cost_median} over ${v.items} item(s)`);
+      break;
+    }
     case 'metrics': {
       const root = requireRepo();
       if (sub === 'dashboard') {
@@ -1019,8 +1055,9 @@ try {
         const file = typeof flags.out === 'string' ? resolve(root, flags.out) : join(ensureStateDir(root), 'cost-dashboard.html');
         mkdirSync(dirname(file), { recursive: true });
         const friction = frictionRows(readFriction(root));
-        writeFileSync(file, renderDashboard({ repo: basename(root), rows, weights, friction }));
-        out({ file, cycles: rows.length, priced: rows.filter((r) => r.cost !== null).length, friction_events: friction.length });
+        const items = ledgerRows(readLedger(root));
+        writeFileSync(file, renderDashboard({ repo: basename(root), rows, weights, friction, items }));
+        out({ file, cycles: rows.length, priced: rows.filter((r) => r.cost !== null).length, friction_events: friction.length, ledger_rows: items.length });
         break;
       }
       out(computeMetrics(root, { since: flags.since || '90d', useGitHub: !flags['no-github'] }));

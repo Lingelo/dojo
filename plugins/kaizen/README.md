@@ -296,6 +296,7 @@ node $K monitor alert [--env e] [--file f|-]   # alert payload → incident open
 node $K monitor incident open|resolve --env e [--at iso] [--summary …] | monitor incident list [--env e]
 node $K metrics [--since 90d] [--no-github]    # DORA, batch size, Kaizen loop, cycle cost
 node $K metrics dashboard [--out file]         # self-contained HTML cost dashboard (.kaizen/state/cost-dashboard.html)
+node $K cost [item | current] [--since 90d] [--json]   # what each feature or fix cost, end to end (Jira key, plan or branch)
 ```
 
 Exit codes: 0 = OK, 1 = red check (verify, size, plan check, deploy, monitor breach…), 2 = usage error.
@@ -313,6 +314,7 @@ Declared in [`hooks/hooks.json`](hooks/hooks.json); they work without any action
 | `PostToolUse` (Bash) | `scripts/quality-gate.mjs --claim` | Ties the gate to the session that ran `gate on` |
 | `PostToolUse` (Agent/Task) | `scripts/review-hooks.mjs --evidence` | Logs the Kaizen reviewers actually launched (evidence required by `review record`) and the agents of the cycle |
 | `Stop` | `scripts/quality-gate.mjs` | Blocks the end of the turn while `verify` is red during `work`/`autopilot`; records the cycle's token usage |
+| `Stop` | `scripts/ledger-hook.mjs` | Charges every turn's new tokens (session and subagents) to the work item in progress — Jira key, plan or branch — for `kaizen cost`; never blocks |
 | `UserPromptSubmit` | `scripts/review-hooks.mjs --confirm` | Confirms a review waiver (`kaizen waive <code>`) or a protected deployment (`kaizen deploy <code>`) typed by the user |
 
 ### Environment variables

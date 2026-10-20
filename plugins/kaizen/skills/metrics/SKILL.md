@@ -37,6 +37,7 @@ than 10 changes → trends not significant).
 | Time to restore | from recorded incidents (`monitor`, detection → resolution) when there are real deployments, otherwise from postmortems (`detected` → `resolved`) |
 | Batch size | median and share above `pr.max_lines` — the first lever according to DORA |
 | Kaizen loop | new learnings, **read** (cited by a recent plan), **applied** (cited by a commit), never cited, constitution exceptions |
+| Work items | `work_items`: what each feature or fix cost end to end (every turn charged to the Jira key, plan or branch), median per kind (`by_kind`), the most expensive (`top`), share of tokens `unattributed` — local to the machine |
 | Friction | `friction`: push refusals by reason (`no_review`, `stale`, `blocked_verdict`) and source, median minutes blocked on push (`unblocked_median_minutes`), branches still blocked, waivers and their share of cleared pushes, quality gate blocks per check and releases (`max_blocks` reached), secrets refused — local to the machine |
 | Cycle cost | `cycle_cost`: closed work/autopilot cycles, median duration and tokens (main session + subagents), subagent share (`subagent_share`), tokens per role (`tokens_by_role`), share of cycles where the gate blocked — local to the machine |
 
@@ -44,6 +45,12 @@ than 10 changes → trends not significant).
 does not close (learnings not findable, badly tagged, or `learnings-researcher` not launched) →
 `/kaizen:prune-learnings` (starting with `learnings_never_cited_sample`) and check findability from
 `CLAUDE.md`.
+
+**Work items**: compare the median cost of a feature and of a fix with their outcomes (rework, failure
+rate). A fix costing as much as a feature → diagnosis is slow (`/kaizen:debug` with learnings and git
+history first) or the bugs are design debt; one item far above the median → read its plan and PR before
+concluding. A high `unattributed` share → work done on the default branch without a plan or a Jira-named
+branch: name branches after their ticket. `node "$K" cost <item>` details one.
 
 **Friction**: a guard rail is worth what it catches minus what it taxes. Read it with the outcomes
 (failure rate, rework): a rising **waiver share** means the review is felt as a tax — find out why

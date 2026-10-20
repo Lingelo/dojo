@@ -20,6 +20,7 @@ Declared in [`hooks/hooks.json`](../../hooks/hooks.json):
 | `PostToolUse` | `Bash` | `quality-gate.mjs --claim` | 10 s | no |
 | `PostToolUse` | `Agent\|Task` | `review-hooks.mjs --evidence` | 15 s | no |
 | `Stop` | — | `quality-gate.mjs` | 900 s | yes (exit 2) |
+| `Stop` | — | `ledger-hook.mjs` (charges the turn's tokens to the work item, see [metrics](metrics.md)) | 30 s | no |
 | `UserPromptSubmit` | — | `review-hooks.mjs --confirm` | 30 s | no |
 
 Common rules:

@@ -54,6 +54,8 @@ the work in progress.
 |---|---|---|---|
 | `gate.json` | `gate on`, Stop hook, `--claim` | active, plan, since, session, blocks, blocks_total, last_failure, usage, subagents | until `gate off` or 24 h |
 | `cycles.jsonl` | `gate off` | plan, since, ended, minutes, gate_blocks, usage (per model), subagents (per role and model) | kept |
+| `ledger.jsonl` | Stop hook `ledger-hook.mjs`, every turn with new tokens | at, session, item (Jira key, `plan:<topic>`, `branch:<name>` or `unattributed`), kind, title, branch, source, usage (per model), subagents | kept |
+| `ledger-cursor.json` | Stop hook `ledger-hook.mjs` | byte offset and last message ids per transcript already charged | kept |
 | `friction.jsonl` | every gate that stops the work (push, quality, secrets, deploy, state, tags — Claude Code and git hooks), `review record`, waivers | at, gate, kind (`refused`, `blocked`, `released`, `no_verify`, `review_recorded`, `waiver_requested`, `waiver_confirmed`), reason, branch, checks, source | kept |
 | `agent-runs.jsonl` | Agent hook during a cycle | at, session, type, role, model, agent_id, prompt start | cleared by `gate off` |
 | `reviews.json` | `review record`, waiver confirmation | per branch: head, tree, verdict, depth, reviewers, models, run, at (waiver: reason, confirmed_by) | replaced per branch |
