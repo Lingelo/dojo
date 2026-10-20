@@ -123,6 +123,12 @@ dependencies. The Stop-hook gate, `verify`, `size`, `plan check` and the review 
 experience: `prototype` for a prototype or internal tool, `product` for a product in production, `critical` for
 regulated or critical domains. See [Agents and models](agents-and-models.md) for the model side.
 
+The profile is a **floor**. A change touching a risk surface — auth, payment, sensitive data,
+migrations, public APIs, dependencies, or the team's own paths — runs one profile up for its cycle, so
+the billing module of an internal tool gets `product` and a migration on a payment service `critical`.
+`node $K profile` shows the profile in effect and why; see
+[configuration](../configuration.md#risk--the-profile-raised-by-the-change).
+
 ## Language
 
 Kaizen’s instructions are in English; Claude talks to you in your language. Deliverables (plans,

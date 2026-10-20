@@ -66,10 +66,20 @@ Stack and verification commands as JSON: `stacks` (e.g. `node (pnpm)`, `python`)
 SDLC maturity in five areas with a score each, and the to-do list by priority. `audit fix` writes a
 scaffold without ever overwriting a file. See [Audit](audit.md).
 
-### `models [--json] [--agent <name>]`
+### `profile [--json] [--plan <path> | --files a,b | --base <ref>]`
+
+The profile for this cycle: the repo's `profile`, raised one step (`prototype` → `product` →
+`critical`) when the change touches a risk surface. The files come from the branch's diff against its
+base (default), from a plan's units (`--plan`, their **Files:**) or from a list (`--files`). `--json`:
+`profile` (the repo's), `effective`, `escalated`, `source` (`branch`, `plan`, `files`), `files` (count),
+`surfaces` (`{surface: [files]}`), `reason`. See
+[configuration](../configuration.md#risk--the-profile-raised-by-the-change).
+
+### `models [--json] [--agent <name>] [--profile <p>]`
 
 The model of each role and agent for the current profile and configuration, with the source of each
 value and warnings for invalid entries. `--agent kaizen:security-reviewer` prints just that model.
+`--profile` resolves them for another profile — the skills pass the cycle's `effective` one.
 See [Agents and models](../concepts/agents-and-models.md#the-model-policy).
 
 ## Checks

@@ -6,7 +6,8 @@
 //   node kaizen.mjs githook pre-push|pre-commit   run by the git hooks of `audit fix git_hooks` (exit 1 refuses)
 //   node kaizen.mjs doctor [--in-skill] [--json] [--strict]   are the guard rails on (plugin declared, hooks
 //                                                 firing, git hooks wired, branch reviewed)? exit 1 with --strict
-//   node kaizen.mjs models [--json] [--agent a]  model of each agent per profile and config
+//   node kaizen.mjs models [--json] [--agent a] [--profile p]  model of each agent per profile and config
+//   node kaizen.mjs profile [--json] [--plan p | --files a,b | --base ref]  profile for this cycle (raised on a risk surface)
 //   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   project SDLC maturity
 //                                                 (fix git_hooks: .githooks/ + core.hooksPath; claude_settings: kaizen@dojo declared)
 //   node kaizen.mjs deploy request|run <env> [--ref r] | rollback <env> [--reason …] [--to r] | list [--env e]
@@ -67,6 +68,7 @@ import { releaseNotes } from './release.mjs';
 import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs';
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
+import { effectiveProfile } from './risk.mjs';
 import { audit, scaffold } from './audit.mjs';
 import { doctor, formatDoctor } from './doctor.mjs';
 import { preCommit, prePush } from './githooks.mjs';
@@ -644,6 +646,7 @@ function repoStatus(root) {
     uncommitted_files: dirty,
     initialized,
     profile: config.profile,
+    effective_profile: initialized ? riskProfile(root, config) : null,
     constitution,
     plans: plans.length,
     latest_plan: latest,
@@ -654,6 +657,16 @@ function repoStatus(root) {
     review: review ? { verdict: review.review?.verdict || null, depth: review.review?.depth || null, push_allowed: review.push.allowed, reason: review.push.reason, pending_waiver: Boolean(review.pending_waiver) } : null,
     next,
   };
+}
+
+// The profile this branch's cycle runs at, raised when its changes touch a risk surface.
+function riskProfile(root, config) {
+  try {
+    const p = effectiveProfile(root, config);
+    return { profile: p.effective, escalated: p.escalated, surfaces: Object.keys(p.surfaces) };
+  } catch {
+    return null;
+  }
 }
 
 // Open incidents, and incidents resolved less than 14 days ago without a postmortem whose detection
@@ -683,7 +696,7 @@ function cmdStatus(root) {
   if (flags.json) return out(st);
   const yes = (b) => (b ? '✔' : '✘');
   out(`Kaizen — ${st.branch || 'detached HEAD'}${st.ahead_of_base ? ` (+${st.ahead_of_base} commit(s))` : ''}${st.uncommitted_files ? `, ${st.uncommitted_files} modified file(s)` : ''}`);
-  out(`  ${yes(st.initialized)} initialized${st.initialized ? ` · profile ${st.profile}` : ''}`);
+  out(`  ${yes(st.initialized)} initialized${st.initialized ? ` · profile ${st.profile}${st.effective_profile?.escalated ? ` → ${st.effective_profile.profile} on this branch (${st.effective_profile.surfaces.join(', ')})` : ''}` : ''}`);
   out(`  ${yes(st.constitution.exists)} constitution${st.constitution.exists ? ` v${st.constitution.version}${st.constitution.draft ? ' (draft, not ratified)' : ''}${st.constitution.valid ? '' : ' (invalid)'}` : ''}`);
   out(`  · ${st.plans} plan(s)${st.latest_plan ? ` — latest: ${st.latest_plan.path} (${st.latest_plan.stage})` : ''} · ${st.learnings} learning(s)`);
   if (st.gate.active) out(`  ⚠ quality gate active since ${st.gate.since}`);
@@ -748,8 +761,31 @@ try {
       }
       break;
     }
+    case 'profile': {
+      const root = requireRepo();
+      const config = loadConfig(root);
+      const files = typeof flags.files === 'string' ? flags.files.split(',').map((f) => f.trim()).filter(Boolean) : undefined;
+      const plan = typeof flags.plan === 'string' ? resolve(root, flags.plan) : undefined;
+      if (plan && !existsSync(plan)) die(`plan not found: ${flags.plan}`);
+      const p = effectiveProfile(root, config, { files, plan, base: flags.base });
+      if (config.profile_warning) p.profile_warning = config.profile_warning;
+      if (flags.json) out(p);
+      else {
+        out(`Profile ${p.profile}${p.escalated ? ` → ${p.effective} for this cycle` : ''} (${p.source}, ${p.files} file(s))`);
+        out(`  ${p.reason}`);
+        for (const [s, list] of Object.entries(p.surfaces)) out(`  · ${s}: ${list.slice(0, 5).join(', ')}${list.length > 5 ? ` (+${list.length - 5})` : ''}`);
+        if (p.profile_warning) out(`  ⚠ ${p.profile_warning}`);
+      }
+      break;
+    }
     case 'models': {
-      const m = resolveModels(loadConfig(requireRepo()));
+      const config = loadConfig(requireRepo());
+      if (typeof flags.profile === 'string') {
+        const asked = PROFILE_ALIASES[flags.profile] || flags.profile;
+        if (!PROFILES.includes(asked)) die(`--profile expected: ${PROFILES.join(' | ')}`);
+        config.profile = asked;
+      }
+      const m = resolveModels(config);
       if (typeof flags.agent === 'string') {
         const a = m.agents[flags.agent.replace(/^kaizen:/, '')];
         if (!a) die(`unknown agent: ${flags.agent}`);

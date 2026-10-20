@@ -31,7 +31,8 @@ from the table when the verdict is obvious); the others become decisions.
 
 ## 3. Reviewers
 
-Depending on the **profile** (`node "$K" config` → `profile`): `prototype` → `plan check` + coherence only;
+Depending on the **profile** of the cycle (`node "$K" profile --json --plan <path>` → `effective`: raised
+one step when the units' files touch a risk surface): `prototype` → `plan check` + coherence only;
 `critical` → always add `kaizen:plan-adversarial-reviewer`. In `product` (default): always
 `kaizen:plan-coherence-reviewer` and `kaizen:plan-feasibility-reviewer`, plus:
 
@@ -44,7 +45,7 @@ Depending on the **profile** (`node "$K" config` → `profile`): `prototype` →
 
 Announce the team (one line per conditional reviewer and its reason). Read
 `${CLAUDE_PLUGIN_ROOT}/references/doc-review-contract.md` and launch **all** the reviewers **in a single
-message** (each reviewer's `model` read from `node "$K" models --json`), each with: the contract, the
+message** (each reviewer's `model` read from `node "$K" models --json --profile <effective>`), each with: the contract, the
 plan path (to read in full), the constitution (`node "$K" constitution --json`) and the applicable pack
 rules, the settled decisions (annotated Key Decisions, "decided in session" KTDs), and its lens.
 

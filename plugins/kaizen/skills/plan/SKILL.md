@@ -37,7 +37,8 @@ invalidates a decision made in session stops the writing: return `status: blocke
 ## Phase 1 — Research (parallel, a single message)
 
 Prepare a self-contained **work context** (goal, R/AE requirements, assumed modules, decisions under
-consideration) and launch as needed, each agent with its `model` (`node "$K" models --json`):
+consideration) and launch as needed, each agent with its `model` (`node "$K" models --json --profile <effective>`, the cycle's profile from
+`node "$K" profile --json --files <files the request will touch>`):
 
 | Agent | When |
 |---|---|
@@ -66,7 +67,8 @@ settling it in one KTD line.
   constitution (`status: draft`) is assessed too but blocks nothing: state the gap, carry on.
 - **Threats**: risk surface (auth, sensitive data, payment, external input, integration) →
   `kaizen:threats` section (lightweight STRIDE), each countermeasure carried by a unit. `critical` profile:
-  always.
+  always. Once the units are written, `node "$K" profile --json --plan <path>` gives the cycle's profile
+  (raised one step on a risk surface): apply that one, not the repo's.
 - **Rollout**: `kaizen:rollout` section — exposure (flag?), order, rollback, what is irreversible,
   signal to watch. Cite the signal by its name declared in `monitor.signals` (`node "$K" config`) with
   its threshold, `` `error_rate` > 1 % → rollback ``: that is what `/kaizen:deploy` will watch after the

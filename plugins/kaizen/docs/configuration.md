@@ -21,6 +21,7 @@ See the effective configuration: `node $K config`. Create the file: `/kaizen:set
   "language": "auto",
   "tracker": "auto",
   "profile": "product",
+  "risk": { "escalate": true, "paths": { "pricing": ["lib/pricing/**"] }, "ignore": ["tools/**"] },
   "verify": {
     "test": "pnpm vitest run",
     "lint": "pnpm eslint .",
@@ -98,6 +99,29 @@ with Kaizen: a team new to Kaizen on a payment service still wants `product` or 
 on a prototype is fine in `prototype`. Change it when the stakes change. An unknown value
 falls back to `product` and is reported by `node $K config` (`profile_warning`). The profile also sets
 each agent's model (see [`models`](#models--the-right-model-for-each-task)).
+
+### `risk` — the profile raised by the change
+
+Default: `{ "escalate": true, "paths": {}, "ignore": [] }`. The profile is a **floor**: a change that
+touches a risk surface runs **one profile up** for its cycle (`prototype` → `product` → `critical`;
+`critical` stays). `node $K profile` says which profile applies and why; `plan`, `doc-review`, `review`,
+`work` and `autopilot` use it for their ceremony and their models, and `status` shows it.
+
+Built-in surfaces, detected from paths (a path segment or a word of the file name: `src/auth/`,
+`user_session.rb`, never `author.ts`):
+
+| Surface | Examples |
+|---|---|
+| `auth` | `auth`, `oauth`, `sso`, `login`, `session`, `permission`, `role`, `rbac`, `jwt`, `password`, `mfa` |
+| `payment` | `payment`, `billing`, `checkout`, `invoice`, `stripe`, `subscription`, `refund`, `wallet`, `ledger` |
+| `sensitive_data` | `pii`, `gdpr`, `privacy`, `personal_data`, `medical`, `patient`, `kyc`, `consent`, `encryption` |
+| `migration` | `migrations/`, `alembic/`, `*.sql`, `schema.prisma`, `db/schema.rb` |
+| `public_api` | `openapi.*`, `swagger.*`, `*.proto`, `*.graphql` |
+| `dependencies` | `package.json`, `requirements*.txt`, `pyproject.toml`, `Gemfile`, `go.mod`, `Cargo.toml`, `pom.xml`, … |
+
+Markdown files, `.kaizen/` and the deliverables (`docs/plans/`, learnings, ADRs, postmortems) never
+count. `paths` adds the team's surfaces as globs (`{ "pricing": ["lib/pricing/**"] }`), `ignore` drops
+paths (globs), `escalate: false` keeps the surfaces reported without raising the profile.
 
 ### `verify`
 

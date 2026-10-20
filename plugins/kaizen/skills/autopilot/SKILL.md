@@ -43,7 +43,8 @@ Match the request to the skill whose job it is:
 short if need be), `work` under the gate, `node "$K" verify` and `kaizen:review`. Only simplification
 (step 3) is skipped for a small diff, and delivery (9-10) without a remote. Whoever wants a change
 without ceremony uses `/kaizen:work` directly, not `autopilot`. **Only exception: `prototype` profile**
-(`node "$K" config` → `profile`) — a change of ≤ ~30 lines with no risk surface (see `conventions.md`)
+(`node "$K" profile --json --files <files the change will touch>` → `effective` still `prototype`, i.e. no
+risk surface, see `conventions.md`) — a change of ≤ ~30 lines
 goes to `kaizen:work mode:return` with its 2 to 6 announced units, without a written plan; gate,
 `verify`, review and delivery stay identical.
 

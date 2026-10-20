@@ -29,7 +29,8 @@ Every deterministic operation goes through the CLI, never through a hand-made re
 K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"
 node "$K" status [--json]          # where the repo stands in the loop + next command (read by help)
 node "$K" doctor --in-skill        # are the guard rails on? (entry skills, see "Guard rails")
-node "$K" models [--json] [--agent a]           # model of each agent (profile + config): pass it to the Agent tool
+node "$K" profile [--json] [--plan p | --files a,b]   # profile for this cycle: the repo's, raised one step on a risk surface
+node "$K" models [--json] [--agent a] [--profile p]  # model of each agent (profile + config): pass it to the Agent tool
 node "$K" audit [--json] | audit fix <id>       # project SDLC maturity, scaffolds (ci, pr_template, dependabot, codeowners, gitignore_env, secret_scanning, monitor_patrol, monitor_alert, git_hooks, claude_settings)
 node "$K" deploy detect | deploy configure <id> # recognized deployment platform → config
 node "$K" root                     # paths: docs_root, plans, learnings, ideation (JSON)
@@ -83,9 +84,16 @@ No ⚠ → say nothing. The doctor never blocks: it informs.
 
 ## Adoption profile
 
-`node "$K" config` → `profile` scales the **ceremony**, never the deterministic gates: the Stop-hook
-quality gate, `verify`, `size`, `plan check` and the review required before `git push` stay active in
-every profile.
+The profile scales the **ceremony**, never the deterministic gates: the Stop-hook quality gate,
+`verify`, `size`, `plan check` and the review required before `git push` stay active in every profile.
+
+**The repo's profile is a floor; the risk raises it.** Read the profile of the cycle with
+`node "$K" profile --json` → `effective`, never `config` → `profile`: a change touching a risk surface
+(detected from paths — the branch's diff by default, `--plan <path>` for a plan's **Files:**, `--files`
+for the files a request will touch) runs **one profile up** for its cycle (`prototype` → `product` →
+`critical`). Say it in one line when `escalated` is true (`product → critical: payment touched`). Pass
+the same `effective` to `node "$K" models --json --profile <effective>`. The team adds its own surfaces
+(`risk.paths`), drops paths (`risk.ignore`) or turns escalation off (`risk.escalate: false`).
 
 | Point | `prototype` | `product` (default) | `critical` |
 |---|---|---|---|
@@ -96,7 +104,7 @@ every profile.
 | Capture | proposed only when the durability test is obvious | proposed | always assessed |
 
 A **risk surface**: auth, sessions, permissions, personal or payment data, migrations, public APIs,
-dependencies. The profile follows the **stakes of the repo**, not the team's experience with Kaizen:
+dependencies — plus the team's `risk.paths`. The profile follows the **stakes of the repo**, not the team's experience with Kaizen:
 `prototype` for a prototype, spike or internal tool, `product` for a product in production, `critical` for
 regulated or critical domains (payment, health, sensitive data at scale).
 
@@ -188,7 +196,8 @@ English.**
 
 ## Subagents
 
-**The right model for each agent.** Before launching agents, read `node "$K" models --json` once and
+**The right model for each agent.** Before launching agents, read
+`node "$K" models --json --profile <effective>` once (the cycle's profile, see "Adoption profile") and
 pass each `Agent` call that agent's `model` parameter (`agents.<name>.model`; `inherit` → pass none).
 A `general-purpose` subagent implementing a unit takes `roles.implement.model`. That is the team's
 policy (profile, then the config's `models`): do not change it "to go faster"; if an agent fails for

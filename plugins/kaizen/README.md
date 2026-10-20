@@ -156,7 +156,9 @@ appears in the PR.
 
 **Ceremony proportional to stakes.** `profile`: `prototype` (spike, internal tool), `product` (product in
 production), `critical` (regulated or critical domains). The profile sets the ceremony (plan size, number of
-reviewers, models), never the deterministic gates.
+reviewers, models), never the deterministic gates. It is a floor: a change touching a risk surface (auth,
+payment, migration, public API, dependencies, sensitive data, or the team's `risk.paths`) runs one profile
+up for its cycle.
 
 **From production to the next cycle.** Each plan says how to roll back and which signal to watch, with
 its threshold (`plan check` warns otherwise). `release` derives the production checklist from it,
@@ -252,7 +254,8 @@ node $K detect                                 # stack and verification commands
 node $K audit [--json] [--no-github]           # SDLC maturity in five areas
 node $K audit fix <ci|pr_template|dependabot|codeowners|gitignore_env|secret_scanning|monitor_patrol|monitor_alert|git_hooks|claude_settings> [--owner @x] [--env e] [--ref sha]
 node $K githook pre-push|pre-commit            # run by .githooks/ (audit fix git_hooks): exit 1 refuses
-node $K models [--json] [--agent a]            # model of each agent per profile and config
+node $K profile [--json] [--plan p | --files a,b]   # profile for this cycle: raised one step on a risk surface
+node $K models [--json] [--agent a] [--profile p]  # model of each agent per profile and config
 
 # Principles, plans, learnings
 node $K constitution [check] [--json]          # CONSTITUTION.md articles / validation
