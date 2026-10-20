@@ -1,0 +1,11 @@
+{
+  "name": "kaizen-ops",
+  "description": "Kaizen's production commands: watched deployments with typed approval and rollback, production signals and incidents, blameless postmortems. Runs on Kaizen core (kaizen@dojo), whose CLI and gates it uses.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Angelo LIMA",
+    "email": "contact@example.com"
+  },
+  "license": "MIT",
+  "keywords": ["deployment", "monitoring", "incidents", "postmortem", "kaizen"]
+}
