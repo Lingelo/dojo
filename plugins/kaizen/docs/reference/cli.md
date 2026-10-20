@@ -201,6 +201,16 @@ recorded with `gaps`. Prints the entry: branch, head, tree, verdict,
 depth (`agents` | `light` | `update`), reviewers, models, run, at. `reserves` is accepted for
 `concerns`.
 
+### `review estimate --reviewers a,b [--profile <p>] [--base <ref>] [--json]`
+
+What a review will cost before it runs: for each reviewer (`correctness`, `security-reviewer` or
+`kaizen:adversarial-reviewer`), its model under the profile (`--profile`: the cycle's, see `profile`),
+its tokens and its cost in relative units (`review.cost_weights`). Tokens per reviewer: the mean of the
+review agents recorded in this repo's cycles once there are at least 5 (`source: history`), otherwise
+60,000 + 150 per changed line, new files included (`source: heuristic`). `--json`: `reviewers`,
+`total_tokens`, `cost`, `by_model`, `confirm` (above `review.confirm_above_cost`), `source`, `method`.
+An order of magnitude, not a bill.
+
 ### `review waive --reason "…"`
 
 Creates a pending waiver for the branch and prints `{ code, expires_in_minutes: 30, instruction }`. Only

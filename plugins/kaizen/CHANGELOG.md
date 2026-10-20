@@ -2,6 +2,17 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.6.0] - 2026-10-20
+
+### Added
+- **`review estimate`**: what a review will cost before it runs — tokens and relative cost per
+  reviewer and per model, under the cycle's profile. Calibrated on this repo's history (mean of the
+  review agents recorded by `gate off`, once there are 5) or a heuristic on the diff, new files
+  included. `/kaizen:review` announces it with the selection, and asks before launching above
+  `review.confirm_above_cost`, proposing which conditional reviewers to drop. `review.cost_weights`
+  sets the weight of each model (your price per million tokens reads it in your currency).
+- Cycles now count subagents per role (`subagents.by_role.<role>.agents`).
+
 ## [3.5.0] - 2026-10-20
 
 ### Added

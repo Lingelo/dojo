@@ -36,7 +36,7 @@
 //   node kaizen.mjs packs [--json] [--refresh]   rules of the declared Kaizen Packs
 //   node kaizen.mjs pack new <name>              creates and declares a local pack
 //   node kaizen.mjs gate on [--plan p] | off | status      Stop-hook quality gate
-//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] [--allow-missing a,b] | waive --reason "…" | status
+//   node kaizen.mjs review record --verdict ready|concerns|blocked [--run d] [--allow-missing a,b] | waive --reason "…" | status | estimate --reviewers a,b [--profile p]
 //                  | check [--branch b --sha s]
 //                                                 reviewed state per branch, required by the hook before git push;
 //                                                 record requires reviewers that actually ran (except a light
@@ -69,6 +69,7 @@ import { deploy, deployments, flag, requestDeploy, rollback } from './deploy.mjs
 import { configureDeploy, detectDeploy } from './deploydetect.mjs';
 import { ROLE_LABELS, resolveModels } from './models.mjs';
 import { effectiveProfile } from './risk.mjs';
+import { estimateReview } from './estimate.mjs';
 import { audit, scaffold } from './audit.mjs';
 import { doctor, formatDoctor } from './doctor.mjs';
 import { preCommit, prePush } from './githooks.mjs';
@@ -934,12 +935,28 @@ try {
       }
       else if (sub === 'waive') out(requestWaiver(root, { reason: typeof flags.reason === 'string' ? flags.reason : null }));
       else if (sub === 'status') out(reviewStatus(root));
-      else if (sub === 'check') {
+      else if (sub === 'estimate') {
+        const config = loadConfig(root);
+        const reviewers = typeof flags.reviewers === 'string' ? flags.reviewers.split(',').map((r) => r.trim()).filter(Boolean) : [];
+        if (!reviewers.length) die('usage: review estimate --reviewers a,b [--profile p] [--base ref] [--json]');
+        const asked = typeof flags.profile === 'string' ? PROFILE_ALIASES[flags.profile] || flags.profile : undefined;
+        if (asked && !PROFILES.includes(asked)) die(`--profile expected: ${PROFILES.join(' | ')}`);
+        const e = estimateReview(root, config, { reviewers, profile: asked, base: typeof flags.base === 'string' ? flags.base : undefined });
+        if (flags.json) out(e);
+        else {
+          const k = (n) => `${Math.round(n / 1000)}k`;
+          out(`Review estimate — ${e.reviewers.length} reviewer(s), ${e.lines} line(s), profile ${e.profile}: ~${k(e.total_tokens)} tokens, ${e.cost} cost unit(s)`);
+          for (const [m, v] of Object.entries(e.by_model)) out(`  ${m.padEnd(8)} ${String(v.reviewers).padStart(2)} reviewer(s)  ~${k(v.tokens).padStart(5)} tokens  ${v.cost}`);
+          out(`  ${e.source}: ${e.method}`);
+          if (e.unknown.length) out(`  ⚠ unknown reviewer(s): ${e.unknown.join(', ')}`);
+          if (e.confirm) out(`  ⚠ above review.confirm_above_cost (${e.confirm_above_cost}): ask before launching`);
+        }
+      } else if (sub === 'check') {
         const str = (v) => (typeof v === 'string' ? v : null);
         const res = checkPush(root, undefined, { branch: str(flags.branch), sha: str(flags.sha) });
         out(res);
         process.exit(res.allowed ? 0 : 1);
-      } else die('usage: review record --verdict ready|concerns|blocked [--run <folder>] | review waive --reason "…" | review status | review check [--branch b --sha s]');
+      } else die('usage: review record --verdict ready|concerns|blocked [--run <folder>] | review waive --reason "…" | review status | review check [--branch b --sha s] | review estimate --reviewers a,b');
       break;
     }
     case 'constitution': {

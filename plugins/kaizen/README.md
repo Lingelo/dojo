@@ -280,6 +280,7 @@ node $K run-dir <type>                         # local run folder (e.g. reviews)
 
 # Review and PR
 node $K review record --verdict ready|concerns|blocked [--run d] [--allow-missing a]   # requires reviewers that ran, and their outputs
+node $K review estimate --reviewers a,b [--profile p]   # tokens and relative cost of a review, before launching it
 node $K review waive --reason "…" | review status | review check [--branch b --sha s]  # waiver = code typed by the user
 node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch [--pr n] [--repo o/r] …
 

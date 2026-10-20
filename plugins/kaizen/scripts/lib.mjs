@@ -44,7 +44,9 @@ export const DEFAULT_CONFIG = {
   // Risk surfaces raise the profile one step for the cycle (scripts/risk.mjs): team globs per surface.
   risk: { escalate: true, paths: {}, ignore: [] },
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
-  review: { require_before_push: true, max_unreviewed_lines: 80 },
+  // cost_weights: relative weight of a million tokens per model; confirm_above_cost: ask before a
+  // review estimated above it (null = never ask).
+  review: { require_before_push: true, max_unreviewed_lines: 80, cost_weights: {}, confirm_above_cost: null },
   // Deployment and monitoring: the team's commands, Kaizen knows no platform.
   deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, timeout_seconds: 1800, flags: {} },
   monitor: { signals: {}, interval_seconds: 60, consecutive: 2 },
@@ -636,6 +638,8 @@ export function subagentUsage(file, since, launches = []) {
     result.agents++;
     addUsage(result.usage, usage);
     result.by_role[role] = addUsage(result.by_role[role] || emptyUsage(), usage);
+    // Agents per role: what a review agent costs on average (estimate.mjs).
+    result.by_role[role].agents = (result.by_role[role].agents || 0) + 1;
   }
   return result;
 }
