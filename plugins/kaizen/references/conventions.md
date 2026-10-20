@@ -34,7 +34,7 @@ node "$K" audit [--json] | audit fix <id>       # project SDLC maturity, scaffol
 node "$K" deploy detect | deploy configure <id> # recognized deployment platform → config
 node "$K" root                     # paths: docs_root, plans, learnings, ideation (JSON)
 node "$K" config                   # effective configuration
-node "$K" init [--profile lean]    # creates .kaizen/config.json and the deliverable folders
+node "$K" init [--profile prototype]    # creates .kaizen/config.json and the deliverable folders
 node "$K" detect                   # stack + verification commands
 node "$K" verify [--only test]     # runs the checks (exit 1 if red)
 node "$K" perf                     # performance budget, when configured (exit 1 over, 2 blind)
@@ -87,7 +87,7 @@ No ⚠ → say nothing. The doctor never blocks: it informs.
 quality gate, `verify`, `size`, `plan check` and the review required before `git push` stay active in
 every profile.
 
-| Point | `lean` | `standard` (default) | `full` |
+| Point | `prototype` | `product` (default) | `critical` |
 |---|---|---|---|
 | Plan | short: requirements, units, verification; threats and rollout only if the diff touches a risk surface or production | complete | complete, threats and rollout always |
 | `doc-review` | `plan check` + coherence only | coherence, feasibility + conditional ones | every relevant reviewer, adversarial always |
@@ -97,7 +97,7 @@ every profile.
 
 A **risk surface**: auth, sessions, permissions, personal or payment data, migrations, public APIs,
 dependencies. The profile follows the **stakes of the repo**, not the team's experience with Kaizen:
-`lean` for a prototype, spike or internal tool, `standard` for a product in production, `full` for
+`prototype` for a prototype, spike or internal tool, `product` for a product in production, `critical` for
 regulated or critical domains (payment, health, sensitive data at scale).
 
 ## Push gate

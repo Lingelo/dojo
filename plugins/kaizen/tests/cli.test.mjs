@@ -318,15 +318,29 @@ test('metrics: learnings cited by a plan, applied in a commit, never cited', () 
   cleanup(dir);
 });
 
-test('profile: standard by default, init --profile, unknown value reported without breaking', () => {
+test('profile: product by default, init --profile, unknown value reported without breaking', () => {
   const dir = tempRepo({});
   assert.notEqual(cli(dir, ['init', '--profile', 'turbo']).code, 0);
-  cli(dir, ['init', '--profile', 'lean']);
-  assert.equal(cli(dir, ['config']).json.profile, 'lean');
+  cli(dir, ['init', '--profile', 'prototype']);
+  assert.equal(cli(dir, ['config']).json.profile, 'prototype');
   writeFiles(dir, { '.kaizen/config.local.json': { profile: 'turbo' } });
   const c = cli(dir, ['config']).json;
-  assert.equal(c.profile, 'standard');
+  assert.equal(c.profile, 'product');
   assert.match(c.profile_warning, /turbo/);
+  cleanup(dir);
+});
+
+test('profile: former names lean/standard/full still apply, reported as deprecated', () => {
+  const dir = tempRepo({});
+  cli(dir, ['init', '--profile', 'full']);
+  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/config.json'), 'utf8')).profile, 'critical', 'init writes the new name');
+  for (const [old, now] of [['lean', 'prototype'], ['standard', 'product'], ['full', 'critical']]) {
+    writeFiles(dir, { '.kaizen/config.local.json': { profile: old } });
+    const c = cli(dir, ['config']).json;
+    assert.equal(c.profile, now);
+    assert.match(c.profile_warning, new RegExp(`deprecated profile: "${old}".*"${now}"`));
+    assert.equal(cli(dir, ['models', '--json']).json.profile, now);
+  }
   cleanup(dir);
 });
 

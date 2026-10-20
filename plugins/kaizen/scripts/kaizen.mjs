@@ -20,7 +20,7 @@
 //   node kaizen.mjs monitor alert [--env e] [--file f|-]   Alertmanager/PagerDuty/Datadog/JSON alert → incident
 //   node kaizen.mjs monitor incident open|resolve --env e [--at iso] [--summary …] | list [--env e]
 //   node kaizen.mjs config                       effective configuration (JSON)
-//   node kaizen.mjs init [--docs-root d] [--language en] [--profile lean|standard|full]   initializes .kaizen/ and the folders
+//   node kaizen.mjs init [--docs-root d] [--language en] [--profile prototype|product|critical]   initializes .kaizen/ and the folders
 //   node kaizen.mjs detect                       stack and verification commands (JSON)
 //   node kaizen.mjs verify [--only test,lint] [--json]     runs the checks (exit 1 if red)
 //   node kaizen.mjs perf [--json]                performance budget (config perf): exit 0 pass, 1 over budget, 2 blind
@@ -77,6 +77,7 @@ import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } f
 import {
   DEFAULT_CONFIG,
   PROFILES,
+  PROFILE_ALIASES,
   defaultBranch,
   diffBase,
   diffSize,
@@ -149,6 +150,7 @@ function cmdInit(root) {
   mkdirSync(dir, { recursive: true });
   const file = join(dir, 'config.json');
   const created = [];
+  if (PROFILE_ALIASES[flags.profile]) flags.profile = PROFILE_ALIASES[flags.profile];
   if (flags.profile && !PROFILES.includes(flags.profile)) die(`--profile expected: ${PROFILES.join(' | ')}`);
   if (!existsSync(file)) {
     const config = {

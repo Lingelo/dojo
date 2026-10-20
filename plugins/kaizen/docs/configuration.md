@@ -11,7 +11,7 @@ Kaizen is configured per repo, in two JSON files:
 decision: it is only read from `config.json`.
 
 See the effective configuration: `node $K config`. Create the file: `/kaizen:setup` or `node $K init`
-(`--profile lean|standard|full`, `--language en`, `--docs-root <dir>`).
+(`--profile prototype|product|critical`, `--language en`, `--docs-root <dir>`).
 
 ## Full example
 
@@ -20,7 +20,7 @@ See the effective configuration: `node $K config`. Create the file: `/kaizen:set
   "docs_root": "docs",
   "language": "auto",
   "tracker": "auto",
-  "profile": "standard",
+  "profile": "product",
   "verify": {
     "test": "pnpm vitest run",
     "lint": "pnpm eslint .",
@@ -84,19 +84,19 @@ messages (`feat(SHOP-412): …`) and in the plans' frontmatter.
 
 ### `profile`
 
-Default: `"standard"`. Scales the cycle's **ceremony**, never the deterministic gates (`Stop`-hook
+Default: `"product"`. Scales the cycle's **ceremony**, never the deterministic gates (`Stop`-hook
 quality gate, `verify`, `size`, `plan check`, review required before `git push`).
 
 | Profile | For whom | What changes |
 |---|---|---|
-| `lean` | prototype, spike, internal tool: a defect is cheap to fix | short plan (threats and rollout only on a risk surface), `doc-review` reduced to `plan check` + coherence, review at the core + security if needed, `autopilot` without a written plan for a change ≤ ~30 lines with no risk |
-| `standard` | a product in production (default) | the cycle as described in the guides |
-| `full` | regulated or critical domains (payment, health, sensitive data at scale) | threats and rollout always, adversarial reviewer always on the plan and from the targeted review |
+| `prototype` | prototype, spike, internal tool: a defect is cheap to fix | short plan (threats and rollout only on a risk surface), `doc-review` reduced to `plan check` + coherence, review at the core + security if needed, `autopilot` without a written plan for a change ≤ ~30 lines with no risk |
+| `product` | a product in production (default) | the cycle as described in the guides |
+| `critical` | regulated or critical domains (payment, health, sensitive data at scale) | threats and rollout always, adversarial reviewer always on the plan and from the targeted review |
 
 Choose it by the **stakes of the repo** (what a defect costs once shipped), not by the team's experience
-with Kaizen: a team new to Kaizen on a payment service still wants `standard` or `full`, a seasoned team
-on a prototype is fine in `lean`. Change it when the stakes change. An unknown value
-falls back to `standard` and is reported by `node $K config` (`profile_warning`). The profile also sets
+with Kaizen: a team new to Kaizen on a payment service still wants `product` or `critical`, a seasoned team
+on a prototype is fine in `prototype`. Change it when the stakes change. An unknown value
+falls back to `product` and is reported by `node $K config` (`profile_warning`). The profile also sets
 each agent's model (see [`models`](#models--the-right-model-for-each-task)).
 
 ### `verify`
@@ -258,7 +258,7 @@ recorded as `incident/<env>/…` tags, resolved by a rollback or a `resolve/<env
 Each agent has a **role**, each role a model (`haiku`, `sonnet`, `opus`, or `inherit` = the session's
 one). The defaults depend on the profile:
 
-| Role | Agents | `lean` | `standard` | `full` |
+| Role | Agents | `prototype` | `product` | `critical` |
 |---|---|---|---|---|
 | `research` | repo, learnings, git-historian, docs, flow-analyst | haiku | sonnet | sonnet |
 | `review` | correctness, testing, performance, reliability, api-contract, maintainability, standards | sonnet | sonnet | opus |

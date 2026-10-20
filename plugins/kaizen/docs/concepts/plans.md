@@ -57,7 +57,7 @@ markers never change, because tools find sections by them.
 | `<!-- kaizen:relationships -->` | How this work fits with the parts split out of it | brainstorm | if the topic was split |
 | `<!-- kaizen:planning -->` | Key technical decisions `KTD1…`, patterns to follow (exact paths), learnings and pack rules applied | plan | ready plan |
 | `<!-- kaizen:constitution -->` | Table: article · verdict (✅ / ⚠️ exception) · justification | plan | if `CONSTITUTION.md` exists |
-| `<!-- kaizen:threats -->` | Lightweight STRIDE on new or changed flows | plan | on a risk surface (`full`: always) |
+| `<!-- kaizen:threats -->` | Lightweight STRIDE on new or changed flows | plan | on a risk surface (`critical`: always) |
 | `<!-- kaizen:rollout -->` | **Exposure**, **Order**, **Rollback**, **Signal** with threshold | plan | as soon as it reaches production |
 | `<!-- kaizen:units -->` | Implementation units `U1…` | plan | ready plan |
 | `<!-- kaizen:verification -->` | Real commands, targeted checks, what proves each AE | plan | ready plan |

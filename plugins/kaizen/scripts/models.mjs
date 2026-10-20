@@ -1,7 +1,7 @@
 // Kaizen — the right model for each task.
 //
-// Each agent of the plugin has a **role**; each role has a model per **profile** (lean, standard,
-// full), which the team can adjust in `.kaizen/config.json → models` (per role or per agent). Skills
+// Each agent of the plugin has a **role**; each role has a model per **profile** (prototype,
+// product, critical), which the team can adjust in `.kaizen/config.json → models` (per role or per agent). Skills
 // read `kaizen.mjs models --json` and pass that model to every Agent tool call.
 //
 // Principle: bulk reading and synthesis (research) rarely cost much when wrong; judgments whose errors
@@ -30,9 +30,9 @@ export const ROLE_LABELS = {
 };
 
 export const PROFILE_MODELS = {
-  lean: { research: 'haiku', review: 'sonnet', review_critical: 'sonnet', plan_review: 'haiku', plan_review_critical: 'sonnet', implement: 'sonnet' },
-  standard: { research: 'sonnet', review: 'sonnet', review_critical: 'opus', plan_review: 'sonnet', plan_review_critical: 'opus', implement: 'sonnet' },
-  full: { research: 'sonnet', review: 'opus', review_critical: 'opus', plan_review: 'opus', plan_review_critical: 'opus', implement: 'inherit' },
+  prototype: { research: 'haiku', review: 'sonnet', review_critical: 'sonnet', plan_review: 'haiku', plan_review_critical: 'sonnet', implement: 'sonnet' },
+  product: { research: 'sonnet', review: 'sonnet', review_critical: 'opus', plan_review: 'sonnet', plan_review_critical: 'opus', implement: 'sonnet' },
+  critical: { research: 'sonnet', review: 'opus', review_critical: 'opus', plan_review: 'opus', plan_review_critical: 'opus', implement: 'inherit' },
 };
 
 export function roleOf(agent) {
@@ -42,7 +42,7 @@ export function roleOf(agent) {
 
 // { profile, roles: {role: {model, source}}, agents: {agent: {role, model, source}}, warnings }
 export function resolveModels(config) {
-  const profile = PROFILE_MODELS[config.profile] ? config.profile : 'standard';
+  const profile = PROFILE_MODELS[config.profile] ? config.profile : 'product';
   const custom = config.models || {};
   const warnings = [];
   const valid = (v, where) => {

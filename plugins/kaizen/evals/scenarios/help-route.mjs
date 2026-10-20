@@ -5,7 +5,7 @@ import { CONSTITUTION, SHOP } from '../fixtures.mjs';
 export default {
   name: 'help-route',
   timeoutMinutes: 8,
-  files: { ...SHOP, 'CONSTITUTION.md': CONSTITUTION, '.kaizen/config.json': { profile: 'lean', verify: { test: 'node --test' } } },
+  files: { ...SHOP, 'CONSTITUTION.md': CONSTITUTION, '.kaizen/config.json': { profile: 'prototype', verify: { test: 'node --test' } } },
   steps: [{ branch: 'feat/SHOP-7-discount', files: { 'src/discount.js': 'export const discount = (t) => t * 0.9;\n' }, commit: 'feat(SHOP-7): discount' }],
   prompt: '/kaizen:help I want to ship my branch, what do I run?',
   checks: [

@@ -65,12 +65,12 @@ settling it in one KTD line.
   cannot be respected blocks the plan (capsule: open blocker) — do not work around it. A **draft**
   constitution (`status: draft`) is assessed too but blocks nothing: state the gap, carry on.
 - **Threats**: risk surface (auth, sensitive data, payment, external input, integration) →
-  `kaizen:threats` section (lightweight STRIDE), each countermeasure carried by a unit. `full` profile:
+  `kaizen:threats` section (lightweight STRIDE), each countermeasure carried by a unit. `critical` profile:
   always.
 - **Rollout**: `kaizen:rollout` section — exposure (flag?), order, rollback, what is irreversible,
   signal to watch. Cite the signal by its name declared in `monitor.signals` (`node "$K" config`) with
   its threshold, `` `error_rate` > 1 % → rollback ``: that is what `/kaizen:deploy` will watch after the
-  release. Signal needed but not declared → say so in the plan (to add to the config). `lean` profile:
+  release. Signal needed but not declared → say so in the plan (to add to the config). `prototype` profile:
   only if the change reaches production in a way that is hard to undo (migration, public API, data);
   otherwise one line is enough.
 

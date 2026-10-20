@@ -95,7 +95,7 @@
 <text class="t12" x="436" y="299" text-anchor="middle">plan mode:return</text>
 <path class="line" d="M314,295 L334,295" marker-end="url(#h-default)"/>
 <rect class="gate" x="562" y="274" width="270" height="42" rx="8" stroke-width="1.5"/>
-<text class="t12" x="697" y="299" text-anchor="middle">lean: ≤ ~30 lines, no risk surface</text>
+<text class="t12" x="697" y="299" text-anchor="middle" style="font-size:11.6px">prototype: ≤ ~30 lines, no risk surface</text>
 <rect class="skill" x="852" y="274" width="204" height="42" rx="8" stroke-width="1.5"/>
 <text class="t12" x="954" y="299" text-anchor="middle">work, no written plan</text>
 <path class="line" d="M832,295 L852,295" marker-end="url(#h-default)"/>

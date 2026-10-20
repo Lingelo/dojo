@@ -154,8 +154,8 @@ requires evidence: a hook logs the reviewers actually launched, the agent cannot
 did not happen. Only the user can waive it, by typing the confirmation code themselves, and the waiver
 appears in the PR.
 
-**Ceremony proportional to stakes.** `profile`: `lean` (prototype, internal tool), `standard` (product in
-production), `full` (regulated or critical domains). The profile sets the ceremony (plan size, number of
+**Ceremony proportional to stakes.** `profile`: `prototype` (spike, internal tool), `product` (product in
+production), `critical` (regulated or critical domains). The profile sets the ceremony (plan size, number of
 reviewers, models), never the deterministic gates.
 
 **From production to the next cycle.** Each plan says how to roll back and which signal to watch, with
@@ -216,7 +216,7 @@ kaizen-packs/<pack>/         prescriptive team rules
 {
   "docs_root": "docs",
   "language": "auto",
-  "profile": "standard",
+  "profile": "product",
   "tracker": "auto",
   "verify": { "test": "pnpm vitest run", "lint": "pnpm eslint ." },
   "gate": { "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "max_age_hours": 24 },
@@ -246,7 +246,7 @@ K=plugins/kaizen/scripts/kaizen.mjs
 node $K status [--json]                        # where the repo stands in the loop, and the next command
 node $K root                                   # deliverable paths (JSON)
 node $K doctor [--in-skill] [--json] [--strict]   # are the guard rails on? plugin declared, hooks, git hooks, review
-node $K init [--docs-root d] [--language en] [--profile lean|standard|full]   # .kaizen/ and the folders
+node $K init [--docs-root d] [--language en] [--profile prototype|product|critical]   # .kaizen/ and the folders
 node $K config                                 # effective configuration (JSON)
 node $K detect                                 # stack and verification commands (JSON)
 node $K audit [--json] [--no-github]           # SDLC maturity in five areas

@@ -23,10 +23,10 @@ Share the [document reviewer contract](../../references/doc-review-contract.md).
 | Agent | When | Lens |
 |---|---|---|
 | `plan-coherence-reviewer` | always | contradictions, vocabulary drift, broken references, ambiguities, R/AE/U traceability |
-| `plan-feasibility-reviewer` | always (standard, full) | can the approach work with the code’s real capabilities: interfaces, dependencies, ordering, migrations, volumes, failure paths |
+| `plan-feasibility-reviewer` | always (product, critical) | can the approach work with the code’s real capabilities: interfaces, dependencies, ordering, migrations, volumes, failure paths |
 | `plan-scope-reviewer` | every ready plan | unrequested mechanisms, drift from requirements, slices too big, simplicity and small batches |
 | `plan-security-reviewer` | auth, sensitive data, payment, exposed endpoints, integrations | threat model (STRIDE), trust boundaries, secrets |
-| `plan-adversarial-reviewer` | high stakes, new abstraction, no prior brainstorm, widened scope (always in `full`) | attacks the premises: right problem? right solution? predicted outcomes? |
+| `plan-adversarial-reviewer` | high stakes, new abstraction, no prior brainstorm, widened scope (always in `critical`) | attacks the premises: right problem? right solution? predicted outcomes? |
 | `plan-design-reviewer` | user interface | empty/loading/error states, journeys, accessibility, responsiveness, consistency |
 
 ## Code reviewers (`/kaizen:review`)
@@ -59,7 +59,7 @@ Each agent has a **role**; each role a model per **profile**. Principle: bulk re
 rarely cost much when wrong; judgments whose errors are expensive (security, migrations, adversarial,
 plan decisions) get the strongest model.
 
-| Role | Agents | `lean` | `standard` | `full` |
+| Role | Agents | `prototype` | `product` | `critical` |
 |---|---|---|---|---|
 | `research` | the five researchers | haiku | sonnet | sonnet |
 | `review` | correctness, testing, performance, rendering, reliability, api-contract, maintainability, standards | sonnet | sonnet | opus |
@@ -78,7 +78,7 @@ plan decisions) get the strongest model.
 ```
 
 Valid values: `haiku`, `sonnet`, `opus`, `inherit`; unknown roles, agents or models are reported and
-ignored. `node $K models` prints the effective policy with each value’s source (`profile standard` or
+ignored. `node $K models` prints the effective policy with each value’s source (`profile product` or
 `config`), `--agent <name>` one agent’s model, `--json` the whole structure that skills read.
 
 Skills must not change the policy "to go faster"; if an agent fails for lack of capability, it is

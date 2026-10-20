@@ -30,15 +30,17 @@ export function repoRoot(cwd = process.cwd()) {
   }
 }
 
-// Adoption profiles: ceremony scales, deterministic gates stay.
-export const PROFILES = ['lean', 'standard', 'full'];
+// Adoption profiles, named after the repo's stakes: ceremony scales, deterministic gates stay.
+export const PROFILES = ['prototype', 'product', 'critical'];
+// Names before 3.4.0, still read (reported as deprecated by `config`).
+export const PROFILE_ALIASES = { lean: 'prototype', standard: 'product', full: 'critical' };
 
 export const DEFAULT_CONFIG = {
   docs_root: 'docs',
   language: 'auto',
   tracker: 'auto',
   verify: {},
-  profile: 'standard',
+  profile: 'product',
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
   review: { require_before_push: true, max_unreviewed_lines: 80 },
   // Deployment and monitoring: the team's commands, Kaizen knows no platform.
@@ -82,10 +84,14 @@ export function loadConfig(root) {
     roles: { ...(base.models?.roles || {}), ...(local.models?.roles || {}) },
     agents: { ...(base.models?.agents || {}), ...(local.models?.agents || {}) },
   };
-  // A mistyped profile must not break the hooks: fall back to "standard", reported by `config`.
-  if (!PROFILES.includes(merged.profile)) {
-    merged.profile_warning = `unknown profile: "${merged.profile}" (expected: ${PROFILES.join(', ')}) — "standard" applied`;
-    merged.profile = 'standard';
+  // A former name still applies; a mistyped profile must not break the hooks: fall back to
+  // "product". Both are reported by `config`.
+  if (PROFILE_ALIASES[merged.profile]) {
+    merged.profile_warning = `deprecated profile: "${merged.profile}" — rename it "${PROFILE_ALIASES[merged.profile]}" in .kaizen/config.json`;
+    merged.profile = PROFILE_ALIASES[merged.profile];
+  } else if (!PROFILES.includes(merged.profile)) {
+    merged.profile_warning = `unknown profile: "${merged.profile}" (expected: ${PROFILES.join(', ')}) — "product" applied`;
+    merged.profile = 'product';
   }
   if (base.docs_root) merged.docs_root = base.docs_root;
   return merged;

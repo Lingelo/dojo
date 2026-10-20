@@ -38,7 +38,7 @@ In depth: [the loop](../concepts/the-loop.md#autopilot).
 
 No shortcut for a "small" change: plan, gate, `verify` and review always run. Only simplification (small
 diff) and shipping (no remote) can be skipped.
-**Exception, `lean` profile**: a change of about 30 lines, with no risky surface (auth, sensitive data,
+**Exception, `prototype` profile**: a change of about 30 lines, with no risky surface (auth, sensitive data,
 migration, public API, dependency), goes straight into `work` without a written plan. Gate, `verify`,
 review and shipping stay the same. See [Configuration](../configuration.md#profile).
 

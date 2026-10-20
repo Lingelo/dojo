@@ -94,10 +94,10 @@ For a project starting with Kaizen, or one that wants to know what it is missing
      Hooks already in use (husky, `.git/hooks`) → nothing is shadowed: relay the `chain` lines. Each
      clone wires them once with `git config core.hooksPath .githooks` (`doctor` reminds it).
 10. **Profile** — ask (one question), chosen by the **stakes of the repo**, never by the team's
-   experience with Kaizen: **lean** (prototype, spike, internal tool: minimal ceremony, gates kept) ·
-   **standard** (a product in production) · **full** (regulated or critical domains: payment, health,
+   experience with Kaizen: **prototype** (prototype, spike, internal tool: minimal ceremony, gates kept) ·
+   **product** (a product in production) · **critical** (regulated or critical domains: payment, health,
    sensitive data at scale). Mark as Recommended the one the repo suggests (deployment detected, risk
-   surfaces, domain); unsure → **standard**. The profile also sets
+   surfaces, domain); unsure → **product**. The profile also sets
    **each agent's model** (`node "$K" models`): show it, and offer to adjust a role (`models.roles`)
    or an agent (`models.agents`) if the team has a cost or quality constraint. Write `profile` in
    `.kaizen/config.json`. Team of several people → propose `approvers` in `CONSTITUTION.md` and a
@@ -105,7 +105,7 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    before any `git push` of a branch (`review.require_before_push`) and that only the team can choose
    to relax it.
 11. **Summary** — open it with the **profile in effect and what it costs**, on its own line, before anything
-   else: e.g. "Profile **lean**: code review on sonnet, critical review on sonnet (opus in standard) — change
+   else: e.g. "Profile **prototype**: code review on sonnet, critical review on sonnet (opus in product) — change
    it with `profile` in `.kaizen/config.json`". It decides the price and depth of every later review, so it
    is never buried among the assumptions, least of all when it was chosen without asking. Then the health
    check above and the command to run next

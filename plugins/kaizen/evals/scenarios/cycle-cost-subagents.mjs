@@ -6,7 +6,7 @@ import { SHOP } from '../fixtures.mjs';
 export default {
   name: 'cycle-cost-subagents',
   timeoutMinutes: 8,
-  files: { ...SHOP, '.kaizen/config.json': { profile: 'lean', verify: { test: 'node --test' } } },
+  files: { ...SHOP, '.kaizen/config.json': { profile: 'prototype', verify: { test: 'node --test' } } },
   steps: [{ run: ['gate', 'on'] }],
   prompt:
     'With the Agent tool, launch the kaizen:repo-researcher subagent with the question "where and how is an order\'s total including tax computed?". ' +

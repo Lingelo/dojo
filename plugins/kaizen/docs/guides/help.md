@@ -31,7 +31,7 @@ In depth: [the loop](../concepts/the-loop.md#knowing-where-you-are).
 
 ```text
 Kaizen — feat/SHOP-12-export (+3 commit(s))
-  ✔ initialized · profile lean
+  ✔ initialized · profile prototype
   ✔ constitution v1.1.0
   · 4 plan(s) — latest: docs/plans/2026-10-04-feat-export-plan.md (implementation-ready) · 7 learning(s)
   ✘ push: no review recorded for this branch

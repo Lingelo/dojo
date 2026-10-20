@@ -1,4 +1,4 @@
-// /kaizen:review launches each reviewer with the policy's model (standard profile: regular review on
+// /kaizen:review launches each reviewer with the policy's model (product profile: regular review on
 // sonnet, security on opus) — checked through the evidence hook, not through the agent's account.
 import { SHOP } from '../fixtures.mjs';
 

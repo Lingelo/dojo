@@ -649,7 +649,7 @@ written.push(
       ['ambiguous product shape', 'brainstorm (or plan if away)'],
       ['not code (ideas, explanation)', 'that skill, and stop'],
       ['any other code change', 'plan mode:return'],
-      ['lean: ≤ ~30 lines, no risk surface', 'work, no written plan'],
+      ['prototype: ≤ ~30 lines, no risk surface', 'work, no written plan'],
     ];
     routes.forEach(([q, a2], i) => {
       const x = i % 2 ? 562 : 44;

@@ -47,9 +47,9 @@ JSON of the deliverable paths: `repo`, `docs_root`, `plans`, `learnings`, `ideat
 ### `config`
 
 The effective configuration (defaults + `config.json` + `config.local.json`), as JSON. A mistyped
-profile falls back to `standard` with a `profile_warning`.
+profile falls back to `product` with a `profile_warning`.
 
-### `init [--docs-root d] [--language l] [--tracker t] [--profile lean|standard|full]`
+### `init [--docs-root d] [--language l] [--tracker t] [--profile prototype|product|critical]`
 
 Creates `.kaizen/config.json` (never rewrites an existing one), `.kaizen/state/` with its own
 `.gitignore`, `<docs_root>/plans`, `learnings`, `ideation` (each with a `.gitkeep`), and adds

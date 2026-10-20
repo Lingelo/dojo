@@ -61,7 +61,7 @@ lost last page as **P1**.
   hook requires before any `git push`. After more than `review.max_unreviewed_lines` changed lines (80
   by default), a new review is needed. Recording requires that reviewers actually ran (logged by a
   hook), except for a light review of 20 lines at most.
-- The profile (`lean`, `standard`, `full`) adjusts the number of reviewers, never the review
+- The profile (`prototype`, `product`, `critical`) adjusts the number of reviewers, never the review
   obligation.
 - **Report only by default**, never a push. A PR passed as argument sets the **scope**, not the
   permission to switch branches.
