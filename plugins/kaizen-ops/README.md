@@ -18,8 +18,12 @@ stays complete without it.
 Guides: [deploy](docs/guides/deploy.md) · [monitor](docs/guides/monitor.md) ·
 [postmortem](docs/guides/postmortem.md) — index in [docs/](docs/README.md).
 
-Until Kaizen 4.0 these commands were `/kaizen:deploy`, `/kaizen:monitor` and `/kaizen:postmortem`;
-in Kaizen 4.0.x those names only answer where the command went.
+Until Kaizen 4.0 these commands were part of Kaizen itself (stubs answered "moved" in 4.0.x; removed
+in 4.1.0):
+
+- `/kaizen:deploy` → `/kaizen-ops:deploy`
+- `/kaizen:monitor` → `/kaizen-ops:monitor`
+- `/kaizen:postmortem` → `/kaizen-ops:postmortem`
 
 ## How it works
 

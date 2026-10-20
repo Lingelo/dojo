@@ -368,11 +368,12 @@ Measured coupling (3.10.0):
 <!-- kaizen:done -->
 ## Definition of done
 
-- [ ] S1 and S2 merged, Kaizen 4.0.0 and kaizen-ops 1.0.0 in `marketplace.json`; S3 (4.1.0) merged after one
-  minor version.
-- [ ] Every R covered by its tests or evals above; CI green on the matrix for each slice.
-- [ ] No `/kaizen:deploy`, `/kaizen:monitor` or `/kaizen:postmortem` outside the stubs (4.0.x) and the
-  CHANGELOG.
+- [x] S1 (#36) and S2 (#37) merged, Kaizen 4.0.0 and kaizen-ops 1.0.0 in `marketplace.json`; S3 (4.1.0)
+  shipped right after S2 at the user's request, without the one-minor-version delay (doctor's
+  `ops_plugin` warning remains the migration signal).
+- [x] Every R covered by its tests or evals above; CI green on the matrix for each slice.
+- [x] No `/kaizen:deploy`, `/kaizen:monitor` or `/kaizen:postmortem` outside the CHANGELOGs and
+  `old → new` migration notes (contract-enforced).
 - [ ] Review recorded with no open P0/P1 on each slice.
 - [ ] A learning captured if the split taught something durable (e.g. how a plugin reaches another one's
   CLI).

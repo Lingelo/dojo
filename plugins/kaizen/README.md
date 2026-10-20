@@ -117,9 +117,13 @@ run next.
 ### Deploy and monitor — in kaizen-ops
 
 Since 4.0 the production commands live in the [**kaizen-ops**](../kaizen-ops/README.md) plugin, for
-teams that deploy through Kaizen: `/kaizen:deploy` → `/kaizen-ops:deploy`, `/kaizen:monitor` →
-`/kaizen-ops:monitor`, `/kaizen:postmortem` → `/kaizen-ops:postmortem` (until 4.1.0 the old names only
-answer where the command went). Enable it next to Kaizen:
+teams that deploy through Kaizen (the old names were removed in 4.1.0):
+
+- `/kaizen:deploy` → `/kaizen-ops:deploy`
+- `/kaizen:monitor` → `/kaizen-ops:monitor`
+- `/kaizen:postmortem` → `/kaizen-ops:postmortem`
+
+Enable it next to Kaizen:
 `"enabledPlugins": { "kaizen@dojo": true, "kaizen-ops@dojo": true }`. The CLI, the configuration and
 every gate behind them — typed approval for protected environments, deployment tags, DORA from real
 deployments — stay here, so nothing is weaker without it.
