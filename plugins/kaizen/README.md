@@ -54,14 +54,33 @@ of the conversation). Plans and constitutions written in French with Kaizen 2.x 
 { "enabledPlugins": { "kaizen@dojo": true } }
 ```
 
-Prerequisites: Node ≥ 18 and git; `gh` for PRs. No npm dependency. In a repo:
+Prerequisites: Node ≥ 18 and git; `gh` for PRs. No npm dependency.
 
-```
-/kaizen:setup
-/kaizen:constitution
-```
+## Start here: four commands
 
-## The commands (23 skills)
+You do not need the 23 commands to start. A feature goes through four, and each one chains what it
+needs:
+
+| # | Command | What you do | What it runs for you |
+|---|---|---|---|
+| 1 | `/kaizen:setup` | once per repo: check the verification commands it found, pick the profile | config, stack and deployment detection |
+| 2 | `/kaizen:plan <what to build>` | answer its questions, approve the plan | research, `plan check`, the plan review (`doc-review`) |
+| 3 | `/kaizen:work <plan>` | follow along, answer when asked | test first, one commit per unit, the quality gate |
+| 4 | `/kaizen:ship` | read the PR it opens | the code review if not done (`review`), size check, PR description |
+
+Then **merge** — that stays yours. Every gate (green tests, review before push, secret scan) is on from
+the first cycle, whatever you skipped.
+
+Three shortcuts cover most of the rest:
+- **A bug**: `/kaizen:debug <symptom>` instead of plan and work, then `/kaizen:ship`.
+- **Hands off**: after the plan, `/kaizen:autopilot <plan>` runs work, review, ship and the PR follow-up.
+- **Lost**: `/kaizen:help` looks at where the repo stands and names the next command.
+
+The other commands answer needs you will meet later — sharper rules (`constitution`), a fuzzy idea
+(`brainstorm`), review comments (`address-feedback`), production (`deploy`, `monitor`), measuring
+(`metrics`, `kaizen cost`). Reach for them when the need shows up.
+
+## All the commands (23 skills)
 
 Lost? **`/kaizen:help`** explains Kaizen, looks at where your repo stands and tells you which command to
 run next.
@@ -296,6 +315,7 @@ node $K monitor alert [--env e] [--file f|-]   # alert payload → incident open
 node $K monitor incident open|resolve --env e [--at iso] [--summary …] | monitor incident list [--env e]
 node $K metrics [--since 90d] [--no-github]    # DORA, batch size, Kaizen loop, cycle cost
 node $K metrics dashboard [--out file]         # self-contained HTML cost dashboard (.kaizen/state/cost-dashboard.html)
+node $K cost [item | current] [--since 90d] [--json]   # what each feature or fix cost, end to end (Jira key, plan or branch)
 ```
 
 Exit codes: 0 = OK, 1 = red check (verify, size, plan check, deploy, monitor breach…), 2 = usage error.
@@ -313,6 +333,7 @@ Declared in [`hooks/hooks.json`](hooks/hooks.json); they work without any action
 | `PostToolUse` (Bash) | `scripts/quality-gate.mjs --claim` | Ties the gate to the session that ran `gate on` |
 | `PostToolUse` (Agent/Task) | `scripts/review-hooks.mjs --evidence` | Logs the Kaizen reviewers actually launched (evidence required by `review record`) and the agents of the cycle |
 | `Stop` | `scripts/quality-gate.mjs` | Blocks the end of the turn while `verify` is red during `work`/`autopilot`; records the cycle's token usage |
+| `Stop` | `scripts/ledger-hook.mjs` | Charges every turn's new tokens (session and subagents) to the work item in progress — Jira key, plan or branch — for `kaizen cost`; never blocks |
 | `UserPromptSubmit` | `scripts/review-hooks.mjs --confirm` | Confirms a review waiver (`kaizen waive <code>`) or a protected deployment (`kaizen deploy <code>`) typed by the user |
 
 ### Environment variables

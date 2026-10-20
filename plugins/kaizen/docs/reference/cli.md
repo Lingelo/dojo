@@ -282,7 +282,17 @@ refuses a protected environment without a confirmed approval for that commit.
 ### `metrics [--since 90d] [--no-github]`
 
 JSON with `window`, `deployments`, `changes`, `throughput`, `instability`, `batch_size`, `kaizen_loop`,
-`cycle_cost`, `friction`. Every computation: [Metrics](../concepts/metrics.md).
+`cycle_cost`, `friction`, `work_items`. Every computation: [Metrics](../concepts/metrics.md).
+
+### `cost [<item> | current] [--since 90d] [--json]`
+
+What each feature or fix cost, end to end. Every turn in the repo (any skill, gate or not) is charged by
+the `Stop` hook to its **work item**: the branch's Jira key (`feat/SHOP-412-…` → `SHOP-412`), otherwise the
+plan being written or implemented (its `jira:`, otherwise `plan:<topic>`), otherwise `branch:<name>`,
+otherwise `unattributed` — never a guess. `cost` lists the items by cost (relative units of
+`review.cost_weights`) with their kind (the plan's `type:` or the branch prefix), tokens and sessions,
+then the median per kind; `cost <item>` details one (`priced_share`: tokens with a known model);
+`cost current` says what the turns are charged to right now. `--json`: `{ items, summary }`.
 
 ### `metrics dashboard [--out <file>]`
 

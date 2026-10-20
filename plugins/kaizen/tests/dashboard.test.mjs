@@ -47,6 +47,7 @@ test('CLI metrics dashboard: writes the page under .kaizen/state or --out', () =
   assert.equal(r.cycles, 1);
   assert.equal(r.priced, 1);
   assert.equal(r.friction_events, 0);
+  assert.equal(r.ledger_rows, 0);
   assert.ok(r.file.endsWith(join('.kaizen', 'state', 'cost-dashboard.html')));
   assert.match(readFileSync(r.file, 'utf8'), /"opus":15/, 'team weights embedded');
   cli(dir, ['metrics', 'dashboard', '--out', 'reports/cost.html']);

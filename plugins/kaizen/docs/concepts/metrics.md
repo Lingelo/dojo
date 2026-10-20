@@ -84,6 +84,14 @@ Each cycle also records its tokens per **model family** (`opus`, `sonnet`, `haik
 of every transcript message), which prices it in the relative units of `review.cost_weights`.
 `node $K metrics dashboard` turns the cycles into one HTML page to follow cost over time.
 
+**Work items** (`work_items`, `kaizen cost`): a cycle only covers implementation. To price a feature
+or a fix end to end, a `Stop` hook charges every turn in the repo — brainstorm and plan on the default
+branch, debug, review, ship, PR follow-up — to its work item: the branch's Jira key, otherwise the plan
+being written or implemented (`jira:`, otherwise `plan:<topic>`), otherwise the branch, otherwise
+`unattributed`. It reads only what was added to the transcripts since its last read (byte offsets), so a
+turn is never counted twice. Metrics reports the median cost per kind (feature, fix, refactor…) and the
+most expensive items; the dashboard shows **Cost per work item**.
+
 **Friction** (`friction`): every time a guard rail stops the work — push refused, quality gate block,
 secret refused, direct deploy or state write refused — the hook appends an event to
 `.kaizen/state/friction.jsonl`, and so do what lifts it (review recorded, waiver confirmed). Metrics

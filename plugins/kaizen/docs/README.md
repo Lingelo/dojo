@@ -17,6 +17,7 @@ writes in your repo (plans, learnings, ADRs, PR descriptions) follow `language` 
 
 | I want to… | Read |
 |---|---|
+| Ship a first feature with the fewest commands | `/kaizen:setup` → `/kaizen:plan` → `/kaizen:work` → `/kaizen:ship` ([start here](../README.md#start-here-four-commands)) |
 | Set up the SDLC on a project | `/kaizen:setup audit` ([guide](guides/setup.md)) |
 | Know which command to run, right now | `/kaizen:help` ([guide](guides/help.md)) |
 | See Kaizen in one minute | [The presentation video](../../../media/kaizen/kaizen-presentation.mp4) |

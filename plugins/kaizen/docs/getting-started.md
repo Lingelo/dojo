@@ -10,6 +10,11 @@ The cycle you are about to run, end to end ([explained here](concepts/the-loop.m
 
 ![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem, and the project memory read back by the next cycle](media/diagrams/kaizen-loop.svg)
 
+> **The short path.** A first feature only needs four commands: `/kaizen:setup`, `/kaizen:plan <what to
+> build>`, `/kaizen:work <plan>`, `/kaizen:ship` — `plan` runs the plan review and `ship` runs the code
+> review if it was not done. Steps 3 and 4 below (constitution, brainstorm) are **optional**: they make
+> the next cycles sharper, and you can come back to them once the first PR is open.
+
 At any time, **`/kaizen:help`** tells you where the repo stands and which command to run next
 (`/kaizen:help I want to ship my branch`, `/kaizen:help I have a bug`…).
 
@@ -60,7 +65,7 @@ the repo's stakes: `prototype` for a prototype or internal tool, `product` for a
 What changes in the repo: `.kaizen/config.json`, `docs/…/.gitkeep`, one line in `.gitignore`. Commit
 them.
 
-## 3. Write the principles: `/kaizen:constitution`
+## 3. Write the principles: `/kaizen:constitution` (optional)
 
 ```text
 /kaizen:constitution
@@ -77,7 +82,7 @@ check that your principles really decide. Result: `CONSTITUTION.md`, version 1.0
 > No time right now? Skip this step: everything works without a constitution. You only lose the checks
 > specific to your project.
 
-## 4. Define what to build: `/kaizen:brainstorm`
+## 4. Define what to build: `/kaizen:brainstorm` (optional)
 
 ```text
 /kaizen:brainstorm CSV export of orders from the list, for store managers

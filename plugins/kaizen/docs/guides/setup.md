@@ -7,11 +7,11 @@
 
 | | |
 |---|---|
-| **What it does** | Creates the config and the folders, has the verification commands validated, sets language, tracker, documents location and PR limit, makes the learnings findable from `CLAUDE.md`, proposes the constitution, detects the deployment platform |
+| **What it does** | Creates the config and the folders, has the verification commands validated, sets language, tracker, documents location and PR limit, makes the learnings findable from `CLAUDE.md`, mentions the constitution as optional, detects the deployment platform |
 | **When to use it** | First use in a repo; `audit` to find out what the project is missing and fix it in order; `check` when something looks wrong; `pack:<name>` to create a pack |
-| **When not to use it** | Writing the project's principles (→ [constitution](constitution.md), which `setup` proposes at the end) |
+| **When not to use it** | Writing the project's principles (→ [constitution](constitution.md), optional, best after a first cycle) |
 | **What it produces** | `.kaizen/config.json`, `docs/{plans,learnings,ideation}/`, one line in `.gitignore`, possibly a section in `CLAUDE.md` and scaffolded files (`audit`) |
-| **What next** | `/kaizen:constitution`, then `/kaizen:brainstorm <idea>` or `/kaizen:ideate` |
+| **What next** | `/kaizen:plan <what to build>`, then `/kaizen:work`, then `/kaizen:ship` ([the four-command path](../../README.md#start-here-four-commands)); `/kaizen:constitution` whenever you want sharper rules |
 
 ## Examples
 

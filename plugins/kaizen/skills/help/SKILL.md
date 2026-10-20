@@ -32,6 +32,14 @@ Use it as a fact, not as an order: the situation the user describes wins.
 3. **Where this repo stands**: 3 to 5 lines from `status`.
 4. **Next**: the recommended command, with its reason, and at most two alternatives.
 
+**A newcomer** (Kaizen not initialized, no plan yet, or "where do I start?") gets the **four-command
+path** before anything else: `/kaizen:setup` → `/kaizen:plan <what to build>` → `/kaizen:work <plan>` →
+`/kaizen:ship`, then merge. Say what each one chains on its own (`plan` → plan review, `ship` → code review
+if missing) and that every gate is on from the first cycle. Name the three shortcuts (`debug` for a bug,
+`autopilot` after the plan, `help` when lost) and present every other command as something to reach for
+when its need shows up — never the full list of 23 to someone who has not shipped a first PR. Constitution
+and brainstorm are recommended **after** the first cycle, not as prerequisites.
+
 **With a question or a situation** — match it to the table below. Answer with the command (exact
 invocation, useful arguments), one sentence on what it does and produces, and what comes after. If two
 commands fit, say what tells them apart. If the situation is truly ambiguous, a single question. For a

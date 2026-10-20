@@ -8,6 +8,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { deployments } from './deploy.mjs';
+import { DEFAULT_WEIGHTS } from './estimate.mjs';
+import { costByKind, itemCosts, readLedger } from './ledger.mjs';
 import { FRICTION, defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, usageTotal, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
@@ -22,7 +24,7 @@ function median(xs) {
 
 const round = (x, d = 1) => (x === null || x === undefined ? null : Math.round(x * 10 ** d) / 10 ** d);
 
-function parseSince(since) {
+export function parseSince(since) {
   const m = /^(\d+)([dwm])$/.exec(since || '90d');
   if (!m) throw new Error(`--since expected as 30d, 12w or 6m: "${since}"`);
   const n = Number(m[1]) * (m[2] === 'd' ? 1 : m[2] === 'w' ? 7 : 30);
@@ -293,6 +295,25 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
     kaizen_loop: loopHealth(root, from, branch),
     cycle_cost: cycleCost(root, from),
     friction: friction(root, from),
+    work_items: workItems(root, from, config),
+  };
+}
+
+// Cost per feature, fix… end to end (ledger.mjs): the most expensive items and the median per kind.
+export function workItems(root, from, config = loadConfig(root)) {
+  const entries = readLedger(root).filter((e) => Date.parse(e.at) >= from.getTime());
+  if (!entries.length) return null;
+  const items = itemCosts(entries, { ...DEFAULT_WEIGHTS, ...(config.review?.cost_weights || {}) });
+  const unattributed = items.find((i) => i.item === 'unattributed');
+  const total = items.reduce((n, i) => n + i.tokens, 0);
+  return {
+    items: items.length - (unattributed ? 1 : 0),
+    by_kind: costByKind(items),
+    top: items.filter((i) => i.item !== 'unattributed').slice(0, 5).map(({ item, kind, title, cost, tokens, sessions }) => ({ item, kind, title, cost, tokens, sessions })),
+    unattributed_share: total && unattributed ? Math.round((unattributed.tokens / total) * 100) / 100 : 0,
+    method:
+      'every turn in this repo on this machine (Stop hook, .kaizen/state/ledger.jsonl) charged to the branch\'s Jira key, ' +
+      'otherwise the plan in progress (jira:, else topic), otherwise the branch; cost = tokens per model family × review.cost_weights',
   };
 }
 

@@ -2,6 +2,32 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [3.10.0] - 2026-10-20
+
+### Changed
+- **A four-command path to start**: `/kaizen:setup` → `/kaizen:plan` → `/kaizen:work` → `/kaizen:ship`,
+  then merge — `plan` chains the plan review and `ship` the code review when missing, and every gate is
+  on from the first cycle. The README opens with it ("Start here: four commands", three shortcuts:
+  `debug`, `autopilot`, `help`) before the full list of 23; getting started marks constitution and
+  brainstorm as optional; `/kaizen:help` gives newcomers this path instead of the full list; `/kaizen:setup`
+  ends on it and mentions the constitution as optional, never as a prerequisite.
+- **`kaizen status`** recommends `/kaizen:plan <what to build>` when nothing else is pending (was
+  `/kaizen:brainstorm`), and puts a missing or draft constitution **after** the next step instead of
+  before it.
+
+## [3.9.0] - 2026-10-20
+
+### Added
+- **What a feature or a fix costs, end to end**: a new `Stop` hook (`scripts/ledger-hook.mjs`) charges
+  every turn in a Kaizen repo — brainstorm and plan on the default branch, debug, review, ship, PR
+  follow-up, gate or not — to its **work item**: the branch's Jira key, otherwise the plan in progress
+  (`jira:`, otherwise `plan:<topic>`), otherwise the branch, otherwise `unattributed` (never a guess).
+  Kind from the plan's `type:` or the branch prefix. Reads only what was appended to the session and
+  subagent transcripts since its last read (byte offsets + message ids), never blocks.
+- **`kaizen cost [item | current]`**: work items by cost with kind, tokens and sessions, median per
+  kind; `metrics` → `work_items`; the dashboard leads with **Cost per work item** and its Cost tile now
+  covers all work when the ledger has data.
+
 ## [3.8.0] - 2026-10-20
 
 ### Added

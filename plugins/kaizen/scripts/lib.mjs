@@ -578,7 +578,7 @@ function addUsage(into, usage) {
   return into;
 }
 
-function readUsage(text, from, seen, usage = emptyUsage()) {
+export function readUsage(text, from, seen, usage = emptyUsage()) {
   for (const line of text.split('\n')) {
     if (!line.includes('"usage"')) continue;
     let entry;
@@ -609,7 +609,7 @@ export function transcriptUsage(file, since) {
 
 // Subagent transcripts of a session: Claude Code stores them next to the main transcript,
 // `<project>/<session>.jsonl` → `<project>/<session>/subagents/[…/]agent-<id>.jsonl`.
-function subagentTranscripts(file) {
+export function subagentTranscripts(file) {
   const dir = join(file.replace(/\.jsonl$/, ''), 'subagents');
   const found = [];
   const walk = (d) => {
