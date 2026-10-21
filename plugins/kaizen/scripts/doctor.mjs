@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { docsRoot, git, loadConfig, verifyCommands } from './lib.mjs';
 import { checkPush, currentBranch } from './review-state.mjs';
+import { pending as pendingMigrations } from './upgrade.mjs';
 
 export const MARKETPLACE = 'dojo';
 export const PLUGIN_ID = `kaizen@${MARKETPLACE}`;
@@ -116,6 +117,13 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     existsSync(join(root, '.kaizen', 'config.json')) ? '.kaizen/config.json' : 'no .kaizen/config.json: the gates stay inactive in this repo',
     '/kaizen:setup',
   );
+
+  // What a Kaizen update still asks of this repo, detected from its state (kaizen upgrade).
+  const migrations = pendingMigrations(root, config);
+  if (migrations.length) {
+    const auto = migrations.filter((m) => m.auto).length;
+    add('upgrade', 'Kaizen migrations', 'warn', `${migrations.length} Kaizen migration(s) pending (${migrations.map((m) => m.id).join(', ')})${auto < migrations.length ? `, ${migrations.length - auto} by hand` : ''}`, 'node "$K" upgrade  (lists them), then node "$K" upgrade --apply');
+  } else if (existsSync(join(root, '.kaizen', 'config.json'))) add('upgrade', 'Kaizen migrations', 'ok', 'nothing to migrate');
 
   const decl = pluginDeclared(root);
   add(

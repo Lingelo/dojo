@@ -123,3 +123,44 @@ test('each migration: does not apply once fixed by hand, nor when its trigger is
   assert.deepEqual(run(foreign, ['upgrade', '--json']).json.pending, []);
   for (const d of [dir, ops, foreign]) cleanup(d);
 });
+
+test('AE4: doctor reports pending migrations with their count, ids and the fix', () => {
+  const dir = oldRepo();
+  const check = (d) => run(d, ['doctor', '--json']).json.checks.find((c) => c.id === 'upgrade');
+  const before = check(dir);
+  assert.equal(before.status, 'warn');
+  assert.equal(before.evidence, '3 Kaizen migration(s) pending (profile-names, kaizen-ops, hook-lookup)');
+  assert.match(before.fix, /node "\$K" upgrade/);
+  run(dir, ['upgrade', '--apply']);
+  assert.deepEqual([check(dir).status, check(dir).evidence], ['ok', 'nothing to migrate']);
+  // A manual one is counted as such; outside a Kaizen repo, no check at all.
+  const manual = tempRepo({ '.kaizen/config.json': {}, 'docs/solutions/a.md': '# a\n' });
+  assert.match(check(manual).evidence, /1 Kaizen migration\(s\) pending \(learnings-folder\), 1 by hand/);
+  const bare = tempRepo({ 'a.txt': 'a\n' });
+  assert.equal(check(bare), undefined);
+  for (const d of [dir, manual, bare]) cleanup(d);
+});
+
+// AE5: every release from 4.3.0 on that breaks or deprecates something declares its migration, or says
+// why there is none — so the next one cannot fall back into a corner of the doctor.
+const semver = (v) => v.split('.').map(Number);
+const atLeast = (v, min) => { const [a, b] = [semver(v), semver(min)]; for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i]; return true; };
+function undeclared(changelog, migrations, exempt) {
+  const out = [];
+  for (const [, version, body] of changelog.matchAll(/^## \[(\d+\.\d+\.\d+)\][^\n]*\n([\s\S]*?)(?=^## \[|(?![\s\S]))/gm)) {
+    if (!atLeast(version, '4.3.0') || !/^### (Breaking|Deprecated)/m.test(body)) continue;
+    if (!migrations.some((m) => m.since === version) && !exempt[version]) out.push(version);
+  }
+  return out;
+}
+
+test('AE5: a Breaking or Deprecated release from 4.3.0 on declares its migration or why there is none', async () => {
+  const { MIGRATIONS, NO_MIGRATION } = await import('../scripts/upgrade.mjs');
+  assert.deepEqual(undeclared(readFileSync(join(PLUGIN, 'CHANGELOG.md'), 'utf8'), MIGRATIONS, NO_MIGRATION), []);
+  // The check itself: a breaking 9.9.0 with nothing declared fails; a migration or an exemption lifts it;
+  // older releases are covered by the migrations of 4.3.0.
+  const fixture = '# Changelog\n\n## [9.9.0] - 2030-01-01\n\n### Breaking\n- renamed a key\n\n## [9.8.0] - 2030-01-01\n\n### Added\n- x\n\n## [4.0.0] - 2026-10-20\n\n### Breaking\n- moved\n';
+  assert.deepEqual(undeclared(fixture, MIGRATIONS, NO_MIGRATION), ['9.9.0']);
+  assert.deepEqual(undeclared(fixture, [...MIGRATIONS, { since: '9.9.0' }], NO_MIGRATION), []);
+  assert.deepEqual(undeclared(fixture, MIGRATIONS, { '9.9.0': 'the key is still read' }), []);
+});

@@ -233,7 +233,8 @@ release adds its signal at all.
 <!-- kaizen:done -->
 ## Definition of done
 
-- [ ] S1 (Kaizen 4.3.0) and S2 (4.4.0) merged.
-- [ ] Every R covered by its tests above; CI green on the matrix for each slice.
-- [ ] The five migrations of the Problem table detected and, where automatable, applied.
-- [ ] `doctor`, `help` and `setup` point to `upgrade` when something is pending.
+- [x] S1 (Kaizen 4.3.0, #44) merged; S2 (4.4.0) in review.
+- [x] Every R covered by its tests above (`tests/upgrade.test.mjs`: AE1–AE5); CI green on the matrix for S1.
+- [x] The five migrations of the Problem table detected and, where automatable, applied.
+- [x] `doctor` reports pending migrations; `help`, `work` and `setup` relay them through the
+  conventions' guard rails, and `setup check` runs `upgrade`.

@@ -10,7 +10,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { docsRoot, loadConfig, PROFILE_ALIASES } from './lib.mjs';
-import { MARKETPLACE, PLUGIN_ID, gitHooksState, opsDeclared, opsNeeded } from './doctor.mjs';
+import { PLUGIN_ID, gitHooksState, opsDeclared, opsNeeded } from './doctor.mjs';
 import { declarePlugin, refreshHookLookups } from './githooks.mjs';
 
 export const KAIZEN_VERSION = JSON.parse(readFileSync(fileURLToPath(new URL('../.claude-plugin/plugin.json', import.meta.url)), 'utf8')).version;
@@ -54,6 +54,10 @@ function declare(root) {
   }
 }
 
+// Releases with a Breaking or Deprecated section that ask nothing of a repository, with the reason
+// (tests/upgrade.test.mjs requires one or the other from 4.3.0 on).
+export const NO_MIGRATION = {};
+
 export const MIGRATIONS = [
   {
     id: 'learnings-folder',
@@ -71,7 +75,8 @@ export const MIGRATIONS = [
   {
     id: 'marketplace-dojo',
     since: '3.1.0',
-    title: `the marketplace is "${MARKETPLACE}": plugins are enabled as ${PLUGIN_ID}`,
+    // Plain text: doctor imports this module, which must not read doctor's exports while it loads.
+    title: 'the marketplace is "dojo": plugins are enabled as kaizen@dojo',
     applies(root) {
       const old = oldMarketplaceIds(root);
       const plugins = readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins || {};

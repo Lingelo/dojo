@@ -83,6 +83,10 @@ before anything else:
 - **production commands moved (`ops_plugin`)** → the repo deploys or watches signals with Kaizen: say the
   commands are now `/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`, and offer
   `node "$K" audit fix claude_settings`, which enables `kaizen-ops@dojo` (ask first);
+- **Kaizen migrations pending (`upgrade`)** → Kaizen was updated and the repo still has changes to make:
+  run `node "$K" upgrade`, show the list (each migration's version, why, files), offer
+  `node "$K" upgrade --apply` for the automatable ones (versioned files: ask first, then name the files to
+  commit), and relay the steps to run by hand;
 - **branch pushed without a review** → `/kaizen:review` before anything else is pushed.
 No ⚠ → say nothing. The doctor never blocks: it informs.
 

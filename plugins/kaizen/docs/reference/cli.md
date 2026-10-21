@@ -36,8 +36,9 @@ the versioned `.claude/settings.json` declares the `dojo` marketplace and enable
 fresh clone or a cloud session runs without Kaizen); Claude Code hooks firing (heartbeat written by the
 SessionStart hook — absent means "not verified" from a terminal, "off" with `--in-skill`, which the
 entry skills pass); git hooks in `.githooks/` wired through `core.hooksPath`; verification commands
-detected; the branch's review state, and whether its upstream was pushed without a review. Exit 0, or 1
-with `--strict` when anything needs attention.
+detected; Kaizen migrations pending after an update (`upgrade`, below); the branch's review state, and
+whether its upstream was pushed without a review. Exit 0, or 1 with `--strict` when anything needs
+attention.
 
 ### `upgrade [--apply] [--json]`
 
@@ -56,7 +57,11 @@ touches, and — when it cannot be automated — the steps to run by hand.
 
 `--apply` runs the automatable ones that still apply, writes only what each owns (formatting and team
 lines kept), and ends with the files to commit; run twice, it changes nothing. Nothing pending outside
-a Kaizen repo (no `.kaizen/config.json`).
+a Kaizen repo (no `.kaizen/config.json`). `kaizen doctor` reports the pending ones (check `upgrade`),
+so `help`, `work` and `setup` relay them.
+
+A release that breaks or deprecates something declares its migration here, or why it needs none
+(`NO_MIGRATION` in `scripts/upgrade.mjs`): a contract test fails otherwise, from 4.3.0 on.
 
 ### `root`
 

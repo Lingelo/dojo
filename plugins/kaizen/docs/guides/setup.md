@@ -72,7 +72,9 @@ Config, detected checks, learnings, packs, constitution, gate, review state and 
 
 ## Guard rails without the plugin
 
-Setup starts with `kaizen doctor`. It offers, with your consent: `audit fix claude_settings`
+Setup starts with `kaizen doctor`. After a Kaizen update, it lists what the repository still has to
+change (`kaizen upgrade`: renamed profile, kaizen-ops to enable, git hooks to refresh, a folder to rename
+by hand) and offers `kaizen upgrade --apply` for the automatable ones; `setup check` runs it too. It offers, with your consent: `audit fix claude_settings`
 (declares `kaizen@dojo` in the versioned `.claude/settings.json`, so every clone loads Kaizen) and
 `audit fix git_hooks` (git hooks that refuse an unreviewed push and a staged secret even when the plugin
 is not loaded; they refuse when the Kaizen CLI cannot be found — set `git config kaizen.cli

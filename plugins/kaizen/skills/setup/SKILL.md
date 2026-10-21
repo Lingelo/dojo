@@ -19,7 +19,8 @@ of what setup fixes.
 
 `node "$K" doctor`, `node "$K" root`, `node "$K" config`, `node "$K" detect`, `node "$K" learnings validate`,
 `node "$K" packs`, `node "$K" constitution check`, `node "$K" gate status`, `node "$K" review status`,
-`node "$K" models` (warnings) → report: ✔/⚠ per point, with the proposed fix.
+`node "$K" models` (warnings), `node "$K" upgrade` (migrations pending after a Kaizen update) → report:
+✔/⚠ per point, with the proposed fix.
 A gate left active without work in progress (`gate status` active) → propose `gate off`.
 
 ## `audit` — set up the SDLC, in order
