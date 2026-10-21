@@ -2,6 +2,19 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [4.4.0] - 2026-10-21
+
+### Added
+- **`kaizen doctor` reports pending migrations** (check `upgrade`): "3 Kaizen migration(s) pending
+  (profile-names, kaizen-ops, hook-lookup)", with how many must be done by hand, and
+  `node "$K" upgrade` as the fix. `help`, `work` and `setup` relay it (conventions, "Guard rails"):
+  they show the list, offer `upgrade --apply` before touching versioned files, and give the manual
+  steps; `setup check` runs `upgrade` too.
+- **No breaking release without its migration.** From 4.3.0 on, a CHANGELOG release with a
+  **Breaking** or **Deprecated** section must register a migration with that version in
+  `scripts/upgrade.mjs`, or say in `NO_MIGRATION` why the repository has nothing to change; a contract
+  test fails otherwise.
+
 ## [4.3.0] - 2026-10-21
 
 ### Added

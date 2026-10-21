@@ -59,8 +59,9 @@ Order of the inference:
 ## Guard rails
 
 `help` runs `kaizen doctor` first and tells you when the guard rails are off: the plugin not declared
-for the repository, hooks not firing in this session, git hooks not wired, or a branch pushed without a
-review — each with the command that fixes it.
+for the repository, hooks not firing in this session, git hooks not wired, a branch pushed without a
+review, or migrations a Kaizen update still asks of the repo (`kaizen upgrade` lists them, `--apply`
+fixes the automatable ones) — each with the command that fixes it.
 
 ## See also
 
