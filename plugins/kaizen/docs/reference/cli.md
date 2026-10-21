@@ -39,6 +39,25 @@ entry skills pass); git hooks in `.githooks/` wired through `core.hooksPath`; ve
 detected; the branch's review state, and whether its upstream was pushed without a review. Exit 0, or 1
 with `--strict` when anything needs attention.
 
+### `upgrade [--apply] [--json]`
+
+The migrations this repository still needs after a Kaizen update, detected from its state (files,
+settings, hooks, folders), never from a remembered version: a fresh clone and a repository fixed by hand
+get the same answer. Each line gives the version that introduced it, why it applies, the files it
+touches, and — when it cannot be automated — the steps to run by hand.
+
+| Migration | Since | Applies when | `--apply` |
+|---|---|---|---|
+| `learnings-folder` | 2.0.0 | `<docs>/solutions/` exists, `<docs>/learnings/` does not | by hand: `git mv` |
+| `marketplace-dojo` | 3.1.0 | `.claude/settings.json` enables `kaizen@<other>` but not `kaizen@dojo` | adds `kaizen@dojo`; the old key is left to the team |
+| `profile-names` | 3.4.0 | `"profile": "lean"`, `"standard"` or `"full"` in `.kaizen/config.json` or `config.local.json` | rewrites that value only |
+| `kaizen-ops` | 4.0.0 | the repo deploys with Kaizen (environments, signals, postmortems, tags) and kaizen-ops is enabled nowhere | enables `kaizen-ops@dojo` for clones |
+| `hook-lookup` | 4.1.2 | a Kaizen git hook has an older CLI lookup line | refreshes that line, keeps the rest |
+
+`--apply` runs the automatable ones that still apply, writes only what each owns (formatting and team
+lines kept), and ends with the files to commit; run twice, it changes nothing. Nothing pending outside
+a Kaizen repo (no `.kaizen/config.json`).
+
 ### `root`
 
 JSON of the deliverable paths: `repo`, `docs_root`, `plans`, `learnings`, `ideation`, `debug`,

@@ -22,11 +22,28 @@ export function applyDiscount(orderId, code) {
 }
 `;
 
+// More than 20 lines on the branch: a light review (≤ 20 lines) launches no reviewer by design.
+const DISCOUNT_TEST = `import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { orders } from './orders.js';
+import { applyDiscount } from './discount.js';
+
+test('percentage code', () => {
+  orders.push({ id: 'd1', status: 'paid', items: [{ price: 1000, qty: 1 }] });
+  assert.equal(applyDiscount('d1', 'PCT10'), 900);
+});
+
+test('fixed amount code', () => {
+  orders.push({ id: 'd2', status: 'paid', items: [{ price: 1000, qty: 1 }] });
+  assert.equal(applyDiscount('d2', 'EUR100'), 900);
+});
+`;
+
 export default {
   name: 'review-evidence',
   timeoutMinutes: 15,
   files: { ...SHOP, '.kaizen/config.json': { verify: { test: 'node --test' } } },
-  steps: [{ branch: 'feat/SHOP-9-promo', files: { 'src/discount.js': DISCOUNT }, commit: 'feat(SHOP-9): promo codes' }],
+  steps: [{ branch: 'feat/SHOP-9-promo', files: { 'src/discount.js': DISCOUNT, 'src/discount.test.js': DISCOUNT_TEST }, commit: 'feat(SHOP-9): promo codes' }],
   prompt: '/kaizen:review',
   checks: [
     ['review recorded for the branch', (_, c) => {

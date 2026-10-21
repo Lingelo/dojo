@@ -2,6 +2,26 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [4.3.0] - 2026-10-21
+
+### Added
+- **`kaizen upgrade`**: the migrations a repository still needs after a Kaizen update, in one list —
+  until now each was signalled somewhere else (`config`, two `doctor` checks) or nowhere. Each is
+  detected from the repository's state, never from a remembered version, so a fresh clone, a jump
+  across several versions and a repository fixed by hand get the right answer:
+  `learnings-folder` (2.0.0, by hand: `git mv docs/solutions docs/learnings`), `marketplace-dojo`
+  (3.1.0), `profile-names` (3.4.0), `kaizen-ops` (4.0.0), `hook-lookup` (4.1.2).
+  `kaizen upgrade --apply` runs the automatable ones: it rewrites only the value or line each migration
+  owns (formatting and team lines kept), never removes the team's old settings, lists the files to
+  commit, and changes nothing when run twice.
+
+### Changed
+- `refreshHookLookups` (git hooks) is shared by `audit fix git_hooks` and `upgrade`.
+- Three evals followed behaviour that had changed by design: `constitution-create` expects the headless
+  draft (3 to 6 evidence-backed articles plus the AI policy), `review-models` compares to the cycle's
+  effective profile (a file on a risk surface makes it critical), `review-evidence` gets past the
+  20-line light review so reviewers must run. All 33 evals green on 4.2.0.
+
 ## [4.2.0] - 2026-10-21
 
 ### Added

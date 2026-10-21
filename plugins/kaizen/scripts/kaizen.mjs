@@ -6,6 +6,8 @@
 //   node kaizen.mjs githook pre-push|pre-commit   run by the git hooks of `audit fix git_hooks` (exit 1 refuses)
 //   node kaizen.mjs doctor [--in-skill] [--json] [--strict]   are the guard rails on (plugin declared, hooks
 //                                                 firing, git hooks wired, branch reviewed)? exit 1 with --strict
+//   node kaizen.mjs upgrade [--apply] [--json]   migrations this repo still needs after a Kaizen update; --apply
+//                                                 runs the automatable ones and lists the files to commit
 //   node kaizen.mjs models [--json] [--agent a] [--profile p]  model of each agent per profile and config
 //   node kaizen.mjs profile [--json] [--plan p | --files a,b | --base ref]  profile for this cycle (raised on a risk surface)
 //   node kaizen.mjs audit [--json] [--no-github] | audit fix <id> [--owner @x] [--env e] [--ref sha]   project SDLC maturity
@@ -81,6 +83,7 @@ import { formatPerf, runPerf } from './perf.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
+import { applyAll, formatUpgrade, pending as pendingMigrations } from './upgrade.mjs';
 import {
   DEFAULT_CONFIG,
   PROFILES,
@@ -742,6 +745,17 @@ try {
       const r = doctor(requireRepo(), { inSkill: !!flags['in-skill'] });
       out(flags.json ? r : formatDoctor(r));
       if (flags.strict && r.status !== 'ok') process.exit(1);
+      break;
+    }
+    case 'upgrade': {
+      const root = requireRepo();
+      if (flags.apply) {
+        const result = applyAll(root);
+        out(flags.json ? result : formatUpgrade(null, result));
+      } else {
+        const list = pendingMigrations(root);
+        out(flags.json ? { pending: list } : formatUpgrade(list));
+      }
       break;
     }
     case 'audit': {
