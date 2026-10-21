@@ -2,6 +2,16 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [4.2.0] - 2026-10-21
+
+### Added
+- **Outdated git hooks are reported and refreshed.** `audit fix git_hooks` never overwrites a hook, so
+  hooks installed before 4.1.2 kept a CLI lookup that runs any file `git config kaizen.cli` or
+  `$KAIZEN_CLI` names, and nothing said so. `kaizen doctor` and `audit` now warn on a Kaizen hook
+  whose lookup line differs from this version's template, and `audit fix git_hooks` replaces that one
+  line — the rest of the hook, lines the team added and CRLF endings included, is kept; a hook that is
+  not Kaizen's is never touched. Commit `.githooks/` afterwards.
+
 ## [4.1.3] - 2026-10-21
 
 ### Fixed

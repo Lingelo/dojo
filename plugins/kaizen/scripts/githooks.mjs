@@ -2,9 +2,10 @@
 // is refused, nothing says so).
 //
 // - `installGitHooks`: copies `templates/githooks/*` into `.githooks/` (versioned, so every clone has
-//   them) and wires `core.hooksPath`. Never overwrites a hook, never shadows hooks already in use
-//   (`core.hooksPath` set by husky…, or `.git/hooks/*`): then it only writes `.githooks/` and returns
-//   the line to chain.
+//   them) and wires `core.hooksPath`. Never overwrites a hook: of a Kaizen hook written by an older
+//   version it refreshes the CLI lookup line only, keeping whatever the team added. Never shadows hooks
+//   already in use (`core.hooksPath` set by husky…, or `.git/hooks/*`): then it only writes
+//   `.githooks/` and returns the line to chain.
 // - `declarePlugin`: merges the dojo marketplace and `kaizen@dojo` into the versioned
 //   `.claude/settings.json`, so a fresh clone or a cloud session loads Kaizen.
 // - `prePush` / `preCommit`: what the hooks run, through `kaizen.mjs githook <name>`.
@@ -13,7 +14,7 @@ import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSy
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { git, loadConfig, logFriction, pushReasonKey } from './lib.mjs';
-import { MARKETPLACE, OPS_ID, PLUGIN_ID, opsNeeded } from './doctor.mjs';
+import { HOOK_LOOKUP, MARKETPLACE, OPS_ID, PLUGIN_ID, opsNeeded, templateLookup } from './doctor.mjs';
 import { checkPush, currentBranch, pushRefusal } from './review-state.mjs';
 import { formatFindings, scan } from './secrets.mjs';
 
@@ -36,15 +37,26 @@ function activeHooks(root) {
 
 export function installGitHooks(root) {
   const written = [];
+  const refreshed = [];
   for (const h of HOOKS) {
     const dest = join(root, '.githooks', h);
-    if (existsSync(dest)) continue;
+    if (existsSync(dest)) {
+      const text = readFileSync(dest, 'utf8');
+      const current = text.match(HOOK_LOOKUP)?.[0];
+      const lookup = templateLookup(h);
+      if (text.includes(`githook ${h}`) && current && lookup && current !== lookup) {
+        writeFileSync(dest, text.replace(HOOK_LOOKUP, () => lookup));
+        refreshed.push(`.githooks/${h}`);
+      }
+      continue;
+    }
     mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(join(TEMPLATES, h), dest);
     chmodSync(dest, 0o755);
     written.push(`.githooks/${h}`);
   }
   if (!written.length && !HOOKS.some((h) => existsSync(join(root, '.githooks', h)))) throw new Error('nothing to install');
+  if (refreshed.length) written.push(...refreshed.map((f) => `${f} (CLI lookup refreshed: commit it)`));
   const hooksPath = git(root, ['config', '--get', 'core.hooksPath'], { allowFail: true });
   if (hooksPath && hooksPath.replace(/[\\/]+$/, '') === '.githooks') return { written, wired: true };
   const existing = hooksPath ? `core.hooksPath (${hooksPath})` : activeHooks(root).length ? `.git/hooks (${activeHooks(root).join(', ')})` : null;
