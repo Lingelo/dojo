@@ -20,7 +20,7 @@ instability, except for teams that keep three disciplines:
 
 Kaizen gives tooling to these three disciplines.
 
-![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem, and the project memory read back by the next cycle](docs/media/diagrams/kaizen-loop.svg)
+![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem (kaizen-ops), and the project memory read back by the next cycle](docs/media/diagrams/kaizen-loop.svg)
 
 > Strongly inspired by Every's [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)
 > plugin (MIT) for the loop, the artifact contracts, the learnings schema, the review personas and PR
@@ -77,7 +77,7 @@ Three shortcuts cover most of the rest:
 - **Lost**: `/kaizen:help` looks at where the repo stands and names the next command.
 
 The other commands answer needs you will meet later — sharper rules (`constitution`), a fuzzy idea
-(`brainstorm`), review comments (`address-feedback`), production (`deploy`, `monitor`), measuring
+(`brainstorm`), review comments (`address-feedback`), production (`/kaizen-ops:deploy`, `/kaizen-ops:monitor`, with kaizen-ops), measuring
 (`metrics`, `kaizen cost`). Reach for them when the need shows up.
 
 ## All the commands (20 skills)
@@ -186,14 +186,16 @@ payment, migration, public API, dependencies, sensitive data, or the team's `ris
 up for its cycle.
 
 **From production to the next cycle.** Each plan says how to roll back and which signal to watch, with
-its threshold (`plan check` warns otherwise). `release` derives the production checklist from it,
-`deploy` and `monitor` watch those thresholds; a breached threshold leads to the rollback and the
-postmortem, whose learnings and amendments feed the next cycle.
+its threshold (`plan check` warns otherwise). `release` derives the production checklist from it;
+with kaizen-ops, `/kaizen-ops:deploy` and `/kaizen-ops:monitor` watch those thresholds, and a breached
+threshold leads to the rollback and `/kaizen-ops:postmortem`, whose learnings and amendments feed the
+next cycle. The CLI commands and gates behind them stay in Kaizen.
 
 **Team governance.** With declared `approvers`, each constitution amendment must be approved by one of
 them, never by an agent (`constitution check`).
 
-**The compounding effect, measured.** Learnings (`docs/learnings/`), ADRs and postmortems are read by
+**The compounding effect, measured.** Learnings (`docs/learnings/`), ADRs and postmortems (written with
+kaizen-ops) are read by
 `learnings-researcher` at every plan, review and debug. `/kaizen:metrics` distinguishes learnings
 **read** (cited by a recent plan) from learnings **applied** (cited by a commit landed on the default
 branch), and lists the ones nobody ever cited. A learning never reused signals a loop that does not
@@ -292,7 +294,7 @@ node $K learnings search <words…> [--limit 8] [--json] | validate [files…] |
 node $K packs [--json] [--refresh]             # rules of the declared Kaizen Packs
 node $K pack new <name>                        # creates and declares a local pack
 node $K adr new --title "…" | adr list         # architecture decisions (docs/adr)
-node $K postmortem new --title "…"             # reserves a postmortem (docs/postmortems)
+node $K postmortem new --title "…"             # reserves a postmortem (docs/postmortems), for /kaizen-ops:postmortem
 
 # Building and verifying
 node $K verify [--only test,lint|audit] [--json]   # runs the checks (exit 1 if red)
@@ -309,7 +311,7 @@ node $K review estimate --reviewers a,b [--profile p]   # tokens and relative co
 node $K review waive --reason "…" | review status | review check [--branch b --sha s]  # waiver = code typed by the user
 node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch [--pr n] [--repo o/r] …
 
-# Release, deployment, monitoring
+# Release, deployment, monitoring (deploy, monitor and postmortem are run by the kaizen-ops skills)
 node $K release notes [--from <tag>] [--to <ref>]  # grouped commits, breaking changes, SemVer, rollout
 node $K deploy detect [--json] | deploy configure <id> [--force]
 node $K deploy request|run <env> [--ref r]     # approval code / deployment + deploy/<env>/… tag
@@ -359,7 +361,10 @@ node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, co
   - that each documented CLI command exists, and that this reference lists every command and hook;
   - that each plan marker is documented;
   - that this README and the docs index are up to date, and that every relative link and `#anchor`
-    resolves.
+    resolves;
+  - that the diagrams are what `docs/media/source/diagrams.mjs` generates, draw every hook of
+    `hooks.json` and every code reviewer, never show a kaizen-ops command as a core skill, and that the
+    counts written in the docs (reviewers, researchers, hook registrations, skills, agents) match.
 - **Evals.** They prepare trapped repos and check:
   - that the review finds an injection and a rounding error;
   - that the review enforces the constitution;

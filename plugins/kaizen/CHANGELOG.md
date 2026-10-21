@@ -2,6 +2,29 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [4.1.3] - 2026-10-21
+
+### Fixed
+- **Diagrams that had drifted from the code.** `hooks.svg` showed six hook registrations for nine (the
+  `SessionStart` heartbeat, the reviewer launch log and the token ledger were missing);
+  `review-pipeline.svg` ten reviewers for eleven (`rendering`) and no cost estimate; `push-gate.svg`
+  missed the launch log and `review record --run`. The production commands moved to kaizen-ops in 4.0
+  were still drawn as core skills in `kaizen-loop`, `artifacts-map`, `deploy-flow`,
+  `incident-lifecycle`, `learnings-loop` and `help-routing`: they now have their own `ops` style and
+  legend. The loop shows the four-command start.
+- **Docs.** "Five hook registrations" (the loop page) and "ten code reviewers" (review page) corrected;
+  the README, positioning, help guide and metrics skill attribute deploy, monitor and postmortem to
+  kaizen-ops; the marketplace row no longer lists postmortems among what core reads back by itself and
+  mentions the four-command start and the cost per feature.
+
+### Added
+- `tests/diagrams.test.mjs`: the SVGs must be exactly what the generator writes (it takes
+  `KAIZEN_DIAGRAMS_OUT`), draw every registration of `hooks.json` with the count they announce, draw
+  exactly the code reviewers of `agents/`, never show a kaizen-ops command as a core skill, and every
+  diagram must be used by a page. Counted claims in the docs, the diagrams and CLAUDE.md (reviewers,
+  researchers, hook registrations, skills, agents) must match the code. Run against 4.1.2, it fails on
+  each drift above.
+
 ## [4.1.2] - 2026-10-20
 
 ### Fixed

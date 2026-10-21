@@ -13,6 +13,7 @@
   .edge { font-size: 11px; fill: #5c6370; }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .skill { fill: #fdf1ea; stroke: #d97757; }
+  .ops { fill: #e8f5f4; stroke: #2e8a83; stroke-dasharray: 6 3; }
   .artifact { fill: #edf2fb; stroke: #5b7fbf; }
   .gate { fill: #fdeeee; stroke: #c94a4a; }
   .agent { fill: #ecf6ef; stroke: #3f8f5a; }
@@ -39,6 +40,7 @@
     text { fill: #e6edf3; }
     .desc, .sub, .small, .edge { fill: #9aa4b0; }
     .skill { fill: #3a2419; stroke: #e08b6c; }
+    .ops { fill: #15302e; stroke: #4fb8ae; }
     .artifact { fill: #1b2638; stroke: #7c9fd8; }
     .gate { fill: #3a1d1f; stroke: #e06c6c; }
     .agent { fill: #18301f; stroke: #5fb07a; }
@@ -78,44 +80,47 @@
 <text class="sub" x="678" y="124" text-anchor="middle">intent summary · R / AE / KTD</text>
 <text class="sub" x="678" y="138" text-anchor="middle">from the plan of the branch</text>
 <rect class="skill" x="822" y="84" width="236" height="70" rx="8" stroke-width="1.5"/>
-<text class="label" x="940" y="109" text-anchor="middle">4. Selection</text>
-<text class="sub" x="940" y="124" text-anchor="middle">correctness always + what the</text>
-<text class="sub" x="940" y="138" text-anchor="middle">diff touches · profile adjusts</text>
+<text class="label" x="940" y="109" text-anchor="middle">4. Selection and price</text>
+<text class="sub" x="940" y="124" text-anchor="middle">what the diff touches, profile</text>
+<text class="sub" x="940" y="138" text-anchor="middle">adjusts · cost estimated first</text>
 <path class="line accent" d="M272,119 L298,119" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M534,119 L560,119" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M796,119 L822,119" marker-end="url(#h-accent)"/>
 <rect class="region" x="36" y="178" width="1028" height="156" rx="12"/>
 <text class="regionlabel" x="48" y="195">LAUNCHED IN PARALLEL, ONE AGENT CALL EACH, MODEL FROM THE PROFILE</text>
-<rect class="agent" x="48" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="143" y="226" text-anchor="middle">correctness</text>
-<text class="sub" x="143" y="241" text-anchor="middle">always</text>
-<rect class="agent" x="250" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="345" y="226" text-anchor="middle">standards</text>
-<text class="sub" x="345" y="241" text-anchor="middle">constitution, packs</text>
-<rect class="agent" x="452" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="547" y="226" text-anchor="middle">security</text>
-<text class="sub" x="547" y="241" text-anchor="middle">auth, input, secrets</text>
-<rect class="agent" x="654" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="749" y="226" text-anchor="middle">testing</text>
-<text class="sub" x="749" y="241" text-anchor="middle">behavior changed</text>
-<rect class="agent" x="856" y="204" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="951" y="226" text-anchor="middle">performance</text>
-<text class="sub" x="951" y="241" text-anchor="middle">queries, complexity</text>
-<rect class="agent" x="48" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="143" y="288" text-anchor="middle">reliability</text>
-<text class="sub" x="143" y="303" text-anchor="middle">errors, retries, jobs</text>
-<rect class="agent" x="250" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="345" y="288" text-anchor="middle">api-contract</text>
-<text class="sub" x="345" y="303" text-anchor="middle">external boundary</text>
-<rect class="agent" x="452" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="547" y="288" text-anchor="middle">data-migration</text>
-<text class="sub" x="547" y="303" text-anchor="middle">migrations, backfills</text>
-<rect class="agent" x="654" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="749" y="288" text-anchor="middle">maintainability</text>
-<text class="sub" x="749" y="303" text-anchor="middle">refactor, ≥ 200 lines</text>
-<rect class="agent" x="856" y="266" width="190" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="951" y="288" text-anchor="middle">adversarial</text>
-<text class="sub" x="951" y="303" text-anchor="middle">≥ 50 lines, risky paths</text>
+<rect class="agent" x="48" y="204" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="127" y="226" text-anchor="middle">correctness</text>
+<text class="sub" x="127" y="241" text-anchor="middle">always</text>
+<rect class="agent" x="216" y="204" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="295" y="226" text-anchor="middle">standards</text>
+<text class="sub" x="295" y="241" text-anchor="middle">constitution, packs</text>
+<rect class="agent" x="384" y="204" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="463" y="226" text-anchor="middle">security</text>
+<text class="sub" x="463" y="241" text-anchor="middle">auth, input, secrets</text>
+<rect class="agent" x="552" y="204" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="631" y="226" text-anchor="middle">testing</text>
+<text class="sub" x="631" y="241" text-anchor="middle">behavior changed</text>
+<rect class="agent" x="720" y="204" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="799" y="226" text-anchor="middle">performance</text>
+<text class="sub" x="799" y="241" text-anchor="middle">queries, complexity</text>
+<rect class="agent" x="888" y="204" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="967" y="226" text-anchor="middle">reliability</text>
+<text class="sub" x="967" y="241" text-anchor="middle">errors, retries, jobs</text>
+<rect class="agent" x="48" y="266" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="127" y="288" text-anchor="middle">api-contract</text>
+<text class="sub" x="127" y="303" text-anchor="middle">external boundary</text>
+<rect class="agent" x="216" y="266" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="295" y="288" text-anchor="middle">data-migration</text>
+<text class="sub" x="295" y="303" text-anchor="middle">migrations, backfills</text>
+<rect class="agent" x="384" y="266" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="463" y="288" text-anchor="middle">maintainability</text>
+<text class="sub" x="463" y="303" text-anchor="middle">refactor, ≥ 200 lines</text>
+<rect class="agent" x="552" y="266" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="631" y="288" text-anchor="middle">adversarial</text>
+<text class="sub" x="631" y="303" text-anchor="middle" style="font-size:10.9px">≥ 50 lines, risky paths</text>
+<rect class="agent" x="720" y="266" width="158" height="50" rx="8" stroke-width="1.5"/>
+<text class="label" x="799" y="288" text-anchor="middle">rendering</text>
+<text class="sub" x="799" y="303" text-anchor="middle">shaders, canvas, CSS</text>
 <path class="line accent" d="M940,154 L940,178" marker-end="url(#h-accent)"/>
 <text class="small" x="36" y="352" text-anchor="start">Each returns the contract JSON: severity P0–P3 · confidence 50 | 75 | 100 · evidence quoting file:line · suggested_fix · autofix_class · pre_existing</text>
 <rect class="gate" x="36" y="384" width="236" height="70" rx="8" stroke-width="1.5"/>

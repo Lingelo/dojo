@@ -13,6 +13,7 @@
   .edge { font-size: 11px; fill: #5c6370; }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .skill { fill: #fdf1ea; stroke: #d97757; }
+  .ops { fill: #e8f5f4; stroke: #2e8a83; stroke-dasharray: 6 3; }
   .artifact { fill: #edf2fb; stroke: #5b7fbf; }
   .gate { fill: #fdeeee; stroke: #c94a4a; }
   .agent { fill: #ecf6ef; stroke: #3f8f5a; }
@@ -39,6 +40,7 @@
     text { fill: #e6edf3; }
     .desc, .sub, .small, .edge { fill: #9aa4b0; }
     .skill { fill: #3a2419; stroke: #e08b6c; }
+    .ops { fill: #15302e; stroke: #4fb8ae; }
     .artifact { fill: #1b2638; stroke: #7c9fd8; }
     .gate { fill: #3a1d1f; stroke: #e06c6c; }
     .agent { fill: #18301f; stroke: #5fb07a; }
@@ -65,17 +67,17 @@
 <rect class="bg" x="0.5" y="0.5" width="1099" height="559" rx="14"/>
 <text class="title" x="28" y="38">Incidents: detection, resolution, learning</text>
 <text class="desc" x="28" y="58">An incident is a dated git tag, so time to restore and postmortem timelines are measured, not remembered.</text>
-<rect class="skill" x="36" y="86" width="250" height="62" rx="8" stroke-width="1.5"/>
+<rect class="ops" x="36" y="86" width="250" height="62" rx="8" stroke-width="1.5"/>
 <text class="label" x="161" y="114" text-anchor="middle">monitor watch</text>
 <text class="sub" x="161" y="129" text-anchor="middle">after a deployment</text>
-<rect class="skill" x="36" y="168" width="250" height="62" rx="8" stroke-width="1.5"/>
+<rect class="ops" x="36" y="168" width="250" height="62" rx="8" stroke-width="1.5"/>
 <text class="label" x="161" y="196" text-anchor="middle">monitor patrol --env e</text>
 <text class="sub" x="161" y="211" text-anchor="middle">scheduled: routine, cron, CI</text>
-<rect class="skill" x="36" y="250" width="250" height="62" rx="8" stroke-width="1.5"/>
+<rect class="ops" x="36" y="250" width="250" height="62" rx="8" stroke-width="1.5"/>
 <text class="label" x="161" y="271" text-anchor="middle">monitor alert</text>
 <text class="sub" x="161" y="286" text-anchor="middle">Alertmanager · PagerDuty ·</text>
 <text class="sub" x="161" y="300" text-anchor="middle">Datadog · plain JSON</text>
-<rect class="skill" x="36" y="332" width="250" height="62" rx="8" stroke-width="1.5"/>
+<rect class="ops" x="36" y="332" width="250" height="62" rx="8" stroke-width="1.5"/>
 <text class="label" x="161" y="360" text-anchor="middle">monitor incident open</text>
 <text class="sub" x="161" y="375" text-anchor="middle">by hand, --at, --summary</text>
 <rect class="artifact" x="360" y="190" width="270" height="96" rx="8" stroke-width="1.5"/>
@@ -87,10 +89,10 @@
 <path class="line bad" d="M286,199 L360,228.4" marker-end="url(#h-bad)"/>
 <path class="line bad" d="M286,281 L360,247.60000000000002" marker-end="url(#h-bad)"/>
 <path class="line bad" d="M286,363 L360,266.8" marker-end="url(#h-bad)"/>
-<rect class="skill" x="700" y="110" width="364" height="62" rx="8" stroke-width="1.5"/>
+<rect class="ops" x="700" y="110" width="364" height="62" rx="8" stroke-width="1.5"/>
 <text class="label" x="882" y="138" text-anchor="middle">deploy rollback &lt;env&gt;</text>
 <text class="sub" x="882" y="153" text-anchor="middle">rollback/&lt;env&gt;/… resolves the open incident</text>
-<rect class="skill" x="700" y="196" width="364" height="62" rx="8" stroke-width="1.5"/>
+<rect class="ops" x="700" y="196" width="364" height="62" rx="8" stroke-width="1.5"/>
 <text class="label" x="882" y="224" text-anchor="middle" style="font-size:12.9px">monitor incident resolve · resolved alert</text>
 <text class="sub" x="882" y="239" text-anchor="middle">resolve/&lt;env&gt;/… (never before detection)</text>
 <path class="line ok" d="M630,218.8 L700,141" marker-end="url(#h-ok)"/>
@@ -101,7 +103,7 @@
 <text class="label" x="482" y="398" text-anchor="middle">metrics</text>
 <text class="sub" x="482" y="413" text-anchor="middle">failure rate · time to restore</text>
 <text class="sub" x="482" y="427" text-anchor="middle">(detection → resolution)</text>
-<rect class="skill" x="604" y="360" width="212" height="96" rx="8" stroke-width="1.5"/>
+<rect class="ops" x="604" y="360" width="212" height="96" rx="8" stroke-width="1.5"/>
 <text class="label" x="710" y="398" text-anchor="middle">postmortem</text>
 <text class="sub" x="710" y="413" text-anchor="middle">timeline: real start,</text>
 <text class="sub" x="710" y="427" text-anchor="middle">detection, mitigation</text>
@@ -118,6 +120,8 @@
 <text class="small" x="36" y="501" text-anchor="start">opens none; an unreachable health-check does.</text>
 <rect class="skill" x="36" y="536" width="18" height="12" rx="3" stroke-width="1.3"/>
 <text class="small" x="60" y="546">skill (/kaizen:…)</text>
-<rect class="artifact" x="187.4" y="536" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="211.4" y="546">file in your repo</text>
+<rect class="ops" x="187.4" y="536" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="211.4" y="546">kaizen-ops (/kaizen-ops:…)</text>
+<rect class="artifact" x="394.6" y="536" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="418.6" y="546">file in your repo</text>
 </svg>

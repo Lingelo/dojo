@@ -63,12 +63,15 @@ The [gates and hooks](gates-and-hooks.md) page explains how the deterministic pa
 
 ## What runs automatically
 
-Five hook registrations work without you invoking anything (see [hooks](gates-and-hooks.md#the-hooks)):
+Nine hook registrations work without you invoking anything (see [hooks](gates-and-hooks.md#the-hooks)):
 
-- a **Stop** hook keeps Claude from finishing a turn on red checks during `work` and `autopilot`;
-- a **PreToolUse** hook refuses `git push` of an unreviewed branch, the raw deploy command of a
-  protected environment, hand-made deployment tags and direct writes to the review state;
+- a **SessionStart** hook records that Kaizen's hooks run in this repo, for `kaizen doctor`;
+- three **PreToolUse** hooks: one refuses a commit carrying a secret; one refuses `git push` of an
+  unreviewed branch, the raw deploy command of a protected environment, hand-made deployment tags and
+  direct writes to the review state; one logs each reviewer as it is launched;
 - two **PostToolUse** hooks bind the quality gate to its session and log which reviewers really ran;
+- two **Stop** hooks: one keeps Claude from finishing a turn on red checks during `work` and
+  `autopilot`, the other charges the turn's tokens to the work item (`kaizen cost`);
 - a **UserPromptSubmit** hook recognizes `kaizen waive <code>` and `kaizen deploy <code>` in your own
   messages.
 

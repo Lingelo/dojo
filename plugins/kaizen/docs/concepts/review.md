@@ -7,7 +7,7 @@ substantiated, and re-verify what would block. This page explains how.
 
 ## Code review
 
-![The multi-agent review pipeline: scope, depth, intent and plan, selection, ten reviewers in parallel, normalize, deduplicate, confidence gate, validation of blocking findings, verdict and review record](../media/diagrams/review-pipeline.svg)
+![The multi-agent review pipeline: scope, depth, intent and plan, selection and cost estimate, eleven reviewers in parallel, normalize, deduplicate, confidence gate, validation of blocking findings, verdict and review record](../media/diagrams/review-pipeline.svg)
 
 ### 1. Scope and depth
 
@@ -166,5 +166,5 @@ Verdict: ⛔ blocked if a P0 remains or `plan check` fails, ⚠️ ready with no
 
 ## The agents
 
-The ten code reviewers, six plan reviewers and five researchers are described in
+The eleven code reviewers, six plan reviewers and five researchers are described in
 [Agents and models](agents-and-models.md).
