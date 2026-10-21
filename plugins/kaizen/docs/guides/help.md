@@ -41,15 +41,15 @@ Next:
 ```
 
 Order of the inference:
-1. Open production incident → `monitor` (restore first), then `postmortem`.
-2. Incident resolved recently without a postmortem → `postmortem`.
+1. Open production incident → `/kaizen-ops:monitor` (restore first), then `/kaizen-ops:postmortem`.
+2. Incident resolved recently without a postmortem → `/kaizen-ops:postmortem`.
 3. Kaizen not initialized → `setup`.
 4. Work in progress under the gate → resume `work`.
 5. Branch with changes:
    - pending waiver → confirm it;
    - not reviewed → `review`;
    - reviewed and committed → `ship`.
-6. Default branch with commits not yet deployed (deployment configured) → `deploy`.
+6. Default branch with commits not yet deployed (deployment configured) → `/kaizen-ops:deploy`.
 7. Requirements without a plan → `plan`. Ready plan → `work`.
 8. Otherwise → `plan <what to build>`: the four-command path `setup` → `plan` → `work` → `ship`
    (a fuzzy idea → `brainstorm`, a bug → `debug`, no idea → `ideate`).

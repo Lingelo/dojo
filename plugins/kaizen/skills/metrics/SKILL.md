@@ -34,7 +34,7 @@ than 10 changes → trends not significant).
 | Change lead time | median PR opened → merged, or first commit → deployment; a long lead time often comes from review (DORA 2025) |
 | Rework rate | share of changes that fix; rising = we ship defects |
 | Change failure rate | changes followed by a fix within 7 days on the same files, or deployments followed by a rollback or an incident |
-| Time to restore | from recorded incidents (`monitor`, detection → resolution) when there are real deployments, otherwise from postmortems (`detected` → `resolved`) |
+| Time to restore | from recorded incidents (`/kaizen-ops:monitor`, detection → resolution) when there are real deployments, otherwise from postmortems (`detected` → `resolved`) |
 | Batch size | median and share above `pr.max_lines` — the first lever according to DORA |
 | Kaizen loop | new learnings, **read** (cited by a recent plan), **applied** (cited by a commit), never cited, constitution exceptions |
 | Work items | `work_items`: what each feature or fix cost end to end (every turn charged to the Jira key, plan or branch), median per kind (`by_kind`), the most expensive (`top`), share of tokens `unattributed` — local to the machine |

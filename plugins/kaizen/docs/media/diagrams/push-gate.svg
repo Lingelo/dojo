@@ -13,6 +13,7 @@
   .edge { font-size: 11px; fill: #5c6370; }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .skill { fill: #fdf1ea; stroke: #d97757; }
+  .ops { fill: #e8f5f4; stroke: #2e8a83; stroke-dasharray: 6 3; }
   .artifact { fill: #edf2fb; stroke: #5b7fbf; }
   .gate { fill: #fdeeee; stroke: #c94a4a; }
   .agent { fill: #ecf6ef; stroke: #3f8f5a; }
@@ -39,6 +40,7 @@
     text { fill: #e6edf3; }
     .desc, .sub, .small, .edge { fill: #9aa4b0; }
     .skill { fill: #3a2419; stroke: #e08b6c; }
+    .ops { fill: #15302e; stroke: #4fb8ae; }
     .artifact { fill: #1b2638; stroke: #7c9fd8; }
     .gate { fill: #3a1d1f; stroke: #e06c6c; }
     .agent { fill: #18301f; stroke: #5fb07a; }
@@ -71,15 +73,15 @@
 <text class="label" x="193" y="129" text-anchor="middle">/kaizen:review</text>
 <text class="sub" x="193" y="144" text-anchor="middle">launches reviewers through the Agent tool</text>
 <rect class="gate" x="44" y="186" width="298" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="193" y="211" text-anchor="middle">PostToolUse --evidence</text>
-<text class="sub" x="193" y="226" text-anchor="middle" style="font-size:11.2px">logs each kaizen:*-reviewer actually launched</text>
+<text class="label" x="193" y="211" text-anchor="middle" style="font-size:13.3px">Agent hooks --launch, --evidence</text>
+<text class="sub" x="193" y="226" text-anchor="middle" style="font-size:11.2px">log each kaizen:*-reviewer launched, then run</text>
 <rect class="state" x="44" y="270" width="298" height="46" rx="10" stroke-width="1.5"/>
 <text class="label" x="193" y="297" text-anchor="middle">review-evidence.json</text>
 <rect class="gate" x="44" y="344" width="298" height="70" rx="8" stroke-width="1.5"/>
-<text class="label" x="193" y="362" text-anchor="middle">review record --verdict</text>
-<text class="sub" x="193" y="377" text-anchor="middle" style="font-size:10.3px">refused without a reviewer since the last review,</text>
-<text class="sub" x="193" y="391" text-anchor="middle">except light (branch ≤ 20 lines)</text>
-<text class="sub" x="193" y="405" text-anchor="middle">or update after fixes (≤ 80 lines since)</text>
+<text class="label" x="193" y="362" text-anchor="middle">review record --verdict [--run]</text>
+<text class="sub" x="193" y="377" text-anchor="middle">refused without a reviewer since the last</text>
+<text class="sub" x="193" y="391" text-anchor="middle" style="font-size:11.2px">review (light ≤ 20, update ≤ 80 lines aside);</text>
+<text class="sub" x="193" y="405" text-anchor="middle">--run: a reviewer left no output</text>
 <rect class="state" x="44" y="442" width="298" height="66" rx="10" stroke-width="1.5"/>
 <text class="label" x="193" y="465" text-anchor="middle">reviews.json[branch]</text>
 <text class="sub" x="193" y="480" text-anchor="middle" style="font-size:11.4px">tree · head · verdict ready|concerns|blocked</text>

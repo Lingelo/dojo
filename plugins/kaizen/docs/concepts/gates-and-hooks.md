@@ -7,7 +7,7 @@ legitimately.
 
 ## The hooks
 
-![Kaizen's main hook registrations along a Claude Code session: UserPromptSubmit on your messages, PreToolUse before tools, PostToolUse after tools, Stop at the end of a turn (the SessionStart heartbeat and the PreToolUse launch log are listed in the table below)](../media/diagrams/hooks.svg)
+![Kaizen's nine hook registrations along a Claude Code session: SessionStart heartbeat, UserPromptSubmit on your messages, two PreToolUse before tools, two PostToolUse after tools, two Stop hooks at the end of a turn (quality gate, token ledger)](../media/diagrams/hooks.svg)
 
 Declared in [`hooks/hooks.json`](../../hooks/hooks.json):
 

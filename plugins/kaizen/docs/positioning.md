@@ -18,9 +18,9 @@ instruction given to the agent.
 | Implementation | `work`, `debug`, `polish` | yes: a hook blocks the end of the work on red tests |
 | Verification | `review`, CI driven by `watch-pr` | yes: push refused without a review that really happened |
 | Delivery | `ship`, `release` | yes: PR size measured, SemVer checked |
-| Deployment | `deploy` (detected platform, rollback) | yes: code typed by the user for production, tags |
-| Operations | `monitor` (plan thresholds, scheduled check, alerts), dated incidents, rollback | partly: continuous detection if `patrol` is scheduled or alerts are wired |
-| Improvement | `learn`, `postmortem`, `metrics` (real DORA, cost) | partly: local measurement |
+| Deployment | `/kaizen-ops:deploy` (detected platform, rollback) | yes: code typed by the user for production, tags |
+| Operations | `/kaizen-ops:monitor` (plan thresholds, scheduled check, alerts), dated incidents, rollback | partly: continuous detection if `patrol` is scheduled or alerts are wired |
+| Improvement | `learn`, `/kaizen-ops:postmortem`, `metrics` (real DORA, cost) | partly: local measurement |
 
 ## How it is tested
 
