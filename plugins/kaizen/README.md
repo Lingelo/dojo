@@ -275,6 +275,7 @@ K=plugins/kaizen/scripts/kaizen.mjs
 node $K status [--json]                        # where the repo stands in the loop, and the next command
 node $K root                                   # deliverable paths (JSON)
 node $K doctor [--in-skill] [--json] [--strict]   # are the guard rails on? plugin declared, hooks, git hooks, review
+node $K upgrade [--apply] [--json]             # migrations this repo still needs after a Kaizen update; --apply fixes the automatable ones
 node $K init [--docs-root d] [--language en] [--profile prototype|product|critical]   # .kaizen/ and the folders
 node $K config                                 # effective configuration (JSON)
 node $K detect                                 # stack and verification commands (JSON)

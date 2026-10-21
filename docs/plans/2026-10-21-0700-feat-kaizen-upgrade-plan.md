@@ -164,8 +164,8 @@ release adds its signal at all.
 <!-- kaizen:rollout -->
 ## Rollout and rollback
 
-- **Exposure:** Kaizen 4.3.0 on the next plugin update; `doctor` (run first by `help`, `work`, `setup`)
-  shows pending migrations.
+- **Exposure:** S1 ships `kaizen upgrade` in Kaizen 4.3.0; S2 (4.4.0) makes `doctor` (run first by
+  `help`, `work`, `setup`) show pending migrations.
 - **Order:** S1 ships the registry and the command; S2 surfaces it and adds the contract.
 - **Rollback:** revert the release; `--apply` only changed files the team commits, each also reachable by
   the existing fixes.
@@ -184,7 +184,8 @@ release adds its signal at all.
   (`upgrade` command), `plugins/kaizen/tests/upgrade.test.mjs` (new), `plugins/kaizen/README.md`
   (CLI reference), `plugins/kaizen/docs/reference/cli.md`
 - **Approach:** KTD1, KTD2; `apply` collects `written` from each applied migration and prints the files to
-  commit; `--json` returns `{ pending, applied, manual }`.
+  commit; `--json` returns `{ pending }`, or `{ applied, manual, written }` with `--apply`. The hook
+  refresh of 4.2.0 is extracted as `refreshHookLookups` so `upgrade` never installs or wires hooks.
 - **Evidence:** test first
 - **Test scenarios:** AE1 (all three listed), AE2 (applied, team lines kept, idempotent), AE3 (manual
   only); each migration: applies / does not apply / already fixed by hand; nothing pending → one line;
@@ -232,7 +233,7 @@ release adds its signal at all.
 <!-- kaizen:done -->
 ## Definition of done
 
-- [ ] S1 and S2 merged, Kaizen 4.3.0 released.
+- [ ] S1 (Kaizen 4.3.0) and S2 (4.4.0) merged.
 - [ ] Every R covered by its tests above; CI green on the matrix for each slice.
 - [ ] The five migrations of the Problem table detected and, where automatable, applied.
 - [ ] `doctor`, `help` and `setup` point to `upgrade` when something is pending.

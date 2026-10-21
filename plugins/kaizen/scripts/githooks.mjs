@@ -35,21 +35,30 @@ function activeHooks(root) {
   }
 }
 
-export function installGitHooks(root) {
-  const written = [];
+// Gives Kaizen's own hooks this version's CLI lookup line, nothing else: lines the team added, line
+// endings and hooks that are not Kaizen's stay as they are. → the paths rewritten.
+export function refreshHookLookups(root) {
   const refreshed = [];
   for (const h of HOOKS) {
     const dest = join(root, '.githooks', h);
-    if (existsSync(dest)) {
-      const text = readFileSync(dest, 'utf8');
-      const current = text.match(HOOK_LOOKUP)?.[0];
-      const lookup = templateLookup(h);
-      if (text.includes(`githook ${h}`) && current && lookup && current !== lookup) {
-        writeFileSync(dest, text.replace(HOOK_LOOKUP, () => lookup));
-        refreshed.push(`.githooks/${h}`);
-      }
-      continue;
+    if (!existsSync(dest)) continue;
+    const text = readFileSync(dest, 'utf8');
+    const current = text.match(HOOK_LOOKUP)?.[0];
+    const lookup = templateLookup(h);
+    if (text.includes(`githook ${h}`) && current && lookup && current !== lookup) {
+      writeFileSync(dest, text.replace(HOOK_LOOKUP, () => lookup));
+      refreshed.push(`.githooks/${h}`);
     }
+  }
+  return refreshed;
+}
+
+export function installGitHooks(root) {
+  const written = [];
+  const refreshed = refreshHookLookups(root);
+  for (const h of HOOKS) {
+    const dest = join(root, '.githooks', h);
+    if (existsSync(dest)) continue;
     mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(join(TEMPLATES, h), dest);
     chmodSync(dest, 0o755);
