@@ -10,6 +10,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { docsRoot, git, loadConfig, verifyCommands } from './lib.mjs';
 import { checkPush, currentBranch } from './review-state.mjs';
 
@@ -80,18 +81,27 @@ export function heartbeat(root) {
 
 // Kaizen's hooks in `.githooks/`, whether git runs them (core.hooksPath) and why not: a hook that is
 // not Kaizen's, or versioned without the executable bit (committed from Windows), is ignored by git.
+// The line of a Kaizen git hook that finds the CLI: the part a newer Kaizen may tighten (4.1.2: an
+// explicit pointer must be Kaizen core). Matched with its line ending kept, CRLF included.
+export const HOOK_LOOKUP = /^cli=\$\(node -e '[^'\n]*'\) \|\| exit 1(?=\r?$)/m;
+const HOOK_TEMPLATES = fileURLToPath(new URL('../templates/githooks/', import.meta.url));
+export const templateLookup = (hook) => readFileSync(join(HOOK_TEMPLATES, hook), 'utf8').match(HOOK_LOOKUP)?.[0] ?? null;
+
 export function gitHooksState(root) {
   const dir = join(root, '.githooks');
   const present = ['pre-push', 'pre-commit'].filter((f) => existsSync(join(dir, f)));
   const hooksPath = git(root, ['config', '--get', 'core.hooksPath'], { allowFail: true }) || null;
   const foreign = present.filter((f) => !readFileSync(join(dir, f), 'utf8').includes(`githook ${f}`));
+  // Kaizen's hooks whose CLI lookup is not this version's: install never overwrites a hook, so an older
+  // lookup stays until `audit fix git_hooks` refreshes that one line.
+  const outdated = present.filter((f) => !foreign.includes(f) && readFileSync(join(dir, f), 'utf8').match(HOOK_LOOKUP)?.[0] !== templateLookup(f));
   const notExecutable = present.filter((f) => {
     const staged = git(root, ['ls-files', '-s', `.githooks/${f}`], { allowFail: true });
     if (staged) return staged.startsWith('100644');
     return process.platform !== 'win32' && (statSync(join(dir, f)).mode & 0o111) === 0;
   });
   const wired = present.length > 0 && !foreign.length && !notExecutable.length && hooksPath !== null && hooksPath.replace(/[\\/]+$/, '') === '.githooks';
-  return { present, hooksPath, wired, foreign, notExecutable };
+  return { present, hooksPath, wired, foreign, notExecutable, outdated };
 }
 
 export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
@@ -141,7 +151,8 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
   }
 
   const gh = gitHooksState(root);
-  if (gh.wired) add('git_hooks', 'Git hooks', 'ok', `.githooks/ (${gh.present.join(', ')}) wired through core.hooksPath`);
+  if (gh.wired && gh.outdated.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/${gh.outdated.join(', ')}: CLI lookup of an older Kaizen (it may run a file that is not Kaizen core)`, 'node "$K" audit fix git_hooks  (refreshes that line only), then commit .githooks/');
+  else if (gh.wired) add('git_hooks', 'Git hooks', 'ok', `.githooks/ (${gh.present.join(', ')}) wired through core.hooksPath`);
   else if (gh.notExecutable.length) add('git_hooks', 'Git hooks', 'warn', `${gh.notExecutable.join(', ')} not executable in git (committed from Windows?): git ignores them`, `git update-index --chmod=+x ${gh.notExecutable.map((f) => `.githooks/${f}`).join(' ')}`);
   else if (gh.foreign.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/${gh.foreign.join(', ')} is not Kaizen's: the review and secret checks are not installed`, 'chain it: add  node "$K" githook <name> "$@" || exit 1  to that hook');
   else if (gh.present.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/ present but core.hooksPath is ${gh.hooksPath ? `"${gh.hooksPath}"` : 'unset'} (fresh clone?): the hooks do not run`, 'git config core.hooksPath .githooks');

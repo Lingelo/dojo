@@ -40,6 +40,43 @@ test('install: hooks written and wired, never overwritten', () => {
   cleanup(bare);
 });
 
+// Hooks installed by Kaizen 4.1.1, whose lookup ran any file named by kaizen.cli or $KAIZEN_CLI.
+const OLD = (h) => readFileSync(join(PLUGIN, 'tests', 'fixtures', 'githooks', `${h}-4.1.1`), 'utf8').replace(/\r\n/g, '\n');
+const lookupLine = (text) => text.split(/\r?\n/).find((l) => l.startsWith('cli=$(node -e'));
+
+test('outdated hooks: doctor and audit warn, audit fix refreshes the lookup line only', () => {
+  const { dir, bare } = featureRepo();
+  mkdirSync(join(dir, '.githooks'), { recursive: true });
+  // pre-push as 4.1.1 wrote it plus a team line; pre-commit as 4.1.1 wrote it, with CRLF (Windows checkout).
+  writeFileSync(join(dir, '.githooks', 'pre-push'), OLD('pre-push').replace(/^exec /m, 'echo team-check\nexec '), { mode: 0o755 });
+  writeFileSync(join(dir, '.githooks', 'pre-commit'), OLD('pre-commit').replace(/\n/g, '\r\n'), { mode: 0o755 });
+  gitc(dir, ['config', 'core.hooksPath', '.githooks']);
+  const check = (r) => r.json.checks.find((c) => c.id === 'git_hooks');
+  const before = check(cli(dir, ['doctor', '--json']));
+  assert.equal(before.status, 'warn');
+  assert.match(before.evidence, /pre-push, pre-commit: CLI lookup of an older Kaizen/);
+  assert.match(before.fix, /audit fix git_hooks/);
+  assert.equal(check(cli(dir, ['audit', '--json', '--no-github'])).status, 'warn');
+
+  const r = cli(dir, ['audit', 'fix', 'git_hooks']);
+  assert.equal(r.code, 0, r.stderr);
+  assert.deepEqual(r.json.written, ['.githooks/pre-push (CLI lookup refreshed: commit it)', '.githooks/pre-commit (CLI lookup refreshed: commit it)']);
+  for (const h of ['pre-push', 'pre-commit']) {
+    const text = readFileSync(join(dir, '.githooks', h), 'utf8');
+    assert.equal(lookupLine(text), lookupLine(readFileSync(join(PLUGIN, 'templates', 'githooks', h), 'utf8')), `${h}: lookup refreshed`);
+  }
+  assert.match(readFileSync(join(dir, '.githooks', 'pre-push'), 'utf8'), /echo team-check\nexec node "\$cli" githook pre-push/, 'the team line is kept');
+  assert.equal((readFileSync(join(dir, '.githooks', 'pre-commit'), 'utf8').match(/\r\n/g) || []).length, OLD('pre-commit').split('\n').length - 1, 'CRLF kept');
+  assert.equal(check(cli(dir, ['doctor', '--json'])).status, 'ok');
+  assert.equal(check(cli(dir, ['audit', '--json', '--no-github'])).status, 'ok');
+  // Idempotent, and a hook that is not Kaizen's is never touched.
+  writeFileSync(join(dir, '.githooks', 'pre-push'), `#!/bin/sh\n${lookupLine(OLD('pre-push'))}\nmake lint\n`);
+  assert.deepEqual(cli(dir, ['audit', 'fix', 'git_hooks']).json.written, []);
+  assert.match(readFileSync(join(dir, '.githooks', 'pre-push'), 'utf8'), /make lint/);
+  cleanup(dir);
+  cleanup(bare);
+});
+
 test('install: hooks already in use are never shadowed, the chaining line is given', () => {
   const { dir, bare } = featureRepo();
   gitc(dir, ['config', 'core.hooksPath', '.husky']);

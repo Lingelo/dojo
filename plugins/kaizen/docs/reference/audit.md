@@ -73,7 +73,7 @@ everything `missing` or `warn` by priority, with the fix, the scaffold id and th
 | `secret_scanning` | `.github/workflows/kaizen-secrets.yml` | `secrets scan --base origin/<target branch>` on every PR (`--ref <sha>` pins the Kaizen checkout) |
 | `monitor_patrol` | `.github/workflows/kaizen-patrol.yml` | scheduled `monitor patrol` (`--env`, default production or the first environment; `--ref <sha>` pins the Kaizen checkout) |
 | `monitor_alert` | `.github/workflows/kaizen-alert.yml` | `repository_dispatch` entry point passing the payload to `monitor alert` through the environment (no script injection) |
-| `git_hooks` | `.githooks/pre-push`, `.githooks/pre-commit`, `core.hooksPath` | refuse an unreviewed push and a staged secret without the plugin; an existing hook is never overwritten, and when hooks are already in use (`core.hooksPath`, `.git/hooks`) the path is left alone and `chain` gives the line to add |
+| `git_hooks` | `.githooks/pre-push`, `.githooks/pre-commit`, `core.hooksPath` | refuse an unreviewed push and a staged secret without the plugin; an existing hook is never overwritten — of a Kaizen hook written by an older version only the CLI lookup line is refreshed (`warn` until then), and when hooks are already in use (`core.hooksPath`, `.git/hooks`) the path is left alone and `chain` gives the line to add |
 | `claude_settings` | merges into `.claude/settings.json` | declares the `dojo` marketplace and enables `kaizen@dojo`, keeping every other key; refused on invalid JSON |
 
 Every scaffold stays **uncommitted**, for you to review. `/kaizen:setup audit` walks the list one item

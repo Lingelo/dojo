@@ -52,8 +52,9 @@ must be Kaizen core (its `.claude-plugin/plugin.json` names `kaizen`); a `git co
 - Enable the plugin in Claude Code (`/plugin`), or point to a checkout:
   `git config kaizen.cli /path/to/dojo/plugins/kaizen/scripts/kaizen.mjs`.
 - To remove them: delete `.githooks/` and run `git config --unset core.hooksPath`.
-- Hooks installed before 4.1.2 check only that an explicit pointer is a file: delete `.githooks/` and run
-  `audit fix git_hooks` again to get the stricter lookup (install never overwrites a hook).
+- `kaizen doctor` says "CLI lookup of an older Kaizen": the hooks were installed before 4.1.2 and run
+  any file an explicit pointer names. `audit fix git_hooks` replaces that one line with this version's
+  lookup, keeping the rest of the hook (lines your team added included); commit `.githooks/`.
 
 `kaizen doctor` says "`.githooks/` present but core.hooksPath unset": this clone has the hooks but
 does not run them — `git config core.hooksPath .githooks`.

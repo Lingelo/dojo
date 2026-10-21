@@ -172,7 +172,11 @@ export function audit(root, { github = true } = {}) {
     const evidence = !decl.declared ? decl.why : opsMissing ? `${OPS_ID} not enabled although this repo ${opsWhy}` : `.claude/settings.json enables kaizen@dojo${opsWhy ? ` and ${OPS_ID}` : ''}`;
     add('claude_settings', 'Kaizen loop', 'Plugin declared for every clone', decl.declared && !opsMissing ? 'ok' : 'missing', evidence, { how: 'declare the dojo marketplace, kaizen@dojo (and kaizen-ops@dojo when the repo deploys with Kaizen) in the versioned .claude/settings.json', scaffold: 'claude_settings' }, 2);
     const hooks = gitHooksState(root);
-    add('git_hooks', 'Kaizen loop', 'Git hooks (review and secrets without the plugin)', hooks.wired ? 'ok' : hooks.present.length ? 'warn' : 'missing', hooks.wired ? '.githooks/ wired' : hooks.present.length ? '.githooks/ present, core.hooksPath unset' : 'none: without the plugin, nothing refuses an unreviewed push', { how: 'git hooks that refuse an unreviewed push and a staged secret', scaffold: 'git_hooks' }, 3);
+    const hooksStatus = hooks.wired && !hooks.outdated.length ? 'ok' : hooks.present.length ? 'warn' : 'missing';
+    const hooksEvidence = hooks.outdated.length
+      ? `.githooks/${hooks.outdated.join(', ')}: CLI lookup of an older Kaizen`
+      : hooks.wired ? '.githooks/ wired' : hooks.present.length ? '.githooks/ present, core.hooksPath unset' : 'none: without the plugin, nothing refuses an unreviewed push';
+    add('git_hooks', 'Kaizen loop', 'Git hooks (review and secrets without the plugin)', hooksStatus, hooksEvidence, { how: 'git hooks that refuse an unreviewed push and a staged secret (an outdated one gets this version\'s CLI lookup)', scaffold: 'git_hooks' }, 3);
   }
   const findable = /learnings/.test(read(root, 'CLAUDE.md') || '');
   add('learnings', 'Kaizen loop', 'Learnings findable by agents', findable ? 'ok' : 'warn', findable ? 'CLAUDE.md cites docs/learnings/' : 'CLAUDE.md does not mention learnings', { how: '/kaizen:setup (findability step)', skill: '/kaizen:setup' }, 3);
