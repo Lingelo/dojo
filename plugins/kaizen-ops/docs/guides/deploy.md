@@ -48,8 +48,9 @@ In depth: [production](../../../kaizen/docs/concepts/production.md#deploy).
      signal. A plan without a rollback or signal blocks a protected deployment;
    - declared rollback;
    - signals already healthy: no deploying on top of an incident.
-2. **Approval** (protected environment): Claude shows a code, you type `kaizen deploy <code>` yourself.
-   Valid 30 minutes, for this commit only. Claude cannot approve for you, and in autonomous mode there
+2. **Approval** (protected environment): Claude asks you, "Not now" first; choose to deploy and Claude
+   Code's own prompt asks you to confirm (for this commit only). With `"approvals": "code"`, you type
+   `kaizen deploy <code>` instead (30 minutes). Claude cannot approve for you, and in autonomous mode there
    is no protected deployment.
 3. **Deployment**: the command runs (killed beyond `deploy.timeout_seconds`), then an annotated
    `deploy/<env>/<timestamp>` tag is created on the commit and pushed.

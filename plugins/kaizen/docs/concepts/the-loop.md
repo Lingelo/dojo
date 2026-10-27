@@ -55,7 +55,7 @@ ADRs), [`prune-learnings`](../guides/prune-learnings.md) (keep the memory true),
 | What the product must do, the scope, the trade-offs | **you**, through one question at a time (brainstorm, plan, doc-review) |
 | How to build it, within the plan | Claude, with justified decisions you can read (KTD) |
 | Whether checks pass, whether a review happened, whether a push may go | **deterministic gates** (CLI and hooks), not Claude’s word |
-| Skipping the review, deploying to a protected environment | **only you**, by typing a code yourself |
+| Skipping the review, deploying to a protected environment | **only you**: Claude asks (the safe option first), you confirm in Claude Code's prompt |
 | Merging a PR | **only you** |
 | Changing the constitution | a declared human approver (an agent never approves) |
 
@@ -73,7 +73,8 @@ Nine hook registrations work without you invoking anything (see [hooks](gates-an
 - two **Stop** hooks: one keeps Claude from finishing a turn on red checks during `work` and
   `autopilot`, the other charges the turn's tokens to the work item (`kaizen cost`);
 - a **UserPromptSubmit** hook recognizes `kaizen waive <code>` and `kaizen deploy <code>` in your own
-  messages.
+  messages, for teams that chose typed codes (`"approvals": "code"`); by default you approve in Claude
+  Code's own permission prompt.
 
 ## Knowing where you are
 

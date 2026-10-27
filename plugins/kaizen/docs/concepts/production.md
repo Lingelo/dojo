@@ -34,7 +34,7 @@ tag, push, `gh release create`. It proposes `/kaizen-ops:deploy` but never deplo
 
 ## Deploy
 
-![A watched deployment: preconditions, approval code you type for a protected environment, deploy run, deployment tag, signal watch, healthy or breach, incident, rollback and postmortem](../media/diagrams/deploy-flow.svg)
+![A watched deployment: preconditions, your approval (question, then Claude Code's prompt) for a protected environment, deploy run, deployment tag, signal watch, healthy or breach, incident, rollback and postmortem](../media/diagrams/deploy-flow.svg)
 
 ### Configuration
 
@@ -79,8 +79,9 @@ the chosen candidate without overwriting an existing environment (`--force` to r
    incident).
 2. **Approval** for a protected environment (`production` by default, or `"protected": true`):
    `node $K deploy request <env> [--ref r]` stores a pending approval for that environment **and that
-   commit** and prints a 6-character code, valid 30 minutes; **you** type `kaizen deploy <code>`; the
-   UserPromptSubmit hook confirms it. Autonomous modes have no protected deployment.
+   commit** and prints a 6-character code, valid 30 minutes; Claude asks you, "Not now" first, and if
+   you choose to deploy, Claude Code's own prompt confirms it (`confirm <code>`). With `"approvals":
+   "code"`, **you** type `kaizen deploy <code>` and the UserPromptSubmit hook confirms it. Autonomous modes have no protected deployment.
 3. `node $K deploy run <env> [--ref r]` consumes the approval, runs your command with `KAIZEN_ENV`,
    `KAIZEN_REF` and `KAIZEN_SHA` in the environment, bounded by `timeout_seconds` (whole process tree
    killed beyond it — the environment’s state is then uncertain and the report says so), logs a line in

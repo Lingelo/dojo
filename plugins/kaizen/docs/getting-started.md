@@ -143,9 +143,9 @@ P0/P1 findings and offers to ship.
 `ship` pushes the branch and opens the PR. The description comes from the plan: why, what changes,
 **reviewer guide**, evidence, rollback.
 
-The push is only accepted with a recorded review: a hook refuses it otherwise. To push without a review
-(hotfix, throwaway branch), tell Claude; it gives you a code that **you** type (`kaizen waive <code>`),
-and the PR reports it in a "Review waived" section.
+The push waits for a recorded review: at an unreviewed push, Claude asks you, the review as the first
+option. To push without it (hotfix, throwaway branch), choose so and confirm in Claude Code's prompt;
+no code to type.
 
 `watch-pr` then follows the PR until it looks ready to merge:
 - it handles review comments before CI;

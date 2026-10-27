@@ -129,8 +129,9 @@ expected. The record is refused while a reviewer launched on this branch since i
 `<name>[-<slice>].json` holding the contract's `findings` array in the run folder **its own prompt**
 named — whatever `--run` says, so pointing at another folder hides nothing. A reviewer launched outside
 a review run (no `Run:` line) or on another branch does not count.
-`--allow-missing <name>` does not record: it creates a pending waiver whose code you type
-(`kaizen waive <code>`), and the review is then recorded with `gaps`.
+`--allow-missing <name>` does not record: it creates a pending waiver you approve (question, then
+Claude Code's prompt; or `kaizen waive <code>` typed with `"approvals": "code"`), and the review is then
+recorded with `gaps`.
 
 Plan reviewers (`plan-*`) never count as code review evidence. Verdicts `reserves` (2.x) are read as
 `concerns`.
@@ -174,13 +175,15 @@ If you explicitly ask to skip the review:
 
 1. Claude runs `node $K review waive --reason "<your request>"`, which stores a pending request and
    prints a 6-character code (valid 30 minutes, one per branch);
-2. **you type** `kaizen waive <code>` in your own message;
-3. the UserPromptSubmit hook — which only ever sees user messages — confirms it: the branch’s review
-   becomes `verdict: waived` with your reason;
+2. Claude asks you, the review as the first option; **you choose** to skip it, Claude runs
+   `node $K confirm <code>`, and Claude Code's own permission prompt — which Claude cannot answer —
+   asks you to confirm (with `"approvals": "code"`: **you type** `kaizen waive <code>`, confirmed by the
+   UserPromptSubmit hook, which only ever sees user messages);
+3. the branch’s review becomes `verdict: waived` with your reason;
 4. the push is allowed, and [`ship`](../guides/ship.md) adds a mandatory **Review waived** section to
    the PR.
 
-Claude cannot type the code for you, and non-interactive modes never waive.
+Claude cannot confirm for you, and non-interactive modes never waive.
 
 ### Tamper protection
 

@@ -42,7 +42,7 @@
 //                  | check [--branch b --sha s]
 //                                                 reviewed state per branch, required by the hook before git push;
 //                                                 record requires reviewers that actually ran (except a light
-//                                                 review), waive waits for the confirmation typed by the user
+//                                                 review), waive waits for the user's approval (approvals.mjs)
 //   node kaizen.mjs run-dir <type>                local run folder (e.g. reviews), ignored by git
 //   node kaizen.mjs constitution [check] [--json] CONSTITUTION.md articles / validation
 //   node kaizen.mjs plan check <path> [--json]    structural check of a plan (R/AE → U traceability)
@@ -638,7 +638,7 @@ function repoStatus(root) {
   else if (initialized && constitution.draft) later.push({ command: '/kaizen:constitution', why: 'the constitution is a draft written without the team: review and ratify it (until then it blocks nothing)' });
   if (gate.active) say('/kaizen:work', `work in progress under the quality gate${gate.plan ? ` (${gate.plan})` : ''}: resume it, or \`gate off\` if it was abandoned`);
   else if (branch && branch !== def && (ahead || dirty)) {
-    if (review?.pending_waiver) say('kaizen waive <code>', 'a review waiver awaits your confirmation (to type yourself)');
+    if (review?.pending_waiver) say(config.approvals === 'code' ? 'kaizen waive <code>' : 'answer Claude\'s question', 'a review waiver awaits your confirmation');
     else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): ready to ship`);
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   } else if (branch && branch === def && undeployed(root, config)) {

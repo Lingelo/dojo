@@ -173,11 +173,12 @@ lint or typing are red. The hook blocks 3 times at most, then lets through while
 be reported, and turns itself off after 24 h. It belongs to the session that turned it on and runs within
 a time budget under the hook's timeout.
 
-**Review enforced by a hook, not by an instruction.** A `PreToolUse` hook refuses `git push` of a branch
-until `/kaizen:review` recorded the pushed state (beyond 80 lines changed since, a new review). The record
+**Review enforced by a hook, not by an instruction.** A `PreToolUse` hook stops `git push` of a branch
+until `/kaizen:review` recorded the pushed state (beyond 80 lines changed since, a new review) and has
+Claude ask you, the review as the first option. The record
 requires evidence: a hook logs the reviewers actually launched, the agent cannot declare a review that
-did not happen. Only the user can waive it, by typing the confirmation code themselves, and the waiver
-appears in the PR.
+did not happen. Only the user can skip it, confirming in Claude Code's own permission prompt — no
+code to type (`approvals: "code"` and `require_before_push: true` restore typed codes and a hard refusal).
 
 **Ceremony proportional to stakes.** `profile`: `prototype` (spike, internal tool), `product` (product in
 production), `critical` (regulated or critical domains). The profile sets the ceremony (plan size, number of
@@ -309,7 +310,7 @@ node $K run-dir <type>                         # local run folder (e.g. reviews)
 # Review and PR
 node $K review record --verdict ready|concerns|blocked [--run d] [--allow-missing a]   # requires reviewers that ran, and their outputs
 node $K review estimate --reviewers a,b [--profile p]   # tokens and relative cost of a review, before launching it
-node $K review waive --reason "…" | review status | review check [--branch b --sha s]  # waiver = code typed by the user
+node $K review waive --reason "…" | review status | review check [--branch b --sha s]  # waiver = the user's approval (question + prompt, or typed code)
 node $K confirm <code>                         # approvals: "ask" — after the user confirmed in Claude Code's prompt
 node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch [--pr n] [--repo o/r] …
 
@@ -344,7 +345,7 @@ Declared in [`hooks/hooks.json`](hooks/hooks.json); they work without any action
 | `PostToolUse` (Agent/Task) | `scripts/review-hooks.mjs --evidence` | Logs the Kaizen reviewers actually launched (evidence required by `review record`) and the agents of the cycle |
 | `Stop` | `scripts/quality-gate.mjs` | Blocks the end of the turn while `verify` is red during `work`/`autopilot`; records the cycle's token usage |
 | `Stop` | `scripts/ledger-hook.mjs` | Charges every turn's new tokens (session and subagents) to the work item in progress — Jira key, plan or branch — for `kaizen cost`; never blocks |
-| `UserPromptSubmit` | `scripts/review-hooks.mjs --confirm` | Confirms a review waiver (`kaizen waive <code>`) or a protected deployment (`kaizen deploy <code>`) typed by the user |
+| `UserPromptSubmit` | `scripts/review-hooks.mjs --confirm` | With `approvals: "code"`: confirms a review waiver (`kaizen waive <code>`) or a protected deployment (`kaizen deploy <code>`) typed by the user |
 
 ### Environment variables
 

@@ -23,6 +23,6 @@ export default {
       const st = JSON.parse(c.kaizen('review', 'status').out);
       return !st.review || st.review.depth !== 'agents' || ev.length > 0;
     }],
-    ['the refusal is explained', (out) => /review/i.test(out) && /refus|block|kaizen waive|confirm/i.test(out)],
+    ['the refusal is explained', (out) => /review/i.test(out) && /refus|block|stop|ask|kaizen waive|confirm/i.test(out)],
   ],
 };

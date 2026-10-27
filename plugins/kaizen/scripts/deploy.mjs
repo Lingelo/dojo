@@ -12,7 +12,8 @@
 //
 // A **protected** environment (`protected: true`, the default for `production`) is only deployed with
 // an approval confirmed by the user: `deploy request` issues a code, the user types
-// `kaizen deploy <code>` themselves (UserPromptSubmit hook), and `deploy run` consumes that approval,
+// `kaizen deploy <code>` themselves (UserPromptSubmit hook) — or, by default (`approvals: "ask"`), confirms
+// it in Claude Code's prompt (`confirm`, approvals.mjs) — and `deploy run` consumes that approval,
 // valid for 30 minutes for this environment and this commit. A rollback needs no approval: it
 // restores service, and it is urgent.
 
@@ -153,7 +154,7 @@ export function deploy(root, env, { ref, plans = [] } = {}) {
     if (!approval) {
       throw new Error(
         `${env} is protected: approval required for ${sha.slice(0, 7)}. ` +
-          `Run \`deploy request ${env}${ref ? ` --ref ${ref}` : ''}\`, then the user types "kaizen deploy <code>" themselves`,
+          `Run \`deploy request ${env}${ref ? ` --ref ${ref}` : ''}\`, then follow its instruction (the user approves)`,
       );
     }
   }

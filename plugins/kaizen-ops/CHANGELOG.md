@@ -2,6 +2,14 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [1.0.2] - 2026-10-27
+
+### Changed
+- `/kaizen-ops:deploy` follows the `instruction` printed by `deploy request`: with Kaizen 5's default
+  `approvals: "ask"`, the user answers a question ("Not now" first) and confirms in Claude Code's
+  prompt instead of typing `kaizen deploy <code>`; with `approvals: "code"` (or an older core) the typed
+  code is unchanged.
+
 ## [1.0.1] - 2026-10-20
 
 ### Fixed

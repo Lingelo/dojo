@@ -82,7 +82,7 @@
 <rect class="gate" x="740" y="76" width="324" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="902" y="94" text-anchor="middle">UserPromptSubmit</text>
 <text class="sub" x="902" y="109" text-anchor="middle">review-hooks.mjs --confirm:</text>
-<text class="sub" x="902" y="123" text-anchor="middle">kaizen waive / deploy &lt;code&gt;</text>
+<text class="sub" x="902" y="123" text-anchor="middle">typed codes (approvals: "code")</text>
 <path class="line" d="M710,104 L740,104" marker-end="url(#h-default)"/>
 <rect class="plain" x="170" y="234" width="230" height="40" rx="8" stroke-width="1.5"/>
 <text class="label" x="285" y="258" text-anchor="middle">Claude calls a tool</text>

@@ -94,7 +94,7 @@
 <rect class="gate" x="36" y="244" width="480" height="32" rx="6" stroke-width="1.5"/>
 <text class="label" x="48" y="264" text-anchor="start">feature branch with changes · waiver pending</text>
 <rect class="skill" x="600" y="244" width="464" height="32" rx="6" stroke-width="1.5"/>
-<text class="label mono" x="612" y="264" text-anchor="start">kaizen waive &lt;code&gt; (you type it)</text>
+<text class="label mono" x="612" y="264" text-anchor="start">answer Claude’s question</text>
 <path class="line" d="M516,260 L600,260" marker-end="url(#h-default)"/>
 <text class="small" x="24" y="265" text-anchor="end">5</text>
 <rect class="gate" x="36" y="284" width="480" height="32" rx="6" stroke-width="1.5"/>

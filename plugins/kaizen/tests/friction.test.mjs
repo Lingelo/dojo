@@ -19,7 +19,7 @@ test('pushReasonKey: stable keys for the refusals of checkPush', () => {
 });
 
 test('the gates log their stops, and what lifts them', () => {
-  const dir = tempRepo({ '.kaizen/config.json': { verify: { test: 'node -e "process.exit(1)"' } }, 'app.js': 'a\n' });
+  const dir = tempRepo({ '.kaizen/config.json': { review: { require_before_push: true }, verify: { test: 'node -e "process.exit(1)"' } }, 'app.js': 'a\n' });
   gitc(dir, ['checkout', '-qb', 'feat/x']);
   writeFiles(dir, { 'app.js': 'a\nb\n' });
   gitc(dir, ['commit', '-qam', 'feat: b']);

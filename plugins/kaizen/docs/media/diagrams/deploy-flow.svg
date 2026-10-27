@@ -75,10 +75,10 @@
 <text class="sub" x="161" y="179" text-anchor="middle">signals already healthy</text>
 <rect class="ops" x="320" y="90" width="230" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="435" y="115" text-anchor="middle">deploy request &lt;env&gt;</text>
-<text class="sub" x="435" y="130" text-anchor="middle" style="font-size:11.2px">protected env: 6-char code, 30 min</text>
+<text class="sub" x="435" y="130" text-anchor="middle" style="font-size:9.7px">protected env: pending approval, 30 min</text>
 <rect class="outside" x="320" y="166" width="230" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="435" y="191" text-anchor="middle" style="font-size:12.9px">you: kaizen deploy 7C1E0B</text>
-<text class="sub" x="435" y="206" text-anchor="middle">UserPromptSubmit approves</text>
+<text class="label" x="435" y="191" text-anchor="middle" style="font-size:11.9px">you: "Deploy", then confirm</text>
+<text class="sub" x="435" y="206" text-anchor="middle" style="font-size:10.6px">Claude Code prompt (Not now = first)</text>
 <rect class="ops" x="584" y="90" width="230" height="70" rx="8" stroke-width="1.5"/>
 <text class="label" x="699" y="115" text-anchor="middle">deploy run &lt;env&gt;</text>
 <text class="sub" x="699" y="130" text-anchor="middle">your command with KAIZEN_ENV,</text>

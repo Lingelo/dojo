@@ -10,8 +10,9 @@
 //   launched since the branch's previous review — except for a light review (branch diff ≤
 //   LIGHT_MAX_LINES), which the skill does without subagents, and except for an update after fixes
 //   (≤ max_unreviewed_lines since the reviewed tree, reviewers carried over from the previous review).
-// - **Human waiver.** `review waive` only creates a pending request, with a code. Only a user message
-//   containing `kaizen waive <code>` (UserPromptSubmit hook) confirms it.
+// - **Human waiver.** `review waive` only creates a pending request, with a code. Only the user confirms
+//   it: in Claude Code's permission prompt (`confirm`, approvals.mjs), or with `approvals: "code"` a
+//   message containing `kaizen waive <code>` (UserPromptSubmit hook).
 //
 // Accepted limit: these gates stop forgetfulness and drift, not an agent set on bypassing them
 // (the PreToolUse hook does refuse direct writes to these state files).
@@ -192,7 +193,7 @@ export function recordReview(root, { verdict, run = null, allowMissing = [] } = 
     );
   }
   const entry = { ...snapshot(root, branch), verdict, depth: reviewers.length ? 'agents' : 'light', reviewers, models, run, at: new Date().toISOString() };
-  // A gap is the user's call, never the agent's: it goes through the same typed code as a waiver.
+  // A gap is the user's call, never the agent's: it goes through the same approval as a waiver.
   if (gaps.length) return requestWaiver(root, { reason: `review recorded without ${gaps.join(', ')}`, gap: { ...entry, gaps } });
   state[branch] = entry;
   writeJson(root, 'reviews.json', state);

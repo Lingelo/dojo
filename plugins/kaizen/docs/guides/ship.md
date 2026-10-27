@@ -60,8 +60,8 @@ language; the title is a conventional commit of 72 characters at most. Full temp
 ## Good to know
 
 - Never a push to the default branch, never `--force`.
-- Pushing without a review is only possible if **you** confirm it: Claude runs
-  `review waive --reason "…"` and you type the displayed code (`kaizen waive <code>`). The PR then
+- Pushing without a review is only possible if **you** choose it: Claude asks you, the review as the
+  first option, and Claude Code's own prompt confirms the push without it. The PR then
   carries a **"Review waived"** section with your reason.
 - An existing PR for the branch is **updated**, never duplicated.
 - Without a remote, everything stays in local commits. Without `gh`, `ship` uses the GitHub MCP tools

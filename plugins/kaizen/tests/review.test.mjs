@@ -31,8 +31,11 @@ function bigBranch(config = {}) {
   return dir;
 }
 
+// Strict mode (typed codes, push refused): what these tests hold. The defaults are "ask" (see below).
+const STRICT = { review: { require_before_push: true }, approvals: 'code' };
+
 function featureRepo(config = {}) {
-  const dir = tempRepo({ '.kaizen/config.json': config, 'app.js': 'a\n' });
+  const dir = tempRepo({ '.kaizen/config.json': { ...STRICT, ...config }, 'app.js': 'a\n' });
   gitc(dir, ['checkout', '-qb', 'feat/x']);
   writeFiles(dir, { 'app.js': 'a\nb\nc\n' });
   gitc(dir, ['commit', '-qam', 'feat: b and c']);
@@ -235,6 +238,29 @@ test('approvals "ask": a review waiver without a typed code, confirmed in Claude
   assert.match(cli(code, ['confirm', w2.code]).stderr, /approvals is "code"/);
   cleanup(dir);
   cleanup(code);
+});
+
+test('defaults: no code to type anywhere — push and approvals are "ask"', () => {
+  const dir = tempRepo({ '.kaizen/config.json': {}, 'app.js': 'a\n' });
+  gitc(dir, ['checkout', '-qb', 'feat/x']);
+  writeFiles(dir, { 'app.js': 'a\nb\nc\n' });
+  gitc(dir, ['commit', '-qam', 'feat: b and c']);
+  const first = prePush(dir);
+  assert.equal(first.status, 2);
+  assert.match(first.stderr, /"Run the review \(Recommended\)"/);
+  assert.doesNotMatch(first.stderr, /kaizen waive/);
+  assert.match(cli(dir, ['review', 'waive', '--reason', 'x']).json.instruction, /AskUserQuestion/);
+  cleanup(dir);
+});
+
+test('bypass-permissions mode: Kaizen cannot ask the user, the skip is refused', () => {
+  const dir = featureRepo({ review: { require_before_push: 'ask' } });
+  const push = () => spawnSync(process.execPath, [REVIEW_GATE], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git push' }, cwd: dir, permission_mode: 'bypassPermissions' }), encoding: 'utf8' });
+  assert.equal(push().status, 2, 'first push: the question');
+  const second = push();
+  assert.equal(second.status, 2, 'no prompt to confirm the skip in bypass mode');
+  assert.match(second.stderr, /bypass-permissions mode/);
+  cleanup(dir);
 });
 
 test('branch without code changes: nothing to review', () => {
