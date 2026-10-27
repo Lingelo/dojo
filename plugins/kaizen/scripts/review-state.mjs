@@ -255,7 +255,14 @@ export function recordHeartbeat(root, { session = null, source = null } = {}) {
 
 // Decides whether a branch state may be pushed: the current branch at HEAD by default, or the
 // `branch` and commit `sha` a git pre-push hook received. Always { allowed, reason, ... }.
-export function checkPush(root, config = loadConfig(root), { branch = null, sha = null } = {}) {
+export function checkPush(root, config = loadConfig(root), opts = {}) {
+  const res = decidePush(root, config, opts);
+  // `ask`: an unreviewed push is the user's call (Claude Code prompt), not a refusal to act on alone.
+  if (!res.allowed && config.review.require_before_push === 'ask') res.ask = true;
+  return res;
+}
+
+function decidePush(root, config, { branch = null, sha = null } = {}) {
   if (config.review.require_before_push === false) return { allowed: true, reason: 'review.require_before_push disabled' };
   branch = branch || currentBranch(root);
   const ref = sha || 'HEAD';

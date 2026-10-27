@@ -8,9 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 - **`review.require_before_push: "ask"`: you judge each push.** Instead of refusing an unreviewed push
   (and asking for `kaizen waive <code>` to skip the review), the review hook hands the decision to you
   through Claude Code's own permission prompt — Claude cannot answer it for you, and there is no code to
-  type. Approving pushes without a review; nothing is recorded as reviewed, the push is logged as
-  `asked` in `friction.jsonl` (`metrics` → `friction.push.asked`). The git `pre-push` hook cannot ask:
-  in this mode it reminds and lets the push through. The default stays `true` (refuse).
+  type. Approving pushes without a review; declining means you want it, and Claude runs
+  `/kaizen:review` right away, then pushes (`review check` reports `"ask": true`, so `ship` pushes and
+  lets you judge instead of launching the review on its own; autonomous flows still review). Nothing
+  is recorded as reviewed, the push is logged as `asked` in `friction.jsonl` (`metrics` →
+  `friction.push.asked`). The git `pre-push` hook cannot ask: in this mode it reminds and lets the
+  push through. The default stays `true` (refuse).
 
 ## [4.4.0] - 2026-10-21
 

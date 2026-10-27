@@ -66,7 +66,8 @@ verification to run, no committing allowed); you integrate, verify and commit.
 2. `node "$K" verify` (and the targeted tests). Red → fix or remove the faulty fix; never a red push.
 3. Conventional commits (`fix(<JIRA>): <feedback handled>`), files named explicitly.
 4. `git push` (no force). Refused by the hook (fixes beyond `review.max_unreviewed_lines` since the last
-   review) → `kaizen:review mode:agent` on the branch, P0/P1 fixes, then push. **The push comes before
+   review) → `kaizen:review mode:agent` on the branch, P0/P1 fixes, then push. With
+   `review.require_before_push: "ask"` the hook asks the user instead: declined → that same review now. **The push comes before
    the replies**: never say "fixed in `<sha>`" for an invisible commit.
 5. Check publication: `git ls-remote origin <branch>` == `HEAD`.
 

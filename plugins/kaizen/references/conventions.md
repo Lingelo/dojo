@@ -121,6 +121,11 @@ regulated or critical domains (payment, health, sensitive data at scale).
 The `PreToolUse` hook refuses a `git push` of a branch (other than the default branch) until a review
 has recorded the pushed state. Every skill that pushes first checks `node "$K" review check`:
 - refused → `kaizen:review` (in `mode:agent` within an autonomous flow), P0/P1 fixes, then push;
+- refused with `"ask": true` (`review.require_before_push: "ask"`, interactive session) → the user
+  judges: do not launch the review on your own, push; Claude Code asks them. Approved → pushed without a
+  review (say so, and in the PR). **Declined → they want the review: run `kaizen:review` right away**,
+  P0/P1 fixes, then push again — no question in between. Autonomous flow (`mode:auto`, `mode:agent`,
+  non-interactive) → nobody to ask: treat it as refused;
 - `review` records the reviewed state itself (`review record`), and records it again after applying
   its own fixes;
 - **`review record` requires evidence**: a hook logs every Kaizen code reviewer actually launched

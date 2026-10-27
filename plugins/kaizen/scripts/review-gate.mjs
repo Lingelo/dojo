@@ -92,7 +92,10 @@ try {
         hookSpecificOutput: {
           hookEventName: 'PreToolUse',
           permissionDecision: 'ask',
-          permissionDecisionReason: `[kaizen] ${res.branch}: ${res.reason}. Push without a review? (or run /kaizen:review first)`,
+          permissionDecisionReason: `[kaizen] ${res.branch}: ${res.reason}. Approve: push without a review. Decline: Claude runs /kaizen:review, then pushes.`,
+          additionalContext:
+            '[kaizen] review.require_before_push is "ask": if the user declined this push, they want the review — run ' +
+            '/kaizen:review on the branch now (P0/P1 fixes), then push again. If they approved, the push went out unreviewed.',
         },
       }),
     );

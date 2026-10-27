@@ -183,6 +183,10 @@ test('require_before_push "ask": the user judges the push, Claude Code asks them
   const out = JSON.parse(r.stdout).hookSpecificOutput;
   assert.equal(out.permissionDecision, 'ask');
   assert.match(out.permissionDecisionReason, /feat\/x: no review recorded/);
+  assert.match(out.additionalContext, /declined.*run \/kaizen:review/);
+  const check = cli(dir, ['review', 'check']);
+  assert.equal(check.code, 1);
+  assert.equal(check.json.ask, true, 'skills see that the user decides');
   // a reviewed branch is not asked about
   assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
   const reviewed = prePush(dir);
