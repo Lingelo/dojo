@@ -12,8 +12,9 @@ function claudeHome() {
   return mkdtempSync(join(tmpdir(), 'kaizen-claude-'));
 }
 
+// Strict push mode: the git hook refuses (the default "ask" only reminds, see review.test.mjs).
 function featureRepo(config = {}) {
-  const dir = tempRepo({ '.kaizen/config.json': config, 'app.js': 'a\n' });
+  const dir = tempRepo({ '.kaizen/config.json': { review: { require_before_push: true }, ...config }, 'app.js': 'a\n' });
   const bare = mkdtempSync(join(tmpdir(), 'kaizen-bare-'));
   gitc(bare, ['init', '-q', '--bare']);
   gitc(dir, ['remote', 'add', 'origin', bare], ['push', '-q', 'origin', 'main'], ['checkout', '-qb', 'feat/x']);

@@ -106,8 +106,9 @@ Merge all slices in step 5; a finding seen in two slices is one finding.
 (`SendMessage` to the same agent: "return the contract's JSON for what you reviewed"), else relaunch it
 once with the same prompt — after the others finished, never in parallel with a rate limit. Still
 nothing → it is a gap: the report names it in the coverage and the verdict cannot be ✅. Recording then
-needs `--allow-missing <name>`, which only prints a code: ask the user to type `kaizen waive <code>`
-themselves if they accept the gap.
+needs `--allow-missing <name>`, which only prints a code and an `instruction`: ask the user, "Relaunch the
+missing reviewer(s)" as the first option, and run `confirm <code>` only if they accept the gap (Claude
+Code asks them to confirm); with `approvals: "code"`, they type `kaizen waive <code>` themselves.
 
 ## Step 5 — Merge, filter, validate
 
@@ -149,7 +150,7 @@ incomplete; ✅ otherwise.
 branch is not recorded. Recording is refused if no reviewer actually ran (a hook logs every `Agent` call
 to a code reviewer) — except at light depth (≤ 20 lines): do not work around it, launch the reviewers.
 It is refused too when a launched reviewer left no output in the run folder (named in the error):
-resume or relaunch it; a gap the user accepts goes through `--allow-missing` and their typed code.
+resume or relaunch it; a gap the user accepts goes through `--allow-missing` and their approval (question then Claude Code's prompt, or a typed code).
 
 ## Step 7 — Apply (only with `apply`)
 

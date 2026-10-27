@@ -364,6 +364,8 @@ export function friction(root, from) {
     events: events.length,
     push: {
       refused: pushRefused.length,
+      // review.require_before_push: "ask" — pushes the user was asked to judge themselves.
+      asked: count((e) => e.gate === 'push' && e.kind === 'asked'),
       by_reason: tally(pushRefused, 'reason'),
       by_source: tally(pushRefused, 'source'),
       unblocked_median_minutes: round(median(blockedMinutes), 0),

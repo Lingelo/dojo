@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="640" viewBox="0 0 1100 640" role="img" aria-labelledby="t d">
 <title id="t">The review required before git push</title>
-<desc id="d">A PreToolUse hook refuses the push until a review recorded the pushed tree. Evidence comes from hooks, not from the agent’s word.</desc>
+<desc id="d">A PreToolUse hook stops the push until a review recorded the pushed tree, or you choose to skip it. Evidence comes from hooks, not from the agent’s word.</desc>
 <style>
   .bg { fill: #fbfaf7; stroke: #e4e0d8; }
   text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
@@ -66,7 +66,7 @@
 <defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
 <rect class="bg" x="0.5" y="0.5" width="1099" height="639" rx="14"/>
 <text class="title" x="28" y="38">The review required before git push</text>
-<text class="desc" x="28" y="58">A PreToolUse hook refuses the push until a review recorded the pushed tree. Evidence comes from hooks, not from the agent’s word.</text>
+<text class="desc" x="28" y="58">A PreToolUse hook stops the push until a review recorded the pushed tree, or you choose to skip it. Evidence comes from hooks, not from the agent’s word.</text>
 <rect class="region" x="28" y="76" width="330" height="520" rx="12"/>
 <text class="regionlabel" x="40" y="93">RECORDING A REVIEW</text>
 <rect class="skill" x="44" y="106" width="298" height="52" rx="8" stroke-width="1.5"/>
@@ -121,17 +121,17 @@
 <rect class="pill" x="703.75" y="243" width="40.5" height="17" rx="4"/>
 <text class="edge" x="724" y="254" text-anchor="middle">allow</text>
 <path class="line bad" d="M696,322 L748,322" marker-end="url(#h-bad)"/>
-<rect class="pill" x="700.7" y="305" width="46.599999999999994" height="17" rx="4"/>
-<text class="edge" x="724" y="316" text-anchor="middle">refuse</text>
+<rect class="pill" x="706.8" y="305" width="34.4" height="17" rx="4"/>
+<text class="edge" x="724" y="316" text-anchor="middle">stop</text>
 <path class="line bad" d="M696,384 L748,384" marker-end="url(#h-bad)"/>
-<rect class="pill" x="700.7" y="367" width="46.599999999999994" height="17" rx="4"/>
-<text class="edge" x="724" y="378" text-anchor="middle">refuse</text>
+<rect class="pill" x="706.8" y="367" width="34.4" height="17" rx="4"/>
+<text class="edge" x="724" y="378" text-anchor="middle">stop</text>
 <path class="line bad" d="M696,446 L748,446" marker-end="url(#h-bad)"/>
-<rect class="pill" x="700.7" y="429" width="46.599999999999994" height="17" rx="4"/>
-<text class="edge" x="724" y="440" text-anchor="middle">refuse</text>
+<rect class="pill" x="706.8" y="429" width="34.4" height="17" rx="4"/>
+<text class="edge" x="724" y="440" text-anchor="middle">stop</text>
 <path class="line bad" d="M696,508 L748,508" marker-end="url(#h-bad)"/>
-<rect class="pill" x="700.7" y="491" width="46.599999999999994" height="17" rx="4"/>
-<text class="edge" x="724" y="502" text-anchor="middle">refuse</text>
+<rect class="pill" x="706.8" y="491" width="34.4" height="17" rx="4"/>
+<text class="edge" x="724" y="502" text-anchor="middle">stop</text>
 <rect class="plain" x="396" y="556" width="300" height="44" rx="8" stroke-width="1.5"/>
 <text class="label" x="546" y="582" text-anchor="middle">otherwise: push allowed ✔</text>
 <path class="line ok" d="M546,530 L546,556" marker-end="url(#h-ok)"/>
@@ -139,24 +139,24 @@
 <rect class="pill" x="356.8" y="381" width="34.4" height="17" rx="4"/>
 <text class="edge" x="374" y="392" text-anchor="middle">read</text>
 <rect class="region" x="760" y="76" width="312" height="520" rx="12"/>
-<text class="regionlabel" x="772" y="93">WAIVER: ONLY YOU CAN GRANT IT</text>
+<text class="regionlabel" x="772" y="93">SKIPPING IT: ONLY YOU DECIDE</text>
 <rect class="outside" x="776" y="106" width="280" height="46" rx="8" stroke-width="1.5"/>
-<text class="label" x="916" y="133" text-anchor="middle">you ask to skip the review</text>
+<text class="label" x="916" y="133" text-anchor="middle">stop: Claude asks you</text>
 <rect class="skill" x="776" y="176" width="280" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="916" y="201" text-anchor="middle">review waive --reason "…"</text>
-<text class="sub" x="916" y="216" text-anchor="middle">prints a 6-character code (30 min)</text>
+<text class="label" x="916" y="201" text-anchor="middle" style="font-size:12.9px">1. Run the review (Recommended)</text>
+<text class="sub" x="916" y="216" text-anchor="middle">2. Push without a review</text>
 <rect class="state" x="776" y="256" width="280" height="46" rx="10" stroke-width="1.5"/>
-<text class="label" x="916" y="283" text-anchor="middle">waivers.json (pending)</text>
+<text class="label" x="916" y="283" text-anchor="middle" style="font-size:13.3px">push-offers.json (this commit)</text>
 <rect class="outside" x="776" y="326" width="280" height="52" rx="8" stroke-width="1.5"/>
-<text class="label" x="916" y="349" text-anchor="middle">you type: kaizen waive 3F9A2C</text>
-<text class="sub" x="916" y="364" text-anchor="middle">Claude cannot type it for you</text>
+<text class="label" x="916" y="349" text-anchor="middle" style="font-size:12.1px">you choose 2: Claude pushes again</text>
+<text class="sub" x="916" y="364" text-anchor="middle">Claude cannot choose for you</text>
 <rect class="gate" x="776" y="402" width="280" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="916" y="427" text-anchor="middle">UserPromptSubmit --confirm</text>
-<text class="sub" x="916" y="442" text-anchor="middle">only a user message reaches this hook</text>
+<text class="label" x="916" y="427" text-anchor="middle">Claude Code permission prompt</text>
+<text class="sub" x="916" y="442" text-anchor="middle">only you can answer it</text>
 <rect class="state" x="776" y="482" width="280" height="62" rx="10" stroke-width="1.5"/>
-<text class="label" x="916" y="503" text-anchor="middle">reviews.json: verdict waived</text>
-<text class="sub" x="916" y="518" text-anchor="middle">push allowed · the PR gets a</text>
-<text class="sub" x="916" y="532" text-anchor="middle">“Review waived” section</text>
+<text class="label" x="916" y="503" text-anchor="middle">pushed without a review</text>
+<text class="sub" x="916" y="518" text-anchor="middle">logged in friction.jsonl</text>
+<text class="sub" x="916" y="532" text-anchor="middle">(declined → /kaizen:review)</text>
 <path class="line" d="M916,152 L916,176" marker-end="url(#h-default)"/>
 <path class="line" d="M916,232 L916,256" marker-end="url(#h-default)"/>
 <path class="line" d="M916,302 L916,326" marker-end="url(#h-default)"/>

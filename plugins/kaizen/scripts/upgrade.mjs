@@ -56,7 +56,9 @@ function declare(root) {
 
 // Releases with a Breaking or Deprecated section that ask nothing of a repository, with the reason
 // (tests/upgrade.test.mjs requires one or the other from 4.3.0 on).
-export const NO_MIGRATION = {};
+export const NO_MIGRATION = {
+  '5.0.0': 'new defaults ("ask") apply as-is; a team keeping typed codes sets require_before_push: true and approvals: "code"',
+};
 
 export const MIGRATIONS = [
   {

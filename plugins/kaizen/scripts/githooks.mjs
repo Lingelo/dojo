@@ -121,6 +121,11 @@ export function prePush(root, stdin, K) {
       : (localRef === 'HEAD' && currentBranch(root)) || remoteRef.slice('refs/heads/'.length);
     const res = checkPush(root, config, { branch, sha: localSha });
     if (!res.allowed) {
+      // `ask` leaves the call to the user: a git hook cannot ask them, so it only reminds.
+      if (config.review.require_before_push === 'ask') {
+        logFriction(root, { gate: 'push', kind: 'asked', reason: pushReasonKey(res), branch, source: 'git' });
+        return { code: 0, message: `[kaizen] Pushing ${branch} without a review: ${res.reason} (review.require_before_push: "ask").\n` };
+      }
       logFriction(root, { gate: 'push', kind: 'refused', reason: pushReasonKey(res), branch, source: 'git' });
       return { code: 1, message: pushRefusal(res, K) };
     }

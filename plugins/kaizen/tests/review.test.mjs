@@ -31,8 +31,11 @@ function bigBranch(config = {}) {
   return dir;
 }
 
+// Strict mode (typed codes, push refused): what these tests hold. The defaults are "ask" (see below).
+const STRICT = { review: { require_before_push: true }, approvals: 'code' };
+
 function featureRepo(config = {}) {
-  const dir = tempRepo({ '.kaizen/config.json': config, 'app.js': 'a\n' });
+  const dir = tempRepo({ '.kaizen/config.json': { ...STRICT, ...config }, 'app.js': 'a\n' });
   gitc(dir, ['checkout', '-qb', 'feat/x']);
   writeFiles(dir, { 'app.js': 'a\nb\nc\n' });
   gitc(dir, ['commit', '-qam', 'feat: b and c']);
@@ -174,6 +177,90 @@ test('out of scope: other commands, repo without Kaizen, disabled, branch deleti
   const off = featureRepo({ review: { require_before_push: false } });
   assert.equal(prePush(off).status, 0);
   cleanup(off);
+});
+
+test('require_before_push "ask": the user judges the push, Claude Code asks them', () => {
+  const dir = featureRepo({ review: { require_before_push: 'ask' } });
+  // first push: stopped, Claude must ask the user with the review as the first option
+  const first = prePush(dir);
+  assert.equal(first.status, 2);
+  assert.match(first.stderr, /feat\/x: no review recorded/);
+  assert.match(first.stderr, /1\. "Run the review \(Recommended\)"[\s\S]*2\. "Push without a review"/);
+  // second push of the same commit: the user chose to skip — Claude Code's prompt confirms it
+  const second = prePush(dir);
+  assert.equal(second.status, 0);
+  const out = JSON.parse(second.stdout).hookSpecificOutput;
+  assert.equal(out.permissionDecision, 'ask');
+  assert.match(out.permissionDecisionReason, /without a review — confirm/);
+  assert.match(out.additionalContext, /declined.*run \/kaizen:review/);
+  // the offer is used up: the next push asks again
+  assert.equal(prePush(dir).status, 2);
+  // a new commit voids a pending offer
+  writeFiles(dir, { 'app.js': 'a\nb\nc\nd\n' });
+  gitc(dir, ['commit', '-qam', 'feat: d']);
+  assert.equal(prePush(dir).status, 2, 'offer was for the previous commit');
+  // Claude cannot forge the offer
+  assert.equal(prePush(dir, 'echo {} > .kaizen/state/push-offers.json').status, 2);
+  const check = cli(dir, ['review', 'check']);
+  assert.equal(check.code, 1);
+  assert.equal(check.json.ask, true, 'skills see that the user decides');
+  // a reviewed branch is not asked about
+  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  const reviewed = prePush(dir);
+  assert.equal(reviewed.status, 0);
+  assert.equal(reviewed.stdout, '');
+  // the git hook cannot ask: it reminds and lets the push through
+  writeFiles(dir, { 'app.js': `${'x\n'.repeat(120)}` });
+  gitc(dir, ['commit', '-qam', 'feat: more']);
+  const g = cli(dir, ['githook', 'pre-push'], { input: `refs/heads/feat/x HEAD refs/heads/feat/x ${'0'.repeat(40)}\n` });
+  assert.equal(g.code, 0, g.stderr);
+  assert.match(g.stderr, /without a review: .*lines changed since the review/);
+  const friction = readFileSync(join(dir, '.kaizen', 'state', 'friction.jsonl'), 'utf8');
+  assert.match(friction, /"kind":"asked"/);
+  assert.doesNotMatch(friction, /"gate":"push","kind":"refused"/, 'no push refused in "ask" mode');
+  cleanup(dir);
+});
+
+test('approvals "ask": a review waiver without a typed code, confirmed in Claude Code\'s prompt', () => {
+  const dir = featureRepo({ approvals: 'ask' });
+  const w = cli(dir, ['review', 'waive', '--reason', 'hotfix']).json;
+  assert.match(w.instruction, /1\. "Run the review \(Recommended\)", 2\. "Push without a review"/);
+  assert.equal(cli(dir, ['confirm', w.code]).code, 2, 'not asked in the prompt yet');
+  const asked = prePush(dir, `node kaizen.mjs confirm ${w.code}`);
+  assert.equal(JSON.parse(asked.stdout).hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(cli(dir, ['confirm', w.code]).json.entry.confirmed_by, 'user (prompt)');
+  assert.equal(prePush(dir).status, 0, 'waived');
+  // default "code": confirm is refused, the user types the code
+  const code = featureRepo();
+  const w2 = cli(code, ['review', 'waive', '--reason', 'x']).json;
+  assert.match(w2.instruction, /kaizen waive/);
+  assert.equal(prePush(code, `node kaizen.mjs confirm ${w2.code}`).stdout, '');
+  assert.match(cli(code, ['confirm', w2.code]).stderr, /approvals is "code"/);
+  cleanup(dir);
+  cleanup(code);
+});
+
+test('defaults: no code to type anywhere — push and approvals are "ask"', () => {
+  const dir = tempRepo({ '.kaizen/config.json': {}, 'app.js': 'a\n' });
+  gitc(dir, ['checkout', '-qb', 'feat/x']);
+  writeFiles(dir, { 'app.js': 'a\nb\nc\n' });
+  gitc(dir, ['commit', '-qam', 'feat: b and c']);
+  const first = prePush(dir);
+  assert.equal(first.status, 2);
+  assert.match(first.stderr, /"Run the review \(Recommended\)"/);
+  assert.doesNotMatch(first.stderr, /kaizen waive/);
+  assert.match(cli(dir, ['review', 'waive', '--reason', 'x']).json.instruction, /AskUserQuestion/);
+  cleanup(dir);
+});
+
+test('bypass-permissions mode: Kaizen cannot ask the user, the skip is refused', () => {
+  const dir = featureRepo({ review: { require_before_push: 'ask' } });
+  const push = () => spawnSync(process.execPath, [REVIEW_GATE], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git push' }, cwd: dir, permission_mode: 'bypassPermissions' }), encoding: 'utf8' });
+  assert.equal(push().status, 2, 'first push: the question');
+  const second = push();
+  assert.equal(second.status, 2, 'no prompt to confirm the skip in bypass mode');
+  assert.match(second.stderr, /bypass-permissions mode/);
+  cleanup(dir);
 });
 
 test('branch without code changes: nothing to review', () => {

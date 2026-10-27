@@ -105,9 +105,10 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    **each agent's model** (`node "$K" models`): show it, and offer to adjust a role (`models.roles`)
    or an agent (`models.agents`) if the team has a cost or quality constraint. Write `profile` in
    `.kaizen/config.json`. Team of several people → propose `approvers` in `CONSTITUTION.md` and a
-   `CODEOWNERS` line for `CONSTITUTION.md` and `kaizen-packs/`. Remind that a review is required
-   before any `git push` of a branch (`review.require_before_push`) and that only the team can choose
-   to relax it.
+   `CODEOWNERS` line for `CONSTITUTION.md` and `kaizen-packs/`. Remind that an unreviewed
+   `git push` stops and asks the developer, the review as the first option (`review.require_before_push:
+   "ask"`, default; `true` refuses it outright, `false` turns it off), and that approvals are a question
+   plus Claude Code's prompt, never a typed code (`approvals: "ask"`; `"code"` if the team wants codes).
 11. **Summary** — open it with the **profile in effect and what it costs**, on its own line, before anything
    else: e.g. "Profile **prototype**: code review on sonnet, critical review on sonnet (opus in product) — change
    it with `profile` in `.kaizen/config.json`". It decides the price and depth of every later review, so it

@@ -67,8 +67,8 @@ Plan: docs/plans/…-plan.md · Units: 3/3 · Review: 1 P1 fixed, 2 P3 recorded 
 
 - **Questions**: only through the brainstorm, and only if you are present. The rest moves on: what is
   reversible is done, then shown.
-- **No review waiver**: autopilot cannot push without a recorded review, and the waiver requires you to
-  type a code yourself. Without you, the run stops and says why.
+- **No review waiver**: autopilot cannot push without a recorded review, and skipping it requires you to
+  answer and confirm in Claude Code's prompt. Without you, the run stops and says why.
 - **What stops the run**:
   - an irreversible action outside what was granted (merge, force push, data deletion, deployment);
   - a work source impossible to produce;

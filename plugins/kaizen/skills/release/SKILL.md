@@ -64,5 +64,5 @@ deliver the notes, the version and the checklist, and give the commands.
 ## 6. Deploy
 
 `release` does not deploy. If `deploy.environments` is configured, finish by proposing
-`/kaizen-ops:deploy <env> vX.Y.Z` (staging first if it exists): preconditions, approval typed by the user
+`/kaizen-ops:deploy <env> vX.Y.Z` (staging first if it exists): preconditions, approval by the user
 for production, watch of the checklist's signals, rollback ready.

@@ -77,6 +77,28 @@ test('protected production: approval typed by the user, bound to the commit, sin
   cleanup(dir);
 });
 
+test('approvals "ask": no code typed, Claude Code\'s prompt confirms the deployment', () => {
+  const dir = shopRepo();
+  const cfg = JSON.parse(readFileSync(join(dir, '.kaizen/config.json'), 'utf8'));
+  writeFiles(dir, { '.kaizen/config.json': { ...cfg, approvals: 'ask' } });
+  const req = cli(dir, ['deploy', 'request', 'production']).json;
+  assert.match(req.instruction, /1\. "Not now \(Recommended\)", 2\. "Deploy"/);
+  // confirm without the prompt having asked: refused
+  assert.match(cli(dir, ['confirm', req.code]).stderr, /not confirmed in Claude Code's permission prompt/);
+  const gate = (command) => spawnSync(process.execPath, [REVIEW_GATE], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command }, cwd: dir }), encoding: 'utf8' });
+  const asked = gate(`node "/x/kaizen.mjs" confirm ${req.code}`);
+  assert.equal(asked.status, 0);
+  const out = JSON.parse(asked.stdout).hookSpecificOutput;
+  assert.equal(out.permissionDecision, 'ask');
+  assert.match(out.permissionDecisionReason, /deploy [0-9a-f]{7} to production — confirm/);
+  assert.equal(cli(dir, ['confirm', req.code]).json.kind, 'deploy');
+  assert.equal(cli(dir, ['confirm', req.code]).code, 2, 'single use');
+  assert.equal(cli(dir, ['deploy', 'run', 'production']).code, 0);
+  // the ask mark cannot be forged
+  assert.equal(gate('echo {} > .kaizen/state/confirm-asks.json').status, 2);
+  cleanup(dir);
+});
+
 test('rollback: to the previous deployment, traced by a rollback/<env>/… tag', () => {
   const dir = shopRepo({ deploy: { environments: { staging: { command: MARK, rollback: `${MARK} # rb` } } } });
   const first = head(dir);

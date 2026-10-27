@@ -19,7 +19,7 @@ test('pushReasonKey: stable keys for the refusals of checkPush', () => {
 });
 
 test('the gates log their stops, and what lifts them', () => {
-  const dir = tempRepo({ '.kaizen/config.json': { verify: { test: 'node -e "process.exit(1)"' } }, 'app.js': 'a\n' });
+  const dir = tempRepo({ '.kaizen/config.json': { review: { require_before_push: true }, verify: { test: 'node -e "process.exit(1)"' } }, 'app.js': 'a\n' });
   gitc(dir, ['checkout', '-qb', 'feat/x']);
   writeFiles(dir, { 'app.js': 'a\nb\n' });
   gitc(dir, ['commit', '-qam', 'feat: b']);
@@ -67,14 +67,16 @@ test('metrics friction: time blocked on push, waiver share, checks that block, s
     { at: t(45), gate: 'quality', kind: 'released', checks: ['test'] },
     { at: t(46), gate: 'secrets', kind: 'refused', findings: 2 },
     { at: t(47), gate: 'deploy', kind: 'refused', env: 'production' },
+    { at: t(48), gate: 'push', kind: 'asked', reason: 'no_review', branch: 'd', source: 'claude' },
   ];
   writeFiles(dir, { '.kaizen/state/friction.jsonl': `${log.map((e) => JSON.stringify(e)).join('\n')}\nnot json\n` });
   const f = friction(dir, new Date(Date.UTC(2026, 8, 1)));
-  assert.equal(f.events, 11);
+  assert.equal(f.events, 12);
   assert.deepEqual(f.push.by_reason, { no_review: 3, stale: 1 });
   assert.deepEqual(f.push.by_source, { claude: 3, git: 1 });
   assert.equal(f.push.unblocked_median_minutes, 20, 'median of 30 (from the first refusal) and 10');
   assert.equal(f.push.still_blocked, 1);
+  assert.equal(f.push.asked, 1, 'an "ask" push is counted apart, never as blocked');
   assert.equal(f.waivers.confirmed, 1);
   assert.equal(f.waivers.share, 0.5);
   assert.deepEqual(f.quality, { blocked: 2, released: 1, by_check: { lint: 1, test: 2 } });

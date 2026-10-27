@@ -8,7 +8,7 @@
 //               its slice and run folder; `review record --run` then requires each one's output.
 //   --heartbeat (SessionStart): records that Claude Code runs Kaizen's hooks in this repo
 //               (`.kaizen/state/hooks-seen.json`), read by `kaizen doctor`.
-//   --confirm   (UserPromptSubmit): a user message containing `kaizen waive <code>` confirms the review
+//   --confirm   (UserPromptSubmit, `approvals: "code"`): a user message containing `kaizen waive <code>` confirms the review
 //               waiver requested by `review waive`; `kaizen deploy <code>` approves the deployment to a
 //               protected environment requested by `deploy request`.
 // Always exit 0: these hooks observe, they block nothing. Inactive outside a Kaizen repo.

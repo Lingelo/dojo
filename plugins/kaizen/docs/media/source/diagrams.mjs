@@ -395,7 +395,7 @@ written.push(
 // 5. Push gate, review evidence and human waiver
 // ---------------------------------------------------------------------------------------------------
 written.push(
-  diagram('push-gate', 1100, 640, 'The review required before git push', 'A PreToolUse hook refuses the push until a review recorded the pushed tree. Evidence comes from hooks, not from the agent’s word.', (d) => {
+  diagram('push-gate', 1100, 640, 'The review required before git push', 'A PreToolUse hook stops the push until a review recorded the pushed tree, or you choose to skip it. Evidence comes from hooks, not from the agent’s word.', (d) => {
     d.region(28, 76, 330, 520, 'Recording a review');
     d.box('rv', 44, 106, 298, 52, 'skill', '/kaizen:review', 'launches reviewers through the Agent tool');
     d.box('ev', 44, 186, 298, 56, 'gate', 'Agent hooks --launch, --evidence', 'log each kaizen:*-reviewer launched, then run');
@@ -412,10 +412,10 @@ written.push(
     const checks = [
       ['k1', 'require_before_push: false?', 'allow'],
       ['k2', 'default branch or no new code?', 'allow'],
-      ['k3', 'no review recorded?', 'refuse'],
-      ['k4', 'reviewed tree not found?', 'refuse'],
-      ['k5', 'blocked and unchanged since?', 'refuse'],
-      ['k6', '> 80 lines since the review?', 'refuse'],
+      ['k3', 'no review recorded?', 'stop'],
+      ['k4', 'reviewed tree not found?', 'stop'],
+      ['k5', 'blocked and unchanged since?', 'stop'],
+      ['k6', '> 80 lines since the review?', 'stop'],
     ];
     checks.forEach(([id, l], i) => d.box(id, 396, 176 + i * 62, 300, 44, 'gate', l));
     d.arrow(['push.b', 'k1.t'], { label: 'PreToolUse review-gate', anchor: 'start', dx: 8, dy: 4 });
@@ -425,13 +425,13 @@ written.push(
     d.arrow(['k6.b', 'allow.t'], { tone: 'ok' });
     d.arrow(['rf.r', [374, 475], [374, 300], 'k3.l'], { tone: 'blue', dashed: true, label: 'read', at: 1, lx: 374, ly: 392 });
     // right: waiver
-    d.region(760, 76, 312, 520, 'Waiver: only you can grant it');
-    d.box('ask', 776, 106, 280, 46, 'outside', 'you ask to skip the review');
-    d.box('w1', 776, 176, 280, 56, 'skill', 'review waive --reason "…"', 'prints a 6-character code (30 min)');
-    d.box('w2', 776, 256, 280, 46, 'state', 'waivers.json (pending)', null, { round: 10 });
-    d.box('w3', 776, 326, 280, 52, 'outside', 'you type: kaizen waive 3F9A2C', 'Claude cannot type it for you');
-    d.box('w4', 776, 402, 280, 56, 'gate', 'UserPromptSubmit --confirm', 'only a user message reaches this hook');
-    d.box('w5', 776, 482, 280, 62, 'state', 'reviews.json: verdict waived', 'push allowed · the PR gets a\n“Review waived” section', { round: 10 });
+    d.region(760, 76, 312, 520, 'Skipping it: only you decide');
+    d.box('ask', 776, 106, 280, 46, 'outside', 'stop: Claude asks you');
+    d.box('w1', 776, 176, 280, 56, 'skill', '1. Run the review (Recommended)', '2. Push without a review');
+    d.box('w2', 776, 256, 280, 46, 'state', 'push-offers.json (this commit)', null, { round: 10 });
+    d.box('w3', 776, 326, 280, 52, 'outside', 'you choose 2: Claude pushes again', 'Claude cannot choose for you');
+    d.box('w4', 776, 402, 280, 56, 'gate', 'Claude Code permission prompt', 'only you can answer it');
+    d.box('w5', 776, 482, 280, 62, 'state', 'pushed without a review', 'logged in friction.jsonl\n(declined → /kaizen:review)', { round: 10 });
     d.arrow(['ask.b', 'w1.t'], {});
     d.arrow(['w1.b', 'w2.t'], {});
     d.arrow(['w2.b', 'w3.t'], {});
@@ -541,8 +541,8 @@ written.push(
 written.push(
   diagram('deploy-flow', 1100, 620, 'A watched deployment (/kaizen-ops:deploy)', 'Your commands, your approval for production, a shared tag, the plan’s signals watched, rollback first when a threshold is breached.', (d) => {
     d.box('pre', 36, 90, 250, 112, 'gate', 'Preconditions', 'merged commit, CI green\nshipped plans: rollback + signal\nrollback declared for the env\nsignals already healthy');
-    d.box('req', 320, 90, 230, 56, 'ops', 'deploy request <env>', 'protected env: 6-char code, 30 min');
-    d.box('you', 320, 166, 230, 56, 'outside', 'you: kaizen deploy 7C1E0B', 'UserPromptSubmit approves');
+    d.box('req', 320, 90, 230, 56, 'ops', 'deploy request <env>', 'protected env: pending approval, 30 min');
+    d.box('you', 320, 166, 230, 56, 'outside', 'you: "Deploy", then confirm', 'Claude Code prompt (Not now = first)');
     d.box('run', 584, 90, 230, 70, 'ops', 'deploy run <env>', 'your command with KAIZEN_ENV,\nKAIZEN_REF, KAIZEN_SHA · timeout');
     d.box('tag', 848, 90, 216, 70, 'artifact', 'deploy/<env>/<stamp>', 'annotated tag on the commit,\npushed (deploy.push_tags)');
     d.arrow(['pre.r@0.3', 'req.l'], { tone: 'accent' });
@@ -699,7 +699,7 @@ written.push(
       ['incident resolved < 14 days ago, no postmortem', '/kaizen-ops:postmortem', 'bad'],
       ['Kaizen not initialized', '/kaizen:setup', null],
       ['quality gate active', '/kaizen:work (resume) or gate off', null],
-      ['feature branch with changes · waiver pending', 'kaizen waive <code> (you type it)', null],
+      ['feature branch with changes · waiver pending', 'answer Claude’s question', null],
       ['feature branch · reviewed, committed, clean', '/kaizen:ship', 'ok'],
       ['feature branch · not reviewed or changed since', '/kaizen:review', null],
       ['default branch · commits not deployed', '/kaizen-ops:deploy <env>', null],
@@ -734,7 +734,7 @@ written.push(
     lane(418, 'END OF TURN');
     d.box('ss', 170, 76, 230, 56, 'gate', 'SessionStart', 'review-hooks.mjs --heartbeat:\nhooks-seen.json, read by doctor');
     d.box('msg', 440, 84, 270, 40, 'outside', 'you send a message');
-    d.box('ups', 740, 76, 324, 56, 'gate', 'UserPromptSubmit', 'review-hooks.mjs --confirm:\nkaizen waive / deploy <code>');
+    d.box('ups', 740, 76, 324, 56, 'gate', 'UserPromptSubmit', 'review-hooks.mjs --confirm:\ntyped codes (approvals: "code")');
     d.arrow(['msg.r', 'ups.l'], {});
     d.box('tool', 170, 234, 230, 40, 'plain', 'Claude calls a tool');
     d.box('pre1', 440, 148, 270, 96, 'gate', 'PreToolUse (Bash, Write, Edit)', 'secret-gate.mjs: commit carrying a\nsecret, --no-verify · review-gate.mjs:\npush without review, raw protected\ndeploy, forged tags, state writes → 2');

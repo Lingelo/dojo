@@ -2,6 +2,34 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [5.0.0] - 2026-10-27
+
+### Breaking
+- **No code to type anywhere by default.** `review.require_before_push` now defaults to `"ask"` and the
+  new `approvals` to `"ask"`: an unreviewed push, a review waiver, a review gap and a protected
+  deployment are decided through a question whose **first option is the safe one**, then confirmed in
+  Claude Code's own permission prompt, which Claude cannot answer. Nothing to migrate: a team that
+  wants the 4.x behaviour (push refused, typed `kaizen waive|deploy <code>`) sets
+  `"review": { "require_before_push": true }` and `"approvals": "code"`. In bypass-permissions mode
+  the prompt is not guaranteed, so the hook refuses the risky option instead of asking. The git
+  `pre-push` hook cannot ask: in `"ask"` mode it reminds and lets the push through.
+
+### Added
+- **`review.require_before_push: "ask"`: you judge each push.** The review hook stops the first push of
+  a commit and Claude asks you: "Run the review (Recommended)" runs `/kaizen:review`, then pushes;
+  "Push without a review" pushes again, and that second push of the same commit (within 30 min,
+  `push-offers.json`) reaches Claude Code's permission prompt — confirm, or decline and the review
+  runs. `review check` reports `"ask": true`, so `ship` and `address-feedback` let you choose instead
+  of launching the review on their own; autonomous and non-interactive flows still review. Nothing is
+  recorded as reviewed; the question is logged as `asked` in `friction.jsonl` (`metrics` →
+  `friction.push.asked`).
+- **`approvals: "ask"`: waiver, review gap and protected deployment without a code.** Claude asks you,
+  the safe option first ("Run the review", "Relaunch the missing reviewer(s)", "Not now"); choosing
+  the other one runs the new `kaizen.mjs confirm <code>`, which the review hook turns into Claude
+  Code's permission prompt (`confirm-asks.json`, tamper-protected) — `confirm` refuses a code that
+  prompt did not ask about (10 min, single use). `review waive`, `review record --allow-missing` and
+  `deploy request` print the matching `instruction`.
+
 ## [4.4.0] - 2026-10-21
 
 ### Added

@@ -61,14 +61,16 @@ the work in progress.
 | `reviews.json` | `review record`, waiver confirmation | per branch: head, tree, verdict, depth, reviewers, models, run, at (waiver: reason, confirmed_by) | replaced per branch |
 | `review-evidence.json` | Agent hook | reviewer, model, session, at | 12 h |
 | `waivers.json` | `review waive` | code, reason, branch, head, tree, at | 30 min |
-| `deploy-approvals.json` | `deploy request`, `kaizen deploy <code>` | code, env, sha, at, confirmed, confirmed_at, session | 30 min, consumed by `deploy run` |
+| `push-offers.json` | review hook (`require_before_push: "ask"`) | per branch: head, at — the commit the user was asked about | 30 min, used by the next push of that commit |
+| `confirm-asks.json` | review hook, before `confirm <code>` | code → at: Claude Code's prompt was shown for it | 10 min, single use |
+| `deploy-approvals.json` | `deploy request`, `confirm <code>` or `kaizen deploy <code>` | code, env, sha, at, confirmed, confirmed_at, session | 30 min, consumed by `deploy run` |
 | `deployments.jsonl` | `deploy run`, `rollback`, `flag` | kind, env, sha, ref, at, ok, exit, seconds, tag, pushed, plans | kept (tags are authoritative) |
 | `monitor.jsonl` | `monitor watch`, `patrol` | at, env, ok, signals (value, ok, ms, detail, threshold source) | kept |
 | `pr/<owner>-<repo>-<n>.json` | `pr snapshot`, `pr mark` | threads, comments, checks handled, started_at, budget, last_head | delete to start over |
 | `reviews/<YYYYMMDD-HHMMSS>/` | `run-dir reviews`, review | raw reviewer returns, `diff.patch` | kept |
 | `rollback-worktree/` | generic rollback (redeploy of a previous commit) | throwaway git worktree | removed after use |
 
-Writes to `reviews.json`, `review-evidence.json`, `waivers.json`, `deploy-approvals.json` and
+Writes to `reviews.json`, `review-evidence.json`, `waivers.json`, `push-offers.json`, `confirm-asks.json`, `deploy-approvals.json` and
 `deployments.jsonl` are refused by the PreToolUse hook unless they come from the CLI or the hooks.
 
 ## Outside the repo

@@ -20,13 +20,26 @@ const command = String(input.tool_input?.command || '');
 const filePath = String(input.tool_input?.file_path || input.tool_input?.notebook_path || '');
 // Cheap filters before any import: this hook sees every Bash command and every write.
 const PUSH = /(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+push(\s|$)/;
-const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals)\.json|deployments\.jsonl|review-hooks\.mjs/;
+const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals|push-offers|confirm-asks)\.json|deployments\.jsonl|review-hooks\.mjs/;
 // Hand-made deployment tags: they would distort DORA metrics and postmortems.
 const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback|incident|resolve)\//;
 const tamper = input.tool_name === 'Bash'
   ? TAMPER.test(command) && /\.kaizen|review-hooks\.mjs/.test(command)
   : /\.kaizen[\\/]state[\\/]/.test(filePath) && TAMPER.test(filePath);
 const isBash = !input.tool_name || input.tool_name === 'Bash';
+
+// The user's approval goes through Claude Code's own permission prompt ("ask"). In bypass-permissions
+// mode nothing guarantees that prompt is shown: refuse instead, the safe option stays open.
+function askUser(reason, safe, context = null) {
+  if (input.permission_mode === 'bypassPermissions') {
+    process.stderr.write(`${reason}\n[kaizen] Claude Code is in bypass-permissions mode: the user cannot be asked. ${safe}, or the user leaves that mode and you retry.\n`);
+    process.exit(2);
+  }
+  const out = { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: reason };
+  if (context) out.additionalContext = context;
+  process.stdout.write(JSON.stringify({ hookSpecificOutput: out }));
+  process.exit(0);
+}
 const forged = isBash && FORGED_TAG.test(command) && !/\s(-d|--delete|-l|--list)\b/.test(command);
 // A protected environment's deploy command is only known after reading the config: every non-trivial
 // Bash command therefore goes through this check in a Kaizen repo (reading one JSON file).
@@ -42,7 +55,7 @@ try {
   if (tamper) {
     logFriction(root, { gate: 'state', kind: 'refused', source: 'claude' });
     process.stderr.write(
-      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, ' +
+      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, push-offers.json, confirm-asks.json, ' +
         'deploy-approvals.json, deployments.jsonl) is only written ' +
         'by the CLI and the hooks. To read the state: `review status`. To waive the review: `review waive --reason`, ' +
         'confirmed by the user.\n',
@@ -53,6 +66,19 @@ try {
     logFriction(root, { gate: 'tag', kind: 'refused', source: 'claude' });
     process.stderr.write('[kaizen] deploy/…, rollback/…, incident/… and resolve/… tags are only created by `kaizen.mjs deploy` and `kaizen.mjs monitor`: they carry DORA metrics and postmortem timelines.\n');
     process.exit(2);
+  }
+  // `approvals: "ask"`: the user picked the risky option of Claude's question — Claude Code's own prompt
+  // confirms it (Claude cannot answer it); `confirm` only accepts a code asked about here.
+  const CONFIRM = /\bkaizen\.mjs["']?\s+confirm\s+([A-Fa-f0-9]{6})\b/.exec(command);
+  if (CONFIRM) {
+    const { loadConfig } = await import('./lib.mjs');
+    const { approvalMode, markAsked, pendingApproval } = await import('./approvals.mjs');
+    const p = approvalMode(loadConfig(root)) === 'ask' && pendingApproval(root, CONFIRM[1]);
+    if (p) {
+      markAsked(root, p.code);
+      logFriction(root, { gate: p.kind === 'deploy' ? 'deploy' : 'push', kind: 'confirm_asked', approval: p.kind, source: 'claude' });
+      askUser(`[kaizen] You chose to ${p.text} — confirm?`, 'Take the safe option (no confirmation)');
+    }
   }
   // Direct deployment of a protected environment: it goes through /kaizen-ops:deploy (approval typed by
   // the user, tag, watch), never through its raw command.
@@ -65,7 +91,7 @@ try {
         logFriction(root, { gate: 'deploy', kind: 'refused', env: name, source: 'claude' });
         process.stderr.write(
           `[kaizen] Direct deployment of ${name} refused: go through /kaizen-ops:deploy ${name} ` +
-            '(approval the user types themselves, deployment tag, signal watch, rollback ready).\n',
+            '(approval by the user, deployment tag, signal watch, rollback ready).\n',
         );
         process.exit(2);
       }
@@ -82,7 +108,25 @@ try {
 
   const { fileURLToPath } = await import('node:url');
   const { pushRefusal } = await import('./review-state.mjs');
-  const { pushReasonKey } = await import('./lib.mjs');
+  const { pushReasonKey, loadConfig } = await import('./lib.mjs');
+  // `ask`: the user judges each push themselves — Claude Code's own permission prompt, which Claude
+  // cannot answer for them. Approving it is their waiver; it is logged, never recorded as a review.
+  if (loadConfig(root).review.require_before_push === 'ask') {
+    const { pushOffer, askQuestion } = await import('./review-state.mjs');
+    // First push of this commit: Claude asks the user, review first. Second one: they chose to skip it.
+    if (!pushOffer(root, res.branch, { take: true })) {
+      logFriction(root, { gate: 'push', kind: 'asked', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
+      process.stderr.write(askQuestion(res));
+      process.exit(2);
+    }
+    logFriction(root, { gate: 'push', kind: 'skip_confirm', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
+    askUser(
+      `[kaizen] ${res.branch}: ${res.reason}. You chose to push without a review — confirm? (No: Claude runs /kaizen:review.)`,
+      'Run /kaizen:review, then push',
+      '[kaizen] If the user declined this push, they want the review after all — run /kaizen:review on the ' +
+        'branch now (P0/P1 fixes), then push again. If they approved, the push went out unreviewed.',
+    );
+  }
   logFriction(root, { gate: 'push', kind: 'refused', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
   process.stderr.write(pushRefusal(res, fileURLToPath(new URL('./kaizen.mjs', import.meta.url))));
   process.exit(2);

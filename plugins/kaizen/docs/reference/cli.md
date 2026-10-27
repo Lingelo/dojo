@@ -220,8 +220,8 @@ previous review, except a light review (branch ≤ 20 lines) or an update after 
 `review.max_unreviewed_lines` since the reviewed tree). Refused too when a reviewer launched for this
 run on this branch (logged by the PreToolUse hook on Agent, with its `Slice:` and `Run:` lines) left no
 `<name>[-<slice>].json` holding a `findings` array in the run folder its prompt named. `--allow-missing`
-does not record: it prints a code the user types (`kaizen waive <code>`), and the review is then
-recorded with `gaps`. Prints the entry: branch, head, tree, verdict,
+does not record: it prints a code the user approves (`confirm <code>` after Claude Code's prompt, or
+`kaizen waive <code>` typed with `approvals: "code"`), and the review is then recorded with `gaps`. Prints the entry: branch, head, tree, verdict,
 depth (`agents` | `light` | `update`), reviewers, models, run, at. `reserves` is accepted for
 `concerns`.
 
@@ -238,7 +238,14 @@ An order of magnitude, not a bill.
 ### `review waive --reason "…"`
 
 Creates a pending waiver for the branch and prints `{ code, expires_in_minutes: 30, instruction }`. Only
-your message `kaizen waive <code>` confirms it.
+you confirm it: `confirm <code>` after Claude Code's prompt, or your message `kaizen waive <code>` with
+`approvals: "code"`.
+
+### `confirm <code>`
+
+With `approvals: "ask"` (default): confirms a pending review waiver, review gap or protected deployment
+— only after the review hook turned this very call into Claude Code's permission prompt and you
+accepted it (10 minutes, single use). Refused otherwise, and always with `approvals: "code"`.
 
 ### `review status` · `review check [--branch <name> --sha <sha>]`
 

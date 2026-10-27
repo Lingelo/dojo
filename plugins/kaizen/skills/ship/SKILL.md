@@ -48,8 +48,10 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
 
 Remaining commits in conventional format (`<type>(<JIRA>): …`, key read from the branch), files named
 explicitly. Check the review: `node "$K" review check` — refused → `kaizen:review` (`mode:agent` in
-`mode:auto`), P0/P1 fixes, then resume; a waiver is only possible at the user's request, confirmed by
-them (`review waive --reason`, then they type `kaizen waive <code>`) — never in `mode:auto`. Then
+`mode:auto`), P0/P1 fixes, then resume; refused with `"ask": true` outside `mode:auto` → push and follow the
+hook: ask the user, the review as the first option (conventions, "Review before push"); a waiver is only possible at the user's request, confirmed by
+them (`review waive --reason`, then follow its `instruction`: a question, then Claude Code's prompt) —
+never in `mode:auto`. Then
 `git push -u origin <branch>` (never `--force`; `--force-with-lease` only on a branch this session
 created and rewrote, with approval).
 

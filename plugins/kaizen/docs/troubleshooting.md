@@ -34,10 +34,11 @@ That is the review hook: in a Kaizen repo, a branch does not leave without a rev
 | No review yet | `/kaizen:review` (it records the reviewed state), then push |
 | "N lines changed since the review" | the changes since the review exceed `review.max_unreviewed_lines`: a new `/kaizen:review` |
 | "the last review returned ⛔" | fix the blocking findings, then rerun the review |
-| You want to push without a review (hotfix, throwaway branch) | ask Claude: it runs `node $K review waive --reason "…"` and gives you a code; type `kaizen waive <code>` yourself |
+| You want to push without a review (hotfix, throwaway branch) | ask Claude, or choose "Push without a review" when it asks you; confirm in Claude Code's prompt (with `"approvals": "code"` and `"require_before_push": true`: Claude runs `review waive` and you type `kaizen waive <code>`) |
 | "no Kaizen reviewer launched" at `review record` time | the review did not launch its reviewers (or they ran more than 12 h ago in another session): rerun `/kaizen:review` |
-| "launched reviewer(s) without a valid output" at `review record` time | a reviewer died (rate limit, error) or its JSON was not saved: rerun it (the review skill resumes it once); if you accept the gap, Claude runs `--allow-missing <name>` and you type the code |
+| "launched reviewer(s) without a valid output" at `review record` time | a reviewer died (rate limit, error) or its JSON was not saved: rerun it (the review skill resumes it once); if you accept the gap, Claude runs `--allow-missing <name>` and you approve it (question, then prompt) |
 | "the reviewed tree cannot be found (history rewritten?)" | the branch was rebased or amended after the review: rerun `/kaizen:review` |
+| You want the push refused until a review, skipping it by typed code only | `"review": { "require_before_push": true }`, `"approvals": "code"` (the default `"ask"` lets you decide at each push) |
 | You do not want this rule in this repo | `"review": { "require_before_push": false }` |
 
 ## The git hooks refuse: "Kaizen CLI not found"
@@ -65,7 +66,7 @@ does not run them — `git config core.hooksPath .githooks`.
 |---|---|
 | `/kaizen:deploy` → `/kaizen-ops:deploy` (same for monitor and postmortem): the command is unknown | since Kaizen 4.0 the production commands are in the kaizen-ops plugin (`/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`): `"enabledPlugins": { "kaizen-ops@dojo": true }` in `.claude/settings.json` (`node $K audit fix claude_settings` does it), then a new session; `kaizen doctor` reports it |
 | "Direct deployment of production refused" | go through `/kaizen-ops:deploy production`: it asks for your approval, creates the tag and watches |
-| "production is protected: approval required" | type the displayed code yourself: `kaizen deploy <code>` (30 min, for this commit) |
+| "production is protected: approval required" | approve the deployment when Claude asks, then in Claude Code's prompt (with `"approvals": "code"`: type `kaizen deploy <code>`, 30 min, for this commit) |
 | "unknown environment" | declare it in `.kaizen/config.json` → `deploy.environments` ([configuration](configuration.md#deploy--deployment-and-rollback)), or `node $K deploy detect` |
 | "deploy/…, rollback/…, incident/… and resolve/… tags are only created by kaizen.mjs" | do not create these tags by hand: they carry the DORA metrics and the incident timelines |
 | "Command killed after N s: state of … is uncertain" | the deploy command exceeded `deploy.timeout_seconds`: check the environment (`node $K monitor check --env <env>`) before retrying |

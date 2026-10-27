@@ -121,6 +121,12 @@ regulated or critical domains (payment, health, sensitive data at scale).
 The `PreToolUse` hook refuses a `git push` of a branch (other than the default branch) until a review
 has recorded the pushed state. Every skill that pushes first checks `node "$K" review check`:
 - refused → `kaizen:review` (in `mode:agent` within an autonomous flow), P0/P1 fixes, then push;
+- refused with `"ask": true` (`review.require_before_push: "ask"`, interactive session) → the user
+  judges: do not launch the review on your own, push. The hook stops that first push and you ask them
+  (AskUserQuestion, **the review as the first option**, "Push without a review" second). Review → run
+  `kaizen:review`, P0/P1 fixes, push. Without → push again: Claude Code asks them to confirm; approved →
+  pushed unreviewed (say so, and in the PR), declined → run `kaizen:review` right away. Autonomous flow
+  (`mode:auto`, `mode:agent`, non-interactive) → nobody to ask: treat it as refused;
 - `review` records the reviewed state itself (`review record`), and records it again after applying
   its own fixes;
 - **`review record` requires evidence**: a hook logs every Kaizen code reviewer actually launched
@@ -130,11 +136,13 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
 - beyond `review.max_unreviewed_lines` lines changed since the review (80 by default), a new review is
   required;
 - **only the user can waive it**: at their request, `node "$K" review waive --reason "<their
-  request>"` prints a code; ask them to type `kaizen waive <code>` themselves (valid 30 min). You
+  request>"` prints a code and an `instruction` to follow: ask them a question, the review as the
+  first option, and run `node "$K" confirm <code>` only if they choose to skip it (Claude Code asks
+  them to confirm); with `approvals: "code"`, ask them to type `kaizen waive <code>` themselves (30 min). You
   cannot confirm it for them, and a confirmed waiver appears in the PR ("Review waived" section). In
   non-interactive mode, no waiver: stop and say why;
 - the review state files (`.kaizen/state/reviews.json`, `review-evidence.json`, `waivers.json`,
-  `hooks-seen.json`, `review-launches.json`) are
+  `hooks-seen.json`, `review-launches.json`, `push-offers.json`) are
   only written by the CLI and the hooks. Never bypass or disable it (`review.require_before_push:
   false`) without the user asking.
 
@@ -142,7 +150,8 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
 
 Kaizen only deploys through `/kaizen-ops:deploy`, with the commands the team declared
 (`deploy.environments`), never guessed ones. A protected environment (`production` by default)
-requires a code the user types themselves (`kaizen deploy <code>`); its raw command is refused by the
+requires the user's approval — a question, "Not now" first, confirmed in Claude Code's prompt
+(`confirm <code>`), or with `approvals: "code"` a code they type (`kaizen deploy <code>`); its raw command is refused by the
 hook, and `deploy/…` / `rollback/…` / `incident/…` / `resolve/…` tags are only created by the CLI.
 After each deployment, signals (`monitor.signals`, plan thresholds) are watched; a breached threshold
 → rollback first, postmortem next. `autopilot` never deploys.
@@ -178,7 +187,7 @@ English.**
   guide", "Review waived", "looks ready") are translated into that language.
 - **Never translated**, because tools rely on them: `<!-- kaizen:<id> -->` markers, frontmatter keys
   and values, ids (R1, AE1, KTD1, U1, S1), CLI commands and flags, `kaizen waive <code>` /
-  `kaizen deploy <code>` confirmations, file paths.
+  `kaizen deploy <code>` confirmations, `confirm <code>`, file paths.
 - The deterministic tools accept the plan and constitution field names in English and, for older
   repos, in French (`**Check:**`/`**Contrôle :**`, `**Covers:**`/`**Couvre :**`,
   `NON-NEGOTIABLE`/`NON NÉGOCIABLE`, `[NEEDS CLARIFICATION: …]`/`[À CLARIFIER : …]`…).

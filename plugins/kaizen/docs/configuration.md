@@ -32,7 +32,7 @@ See the effective configuration: `node $K config`. Create the file: `/kaizen:set
     "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "budget_seconds": 840, "max_age_hours": 24,
     "targeted": { "test": "pnpm vitest related --run {files}", "lint": "pnpm eslint {files}" }
   },
-  "review": { "require_before_push": true, "max_unreviewed_lines": 80 },
+  "review": { "require_before_push": "ask", "max_unreviewed_lines": 80 },
   "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] },
   "secrets": { "scan": true, "ignore": ["test/fixtures/**"] },
   "deploy": {
@@ -167,11 +167,24 @@ set it (a `PostToolUse` hook records its id right after `gate on`): another Clau
 the same repo is not blocked. While it is active, the same hook records the cycle's token usage (main
 session and subagents, per role), logged by `gate off` for [`metrics`](guides/metrics.md).
 
+### `approvals` — how you approve what only you can
+
+`"ask"` (default) or `"code"`. Applies to a review waiver, a review recorded with a missing reviewer
+(`--allow-missing`) and a deployment to a protected environment.
+
+| Value | What you do |
+|---|---|
+| `"code"` | for teams that want it typed: the code Claude shows you: `kaizen waive <code>`, `kaizen deploy <code>` (30 min, single use) |
+| `"ask"` (default) | Claude asks you a question, **the safe option first** ("Run the review", "Relaunch the missing reviewer(s)", "Not now"); choose the other one and Claude runs `node $K confirm <code>`, which Claude Code's own permission prompt asks you to confirm — Claude cannot answer it. `confirm` refuses a code that prompt did not ask about (10 min, single use) |
+
+A typed code makes you read what you approve; the question is quicker. For a push, see also
+`review.require_before_push: "ask"`, which needs no waiver at all.
+
 ### `review` — the review required before `git push`
 
 | Key | Default | Role |
 |---|---|---|
-| `require_before_push` | `true` | a `PreToolUse` hook refuses `git push` of a branch until a review has recorded the pushed state |
+| `require_before_push` | `"ask"` | `true`: a `PreToolUse` hook refuses `git push` of a branch until a review has recorded the pushed state. `"ask"` (default): you judge each unreviewed push yourself, no code to type — Claude asks you, **the review as the first option**; choose to push without it and Claude Code's own permission prompt (which Claude cannot answer) asks you to confirm; the git `pre-push` hook only reminds. `false`: no check |
 | `max_unreviewed_lines` | `80` | lines changed since the last review that are tolerated (small CI or feedback fixes); beyond, a new review |
 | `cost_weights` | `{}` | weight of a million tokens per model for `review estimate`, over the defaults `haiku` 1, `sonnet` 3, `opus` 5 (relative units); put your blended price per million tokens to read it in your currency |
 | `confirm_above_cost` | `null` | `/kaizen:review` asks before launching a selection estimated above this cost, proposing which conditional reviewers to drop; `null` never asks |
@@ -186,8 +199,10 @@ Two exceptions: the light review (branch diff ≤ 20 lines, reviewed without sub
 after fixes (≤ `max_unreviewed_lines` since the reviewed tree).
 
 **Waiver confirmed by the user.** `node $K review waive --reason "hotfix approved by X"` only prints a
-code. The waiver only takes effect when **you** type `kaizen waive <code>` in the conversation
-(`UserPromptSubmit` hook, 30 minutes, single use); Claude cannot confirm it for you. `ship` restates it
+code. The waiver only takes effect when **you** confirm it: Claude's question, then Claude Code's
+permission prompt ([`approvals`](#approvals--how-you-approve-what-only-you-can)), or with `"approvals":
+"code"` by typing `kaizen waive <code>` (`UserPromptSubmit` hook, 30 minutes, single use); Claude
+cannot confirm it for you. `ship` restates it
 in a "Review waived" section of the PR. State: `node $K review status`; check without pushing:
 `node $K review check`.
 
@@ -243,7 +258,7 @@ writes the proposed commands here (see [deploy](../../kaizen-ops/docs/guides/dep
 | `environments.<env>.command` | — | deploys; receives `KAIZEN_ENV`, `KAIZEN_REF`, `KAIZEN_SHA` |
 | `environments.<env>.rollback` | — | rolls back (to the previous deployment by default) |
 | `environments.<env>.url` | — | the environment's address, shown during the watch |
-| `environments.<env>.protected` | `true` for `production` | requires a code **you** type (`kaizen deploy <code>`); the raw command is refused by a hook |
+| `environments.<env>.protected` | `true` for `production` | requires **your** approval ([`approvals`](#approvals--how-you-approve-what-only-you-can): question then prompt, or `kaizen deploy <code>` typed); the raw command is refused by a hook |
 | `environments.<env>.timeout_seconds` | `deploy.timeout_seconds` | timeout for this environment's commands |
 | `watch_minutes` | `15` | duration of the signal watch after a deployment |
 | `auto_rollback` | `false` | automatic rollback as soon as a threshold is breached |

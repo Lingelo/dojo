@@ -12,13 +12,15 @@
 //
 // A **protected** environment (`protected: true`, the default for `production`) is only deployed with
 // an approval confirmed by the user: `deploy request` issues a code, the user types
-// `kaizen deploy <code>` themselves (UserPromptSubmit hook), and `deploy run` consumes that approval,
+// `kaizen deploy <code>` themselves (UserPromptSubmit hook) — or, by default (`approvals: "ask"`), confirms
+// it in Claude Code's prompt (`confirm`, approvals.mjs) — and `deploy run` consumes that approval,
 // valid for 30 minutes for this environment and this commit. A rollback needs no approval: it
 // restores service, and it is urgent.
 
 import { randomBytes } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { approvalInstruction } from './approvals.mjs';
 import { git, loadConfig, runBounded } from './lib.mjs';
 
 const APPROVAL_MAX_AGE_MS = 30 * 60 * 1000;
@@ -112,12 +114,12 @@ export function requestDeploy(root, env, { ref } = {}) {
     approval_needed: true,
     code,
     expires_in_minutes: APPROVAL_MAX_AGE_MS / 60000,
-    instruction: `Ask the user to type it themselves: kaizen deploy ${code}`,
+    instruction: approvalInstruction(root, 'deploy', code, `deploy ${sha.slice(0, 7)} to ${env}`),
   };
 }
 
-// Called by the UserPromptSubmit hook: only a user message reaches this path.
-export function confirmDeploy(root, code, { session = null } = {}) {
+// Called by the UserPromptSubmit hook (a user message), or by `confirm` after Claude Code's prompt (approvals.mjs).
+export function confirmDeploy(root, code, { session = null, by = 'user (message)' } = {}) {
   const now = Date.now();
   const list = readJson(root, 'deploy-approvals.json', []);
   const a = list.find((x) => x.code === String(code).toUpperCase() && !x.confirmed && now - Date.parse(x.at) < APPROVAL_MAX_AGE_MS);
@@ -125,6 +127,7 @@ export function confirmDeploy(root, code, { session = null } = {}) {
   a.confirmed = true;
   a.confirmed_at = new Date(now).toISOString();
   a.session = session;
+  a.confirmed_by = by;
   writeJson(root, 'deploy-approvals.json', list);
   return a;
 }
@@ -151,7 +154,7 @@ export function deploy(root, env, { ref, plans = [] } = {}) {
     if (!approval) {
       throw new Error(
         `${env} is protected: approval required for ${sha.slice(0, 7)}. ` +
-          `Run \`deploy request ${env}${ref ? ` --ref ${ref}` : ''}\`, then the user types "kaizen deploy <code>" themselves`,
+          `Run \`deploy request ${env}${ref ? ` --ref ${ref}` : ''}\`, then follow its instruction (the user approves)`,
       );
     }
   }
