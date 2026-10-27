@@ -82,7 +82,22 @@ try {
 
   const { fileURLToPath } = await import('node:url');
   const { pushRefusal } = await import('./review-state.mjs');
-  const { pushReasonKey } = await import('./lib.mjs');
+  const { pushReasonKey, loadConfig } = await import('./lib.mjs');
+  // `ask`: the user judges each push themselves — Claude Code's own permission prompt, which Claude
+  // cannot answer for them. Approving it is their waiver; it is logged, never recorded as a review.
+  if (loadConfig(root).review.require_before_push === 'ask') {
+    logFriction(root, { gate: 'push', kind: 'asked', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'ask',
+          permissionDecisionReason: `[kaizen] ${res.branch}: ${res.reason}. Push without a review? (or run /kaizen:review first)`,
+        },
+      }),
+    );
+    process.exit(0);
+  }
   logFriction(root, { gate: 'push', kind: 'refused', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
   process.stderr.write(pushRefusal(res, fileURLToPath(new URL('./kaizen.mjs', import.meta.url))));
   process.exit(2);

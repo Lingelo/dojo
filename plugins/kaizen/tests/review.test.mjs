@@ -176,6 +176,30 @@ test('out of scope: other commands, repo without Kaizen, disabled, branch deleti
   cleanup(off);
 });
 
+test('require_before_push "ask": the user judges the push, Claude Code asks them', () => {
+  const dir = featureRepo({ review: { require_before_push: 'ask' } });
+  const r = prePush(dir);
+  assert.equal(r.status, 0);
+  const out = JSON.parse(r.stdout).hookSpecificOutput;
+  assert.equal(out.permissionDecision, 'ask');
+  assert.match(out.permissionDecisionReason, /feat\/x: no review recorded/);
+  // a reviewed branch is not asked about
+  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  const reviewed = prePush(dir);
+  assert.equal(reviewed.status, 0);
+  assert.equal(reviewed.stdout, '');
+  // the git hook cannot ask: it reminds and lets the push through
+  writeFiles(dir, { 'app.js': `${'x\n'.repeat(120)}` });
+  gitc(dir, ['commit', '-qam', 'feat: more']);
+  const g = cli(dir, ['githook', 'pre-push'], { input: `refs/heads/feat/x HEAD refs/heads/feat/x ${'0'.repeat(40)}\n` });
+  assert.equal(g.code, 0, g.stderr);
+  assert.match(g.stderr, /without a review: .*lines changed since the review/);
+  const friction = readFileSync(join(dir, '.kaizen', 'state', 'friction.jsonl'), 'utf8');
+  assert.match(friction, /"kind":"asked"/);
+  assert.doesNotMatch(friction, /"kind":"refused"/);
+  cleanup(dir);
+});
+
 test('branch without code changes: nothing to review', () => {
   const dir = tempRepo({ '.kaizen/config.json': {}, 'app.js': 'a\n' });
   gitc(dir, ['checkout', '-qb', 'feat/empty']);

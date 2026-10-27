@@ -107,7 +107,7 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    `.kaizen/config.json`. Team of several people → propose `approvers` in `CONSTITUTION.md` and a
    `CODEOWNERS` line for `CONSTITUTION.md` and `kaizen-packs/`. Remind that a review is required
    before any `git push` of a branch (`review.require_before_push`) and that only the team can choose
-   to relax it.
+   to relax it (`"ask"`: each developer judges each unreviewed push in a Claude Code prompt; `false`: off).
 11. **Summary** — open it with the **profile in effect and what it costs**, on its own line, before anything
    else: e.g. "Profile **prototype**: code review on sonnet, critical review on sonnet (opus in product) — change
    it with `profile` in `.kaizen/config.json`". It decides the price and depth of every later review, so it
