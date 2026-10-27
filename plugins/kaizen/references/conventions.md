@@ -136,7 +136,10 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
 - beyond `review.max_unreviewed_lines` lines changed since the review (80 by default), a new review is
   required;
 - **only the user can waive it**: at their request, `node "$K" review waive --reason "<their
-  request>"` prints a code; ask them to type `kaizen waive <code>` themselves (valid 30 min). You
+  request>"` prints a code and an `instruction` to follow: ask them to type `kaizen waive <code>`
+  themselves (valid 30 min), or with `approvals: "ask"` ask them a question, the review as the first
+  option, and run `node "$K" confirm <code>` only if they choose to skip it (Claude Code asks them to
+  confirm). You
   cannot confirm it for them, and a confirmed waiver appears in the PR ("Review waived" section). In
   non-interactive mode, no waiver: stop and say why;
 - the review state files (`.kaizen/state/reviews.json`, `review-evidence.json`, `waivers.json`,
@@ -148,7 +151,8 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
 
 Kaizen only deploys through `/kaizen-ops:deploy`, with the commands the team declared
 (`deploy.environments`), never guessed ones. A protected environment (`production` by default)
-requires a code the user types themselves (`kaizen deploy <code>`); its raw command is refused by the
+requires the user's approval — a code they type themselves (`kaizen deploy <code>`), or with
+`approvals: "ask"` a question, "Not now" first, confirmed in Claude Code's prompt (`confirm <code>`); its raw command is refused by the
 hook, and `deploy/…` / `rollback/…` / `incident/…` / `resolve/…` tags are only created by the CLI.
 After each deployment, signals (`monitor.signals`, plan thresholds) are watched; a breached threshold
 → rollback first, postmortem next. `autopilot` never deploys.

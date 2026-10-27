@@ -20,7 +20,7 @@ const command = String(input.tool_input?.command || '');
 const filePath = String(input.tool_input?.file_path || input.tool_input?.notebook_path || '');
 // Cheap filters before any import: this hook sees every Bash command and every write.
 const PUSH = /(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+push(\s|$)/;
-const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals|push-offers)\.json|deployments\.jsonl|review-hooks\.mjs/;
+const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals|push-offers|confirm-asks)\.json|deployments\.jsonl|review-hooks\.mjs/;
 // Hand-made deployment tags: they would distort DORA metrics and postmortems.
 const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback|incident|resolve)\//;
 const tamper = input.tool_name === 'Bash'
@@ -42,7 +42,7 @@ try {
   if (tamper) {
     logFriction(root, { gate: 'state', kind: 'refused', source: 'claude' });
     process.stderr.write(
-      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, push-offers.json, ' +
+      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, push-offers.json, confirm-asks.json, ' +
         'deploy-approvals.json, deployments.jsonl) is only written ' +
         'by the CLI and the hooks. To read the state: `review status`. To waive the review: `review waive --reason`, ' +
         'confirmed by the user.\n',
@@ -53,6 +53,28 @@ try {
     logFriction(root, { gate: 'tag', kind: 'refused', source: 'claude' });
     process.stderr.write('[kaizen] deploy/…, rollback/…, incident/… and resolve/… tags are only created by `kaizen.mjs deploy` and `kaizen.mjs monitor`: they carry DORA metrics and postmortem timelines.\n');
     process.exit(2);
+  }
+  // `approvals: "ask"`: the user picked the risky option of Claude's question — Claude Code's own prompt
+  // confirms it (Claude cannot answer it); `confirm` only accepts a code asked about here.
+  const CONFIRM = /\bkaizen\.mjs["']?\s+confirm\s+([A-Fa-f0-9]{6})\b/.exec(command);
+  if (CONFIRM) {
+    const { loadConfig } = await import('./lib.mjs');
+    const { approvalMode, markAsked, pendingApproval } = await import('./approvals.mjs');
+    const p = approvalMode(loadConfig(root)) === 'ask' && pendingApproval(root, CONFIRM[1]);
+    if (p) {
+      markAsked(root, p.code);
+      logFriction(root, { gate: p.kind === 'deploy' ? 'deploy' : 'push', kind: 'confirm_asked', approval: p.kind, source: 'claude' });
+      process.stdout.write(
+        JSON.stringify({
+          hookSpecificOutput: {
+            hookEventName: 'PreToolUse',
+            permissionDecision: 'ask',
+            permissionDecisionReason: `[kaizen] You chose to ${p.text} — confirm?`,
+          },
+        }),
+      );
+      process.exit(0);
+    }
   }
   // Direct deployment of a protected environment: it goes through /kaizen-ops:deploy (approval typed by
   // the user, tag, watch), never through its raw command.

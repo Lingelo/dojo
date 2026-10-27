@@ -218,6 +218,25 @@ test('require_before_push "ask": the user judges the push, Claude Code asks them
   cleanup(dir);
 });
 
+test('approvals "ask": a review waiver without a typed code, confirmed in Claude Code\'s prompt', () => {
+  const dir = featureRepo({ approvals: 'ask' });
+  const w = cli(dir, ['review', 'waive', '--reason', 'hotfix']).json;
+  assert.match(w.instruction, /1\. "Run the review \(Recommended\)", 2\. "Push without a review"/);
+  assert.equal(cli(dir, ['confirm', w.code]).code, 2, 'not asked in the prompt yet');
+  const asked = prePush(dir, `node kaizen.mjs confirm ${w.code}`);
+  assert.equal(JSON.parse(asked.stdout).hookSpecificOutput.permissionDecision, 'ask');
+  assert.equal(cli(dir, ['confirm', w.code]).json.entry.confirmed_by, 'user (prompt)');
+  assert.equal(prePush(dir).status, 0, 'waived');
+  // default "code": confirm is refused, the user types the code
+  const code = featureRepo();
+  const w2 = cli(code, ['review', 'waive', '--reason', 'x']).json;
+  assert.match(w2.instruction, /kaizen waive/);
+  assert.equal(prePush(code, `node kaizen.mjs confirm ${w2.code}`).stdout, '');
+  assert.match(cli(code, ['confirm', w2.code]).stderr, /approvals is "code"/);
+  cleanup(dir);
+  cleanup(code);
+});
+
 test('branch without code changes: nothing to review', () => {
   const dir = tempRepo({ '.kaizen/config.json': {}, 'app.js': 'a\n' });
   gitc(dir, ['checkout', '-qb', 'feat/empty']);

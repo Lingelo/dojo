@@ -44,6 +44,9 @@ export const DEFAULT_CONFIG = {
   // Risk surfaces raise the profile one step for the cycle (scripts/risk.mjs): team globs per surface.
   risk: { escalate: true, paths: {}, ignore: [] },
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
+  // How the user approves a review waiver, a review gap or a protected deployment: a code they type, or
+  // a question (safe option first) confirmed in Claude Code's prompt — scripts/approvals.mjs.
+  approvals: 'code',
   // cost_weights: relative weight of a million tokens per model; confirm_above_cost: ask before a
   // review estimated above it (null = never ask).
   review: { require_before_push: true, max_unreviewed_lines: 80, cost_weights: {}, confirm_above_cost: null },

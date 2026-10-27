@@ -16,6 +16,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
   review. Nothing is recorded as reviewed; the question is logged as `asked` in `friction.jsonl`
   (`metrics` → `friction.push.asked`). The git `pre-push` hook cannot ask: in this mode it reminds and
   lets the push through. The default stays `true` (refuse).
+- **`approvals: "ask"`: the other approvals without a code.** A review waiver, a review gap
+  (`--allow-missing`) and a protected deployment no longer need `kaizen waive|deploy <code>` typed: Claude
+  asks you, the safe option first ("Run the review", "Relaunch the missing reviewer(s)", "Not now");
+  choosing the other one runs the new `kaizen.mjs confirm <code>`, which the review hook turns into
+  Claude Code's own permission prompt (`confirm-asks.json`, tamper-protected) — `confirm` refuses a
+  code that prompt did not ask about. `review waive`, `review record --allow-missing` and
+  `deploy request` print the matching `instruction`. Default `"code"`: nothing changes.
 
 ## [4.4.0] - 2026-10-21
 

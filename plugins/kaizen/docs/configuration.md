@@ -167,6 +167,19 @@ set it (a `PostToolUse` hook records its id right after `gate on`): another Clau
 the same repo is not blocked. While it is active, the same hook records the cycle's token usage (main
 session and subagents, per role), logged by `gate off` for [`metrics`](guides/metrics.md).
 
+### `approvals` — how you approve what only you can
+
+`"code"` (default) or `"ask"`. Applies to a review waiver, a review recorded with a missing reviewer
+(`--allow-missing`) and a deployment to a protected environment.
+
+| Value | What you do |
+|---|---|
+| `"code"` | type the code Claude shows you: `kaizen waive <code>`, `kaizen deploy <code>` (30 min, single use) |
+| `"ask"` | Claude asks you a question, **the safe option first** ("Run the review", "Relaunch the missing reviewer(s)", "Not now"); choose the other one and Claude runs `node $K confirm <code>`, which Claude Code's own permission prompt asks you to confirm — Claude cannot answer it. `confirm` refuses a code that prompt did not ask about (10 min, single use) |
+
+A typed code makes you read what you approve; the question is quicker. For a push, see also
+`review.require_before_push: "ask"`, which needs no waiver at all.
+
 ### `review` — the review required before `git push`
 
 | Key | Default | Role |

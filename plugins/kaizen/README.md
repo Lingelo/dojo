@@ -310,6 +310,7 @@ node $K run-dir <type>                         # local run folder (e.g. reviews)
 node $K review record --verdict ready|concerns|blocked [--run d] [--allow-missing a]   # requires reviewers that ran, and their outputs
 node $K review estimate --reviewers a,b [--profile p]   # tokens and relative cost of a review, before launching it
 node $K review waive --reason "…" | review status | review check [--branch b --sha s]  # waiver = code typed by the user
+node $K confirm <code>                         # approvals: "ask" — after the user confirmed in Claude Code's prompt
 node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch [--pr n] [--repo o/r] …
 
 # Release, deployment, monitoring (deploy, monitor and postmortem are run by the kaizen-ops skills)
@@ -337,7 +338,7 @@ Declared in [`hooks/hooks.json`](hooks/hooks.json); they work without any action
 |---|---|---|
 | `SessionStart` | `scripts/review-hooks.mjs --heartbeat` | Records that Kaizen's hooks run in this repo (`.kaizen/state/hooks-seen.json`), read by `kaizen doctor` |
 | `PreToolUse` (Bash) | `scripts/secret-gate.mjs` | Refuses a `git commit` whose changes (index, plus what a `git add` in the same command or `commit -a` brings in) carry a key or token, and `--no-verify`. Active in every git repo; `secrets.scan: false` turns it off |
-| `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | Refuses `git push` of a branch without a recorded review of the pushed tree, a direct deploy command of a protected environment, hand-made `deploy/…`, `rollback/…`, `incident/…` tags, and direct writes to Kaizen's review and deployment state |
+| `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | Refuses `git push` of a branch without a recorded review of the pushed tree, a direct deploy command of a protected environment, hand-made `deploy/…`, `rollback/…`, `incident/…` tags, and direct writes to Kaizen's review and deployment state; with `approvals: "ask"`, turns `kaizen.mjs confirm <code>` into Claude Code's permission prompt |
 | `PreToolUse` (Agent/Task) | `scripts/review-hooks.mjs --launch` | Logs each Kaizen reviewer as it is launched (slice, run): `review record` refuses a run where one left no output |
 | `PostToolUse` (Bash) | `scripts/quality-gate.mjs --claim` | Ties the gate to the session that ran `gate on` |
 | `PostToolUse` (Agent/Task) | `scripts/review-hooks.mjs --evidence` | Logs the Kaizen reviewers actually launched (evidence required by `review record`) and the agents of the cycle |

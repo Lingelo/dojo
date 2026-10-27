@@ -949,6 +949,16 @@ try {
     case 'gate':
       cmdGate(requireRepo(), sub);
       break;
+    case 'confirm': {
+      // approvals: "ask" — after Claude Code's prompt (review hook), never on Claude's word alone.
+      const { confirmAsked } = await import('./approvals.mjs');
+      try {
+        out(await confirmAsked(requireRepo(), sub || '', { session: process.env.CLAUDE_SESSION_ID || null }));
+      } catch (err) {
+        die(err.message);
+      }
+      break;
+    }
     case 'review': {
       const root = requireRepo();
       if (sub === 'record') {

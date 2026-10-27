@@ -19,6 +19,7 @@
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { approvalInstruction } from './approvals.mjs';
 import { changedLines, defaultBranch, diffBase, git, loadConfig, logFriction, worktreeTree } from './lib.mjs';
 
 export const VERDICTS = ['ready', 'concerns', 'blocked'];
@@ -28,7 +29,7 @@ export const LIGHT_MAX_LINES = 20;
 const EVIDENCE_MAX_AGE_MS = 12 * 3600 * 1000;
 const WAIVER_MAX_AGE_MS = 30 * 60 * 1000;
 // State files only the CLI and the hooks write (the PreToolUse hook refuses direct writes).
-export const PROTECTED_STATE = ['reviews.json', 'review-evidence.json', 'waivers.json', 'hooks-seen.json', 'review-launches.json'];
+export const PROTECTED_STATE = ['reviews.json', 'review-evidence.json', 'waivers.json', 'hooks-seen.json', 'review-launches.json', 'push-offers.json', 'confirm-asks.json'];
 
 function stateDir(root) {
   const dir = join(root, '.kaizen', 'state');
@@ -216,25 +217,25 @@ export function requestWaiver(root, { reason, gap = null }) {
     branch,
     code,
     expires_in_minutes: WAIVER_MAX_AGE_MS / 60000,
-    instruction: `Ask the user to type it themselves: kaizen waive ${code}`,
+    instruction: approvalInstruction(root, gap ? 'gap' : 'waiver', code, gap ? `record the review without ${gap.gaps.join(', ')}` : 'push without a review'),
   };
 }
 
-// Called by the UserPromptSubmit hook: only a user message reaches this path.
-export function confirmWaiver(root, code, { session = null } = {}) {
+// Called by the UserPromptSubmit hook (a user message), or by `confirm` after Claude Code's prompt (approvals.mjs).
+export function confirmWaiver(root, code, { session = null, by = 'user (message)' } = {}) {
   const now = Date.now();
   const pending = readJson(root, 'waivers.json', []);
   const w = pending.find((x) => x.code === String(code).toUpperCase() && now - Date.parse(x.at) < WAIVER_MAX_AGE_MS);
   if (!w) return null;
   const state = readJson(root, 'reviews.json', {});
-  const entry = w.kind === 'gap' ? { ...w.review, confirmed_by: 'user (message)', session, at: new Date(now).toISOString() } : {
+  const entry = w.kind === 'gap' ? { ...w.review, confirmed_by: by, session, at: new Date(now).toISOString() } : {
     branch: w.branch,
     head: w.head,
     tree: w.tree,
     verdict: 'waived',
     reason: w.reason,
     reviewers: [],
-    confirmed_by: 'user (message)',
+    confirmed_by: by,
     session,
     at: new Date(now).toISOString(),
   };
