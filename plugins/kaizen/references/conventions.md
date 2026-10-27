@@ -122,10 +122,11 @@ The `PreToolUse` hook refuses a `git push` of a branch (other than the default b
 has recorded the pushed state. Every skill that pushes first checks `node "$K" review check`:
 - refused → `kaizen:review` (in `mode:agent` within an autonomous flow), P0/P1 fixes, then push;
 - refused with `"ask": true` (`review.require_before_push: "ask"`, interactive session) → the user
-  judges: do not launch the review on your own, push; Claude Code asks them. Approved → pushed without a
-  review (say so, and in the PR). **Declined → they want the review: run `kaizen:review` right away**,
-  P0/P1 fixes, then push again — no question in between. Autonomous flow (`mode:auto`, `mode:agent`,
-  non-interactive) → nobody to ask: treat it as refused;
+  judges: do not launch the review on your own, push. The hook stops that first push and you ask them
+  (AskUserQuestion, **the review as the first option**, "Push without a review" second). Review → run
+  `kaizen:review`, P0/P1 fixes, push. Without → push again: Claude Code asks them to confirm; approved →
+  pushed unreviewed (say so, and in the PR), declined → run `kaizen:review` right away. Autonomous flow
+  (`mode:auto`, `mode:agent`, non-interactive) → nobody to ask: treat it as refused;
 - `review` records the reviewed state itself (`review record`), and records it again after applying
   its own fixes;
 - **`review record` requires evidence**: a hook logs every Kaizen code reviewer actually launched
@@ -139,7 +140,7 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
   cannot confirm it for them, and a confirmed waiver appears in the PR ("Review waived" section). In
   non-interactive mode, no waiver: stop and say why;
 - the review state files (`.kaizen/state/reviews.json`, `review-evidence.json`, `waivers.json`,
-  `hooks-seen.json`, `review-launches.json`) are
+  `hooks-seen.json`, `review-launches.json`, `push-offers.json`) are
   only written by the CLI and the hooks. Never bypass or disable it (`review.require_before_push:
   false`) without the user asking.
 

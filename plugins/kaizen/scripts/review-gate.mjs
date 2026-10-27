@@ -20,7 +20,7 @@ const command = String(input.tool_input?.command || '');
 const filePath = String(input.tool_input?.file_path || input.tool_input?.notebook_path || '');
 // Cheap filters before any import: this hook sees every Bash command and every write.
 const PUSH = /(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+push(\s|$)/;
-const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals)\.json|deployments\.jsonl|review-hooks\.mjs/;
+const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals|push-offers)\.json|deployments\.jsonl|review-hooks\.mjs/;
 // Hand-made deployment tags: they would distort DORA metrics and postmortems.
 const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback|incident|resolve)\//;
 const tamper = input.tool_name === 'Bash'
@@ -42,7 +42,7 @@ try {
   if (tamper) {
     logFriction(root, { gate: 'state', kind: 'refused', source: 'claude' });
     process.stderr.write(
-      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, ' +
+      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, push-offers.json, ' +
         'deploy-approvals.json, deployments.jsonl) is only written ' +
         'by the CLI and the hooks. To read the state: `review status`. To waive the review: `review waive --reason`, ' +
         'confirmed by the user.\n',
@@ -86,16 +86,23 @@ try {
   // `ask`: the user judges each push themselves — Claude Code's own permission prompt, which Claude
   // cannot answer for them. Approving it is their waiver; it is logged, never recorded as a review.
   if (loadConfig(root).review.require_before_push === 'ask') {
-    logFriction(root, { gate: 'push', kind: 'asked', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
+    const { pushOffer, askQuestion } = await import('./review-state.mjs');
+    // First push of this commit: Claude asks the user, review first. Second one: they chose to skip it.
+    if (!pushOffer(root, res.branch, { take: true })) {
+      logFriction(root, { gate: 'push', kind: 'asked', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
+      process.stderr.write(askQuestion(res));
+      process.exit(2);
+    }
+    logFriction(root, { gate: 'push', kind: 'skip_confirm', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
     process.stdout.write(
       JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'PreToolUse',
           permissionDecision: 'ask',
-          permissionDecisionReason: `[kaizen] ${res.branch}: ${res.reason}. Approve: push without a review. Decline: Claude runs /kaizen:review, then pushes.`,
+          permissionDecisionReason: `[kaizen] ${res.branch}: ${res.reason}. You chose to push without a review — confirm? (No: Claude runs /kaizen:review.)`,
           additionalContext:
-            '[kaizen] review.require_before_push is "ask": if the user declined this push, they want the review — run ' +
-            '/kaizen:review on the branch now (P0/P1 fixes), then push again. If they approved, the push went out unreviewed.',
+            '[kaizen] If the user declined this push, they want the review after all — run /kaizen:review on the ' +
+            'branch now (P0/P1 fixes), then push again. If they approved, the push went out unreviewed.',
         },
       }),
     );

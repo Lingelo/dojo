@@ -5,15 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 ## [4.5.0] - 2026-10-27
 
 ### Added
-- **`review.require_before_push: "ask"`: you judge each push.** Instead of refusing an unreviewed push
-  (and asking for `kaizen waive <code>` to skip the review), the review hook hands the decision to you
-  through Claude Code's own permission prompt — Claude cannot answer it for you, and there is no code to
-  type. Approving pushes without a review; declining means you want it, and Claude runs
-  `/kaizen:review` right away, then pushes (`review check` reports `"ask": true`, so `ship` pushes and
-  lets you judge instead of launching the review on its own; autonomous flows still review). Nothing
-  is recorded as reviewed, the push is logged as `asked` in `friction.jsonl` (`metrics` →
-  `friction.push.asked`). The git `pre-push` hook cannot ask: in this mode it reminds and lets the
-  push through. The default stays `true` (refuse).
+- **`review.require_before_push: "ask"`: you judge each push, no code to type.** Instead of refusing
+  an unreviewed push (and asking for `kaizen waive <code>` to skip the review), the review hook stops
+  the first push of a commit and Claude asks you, **the review as the first option** so skipping it is
+  never the reflex: "Run the review (Recommended)" runs `/kaizen:review`, then pushes; "Push without a
+  review" pushes again, and that second push of the same commit (within 30 min, `push-offers.json`)
+  reaches Claude Code's own permission prompt, which Claude cannot answer for you — confirm, or decline
+  and the review runs. `review check` reports `"ask": true`, so `ship` and `address-feedback` let you
+  choose instead of launching the review on their own; autonomous and non-interactive flows still
+  review. Nothing is recorded as reviewed; the question is logged as `asked` in `friction.jsonl`
+  (`metrics` → `friction.push.asked`). The git `pre-push` hook cannot ask: in this mode it reminds and
+  lets the push through. The default stays `true` (refuse).
 
 ## [4.4.0] - 2026-10-21
 

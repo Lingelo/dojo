@@ -178,12 +178,26 @@ test('out of scope: other commands, repo without Kaizen, disabled, branch deleti
 
 test('require_before_push "ask": the user judges the push, Claude Code asks them', () => {
   const dir = featureRepo({ review: { require_before_push: 'ask' } });
-  const r = prePush(dir);
-  assert.equal(r.status, 0);
-  const out = JSON.parse(r.stdout).hookSpecificOutput;
+  // first push: stopped, Claude must ask the user with the review as the first option
+  const first = prePush(dir);
+  assert.equal(first.status, 2);
+  assert.match(first.stderr, /feat\/x: no review recorded/);
+  assert.match(first.stderr, /1\. "Run the review \(Recommended\)"[\s\S]*2\. "Push without a review"/);
+  // second push of the same commit: the user chose to skip — Claude Code's prompt confirms it
+  const second = prePush(dir);
+  assert.equal(second.status, 0);
+  const out = JSON.parse(second.stdout).hookSpecificOutput;
   assert.equal(out.permissionDecision, 'ask');
-  assert.match(out.permissionDecisionReason, /feat\/x: no review recorded/);
+  assert.match(out.permissionDecisionReason, /without a review — confirm/);
   assert.match(out.additionalContext, /declined.*run \/kaizen:review/);
+  // the offer is used up: the next push asks again
+  assert.equal(prePush(dir).status, 2);
+  // a new commit voids a pending offer
+  writeFiles(dir, { 'app.js': 'a\nb\nc\nd\n' });
+  gitc(dir, ['commit', '-qam', 'feat: d']);
+  assert.equal(prePush(dir).status, 2, 'offer was for the previous commit');
+  // Claude cannot forge the offer
+  assert.equal(prePush(dir, 'echo {} > .kaizen/state/push-offers.json').status, 2);
   const check = cli(dir, ['review', 'check']);
   assert.equal(check.code, 1);
   assert.equal(check.json.ask, true, 'skills see that the user decides');
@@ -200,7 +214,7 @@ test('require_before_push "ask": the user judges the push, Claude Code asks them
   assert.match(g.stderr, /without a review: .*lines changed since the review/);
   const friction = readFileSync(join(dir, '.kaizen', 'state', 'friction.jsonl'), 'utf8');
   assert.match(friction, /"kind":"asked"/);
-  assert.doesNotMatch(friction, /"kind":"refused"/);
+  assert.doesNotMatch(friction, /"gate":"push","kind":"refused"/, 'no push refused in "ask" mode');
   cleanup(dir);
 });
 

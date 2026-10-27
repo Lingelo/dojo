@@ -171,7 +171,7 @@ session and subagents, per role), logged by `gate off` for [`metrics`](guides/me
 
 | Key | Default | Role |
 |---|---|---|
-| `require_before_push` | `true` | a `PreToolUse` hook refuses `git push` of a branch until a review has recorded the pushed state. `"ask"`: you judge each unreviewed push yourself — Claude Code asks you (its own permission prompt, which Claude cannot answer), no code to type; decline it and Claude runs `/kaizen:review`, then pushes; the git `pre-push` hook only reminds. `false`: no check |
+| `require_before_push` | `true` | a `PreToolUse` hook refuses `git push` of a branch until a review has recorded the pushed state. `"ask"`: you judge each unreviewed push yourself, no code to type — Claude asks you, **the review as the first option**; choose to push without it and Claude Code's own permission prompt (which Claude cannot answer) asks you to confirm; the git `pre-push` hook only reminds. `false`: no check |
 | `max_unreviewed_lines` | `80` | lines changed since the last review that are tolerated (small CI or feedback fixes); beyond, a new review |
 | `cost_weights` | `{}` | weight of a million tokens per model for `review estimate`, over the defaults `haiku` 1, `sonnet` 3, `opus` 5 (relative units); put your blended price per million tokens to read it in your currency |
 | `confirm_above_cost` | `null` | `/kaizen:review` asks before launching a selection estimated above this cost, proposing which conditional reviewers to drop; `null` never asks |

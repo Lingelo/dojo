@@ -289,6 +289,32 @@ function decidePush(root, config, { branch = null, sha = null } = {}) {
   return { allowed: true, branch, reason, review: rec, unreviewed_lines: since };
 }
 
+// `ask` mode, in two steps: the first unreviewed push of a commit is stopped so Claude asks the user a
+// question whose first choice is the review; only a second push of that same commit, within 30 min,
+// reaches Claude Code's permission prompt — where the user confirms the push without a review.
+export function pushOffer(root, branch, { take = false } = {}) {
+  const head = git(root, ['rev-parse', 'HEAD'], { allowFail: true });
+  const offers = readJson(root, 'push-offers.json', {});
+  const o = offers[branch];
+  const pending = Boolean(o && o.head === head && Date.now() - Date.parse(o.at) < WAIVER_MAX_AGE_MS);
+  if (take) {
+    if (pending) delete offers[branch];
+    else offers[branch] = { head, at: new Date().toISOString() };
+    writeJson(root, 'push-offers.json', offers);
+  }
+  return pending;
+}
+
+export function askQuestion(res) {
+  return (
+    `[kaizen] ${res.branch}: ${res.reason}. review.require_before_push is "ask": the user decides.\n` +
+    'Ask them now with AskUserQuestion (in their language), the review as the FIRST option:\n' +
+    '  1. "Run the review (Recommended)" — /kaizen:review on the branch, P0/P1 fixes, then push;\n' +
+    '  2. "Push without a review" — rerun the same push: Claude Code will ask them to confirm it.\n' +
+    'Do not pick for them. Non-interactive or autonomous flow: nobody to ask, run the review.\n'
+  );
+}
+
 // The refusal both push gates print (Claude Code hook and git pre-push hook).
 export function pushRefusal(res, K) {
   return (

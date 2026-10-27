@@ -38,7 +38,7 @@ That is the review hook: in a Kaizen repo, a branch does not leave without a rev
 | "no Kaizen reviewer launched" at `review record` time | the review did not launch its reviewers (or they ran more than 12 h ago in another session): rerun `/kaizen:review` |
 | "launched reviewer(s) without a valid output" at `review record` time | a reviewer died (rate limit, error) or its JSON was not saved: rerun it (the review skill resumes it once); if you accept the gap, Claude runs `--allow-missing <name>` and you type the code |
 | "the reviewed tree cannot be found (history rewritten?)" | the branch was rebased or amended after the review: rerun `/kaizen:review` |
-| You want to decide yourself, push by push, without typing a code | `"review": { "require_before_push": "ask" }`: Claude Code asks you at each unreviewed push |
+| You want to decide yourself, push by push, without typing a code | `"review": { "require_before_push": "ask" }`: at each unreviewed push Claude asks you, the review as the first option; skipping it is confirmed in Claude Code's prompt |
 | You do not want this rule in this repo | `"review": { "require_before_push": false }` |
 
 ## The git hooks refuse: "Kaizen CLI not found"
