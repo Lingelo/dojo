@@ -73,6 +73,12 @@
 <text class="sub" x="146" y="139" text-anchor="middle" style="font-size:11px">reviews, head checks, merge state</text>
 <rect class="plain" x="36" y="182" width="220" height="44" rx="8" stroke-width="1.5"/>
 <text class="label" x="146" y="208" text-anchor="middle">merged / closed → stop</text>
+<rect class="gate" x="36" y="420" width="220" height="104" rx="8" stroke-width="1.5"/>
+<text class="label" x="146" y="448" text-anchor="middle">Still relevant?</text>
+<text class="sub" x="146" y="463" text-anchor="middle" style="font-size:10.3px">pr overlap, before the first cycle:</text>
+<text class="sub" x="146" y="477" text-anchor="middle">base touched the PR paths?</text>
+<text class="sub" x="146" y="491" text-anchor="middle" style="font-size:11.3px">Update → cycles · Rework / Close</text>
+<text class="sub" x="146" y="505" text-anchor="middle">→ stop, you decide</text>
 <rect class="skill" x="320" y="90" width="300" height="64" rx="8" stroke-width="1.5"/>
 <text class="label" x="470" y="112" text-anchor="middle">1. Feedback first</text>
 <text class="sub" x="470" y="127" text-anchor="middle">address-feedback once, then</text>
@@ -98,6 +104,9 @@
 <path class="line accent" d="M470,238 L470,258" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M470,322 L470,342" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M470,406 L470,426" marker-end="url(#h-accent)"/>
+<path class="line dashed" d="M320,374 L288,374 L288,472 L256,472" marker-end="url(#h-default)"/>
+<rect class="pill" x="205" y="389" width="71" height="17" rx="4"/>
+<text class="edge" x="210" y="400" text-anchor="start">base moved</text>
 <rect class="gate" x="320" y="524" width="300" height="64" rx="8" stroke-width="1.5"/>
 <text class="label" x="470" y="546" text-anchor="middle">pr watch --interval 150</text>
 <text class="sub" x="470" y="561" text-anchor="middle">polls GitHub, no tokens spent,</text>

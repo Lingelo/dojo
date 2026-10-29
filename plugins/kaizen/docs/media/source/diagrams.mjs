@@ -499,6 +499,7 @@ written.push(
   diagram('pr-watch', 1100, 640, 'Driving a PR to "looks ready" (/kaizen:watch-pr)', 'Feedback before CI, CI before branch updates, a token-free watcher between cycles. You merge, never Kaizen.', (d) => {
     d.box('snap', 36, 90, 220, 60, 'gate', 'pr snapshot', 'paginated threads, comments,\nreviews, head checks, merge state');
     d.box('term', 36, 182, 220, 44, 'plain', 'merged / closed → stop');
+    d.box('fit', 36, 420, 220, 104, 'gate', 'Still relevant?', 'pr overlap, before the first cycle:\nbase touched the PR paths?\nUpdate → cycles · Rework / Close\n→ stop, you decide');
     const cyc = [
       ['fb', '1. Feedback first', 'address-feedback once, then\npr mark each item (handled)'],
       ['head', '2. Head moved?', 'observed CI is stale: wait'],
@@ -510,6 +511,7 @@ written.push(
     d.arrow(['snap.r', 'fb.l'], { tone: 'accent' });
     d.arrow(['snap.b', 'term.t'], {});
     for (let i = 0; i < cyc.length - 1; i++) d.arrow([`${cyc[i][0]}.b`, `${cyc[i + 1][0]}.t`], { tone: 'accent' });
+    d.arrow(['br.l', [288, 374], [288, 472], 'fit.r'], { dashed: true, label: 'base moved', at: 1, lx: 210, ly: 400, anchor: 'start' });
     d.box('wait', 320, 524, 300, 64, 'gate', 'pr watch --interval 150', 'polls GitHub, no tokens spent,\nexits with a KAIZEN_WAKE line');
     d.arrow(['conv.b', 'wait.t'], { tone: 'accent' });
     d.arrow(['wait.l', [22, 556], [22, 120], 'snap.l'], { tone: 'ok', dashed: true, label: 'KAIZEN_WAKE → next cycle', at: 1, lx: 30, ly: 330, anchor: 'start' });
