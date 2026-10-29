@@ -10,7 +10,7 @@
 | **What it does** | Successive cycles: review feedback **before** CI, repair of the head commit's CI, branch update on signal, waiting without tokens between two cycles |
 | **When to use it** | After `/kaizen:ship`; "watch my PR"; "drive it to the merge" |
 | **When not to use it** | A single comment (→ [address-feedback](address-feedback.md)); a single CI failure (→ [debug](debug.md)) |
-| **What it produces** | Commits and replies on the PR, and a **true** final state: ✅ looks ready · 🟡 reservation · ⛔ blocked · ⏱️ budget · 🎉 merged · 🚫 closed · ⏸️ paused |
+| **What it produces** | Commits and replies on the PR, and a **true** final state: ✅ looks ready · 🟡 reservation · 🔁 needs rework · 🗑️ close recommended · ⛔ blocked · ⏱️ budget · 🎉 merged · 🚫 closed · ⏸️ paused |
 | **What next** | **You merge.** Kaizen never merges. |
 
 ## Examples
@@ -24,6 +24,16 @@
 ![The watch-pr cycle, watcher verdicts and looks-ready conditions](../media/diagrams/pr-watch.svg)
 
 In depth: [pull requests](../concepts/pull-requests.md#driving-the-pr-to-looks-ready).
+
+## Does the PR still belong?
+
+Before the first cycle, and again when the base moved, `node $K pr overlap --base origin/<base>` asks
+local git whether the base touched what the PR touches: files modified, moved or deleted, a folder
+removed under a path the PR adds, or every PR patch already in the base. **Path overlap, never age.**
+Nothing overlaps → watching starts. Otherwise Claude reads what changed and looks for a PR that
+replaced this one, then gives one verdict: **Update** (still belongs, watching goes on), **Rework**
+(the smallest credible rework, then it stops) or **Close** (absorbed or superseded, with the evidence —
+closing is up to you; Kaizen never closes a PR).
 
 ## A cycle (imposed order)
 

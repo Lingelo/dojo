@@ -13,12 +13,13 @@
 //   resolve  --thread ID                             marks a thread as resolved
 //   comment  --body-file F                           top-level comment (marker added)
 //   update-branch                                    updates the branch from the base (if BEHIND)
+//   overlap  --base REF                              local git: has the base touched what the PR touches?
 //
 // Test variable: KAIZEN_GH = binary (or Node .mjs/.js script) to use instead of `gh`.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { ghCommand } from './lib.mjs';
 
 export const MARKER = '<!-- kaizen -->';
@@ -391,6 +392,86 @@ export function updateBranch(stateRoot, opts) {
   }
   gh(['api', '-X', 'PUT', `repos/${target.owner}/${target.name}/pulls/${target.number}/update-branch`, '-f', `expected_head_sha=${pr.headRefOid}`]);
   return { updated: true, from_head: pr.headRefOid };
+}
+
+// ---------------------------------------------------------------------------
+// Overlap with the base — does the PR still belong? (watch-pr, "Still relevant?")
+// ---------------------------------------------------------------------------
+
+// `git diff --name-status -M` lines → [{ status: 'A'|'M'|'D'|'R'|…, path, from }]
+export function parseNameStatus(text) {
+  return String(text || '')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [code, a, b] = line.split('\t');
+      const status = code[0];
+      return status === 'R' || status === 'C' ? { status, path: b, from: a } : { status, path: a, from: null };
+    });
+}
+
+const parents = (path) => {
+  const dirs = [];
+  for (let d = dirname(path); d && d !== '.' && d !== '/'; d = dirname(d)) dirs.push(d);
+  return dirs;
+};
+
+// The trigger is path overlap, never age: files the PR touches that the base changed, moved or deleted
+// since the merge-base, and folders the base removed under a path the PR adds.
+export function overlapOf(prChanges, baseChanges, { dirExistsInBase = () => true } = {}) {
+  const prPaths = new Set(prChanges.flatMap((c) => [c.path, c.from].filter(Boolean)));
+  const touched = [];
+  for (const c of baseChanges) {
+    const hit = [c.path, c.from].filter(Boolean).find((p) => prPaths.has(p));
+    if (!hit) continue;
+    const base = c.status === 'D' ? 'deleted' : c.status === 'R' ? `renamed to ${c.path}` : c.status === 'A' ? 'added' : 'modified';
+    touched.push({ path: hit, base });
+  }
+  const gone = new Set(baseChanges.filter((c) => c.status === 'D' || c.status === 'R').flatMap((c) => parents(c.from || c.path)));
+  const removed = new Map();
+  for (const c of prChanges.filter((x) => x.status === 'A' || x.status === 'R' || x.status === 'C')) {
+    const dir = parents(c.path).find((d) => gone.has(d) && !dirExistsInBase(d));
+    if (dir && !removed.has(dir)) removed.set(dir, c.path);
+  }
+  return { touched, removed_dirs: [...removed].map(([dir, example]) => ({ dir, pr_adds: example })) };
+}
+
+function git(args, cwd) {
+  return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 }).trim();
+}
+
+export function overlap({ base, cwd = process.cwd() } = {}) {
+  if (!base) throw new Error('--base <ref> required (e.g. origin/main, after git fetch)');
+  try {
+    git(['rev-parse', '--verify', '--quiet', `${base}^{commit}`], cwd);
+  } catch {
+    throw new Error(`unknown base "${base}" (git fetch it first)`);
+  }
+  const mergeBase = git(['merge-base', 'HEAD', base], cwd);
+  const prChanges = parseNameStatus(git(['diff', '--name-status', '-M', mergeBase, 'HEAD'], cwd));
+  const baseChanges = parseNameStatus(git(['diff', '--name-status', '-M', mergeBase, base], cwd));
+  const dirExistsInBase = (d) => {
+    try {
+      return Boolean(git(['ls-tree', '--name-only', base, '--', d], cwd));
+    } catch {
+      return false;
+    }
+  };
+  const { touched, removed_dirs } = overlapOf(prChanges, baseChanges, { dirExistsInBase });
+  // Every PR commit is in the base, or has an equivalent patch there ("-" lines of git cherry).
+  const cherry = git(['cherry', base, 'HEAD'], cwd).split('\n').filter(Boolean);
+  const absorbed = cherry.every((l) => l.startsWith('-'));
+  const behind = Number(git(['rev-list', '--count', `HEAD..${base}`], cwd));
+  return {
+    base,
+    merge_base: mergeBase,
+    behind,
+    pr_files: prChanges.length,
+    touched,
+    removed_dirs,
+    absorbed,
+    assess: touched.length > 0 || removed_dirs.length > 0 || absorbed,
+  };
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

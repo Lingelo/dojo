@@ -55,7 +55,7 @@
 //   node kaizen.mjs adr new --title "…" | adr list        architecture decisions (docs/adr)
 //   node kaizen.mjs postmortem new --title "…"            reserves a postmortem (docs/postmortems)
 //   node kaizen.mjs release notes [--from <tag>]          release notes + proposed SemVer version
-//   node kaizen.mjs pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch …   PR tracking (see pr.mjs)
+//   node kaizen.mjs pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch|overlap …   PR tracking (see pr.mjs)
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -1175,6 +1175,7 @@ try {
         note: flags.note,
         bodyFile: flags['body-file'],
         all: Boolean(flags.all),
+        base: typeof flags.base === 'string' ? flags.base : undefined,
       };
       if (sub === 'watch') process.exit(await prmod.watch(stateRoot, opts));
       const handlers = {
@@ -1185,8 +1186,9 @@ try {
         resolve: () => prmod.resolveThread(opts),
         comment: () => prmod.comment(opts),
         'update-branch': () => prmod.updateBranch(stateRoot, opts),
+        overlap: () => prmod.overlap({ base: opts.base, cwd: root }),
       };
-      if (!handlers[sub]) die('usage: pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch');
+      if (!handlers[sub]) die('usage: pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch|overlap');
       out(handlers[sub]());
       break;
     }

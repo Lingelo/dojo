@@ -312,7 +312,7 @@ node $K review record --verdict ready|concerns|blocked [--run d] [--allow-missin
 node $K review estimate --reviewers a,b [--profile p]   # tokens and relative cost of a review, before launching it
 node $K review waive --reason "…" | review status | review check [--branch b --sha s]  # waiver = the user's approval (question + prompt, or typed code)
 node $K confirm <code>                         # approvals: "ask" — after the user confirmed in Claude Code's prompt
-node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch [--pr n] [--repo o/r] …
+node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch|overlap [--pr n] [--repo o/r] …
 
 # Release, deployment, monitoring (deploy, monitor and postmortem are run by the kaizen-ops skills)
 node $K release notes [--from <tag>] [--to <ref>]  # grouped commits, breaking changes, SemVer, rollout

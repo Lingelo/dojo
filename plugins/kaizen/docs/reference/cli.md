@@ -275,6 +275,7 @@ repository. Mechanics in [Pull requests](../concepts/pull-requests.md#driving-th
 | `pr resolve --thread ID` | resolves a thread |
 | `pr comment --body-file F` | top-level comment, marker added |
 | `pr update-branch` | updates the branch through the GitHub API **only if** GitHub says `BEHIND`, with the expected head SHA |
+| `pr overlap --base <ref>` | local git only (no `gh`): PR files the base modified, moved or deleted since the merge-base (`touched`), folders the base removed under a path the PR adds (`removed_dirs`), every PR patch already in the base (`absorbed`), commits `behind`; `assess: true` when any is set |
 
 `KAIZEN_GH` replaces `gh` (a binary or a Node script, used by the tests).
 
