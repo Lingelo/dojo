@@ -398,16 +398,22 @@ export function updateBranch(stateRoot, opts) {
 // Overlap with the base — does the PR still belong? (watch-pr, "Still relevant?")
 // ---------------------------------------------------------------------------
 
-// `git diff --name-status -M` lines → [{ status: 'A'|'M'|'D'|'R'|…, path, from }]
+// `git diff --name-status -M -z` → [{ status: 'A'|'M'|'D'|'R'|…, path, from }]. NUL-separated, so
+// paths are raw (git quotes non-ASCII names without -z).
 export function parseNameStatus(text) {
-  return String(text || '')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => {
-      const [code, a, b] = line.split('\t');
-      const status = code[0];
-      return status === 'R' || status === 'C' ? { status, path: b, from: a } : { status, path: a, from: null };
-    });
+  const tokens = String(text || '').split('\0');
+  const changes = [];
+  for (let i = 0; i < tokens.length && tokens[i]; ) {
+    const status = tokens[i][0];
+    if (status === 'R' || status === 'C') {
+      changes.push({ status, path: tokens[i + 2], from: tokens[i + 1] });
+      i += 3;
+    } else {
+      changes.push({ status, path: tokens[i + 1], from: null });
+      i += 2;
+    }
+  }
+  return changes;
 }
 
 const parents = (path) => {
@@ -448,8 +454,8 @@ export function overlap({ base, cwd = process.cwd() } = {}) {
     throw new Error(`unknown base "${base}" (git fetch it first)`);
   }
   const mergeBase = git(['merge-base', 'HEAD', base], cwd);
-  const prChanges = parseNameStatus(git(['diff', '--name-status', '-M', mergeBase, 'HEAD'], cwd));
-  const baseChanges = parseNameStatus(git(['diff', '--name-status', '-M', mergeBase, base], cwd));
+  const prChanges = parseNameStatus(git(['diff', '--name-status', '-M', '-z', mergeBase, 'HEAD'], cwd));
+  const baseChanges = parseNameStatus(git(['diff', '--name-status', '-M', '-z', mergeBase, base], cwd));
   const dirExistsInBase = (d) => {
     try {
       return Boolean(git(['ls-tree', '--name-only', base, '--', d], cwd));
@@ -458,9 +464,10 @@ export function overlap({ base, cwd = process.cwd() } = {}) {
     }
   };
   const { touched, removed_dirs } = overlapOf(prChanges, baseChanges, { dirExistsInBase });
-  // Every PR commit is in the base, or has an equivalent patch there ("-" lines of git cherry).
+  // Every PR commit has an equivalent patch in the base ("-" lines of git cherry). No line at all means
+  // no PR commit to compare (stale checkout, merge-only head): not evidence of absorption.
   const cherry = git(['cherry', base, 'HEAD'], cwd).split('\n').filter(Boolean);
-  const absorbed = cherry.every((l) => l.startsWith('-'));
+  const absorbed = cherry.length > 0 && cherry.every((l) => l.startsWith('-'));
   const behind = Number(git(['rev-list', '--count', `HEAD..${base}`], cwd));
   return {
     base,

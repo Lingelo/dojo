@@ -121,23 +121,24 @@ test('CLI pr watch: exits immediately with KAIZEN_WAKE when there is work', () =
 });
 
 test('overlapOf: base changes on PR paths, folders removed under PR additions', () => {
-  const pr = parseNameStatus('M\tsrc/a.js\nA\tlib/old/new.js\nR100\tsrc/b.js\tsrc/c.js\nA\tdocs/x.md');
-  const base = parseNameStatus('M\tsrc/a.js\nD\tlib/old/util.js\nR090\tsrc/b.js\tsrc/d.js\nM\tREADME.md');
+  const z = (...t) => `${t.join('\0')}\0`;
+  const pr = parseNameStatus(z('M', 'src/a.js', 'A', 'lib/old/new.js', 'R100', 'src/b.js', 'src/c.js', 'A', 'docs/x.md'));
+  const base = parseNameStatus(z('M', 'src/a.js', 'D', 'lib/old/util.js', 'R090', 'src/b.js', 'src/d.js', 'M', 'README.md'));
   const r = overlapOf(pr, base, { dirExistsInBase: (d) => d !== 'lib/old' && d !== 'lib' });
   assert.deepEqual(r.touched, [
     { path: 'src/a.js', base: 'modified' },
     { path: 'src/b.js', base: 'renamed to src/d.js' },
   ]);
   assert.deepEqual(r.removed_dirs, [{ dir: 'lib/old', pr_adds: 'lib/old/new.js' }]);
-  assert.deepEqual(overlapOf(pr, parseNameStatus('M\tREADME.md')), { touched: [], removed_dirs: [] });
+  assert.deepEqual(overlapOf(pr, parseNameStatus(z('M', 'README.md'))), { touched: [], removed_dirs: [] });
 });
 
 test('CLI pr overlap: path overlap, deleted folder and absorbed PR, from local git only', () => {
-  const dir = tempRepo({ 'src/a.js': 'a\n', 'src/b.js': 'b\n', 'lib/old/util.js': 'u\n', 'README.md': 'r\n' });
+  const dir = tempRepo({ 'src/a.js': 'a\n', 'src/b.js': 'b\n', 'lib/old/util.js': 'u\n', 'README.md': 'r\n', 'docs/é/old.md': 'o\n' });
   gitc(dir, ['branch', 'base-ref']);
 
   gitc(dir, ['checkout', '-qb', 'feature']);
-  writeFiles(dir, { 'src/a.js': 'a2\n', 'lib/old/new.js': 'n\n' });
+  writeFiles(dir, { 'src/a.js': 'a2\n', 'lib/old/new.js': 'n\n', 'docs/é/new.md': 'n\n' });
   gitc(dir, ['add', '-A'], ['commit', '-qm', 'feat: a2']);
 
   gitc(dir, ['checkout', '-q', 'base-ref']);
@@ -148,18 +149,24 @@ test('CLI pr overlap: path overlap, deleted folder and absorbed PR, from local g
   assert.equal(r.assess, false, 'an unrelated base change asks for nothing');
   assert.equal(r.behind, 1);
 
-  gitc(dir, ['checkout', '-q', 'base-ref'], ['rm', '-rq', 'lib/old'], ['commit', '-qm', 'refactor: drop lib/old']);
+  gitc(dir, ['checkout', '-q', 'base-ref'], ['rm', '-rq', 'lib/old', 'docs/é/old.md'], ['commit', '-qm', 'refactor: drop lib/old']);
+  writeFiles(dir, { 'docs/é/keep.md': 'k\n' });
   writeFiles(dir, { 'src/a.js': 'a3\n' });
   gitc(dir, ['add', '-A'], ['commit', '-qm', 'fix: a3'], ['checkout', '-q', 'feature']);
   r = cli(dir, ['pr', 'overlap', '--base', 'base-ref']).json;
   assert.equal(r.assess, true);
   assert.deepEqual(r.touched, [{ path: 'src/a.js', base: 'modified' }]);
-  assert.deepEqual(r.removed_dirs, [{ dir: 'lib/old', pr_adds: 'lib/old/new.js' }]);
+  assert.deepEqual(r.removed_dirs, [{ dir: 'lib/old', pr_adds: 'lib/old/new.js' }], 'docs/é still exists in the base');
   assert.equal(r.absorbed, false);
 
   gitc(dir, ['checkout', '-qb', 'absorbed', 'main'], ['cherry-pick', 'feature'], ['commit', '--amend', '-qm', 'feat: a2 (squashed)'], ['checkout', '-q', 'feature']);
   r = cli(dir, ['pr', 'overlap', '--base', 'absorbed']).json;
   assert.equal(r.absorbed, true, 'the base already carries the PR patch');
+
+  gitc(dir, ['checkout', '-qb', 'empty', 'main']);
+  r = cli(dir, ['pr', 'overlap', '--base', 'base-ref']).json;
+  assert.equal(r.absorbed, false, 'no PR commit is not evidence of absorption');
+  gitc(dir, ['checkout', '-q', 'feature']);
 
   assert.notEqual(cli(dir, ['pr', 'overlap']).code, 0);
   assert.match(cli(dir, ['pr', 'overlap', '--base', 'nope']).stderr, /unknown base "nope"/);
