@@ -52,7 +52,8 @@ Schema and a full example: [learnings](../concepts/learnings.md#format).
   `docs/learnings/` (`node $K learnings stats`), so that searches find them.
 - An existing learning that became wrong is **updated**, not duplicated.
 - A learning that holds for the whole team can become a **pack rule**: Claude proposes it.
-- `retire_when`: only if the learning depends on a state outside the repo (upstream bug, tool version).
+- `retire_when`: only if the learning depends on a state outside the repo (upstream bug, tool version):
+  the change that would retire it and how to check it without touching the repo.
 - Nothing secret or personal in a learning (`<REDACTED>`).
 
 ## See also

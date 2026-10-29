@@ -34,7 +34,7 @@
 //   node kaizen.mjs plan reviewed <path>          marks the plan reviewed (date + body hash; plan check warns otherwise)
 //   node kaizen.mjs learnings search <words…> [--limit 8] [--json]
 //   node kaizen.mjs learnings validate [files…]
-//   node kaizen.mjs learnings list | stats
+//   node kaizen.mjs learnings list [--retire] | stats
 //   node kaizen.mjs packs [--json] [--refresh]   rules of the declared Kaizen Packs
 //   node kaizen.mjs pack new <name>              creates and declares a local pack
 //   node kaizen.mjs gate on [--plan p] | off | status      Stop-hook quality gate
@@ -338,6 +338,7 @@ function validateLearning(file) {
   if (track === 'knowledge' && data.applies_when && (!Array.isArray(data.applies_when) || data.applies_when.length > 5)) errors.push('applies_when: list of 5 items at most');
   if (data.tags && (!Array.isArray(data.tags) || data.tags.length > 8)) errors.push('tags: list of 8 items at most');
   if (track !== 'bug' && !isEmpty(data.framework_version)) errors.push('framework_version: reserved for the bug track');
+  if (data.retire_when !== undefined && (typeof data.retire_when !== 'string' || !data.retire_when.trim())) errors.push('retire_when: one string naming the change and how to check it');
   return errors;
 }
 
@@ -414,7 +415,9 @@ function cmdLearnings(root, sub) {
     return;
   }
   if (sub === 'list') {
-    out(all.map((l) => ({ path: l.rel, title: l.data.title, problem_type: l.data.problem_type, module: l.data.module, date: l.data.date })));
+    // --retire: only the learnings declaring a retirement condition, for /kaizen:prune-learnings.
+    const listed = flags.retire ? all.filter((l) => !isEmpty(l.data.retire_when)) : all;
+    out(listed.map((l) => ({ path: l.rel, title: l.data.title, problem_type: l.data.problem_type, module: l.data.module, date: l.data.date, ...(isEmpty(l.data.retire_when) ? {} : { retire_when: l.data.retire_when }) })));
     return;
   }
   die('usage: learnings search <words…> | validate [files…] | list | stats');

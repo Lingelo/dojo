@@ -51,7 +51,7 @@ tags: [csv, excel, encoding, bom]
 | `problem_type` | always | **bug track**: `build_error`, `test_failure`, `runtime_error`, `performance_issue`, `database_issue`, `security_issue`, `ui_bug`, `integration_issue`, `logic_error` · **knowledge track**: `best_practice`, `documentation_gap`, `workflow_issue`, `developer_experience`, `architecture_pattern`, `design_pattern`, `tooling_decision`, `convention` |
 | `symptoms` (1–5), `root_cause`, `resolution_type` | bug track | resolution: `code_fix`, `migration`, `config_change`, `test_fix`, `dependency_update`, `environment_setup`, `workflow_improvement`, `documentation_update`, `tooling_addition`, `seed_data_update` |
 | `applies_when` (≤ 5 situations) | knowledge track, recommended | — |
-| `category`, `tags` (≤ 8), `related_components`, `retire_when` | optional | `retire_when`: the change **outside the repo** that would make it obsolete (upstream bug fixed, tool version) |
+| `category`, `tags` (≤ 8), `related_components`, `retire_when` | optional | `retire_when`: the change **outside the repo** that would make it obsolete (upstream bug fixed, tool version), with a check that runs without changing the repo |
 | `framework_version` | bug track only | e.g. `rails 7.1.2` |
 
 Default folders follow the type (`runtime-errors/`, `test-failures/`, `best-practices/`,
@@ -131,7 +131,8 @@ finds duplicates and contradictions, and classifies:
 | Delete | the problem can no longer happen and it teaches nothing |
 
 Replace and Delete ask for approval interactively; in `mode:auto` those learnings are only marked
-*Possibly stale* and listed. Unverifiable is not wrong. `prune` also removes accurate learnings whose
+*Possibly stale* and listed. Unverifiable is not wrong. A met `retire_when` keeps the learning while
+the workaround is still in the code, and recommends removing it. `prune` also removes accurate learnings whose
 reasoning now lives in a test or a comment, citing the file that justifies it. It never touches product
 code, skills or `CLAUDE.md` (contradictions are reported), and keeps no `_archived` folder: git history
 is the archive. Commit: `docs(<JIRA>): prune learnings in <area>`.

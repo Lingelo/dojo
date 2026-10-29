@@ -187,10 +187,11 @@ Without `check`: the articles (id, title, NON-NEGOTIABLE, check) and the version
 
 Ranked learnings ([scoring](../concepts/learnings.md#search)).
 
-### `learnings validate [files…]` · `learnings list` · `learnings stats`
+### `learnings validate [files…]` · `learnings list [--retire]` · `learnings stats`
 
 `validate`: every learning (or the given files) against the schema, exit 1 if one is invalid. `list`:
-JSON of path, title, type, module, date. `stats`: counts by `problem_type`, `component`, `module` — the
+JSON of path, title, type, module, date, and `retire_when` when declared; `--retire` keeps only those
+(the conditions `/kaizen:prune-learnings` checks). `stats`: counts by `problem_type`, `component`, `module` — the
 corpus vocabulary to reuse.
 
 ### `packs [--json] [--refresh]` · `pack new <name>`

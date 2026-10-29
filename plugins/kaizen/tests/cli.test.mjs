@@ -175,13 +175,21 @@ test('learnings: validation per track and ranked search', () => {
       '---\ntitle: Excel breaks accents in CSV exports\ndate: 2026-09-12\nmodule: exports\nproblem_type: runtime_error\ncomponent: service_layer\nsymptoms:\n  - "Unreadable accents"\nroot_cause: wrong_api\nresolution_type: code_fix\nseverity: medium\ntags: [csv, excel, bom]\n---\n# x\n',
     'docs/learnings/conventions/naming.md':
       '---\ntitle: Name jobs with a verb\ndate: 2026-09-01\nmodule: jobs\nproblem_type: convention\ncomponent: background_job\nseverity: low\n---\n# y\n',
-    'docs/learnings/bad.md': '---\ntitle: Bad\ndate: 12/09/2026\nproblem_type: runtime_error\nseverity: urgent\n---\n',
+    'docs/learnings/tooling-decisions/bun-rerun.md':
+      '---\ntitle: Re-run bun install once\ndate: 2026-09-20\nmodule: ci\nproblem_type: tooling_decision\ncomponent: tooling\nseverity: low\nretire_when: "bun#1234 fixed — gh issue view 1234 -R oven-sh/bun"\n---\n# z\n',
+    'docs/learnings/bad.md': '---\ntitle: Bad\ndate: 12/09/2026\nproblem_type: runtime_error\nseverity: urgent\nretire_when: [a, b]\n---\n',
   });
   const v = cli(dir, ['learnings', 'validate']);
   assert.equal(v.code, 1);
   assert.match(v.stdout, /✘ docs\/learnings\/bad\.md/);
   assert.match(v.stdout, /✔ docs\/learnings\/conventions\/naming\.md/);
   assert.match(v.stdout, /bug track: required field missing: symptoms/);
+  assert.match(v.stdout, /retire_when: one string/);
+  assert.match(v.stdout, /✔ docs\/learnings\/tooling-decisions\/bun-rerun\.md/);
+  const retire = cli(dir, ['learnings', 'list', '--retire']).json;
+  assert.deepEqual(retire.map((l) => l.path), ['docs/learnings/bad.md', 'docs/learnings/tooling-decisions/bun-rerun.md'], 'only the learnings declaring one');
+  assert.match(retire[1].retire_when, /gh issue view 1234/);
+  assert.equal(cli(dir, ['learnings', 'list']).json.length, 4);
   const s = cli(dir, ['learnings', 'search', 'export', 'CSV', 'excel', '--json']).json;
   assert.equal(s[0].path, 'docs/learnings/runtime-errors/csv-bom.md');
   assert.equal(cli(dir, ['learnings', 'search', 'kubernetes', '--json']).json.length, 0);
