@@ -18,33 +18,16 @@
 // restores service, and it is urgent.
 
 import { randomBytes } from 'node:crypto';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { approvalInstruction } from './approvals.mjs';
-import { git, loadConfig, runBounded } from './lib.mjs';
+import { git, loadConfig, readState, runBounded, stateDir, writeState } from './lib.mjs';
 
 const APPROVAL_MAX_AGE_MS = 30 * 60 * 1000;
 export const DEPLOY_TAG = /^(deploy|rollback|incident|resolve)\/([\w.-]+)\/(\d{8}T\d{6}Z)(?:-\d+)?$/;
 
-function stateDir(root) {
-  const dir = join(root, '.kaizen', 'state');
-  mkdirSync(dir, { recursive: true });
-  const gi = join(dir, '.gitignore');
-  if (!existsSync(gi)) writeFileSync(gi, '*\n');
-  return dir;
-}
-
-function readJson(root, name, fallback) {
-  try {
-    return JSON.parse(readFileSync(join(stateDir(root), name), 'utf8'));
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(root, name, value) {
-  writeFileSync(join(stateDir(root), name), `${JSON.stringify(value, null, 2)}\n`);
-}
+const readJson = readState;
+const writeJson = writeState;
 
 export function environment(root, env, config = loadConfig(root)) {
   const e = config.deploy.environments?.[env];
@@ -119,10 +102,16 @@ export function requestDeploy(root, env, { ref } = {}) {
 }
 
 // Called by the UserPromptSubmit hook (a user message), or by `confirm` after Claude Code's prompt (approvals.mjs).
+// A deployment approval still waiting for the user, by its code; null if unknown, confirmed or expired.
+export function pendingDeploy(root, code, list = readJson(root, 'deploy-approvals.json', [])) {
+  const now = Date.now();
+  return list.find((x) => x.code === String(code).toUpperCase() && !x.confirmed && now - Date.parse(x.at) < APPROVAL_MAX_AGE_MS) || null;
+}
+
 export function confirmDeploy(root, code, { session = null, by = 'user (message)' } = {}) {
   const now = Date.now();
   const list = readJson(root, 'deploy-approvals.json', []);
-  const a = list.find((x) => x.code === String(code).toUpperCase() && !x.confirmed && now - Date.parse(x.at) < APPROVAL_MAX_AGE_MS);
+  const a = pendingDeploy(root, code, list);
   if (!a) return null;
   a.confirmed = true;
   a.confirmed_at = new Date(now).toISOString();

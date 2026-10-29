@@ -45,6 +45,30 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
    - **pipeline** (`mode:pipeline`, set by `/kaizen:autopilot`) — bounded synchronous cycles, no
      questions, structured return.
 5. Create a tracking task (`TaskCreate`) updated every cycle.
+6. **Still relevant?** — see below, before the first cycle.
+
+## Still relevant? (before the first cycle, and when the base moved)
+
+A PR opened weeks ago can still rebase cleanly and yet no longer belong: the base deleted the folder
+it extends, or another PR already did the job. **The trigger is path overlap, never age**:
+`git fetch origin <base_ref>`, then `node "$K" pr overlap --base origin/<base_ref>` (local git only).
+Run the assessment when `assess` is true (`touched`: PR files the base modified, moved or deleted;
+`removed_dirs`: a folder the base removed under a path the PR adds; `absorbed`: the base already
+carries every PR commit's patch), when the user asks, or when `overlap` itself fails. Rerun it when
+the snapshot reports `branch_currency`, before acting on it.
+
+Assess: what the PR was for (title, description, plan), what the base changed on those paths
+(`git log <merge_base>..origin/<base_ref> -- <paths>`), and whether a merged or open PR replaced it
+(`gh pr list --state all --search "<key words>"`, PRs touching the same paths). One verdict, with
+evidence:
+- **Update** — still belongs: watching continues as usual (base updates only as the limits say).
+- **Rework** — still wanted, but the base moved under it: describe the **smallest credible rework**
+  (files, why) and stop; `/kaizen:work` only if the user asks.
+- **Close** — absorbed, superseded (cite the replacing PR) or recreating what the base deliberately
+  removed: recommend closing, with the evidence, and stop. **Never close the PR yourself.**
+
+Rework and Close stop the watching (report `🔁` or `🗑️`, below). In `mode:pipeline`, both return
+`needs-human` with the verdict and its evidence, before any fix.
 
 ## 2. A cycle (imposed order)
 
@@ -117,6 +141,8 @@ A status line first, in the user's language, then a summary readable without scr
 
 - `✅ Looks ready to merge — <evidence: checks, reviews, quiet>. Merging is up to you.`
 - `🟡 Looks ready, with a reservation — <what could not be confirmed (announced review without a result…)>`
+- `🔁 Needs rework — <what the base changed under the PR, smallest rework>` ·
+  `🗑️ Close recommended — <absorbed / superseded by #n / recreates removed <dir>>. Closing is up to you.`
 - `⛔ Blocked — <reason, what it takes to unblock>` · `⏱️ Budget exhausted — <state>` ·
   `🎉 Merged` · `🚫 Closed` · `⏸️ Paused (checkpoint) — resume with /kaizen:watch-pr <n>`
 

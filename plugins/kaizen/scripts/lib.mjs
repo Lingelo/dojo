@@ -63,6 +63,28 @@ export const DEFAULT_CONFIG = {
   packs: [],
 };
 
+// JSON state under .kaizen/state/ (ignored by git). Reading never creates the folder: hooks read it
+// on every command.
+export function readState(root, name, fallback) {
+  try {
+    return JSON.parse(readFileSync(join(root, '.kaizen', 'state', name), 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+
+// The state folder, created on first write with a .gitignore of its own.
+export function stateDir(root) {
+  const dir = join(root, '.kaizen', 'state');
+  mkdirSync(dir, { recursive: true });
+  if (!existsSync(join(dir, '.gitignore'))) writeFileSync(join(dir, '.gitignore'), '*\n');
+  return dir;
+}
+
+export function writeState(root, name, value) {
+  writeFileSync(join(stateDir(root), name), `${JSON.stringify(value, null, 2)}\n`);
+}
+
 function readJson(file) {
   try {
     return JSON.parse(readFileSync(file, 'utf8'));

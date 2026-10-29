@@ -49,7 +49,8 @@ The caller gives you:
    about the same module but an unrelated problem is not relevant.
 8. **Freshness** — if a learning cites files or code, quickly check they still exist. A visibly stale
    learning is reported as such (candidate for `/kaizen:prune-learnings`), not applied blindly.
-   `retire_when` filled in: say whether the condition looks met.
+   `retire_when` filled in: say whether the condition looks met. Met does not lift the learning: it
+   still applies until the workaround is removed — say so, and suggest `/kaizen:prune-learnings`.
 
 ## Return (markdown, concise)
 

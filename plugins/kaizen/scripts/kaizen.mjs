@@ -34,7 +34,7 @@
 //   node kaizen.mjs plan reviewed <path>          marks the plan reviewed (date + body hash; plan check warns otherwise)
 //   node kaizen.mjs learnings search <words…> [--limit 8] [--json]
 //   node kaizen.mjs learnings validate [files…]
-//   node kaizen.mjs learnings list | stats
+//   node kaizen.mjs learnings list [--retire] | stats
 //   node kaizen.mjs packs [--json] [--refresh]   rules of the declared Kaizen Packs
 //   node kaizen.mjs pack new <name>              creates and declares a local pack
 //   node kaizen.mjs gate on [--plan p] | off | status      Stop-hook quality gate
@@ -55,7 +55,7 @@
 //   node kaizen.mjs adr new --title "…" | adr list        architecture decisions (docs/adr)
 //   node kaizen.mjs postmortem new --title "…"            reserves a postmortem (docs/postmortems)
 //   node kaizen.mjs release notes [--from <tag>]          release notes + proposed SemVer version
-//   node kaizen.mjs pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch …   PR tracking (see pr.mjs)
+//   node kaizen.mjs pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch|overlap …   PR tracking (see pr.mjs)
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -83,6 +83,7 @@ import { formatPerf, runPerf } from './perf.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
+import { approvalMode } from './approvals.mjs';
 import { applyAll, formatUpgrade, pending as pendingMigrations } from './upgrade.mjs';
 import {
   DEFAULT_CONFIG,
@@ -338,6 +339,7 @@ function validateLearning(file) {
   if (track === 'knowledge' && data.applies_when && (!Array.isArray(data.applies_when) || data.applies_when.length > 5)) errors.push('applies_when: list of 5 items at most');
   if (data.tags && (!Array.isArray(data.tags) || data.tags.length > 8)) errors.push('tags: list of 8 items at most');
   if (track !== 'bug' && !isEmpty(data.framework_version)) errors.push('framework_version: reserved for the bug track');
+  if (data.retire_when !== undefined && (typeof data.retire_when !== 'string' || !data.retire_when.trim())) errors.push('retire_when: one string naming the change and how to check it');
   return errors;
 }
 
@@ -414,7 +416,9 @@ function cmdLearnings(root, sub) {
     return;
   }
   if (sub === 'list') {
-    out(all.map((l) => ({ path: l.rel, title: l.data.title, problem_type: l.data.problem_type, module: l.data.module, date: l.data.date })));
+    // --retire: only the learnings declaring a retirement condition, for /kaizen:prune-learnings.
+    const listed = flags.retire ? all.filter((l) => !isEmpty(l.data.retire_when)) : all;
+    out(listed.map((l) => ({ path: l.rel, title: l.data.title, problem_type: l.data.problem_type, module: l.data.module, date: l.data.date, ...(isEmpty(l.data.retire_when) ? {} : { retire_when: l.data.retire_when }) })));
     return;
   }
   die('usage: learnings search <words…> | validate [files…] | list | stats');
@@ -638,7 +642,7 @@ function repoStatus(root) {
   else if (initialized && constitution.draft) later.push({ command: '/kaizen:constitution', why: 'the constitution is a draft written without the team: review and ratify it (until then it blocks nothing)' });
   if (gate.active) say('/kaizen:work', `work in progress under the quality gate${gate.plan ? ` (${gate.plan})` : ''}: resume it, or \`gate off\` if it was abandoned`);
   else if (branch && branch !== def && (ahead || dirty)) {
-    if (review?.pending_waiver) say(config.approvals === 'code' ? 'kaizen waive <code>' : 'answer Claude\'s question', 'a review waiver awaits your confirmation');
+    if (review?.pending_waiver) say(approvalMode(config) === 'code' ? 'kaizen waive <code>' : 'answer Claude\'s question', 'a review waiver awaits your confirmation');
     else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): ready to ship`);
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   } else if (branch && branch === def && undeployed(root, config)) {
@@ -1172,6 +1176,7 @@ try {
         note: flags.note,
         bodyFile: flags['body-file'],
         all: Boolean(flags.all),
+        base: typeof flags.base === 'string' ? flags.base : undefined,
       };
       if (sub === 'watch') process.exit(await prmod.watch(stateRoot, opts));
       const handlers = {
@@ -1182,8 +1187,9 @@ try {
         resolve: () => prmod.resolveThread(opts),
         comment: () => prmod.comment(opts),
         'update-branch': () => prmod.updateBranch(stateRoot, opts),
+        overlap: () => prmod.overlap({ base: opts.base, cwd: root }),
       };
-      if (!handlers[sub]) die('usage: pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch');
+      if (!handlers[sub]) die('usage: pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch|overlap');
       out(handlers[sub]());
       break;
     }

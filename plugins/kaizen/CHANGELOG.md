@@ -2,6 +2,51 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [5.1.0] - 2026-10-29
+
+Three ideas from the latest Compound Engineering releases, adapted to Kaizen's gates.
+
+### Added
+- **The review flags what nobody asked for.** The reviewer contract's intent check now runs both
+  ways: a public surface (endpoint, flag, config key, export, CLI option) that the plan's *Out of
+  scope* or units rule out, and a new package that the standard library or an existing helper already
+  covers — each quoted with what rules it out or replaces it, else not reported. `correctness` owns
+  it, so small diffs get it too; the report lists them under "Outside the plan".
+- **`kaizen pr overlap --base <ref>`** (local git): PR files the base modified, moved or deleted since
+  the merge-base, folders the base removed under a path the PR adds, and a PR whose patches the base
+  already carries. `/kaizen:watch-pr` runs it before the first cycle and again when the base moved;
+  when it overlaps, it judges **Update**, **Rework** (smallest rework, then stops) or **Close**
+  (evidence, then stops — it never closes the PR). Path overlap, never age.
+- **`learnings list --retire`**: only the learnings declaring a `retire_when`, with it.
+
+### Changed
+- **`retire_when` names a check that runs without changing the repo** (issue URL, `npm view`,
+  release page). `/kaizen:prune-learnings` runs it itself: met while the workaround is still in the
+  code keeps the learning and recommends removing the workaround — it never removes it; not met or
+  uncheckable decides nothing. `learnings validate` refuses a `retire_when` that is not one string.
+- `docs/positioning.md` reflects Spec Kit 1.2.5 and Compound Engineering 3.33.2.
+
+### Fixed
+- **`approvals: "ask"` works with the documented call.** The review hook only recognized the literal
+  `kaizen.mjs confirm <code>`, so `node "$K" confirm <code>` — what the skills and docs say — never
+  reached Claude Code's prompt and `confirm` always refused. Every call of `confirm` is now seen, and
+  must run on its own with the code written out: a code in a variable or a command chained after it
+  (`confirm … && git push`) is refused, so the prompt shows exactly what is confirmed and a mark left
+  by a declined prompt cannot be reused by another visible call.
+- **The git `pre-push` hook guards Claude's pushes again in `"ask"` mode.** From Claude Code
+  (`CLAUDECODE` set) it lets through only the push the review hook just put to the user (same branch
+  and commit, 10 min, once) and refuses any other — a spelling the review hook missed, a script. From
+  the user's own terminal it still only reminds. The review hook also sees `/usr/bin/git push`,
+  `git --no-pager push` and other global options before `push`.
+- **`friction` metrics in `"ask"` mode** no longer count a push twice (the git hook only logs pushes from
+  the user's terminal, as `unreviewed_from_terminal`), report `pushed_without_review`, and count those
+  pushes in the waiver share.
+- `approvals.mjs` reuses the waiver and deployment lookups of `review-state.mjs` and `deploy.mjs` (no
+  copied lifetimes), and the state helpers are shared in `lib.mjs`: reading the state never creates
+  `.kaizen/state/` any more. The push gates read `checkPush`'s `ask`; `status` uses `approvalMode`.
+- `pr overlap` reads raw paths (`-z`): a non-ASCII folder no longer looks removed; an empty
+  `git cherry` is not taken as an absorbed PR.
+
 ## [5.0.0] - 2026-10-27
 
 ### Breaking

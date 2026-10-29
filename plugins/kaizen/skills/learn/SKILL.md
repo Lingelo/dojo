@@ -81,7 +81,9 @@ serious what the learning prevents is, not how hard the investigation was.
 - The "What didn't work" section is often the most valuable: do not skip it if the session hit dead
   ends.
 - `retire_when` only if the learning depends on a state **outside the repo** (open upstream bug, tool
-  version) — with how to check it.
+  version): the change that would retire it **and** a check that runs without changing the repo
+  (issue URL, `npm view`, release page). Check it now: a condition already met means no learning, or
+  a different one.
 - Validate: `node "$K" learnings validate <file>`; fix until green.
 
 ## 6. Promote (interactive only)

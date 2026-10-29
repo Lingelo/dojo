@@ -42,6 +42,8 @@ rule, non-findings). Your reviewer name: `correctness`.
   as what it protects (directory, inputs, env), otherwise it goes green while production breaks.
 - **Unmet intent** — the code does not do what the plan (R/AE) or the description promises, or does
   something else.
+- **Unrequested surface, needless dependency** — the contract's "Intent check", second half. You own
+  it because you run on every review, small diffs included.
 
 ## Calibration
 

@@ -49,6 +49,9 @@ Boundary: if a reader of the old version would make a **wrong decision**, it is 
   marked "Possibly stale" and listed.
 - **Unverifiable is not wrong**: a learning about a production behavior that cannot be observed stays,
   with a note.
+- **A met `retire_when` is not a deletion.** Claude runs the declared check itself (read-only). Met
+  while the workaround is still in the code: the learning stays and the report recommends removing the
+  workaround — Claude never removes it. Met and the workaround already gone: judged like any learning.
 - `prune` also deletes **accurate** learnings whose reasoning is now carried by a test or a comment.
   Each deletion cites the file that justifies it, and nothing goes without your confirmation.
 - No `_archived` folder: git history is the archive.

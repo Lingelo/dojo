@@ -100,6 +100,17 @@ Compare the code to the provided intent (plan, R/AE requirements, description). 
 something other than what was promised, or does not do what was promised: that is a high-value
 finding.
 
+The other direction counts too — what the diff adds that **nobody asked for**:
+- **Unrequested surface** — a new endpoint, flag, config key, CLI option, public export or event
+  that no R/unit asks for, or that the plan's *Out of scope* names. Report it only when the intent
+  **rules it out** (an Out of scope item, a unit that lists its surface, a description that bounds
+  the change); a terse intent that says nothing about it is not evidence. Quote the added line and the
+  plan line. P2 by default; P1 if it widens a public API or a security surface.
+- **Needless dependency** — a new package in a manifest doing what the standard library or an
+  existing helper of the repo already does in a few lines. Quote the manifest line **and** the helper
+  or the standard API that replaces it (no quote of a replacement → do not report). P3, P2 when the
+  package also brings install scripts, native code or a large tree.
+
 ## Budget and read-only
 
 About 40 tool calls. Budget exhausted: stop inspecting, return what you have substantiated, and name

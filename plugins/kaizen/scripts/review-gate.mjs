@@ -19,7 +19,10 @@ try {
 const command = String(input.tool_input?.command || '');
 const filePath = String(input.tool_input?.file_path || input.tool_input?.notebook_path || '');
 // Cheap filters before any import: this hook sees every Bash command and every write.
-const PUSH = /(^|[\s;&|(])git(\s+-[cC]\s+\S+)*\s+push(\s|$)/;
+// `git push`, also through a path (`/usr/bin/git`) or after global options (`--no-pager`, `-C dir`).
+const PUSH = /(^|[\s;&|(])(\S*\/)?git(\s+(-[cC]\s+\S+|--[\w-]+(=\S+)?))*\s+push(\s|$)/;
+// Any call of the CLI's `confirm` (`node "$K" confirm <code>`, `node …/kaizen.mjs confirm <code>`).
+const CONFIRM_CALL = /(kaizen\.mjs|\$\{?K\}?)["']?\s+confirm\b/;
 const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals|push-offers|confirm-asks)\.json|deployments\.jsonl|review-hooks\.mjs/;
 // Hand-made deployment tags: they would distort DORA metrics and postmortems.
 const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback|incident|resolve)\//;
@@ -44,6 +47,7 @@ const forged = isBash && FORGED_TAG.test(command) && !/\s(-d|--delete|-l|--list)
 // A protected environment's deploy command is only known after reading the config: every non-trivial
 // Bash command therefore goes through this check in a Kaizen repo (reading one JSON file).
 if (!tamper && !forged && (!isBash || (!PUSH.test(command) && !command.trim()))) process.exit(0);
+const confirmCall = isBash && CONFIRM_CALL.test(command);
 
 try {
   const { existsSync } = await import('node:fs');
@@ -68,12 +72,19 @@ try {
     process.exit(2);
   }
   // `approvals: "ask"`: the user picked the risky option of Claude's question — Claude Code's own prompt
-  // confirms it (Claude cannot answer it); `confirm` only accepts a code asked about here.
-  const CONFIRM = /\bkaizen\.mjs["']?\s+confirm\s+([A-Fa-f0-9]{6})\b/.exec(command);
-  if (CONFIRM) {
+  // confirms it (Claude cannot answer it); `confirm` only accepts a code asked about here. Every call
+  // this hook can see goes through the prompt, so a mark left by a declined prompt is never enough on
+  // its own: the code must be literal and `confirm` alone at the end of the command, so the prompt
+  // covers exactly what runs (nothing chained after it, no code hidden in a variable).
+  if (confirmCall) {
+    const m = /\bconfirm\s+["']?([A-Fa-f0-9]{6})["']?(?=\s|$)/.exec(command);
+    if (!m || /\S/.test(command.slice(m.index + m[0].length))) {
+      process.stderr.write('[kaizen] Run `node "$K" confirm <code>` on its own, with the 6-character code written out and nothing after it: Claude Code\'s prompt must show the user exactly what they confirm.\n');
+      process.exit(2);
+    }
     const { loadConfig } = await import('./lib.mjs');
     const { approvalMode, markAsked, pendingApproval } = await import('./approvals.mjs');
-    const p = approvalMode(loadConfig(root)) === 'ask' && pendingApproval(root, CONFIRM[1]);
+    const p = approvalMode(loadConfig(root)) === 'ask' && pendingApproval(root, m[1]);
     if (p) {
       markAsked(root, p.code);
       logFriction(root, { gate: p.kind === 'deploy' ? 'deploy' : 'push', kind: 'confirm_asked', approval: p.kind, source: 'claude' });
@@ -111,7 +122,7 @@ try {
   const { pushReasonKey, loadConfig } = await import('./lib.mjs');
   // `ask`: the user judges each push themselves — Claude Code's own permission prompt, which Claude
   // cannot answer for them. Approving it is their waiver; it is logged, never recorded as a review.
-  if (loadConfig(root).review.require_before_push === 'ask') {
+  if (res.ask) {
     const { pushOffer, askQuestion } = await import('./review-state.mjs');
     // First push of this commit: Claude asks the user, review first. Second one: they chose to skip it.
     if (!pushOffer(root, res.branch, { take: true })) {

@@ -104,6 +104,16 @@ approval).
 | `needs-human` | decisions left to a human, checks finished |
 | `waiting` | nothing to do yet |
 
+### Does the PR still belong?
+
+`node $K pr overlap --base origin/<base>` (local git, after a fetch) diffs the PR and the base from
+their merge-base: `touched` lists PR files the base modified, moved or deleted; `removed_dirs` a
+folder the base removed under a path the PR adds (an exact-path match misses it); `absorbed` says
+every PR commit already has an equivalent patch in the base (`git cherry`). `assess` is true when any
+is set. `watch-pr` runs it before the first cycle and again on `behind`/`conflict`; when `assess` is
+true it judges **Update**, **Rework** (stops with the smallest rework) or **Close** (stops with the
+evidence; never closes the PR). Age alone never triggers it.
+
 ### One cycle
 
 1. **Terminal** → stop.

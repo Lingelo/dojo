@@ -18,10 +18,10 @@
 // (the PreToolUse hook does refuse direct writes to these state files).
 
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { approvalInstruction } from './approvals.mjs';
-import { changedLines, defaultBranch, diffBase, git, loadConfig, logFriction, worktreeTree } from './lib.mjs';
+import { changedLines, defaultBranch, diffBase, git, loadConfig, logFriction, readState, worktreeTree, writeState } from './lib.mjs';
 
 export const VERDICTS = ['ready', 'concerns', 'blocked'];
 // Verdict names used before Kaizen 3.0, still accepted.
@@ -32,25 +32,8 @@ const WAIVER_MAX_AGE_MS = 30 * 60 * 1000;
 // State files only the CLI and the hooks write (the PreToolUse hook refuses direct writes).
 export const PROTECTED_STATE = ['reviews.json', 'review-evidence.json', 'waivers.json', 'hooks-seen.json', 'review-launches.json', 'push-offers.json', 'confirm-asks.json'];
 
-function stateDir(root) {
-  const dir = join(root, '.kaizen', 'state');
-  mkdirSync(dir, { recursive: true });
-  const gi = join(dir, '.gitignore');
-  if (!existsSync(gi)) writeFileSync(gi, '*\n');
-  return dir;
-}
-
-function readJson(root, name, fallback) {
-  try {
-    return JSON.parse(readFileSync(join(stateDir(root), name), 'utf8'));
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(root, name, value) {
-  writeFileSync(join(stateDir(root), name), `${JSON.stringify(value, null, 2)}\n`);
-}
+const readJson = readState;
+const writeJson = writeState;
 
 export function currentBranch(root) {
   const b = git(root, ['rev-parse', '--abbrev-ref', 'HEAD'], { allowFail: true });
@@ -223,10 +206,16 @@ export function requestWaiver(root, { reason, gap = null }) {
 }
 
 // Called by the UserPromptSubmit hook (a user message), or by `confirm` after Claude Code's prompt (approvals.mjs).
+// A waiver (or accepted review gap) still waiting for the user, by its code; null if unknown or expired.
+export function pendingWaiver(root, code, list = readJson(root, 'waivers.json', [])) {
+  const now = Date.now();
+  return list.find((x) => x.code === String(code).toUpperCase() && now - Date.parse(x.at) < WAIVER_MAX_AGE_MS) || null;
+}
+
 export function confirmWaiver(root, code, { session = null, by = 'user (message)' } = {}) {
   const now = Date.now();
   const pending = readJson(root, 'waivers.json', []);
-  const w = pending.find((x) => x.code === String(code).toUpperCase() && now - Date.parse(x.at) < WAIVER_MAX_AGE_MS);
+  const w = pendingWaiver(root, code, pending);
   if (!w) return null;
   const state = readJson(root, 'reviews.json', {});
   const entry = w.kind === 'gap' ? { ...w.review, confirmed_by: by, session, at: new Date(now).toISOString() } : {
@@ -293,18 +282,30 @@ function decidePush(root, config, { branch = null, sha = null } = {}) {
 
 // `ask` mode, in two steps: the first unreviewed push of a commit is stopped so Claude asks the user a
 // question whose first choice is the review; only a second push of that same commit, within 30 min,
-// reaches Claude Code's permission prompt — where the user confirms the push without a review.
+// reaches Claude Code's permission prompt — where the user confirms the push without a review. That
+// second push is kept as `prompted` so the git pre-push hook lets exactly that push through.
+const PROMPT_MAX_AGE_MS = 10 * 60 * 1000;
 export function pushOffer(root, branch, { take = false } = {}) {
   const head = git(root, ['rev-parse', 'HEAD'], { allowFail: true });
   const offers = readJson(root, 'push-offers.json', {});
   const o = offers[branch];
-  const pending = Boolean(o && o.head === head && Date.now() - Date.parse(o.at) < WAIVER_MAX_AGE_MS);
+  const pending = Boolean(o && !o.prompted && o.head === head && Date.now() - Date.parse(o.at) < WAIVER_MAX_AGE_MS);
   if (take) {
-    if (pending) delete offers[branch];
-    else offers[branch] = { head, at: new Date().toISOString() };
+    offers[branch] = pending ? { ...o, prompted: new Date().toISOString() } : { head, at: new Date().toISOString() };
     writeJson(root, 'push-offers.json', offers);
   }
   return pending;
+}
+
+// git pre-push, for a push run from Claude Code: did the review hook just put this very push (branch and
+// commit) to the user in Claude Code's prompt? Single use.
+export function takePromptedPush(root, branch, sha) {
+  const offers = readJson(root, 'push-offers.json', {});
+  const o = offers[branch];
+  if (!o?.prompted || o.head !== sha || Date.now() - Date.parse(o.prompted) >= PROMPT_MAX_AGE_MS) return false;
+  delete offers[branch];
+  writeJson(root, 'push-offers.json', offers);
+  return true;
 }
 
 export function askQuestion(res) {

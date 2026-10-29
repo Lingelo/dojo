@@ -38,7 +38,7 @@ than 10 changes → trends not significant).
 | Batch size | median and share above `pr.max_lines` — the first lever according to DORA |
 | Kaizen loop | new learnings, **read** (cited by a recent plan), **applied** (cited by a commit), never cited, constitution exceptions |
 | Work items | `work_items`: what each feature or fix cost end to end (every turn charged to the Jira key, plan or branch), median per kind (`by_kind`), the most expensive (`top`), share of tokens `unattributed` — local to the machine |
-| Friction | `friction`: push refusals by reason (`no_review`, `stale`, `blocked_verdict`) and source, median minutes blocked on push (`unblocked_median_minutes`), branches still blocked, waivers and their share of cleared pushes, quality gate blocks per check and releases (`max_blocks` reached), secrets refused — local to the machine |
+| Friction | `friction`: push refusals by reason (`no_review`, `stale`, `blocked_verdict`) and source, median minutes blocked on push (`unblocked_median_minutes`), branches still blocked, waivers and their share of cleared pushes (`"ask"` mode: `asked`, `pushed_without_review` — in the share — and `unreviewed_from_terminal`), quality gate blocks per check and releases (`max_blocks` reached), secrets refused — local to the machine |
 | Cycle cost | `cycle_cost`: closed work/autopilot cycles, median duration and tokens (main session + subagents), subagent share (`subagent_share`), tokens per role (`tokens_by_role`), share of cycles where the gate blocked — local to the machine |
 
 **Learning reuse**: this is Kaizen's own metric. Learnings written but never cited by a plan = the loop

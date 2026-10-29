@@ -121,7 +121,10 @@ Following [`synthesis.md`](../../skills/review/references/synthesis.md):
    contracts — a finding is only refuted on quoted contrary evidence. More than 8 to validate: a
    read-only subagent per batch.
 5. **Plan conformance** — each R and AE: covered (file + test), covered differently (reported), not
-   covered (P1 if in scope). A KTD bypassed without explanation is a finding.
+   covered (P1 if in scope). A KTD bypassed without explanation is a finding. The reverse too, owned
+   by `correctness` so small diffs get it: a public surface (endpoint, flag, config key, export) the
+   plan's *Out of scope* or units rule out, and a new dependency the standard library or an existing
+   helper already covers (both quoted) — listed under "Outside the plan".
 6. **Rank** — severity, confidence, number of agreeing reviewers; findings are numbered so you can say
    "apply 1, 3 and 4".
 

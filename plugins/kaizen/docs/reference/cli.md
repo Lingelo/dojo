@@ -187,10 +187,11 @@ Without `check`: the articles (id, title, NON-NEGOTIABLE, check) and the version
 
 Ranked learnings ([scoring](../concepts/learnings.md#search)).
 
-### `learnings validate [files…]` · `learnings list` · `learnings stats`
+### `learnings validate [files…]` · `learnings list [--retire]` · `learnings stats`
 
 `validate`: every learning (or the given files) against the schema, exit 1 if one is invalid. `list`:
-JSON of path, title, type, module, date. `stats`: counts by `problem_type`, `component`, `module` — the
+JSON of path, title, type, module, date, and `retire_when` when declared; `--retire` keeps only those
+(the conditions `/kaizen:prune-learnings` checks). `stats`: counts by `problem_type`, `component`, `module` — the
 corpus vocabulary to reuse.
 
 ### `packs [--json] [--refresh]` · `pack new <name>`
@@ -245,7 +246,9 @@ you confirm it: `confirm <code>` after Claude Code's prompt, or your message `ka
 
 With `approvals: "ask"` (default): confirms a pending review waiver, review gap or protected deployment
 — only after the review hook turned this very call into Claude Code's permission prompt and you
-accepted it (10 minutes, single use). Refused otherwise, and always with `approvals: "code"`.
+accepted it (10 minutes, single use). Refused otherwise, and always with `approvals: "code"`. The hook
+only lets it run on its own with the code written out (no variable, nothing chained after it), so the
+prompt shows exactly what you confirm.
 
 ### `review status` · `review check [--branch <name> --sha <sha>]`
 
@@ -274,6 +277,7 @@ repository. Mechanics in [Pull requests](../concepts/pull-requests.md#driving-th
 | `pr resolve --thread ID` | resolves a thread |
 | `pr comment --body-file F` | top-level comment, marker added |
 | `pr update-branch` | updates the branch through the GitHub API **only if** GitHub says `BEHIND`, with the expected head SHA |
+| `pr overlap --base <ref>` | local git only (no `gh`): PR files the base modified, moved or deleted since the merge-base (`touched`), folders the base removed under a path the PR adds (`removed_dirs`), every PR patch already in the base (`absorbed`), commits `behind`; `assess: true` when any is set |
 
 `KAIZEN_GH` replaces `gh` (a binary or a Node script, used by the tests).
 

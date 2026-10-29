@@ -38,7 +38,9 @@ For each learning, against the current tree:
   (`Glob`, `Grep`, `git log --follow` for a moved file)
 - **Behavior** — are the described cause and solution still true? Is the fix still in the code, or was
   it removed/replaced? Does a test now cover the case?
-- **`retire_when`** — is the external condition met (upstream bug fixed, version superseded)?
+- **`retire_when`** — run the declared check yourself (`node "$K" learnings list --retire` lists them),
+  never inside a batch agent: read-only only (issue page, `npm view`, release notes), never a repo
+  change. Its result decides nothing alone — see "Retirement condition" in step 3.
 - **Named instructions** — if a knowledge-track learning names an instructions file (a skill, a runbook,
   `CLAUDE.md`), read it; if it prescribes something else, report both quotes and what the code does —
   without editing the instruction.
@@ -65,6 +67,14 @@ behavior, external service) stays, with a note.
 Update / Replace boundary: if a reader of the old version would make a **wrong decision**, it is
 Replace. No in-place archiving: git history is the archive.
 
+**Retirement condition (`retire_when`)** — no outcome of its own:
+- **met, and the workaround is still in the code** → Keep (or Update if a claim drifted), and list
+  under "Recommended" removing the workaround with the evidence of the met condition. Never remove
+  it yourself: a met condition is a reason to verify the removal, not proof that it is safe.
+- **met, and the workaround is gone** → judged like any other learning (usually Delete).
+- **not met** → decides nothing; the other checks still apply.
+- **cannot be checked** (private tracker, no network) → "Unverifiable is not false".
+
 **Pruning ("prune", on explicit confirmation)**: besides accuracy, judge **value**: delete or shorten an
 accurate learning whose reasoning is now carried by a test, a comment or the instructions file — each
 cut **quotes** that file. Without an explicit request, an accurate learning is never deleted for
@@ -89,6 +99,8 @@ Examined: N · Kept: a · Updated: b · Merged: c · Replaced: d · Deleted: e
 - `path` — **Update**: <what changed> (evidence: `file:line`)
 ### Recommended (not applied)
 - `path` — **Delete?** <reason, evidence>
+- `path` — **Retirement condition met**: <evidence> — remove the workaround at `file:line`, then
+  delete or update the learning
 ### Contradictions with instructions
 - `learning` vs `instruction` — "quote A" / "quote B" — the code follows: …
 ### Possible regressions

@@ -55,8 +55,12 @@ why.
 - `category` — subfolder of `learnings/`
 - `tags` — ≤ 8 lowercase-with-dashes keywords
 - `related_components` — other components
-- `retire_when` — the change **outside the repo** that would make the learning obsolete and how to
-  check it (open upstream bug, tool version…). A string; quoted if it contains ` #` or `: `.
+- `retire_when` — the change **outside the repo** that would make the learning obsolete, and a
+  **check that runs without changing the repo** (an issue URL to read, `npm view <pkg> version`, a
+  release page…). Example: `"bun#1234 and bun#1240 fixed — gh issue view 1234 -R oven-sh/bun"`.
+  A single string; quoted if it contains ` #` or `: `. A verification that needs a repo change
+  (remove the workaround, watch CI) goes in the body, not here. A met condition is a reason to
+  **verify** removing the workaround, never proof that removal is safe (see `/kaizen:prune-learnings`).
 
 ## Corpus vocabulary first
 
