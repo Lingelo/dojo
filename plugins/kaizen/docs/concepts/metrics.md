@@ -97,6 +97,9 @@ secret refused, direct deploy or state write refused — the hook appends an eve
 `.kaizen/state/friction.jsonl`, and so do what lifts it (review recorded, waiver confirmed). Metrics
 reads the refusals by reason, the median time a branch stays blocked on push (first refusal → next
 review or waiver), the waiver share of cleared pushes, and the checks that block the quality gate most.
+In `"ask"` mode it also counts the pushes Claude asked you about (`asked`), the ones you chose to push
+without a review (`pushed_without_review`, counted in the waiver share) and unreviewed pushes from your
+own terminal (`unreviewed_from_terminal`).
 The dashboard shows them as **Stops**, **Waivers** and **Guard rails**.
 
 The question it answers: **does the ceremony pay back more than it costs?** Compare cycle cost with

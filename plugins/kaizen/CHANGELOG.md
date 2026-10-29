@@ -38,6 +38,12 @@ Three ideas from the latest Compound Engineering releases, adapted to Kaizen's g
   and commit, 10 min, once) and refuses any other — a spelling the review hook missed, a script. From
   the user's own terminal it still only reminds. The review hook also sees `/usr/bin/git push`,
   `git --no-pager push` and other global options before `push`.
+- **`friction` metrics in `"ask"` mode** no longer count a push twice (the git hook only logs pushes from
+  the user's terminal, as `unreviewed_from_terminal`), report `pushed_without_review`, and count those
+  pushes in the waiver share.
+- `approvals.mjs` reuses the waiver and deployment lookups of `review-state.mjs` and `deploy.mjs` (no
+  copied lifetimes), and the state helpers are shared in `lib.mjs`: reading the state never creates
+  `.kaizen/state/` any more. The push gates read `checkPush`'s `ask`; `status` uses `approvalMode`.
 - `pr overlap` reads raw paths (`-z`): a non-ASCII folder no longer looks removed; an empty
   `git cherry` is not taken as an absorbed PR.
 

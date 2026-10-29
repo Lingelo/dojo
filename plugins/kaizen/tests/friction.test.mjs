@@ -68,17 +68,21 @@ test('metrics friction: time blocked on push, waiver share, checks that block, s
     { at: t(46), gate: 'secrets', kind: 'refused', findings: 2 },
     { at: t(47), gate: 'deploy', kind: 'refused', env: 'production' },
     { at: t(48), gate: 'push', kind: 'asked', reason: 'no_review', branch: 'd', source: 'claude' },
+    { at: t(49), gate: 'push', kind: 'skip_confirm', reason: 'no_review', branch: 'd', source: 'claude' },
+    { at: t(50), gate: 'push', kind: 'asked', reason: 'no_review', branch: 'e', source: 'git' },
   ];
   writeFiles(dir, { '.kaizen/state/friction.jsonl': `${log.map((e) => JSON.stringify(e)).join('\n')}\nnot json\n` });
   const f = friction(dir, new Date(Date.UTC(2026, 8, 1)));
-  assert.equal(f.events, 12);
+  assert.equal(f.events, 14);
   assert.deepEqual(f.push.by_reason, { no_review: 3, stale: 1 });
   assert.deepEqual(f.push.by_source, { claude: 3, git: 1 });
   assert.equal(f.push.unblocked_median_minutes, 20, 'median of 30 (from the first refusal) and 10');
   assert.equal(f.push.still_blocked, 1);
   assert.equal(f.push.asked, 1, 'an "ask" push is counted apart, never as blocked');
+  assert.equal(f.push.pushed_without_review, 1);
+  assert.equal(f.push.unreviewed_from_terminal, 1, 'the git hook reminder is not a question Claude asked');
   assert.equal(f.waivers.confirmed, 1);
-  assert.equal(f.waivers.share, 0.5);
+  assert.equal(f.waivers.share, 0.67, 'waiver + push without a review / (review + both)');
   assert.deepEqual(f.quality, { blocked: 2, released: 1, by_check: { lint: 1, test: 2 } });
   assert.deepEqual(f.secrets, { refused: 1, no_verify: 0 });
   assert.deepEqual(f.other_refusals, { deploy: 1 });

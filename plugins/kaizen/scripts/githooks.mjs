@@ -121,7 +121,7 @@ export function prePush(root, stdin, K, { env = process.env } = {}) {
       : (localRef === 'HEAD' && currentBranch(root)) || remoteRef.slice('refs/heads/'.length);
     const res = checkPush(root, config, { branch, sha: localSha });
     if (!res.allowed) {
-      if (config.review.require_before_push === 'ask') {
+      if (res.ask) {
         // From Claude Code (CLAUDECODE is set in its Bash tool): only the push its review hook just put
         // to the user. A push that hook did not see (another spelling, a script) asked nobody: refused.
         if (env.CLAUDECODE) {

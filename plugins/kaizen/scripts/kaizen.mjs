@@ -83,6 +83,7 @@ import { formatPerf, runPerf } from './perf.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { handleAlert, incidents, openIncident, patrol, resolveIncident, check as monitorCheck, watch as monitorWatch } from './monitor.mjs';
 import { checkPush, currentBranch, recordReview, requestWaiver, reviewStatus } from './review-state.mjs';
+import { approvalMode } from './approvals.mjs';
 import { applyAll, formatUpgrade, pending as pendingMigrations } from './upgrade.mjs';
 import {
   DEFAULT_CONFIG,
@@ -641,7 +642,7 @@ function repoStatus(root) {
   else if (initialized && constitution.draft) later.push({ command: '/kaizen:constitution', why: 'the constitution is a draft written without the team: review and ratify it (until then it blocks nothing)' });
   if (gate.active) say('/kaizen:work', `work in progress under the quality gate${gate.plan ? ` (${gate.plan})` : ''}: resume it, or \`gate off\` if it was abandoned`);
   else if (branch && branch !== def && (ahead || dirty)) {
-    if (review?.pending_waiver) say(config.approvals === 'code' ? 'kaizen waive <code>' : 'answer Claude\'s question', 'a review waiver awaits your confirmation');
+    if (review?.pending_waiver) say(approvalMode(config) === 'code' ? 'kaizen waive <code>' : 'answer Claude\'s question', 'a review waiver awaits your confirmation');
     else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): ready to ship`);
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   } else if (branch && branch === def && undeployed(root, config)) {

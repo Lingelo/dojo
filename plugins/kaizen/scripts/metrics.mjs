@@ -357,6 +357,8 @@ export function friction(root, from) {
   const pushRefused = events.filter((e) => e.gate === 'push' && e.kind === 'refused');
   const recorded = count((e) => e.kind === 'review_recorded');
   const confirmed = count((e) => e.kind === 'waiver_confirmed' && !e.gap);
+  // "ask" mode: the user chose "Push without a review" and Claude Code's prompt asked them to confirm it.
+  const skipped = count((e) => e.gate === 'push' && e.kind === 'skip_confirm');
   const quality = events.filter((e) => e.gate === 'quality');
   const checks = {};
   for (const e of quality.filter((x) => x.kind === 'blocked')) for (const c of e.checks || []) checks[c] = (checks[c] || 0) + 1;
@@ -364,8 +366,11 @@ export function friction(root, from) {
     events: events.length,
     push: {
       refused: pushRefused.length,
-      // review.require_before_push: "ask" — pushes the user was asked to judge themselves.
-      asked: count((e) => e.gate === 'push' && e.kind === 'asked'),
+      // review.require_before_push: "ask" — pushes Claude asked the user to judge, the ones they chose to
+      // push without a review, and unreviewed pushes from their own terminal (the git hook only reminds).
+      asked: count((e) => e.gate === 'push' && e.kind === 'asked' && e.source !== 'git'),
+      pushed_without_review: skipped,
+      unreviewed_from_terminal: count((e) => e.gate === 'push' && e.kind === 'asked' && e.source === 'git'),
       by_reason: tally(pushRefused, 'reason'),
       by_source: tally(pushRefused, 'source'),
       unblocked_median_minutes: round(median(blockedMinutes), 0),
@@ -376,15 +381,16 @@ export function friction(root, from) {
       requested: count((e) => e.kind === 'waiver_requested'),
       confirmed,
       gaps_accepted: count((e) => e.kind === 'waiver_confirmed' && e.gap),
-      // Share of pushes cleared by a waiver rather than a review: a rising share means the review is
-      // felt as a tax.
-      share: recorded + confirmed ? round(confirmed / (recorded + confirmed), 2) : null,
+      // Share of pushes cleared by a waiver (or, in "ask" mode, by choosing to push without a review)
+      // rather than a review: a rising share means the review is felt as a tax.
+      share: recorded + confirmed + skipped ? round((confirmed + skipped) / (recorded + confirmed + skipped), 2) : null,
     },
     quality: { blocked: count((e) => e.gate === 'quality' && e.kind === 'blocked'), released: count((e) => e.gate === 'quality' && e.kind === 'released'), by_check: checks },
     secrets: { refused: count((e) => e.gate === 'secrets' && e.kind === 'refused'), no_verify: count((e) => e.gate === 'secrets' && e.kind === 'no_verify') },
     other_refusals: tally(events.filter((e) => ['deploy', 'state', 'tag'].includes(e.gate)), 'gate'),
     method:
       'stops logged by the Kaizen hooks and git hooks on this machine (.kaizen/state/friction.jsonl); time blocked = first push ' +
-      'refusal on a branch → next review recorded or waiver confirmed on it; waiver share = waivers / (reviews + waivers)',
+      'refusal on a branch → next review recorded or waiver confirmed on it; waiver share = (waivers + pushes without a review ' +
+      'chosen in "ask" mode, a declined prompt included) / (reviews + both)',
   };
 }

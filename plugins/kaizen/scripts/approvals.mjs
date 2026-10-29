@@ -7,38 +7,22 @@
 // `kaizen waive|deploy <code>` themselves (UserPromptSubmit hook). Like the rest of the review state, a
 // protection against reflexes and drift, not against an agent set on bypassing it.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { loadConfig } from './lib.mjs';
+import { pendingDeploy } from './deploy.mjs';
+import { loadConfig, readState as read, writeState as write } from './lib.mjs';
+import { pendingWaiver } from './review-state.mjs';
 
 const ASK_MAX_AGE_MS = 10 * 60 * 1000;
-const MAX_AGE_MS = 30 * 60 * 1000;
-
-function file(root, name) {
-  const dir = join(root, '.kaizen', 'state');
-  mkdirSync(dir, { recursive: true });
-  if (!existsSync(join(dir, '.gitignore'))) writeFileSync(join(dir, '.gitignore'), '*\n');
-  return join(dir, name);
-}
-const read = (root, name, fallback) => {
-  try {
-    return JSON.parse(readFileSync(file(root, name), 'utf8'));
-  } catch {
-    return fallback;
-  }
-};
-const write = (root, name, value) => writeFileSync(file(root, name), `${JSON.stringify(value, null, 2)}\n`);
 
 export const approvalMode = (config) => (config.approvals === 'ask' ? 'ask' : 'code');
 
-// What a pending code would approve, in words the user can judge.
+// What a pending code would approve, in words the user can judge — the same lookups (and lifetimes) as
+// confirmWaiver and confirmDeploy, so the hook never asks about a code the CLI would reject.
 export function pendingApproval(root, code) {
   const c = String(code).toUpperCase();
-  const now = Date.now();
-  const w = read(root, 'waivers.json', []).find((x) => x.code === c && now - Date.parse(x.at) < MAX_AGE_MS);
+  const w = pendingWaiver(root, c);
   if (w?.kind === 'gap') return { kind: 'gap', code: c, text: `record the review of ${w.branch} without ${w.review.gaps.join(', ')}` };
   if (w) return { kind: 'waiver', code: c, text: `push ${w.branch} without a review (${w.reason})` };
-  const d = read(root, 'deploy-approvals.json', []).find((x) => x.code === c && !x.confirmed && now - Date.parse(x.at) < MAX_AGE_MS);
+  const d = pendingDeploy(root, c);
   if (d) return { kind: 'deploy', code: c, text: `deploy ${d.sha.slice(0, 7)} to ${d.env}` };
   return null;
 }

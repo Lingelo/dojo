@@ -122,7 +122,7 @@ try {
   const { pushReasonKey, loadConfig } = await import('./lib.mjs');
   // `ask`: the user judges each push themselves — Claude Code's own permission prompt, which Claude
   // cannot answer for them. Approving it is their waiver; it is logged, never recorded as a review.
-  if (loadConfig(root).review.require_before_push === 'ask') {
+  if (res.ask) {
     const { pushOffer, askQuestion } = await import('./review-state.mjs');
     // First push of this commit: Claude asks the user, review first. Second one: they chose to skip it.
     if (!pushOffer(root, res.branch, { take: true })) {
