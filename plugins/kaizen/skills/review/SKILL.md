@@ -134,6 +134,7 @@ by rereading the quoted lines, ranking, and pre-existing items reported separate
 
 ### Plan conformance
 | Requirement | Covered by | Evidence |  — R/AE not covered or covered differently = finding
+Outside the plan: <surface or dependency the intent rules out, or "none"> — each one is a finding
 
 ### Test gaps · Residual risks
 ### Pre-existing (outside the diff, for information)

@@ -53,7 +53,9 @@ batch, with the list of findings and these rules.
 
 For each `R` and `AE` of the plan: covered (file + test proving it), covered differently than planned
 (to report), or not covered (P1 finding if the requirement is within the branch's scope, otherwise a
-note). A `KTD` decision bypassed without explanation is a finding.
+note). A `KTD` decision bypassed without explanation is a finding. The reverse direction too: a
+surface or dependency the intent rules out (reviewer contract, "Intent check") is listed under
+"Outside the plan".
 
 ## 6. Rank
 
