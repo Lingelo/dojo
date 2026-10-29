@@ -26,6 +26,21 @@ Three ideas from the latest Compound Engineering releases, adapted to Kaizen's g
   uncheckable decides nothing. `learnings validate` refuses a `retire_when` that is not one string.
 - `docs/positioning.md` reflects Spec Kit 1.2.5 and Compound Engineering 3.33.2.
 
+### Fixed
+- **`approvals: "ask"` works with the documented call.** The review hook only recognized the literal
+  `kaizen.mjs confirm <code>`, so `node "$K" confirm <code>` — what the skills and docs say — never
+  reached Claude Code's prompt and `confirm` always refused. Every call of `confirm` is now seen, and
+  must run on its own with the code written out: a code in a variable or a command chained after it
+  (`confirm … && git push`) is refused, so the prompt shows exactly what is confirmed and a mark left
+  by a declined prompt cannot be reused by another visible call.
+- **The git `pre-push` hook guards Claude's pushes again in `"ask"` mode.** From Claude Code
+  (`CLAUDECODE` set) it lets through only the push the review hook just put to the user (same branch
+  and commit, 10 min, once) and refuses any other — a spelling the review hook missed, a script. From
+  the user's own terminal it still only reminds. The review hook also sees `/usr/bin/git push`,
+  `git --no-pager push` and other global options before `push`.
+- `pr overlap` reads raw paths (`-z`): a non-ASCII folder no longer looks removed; an empty
+  `git cherry` is not taken as an absorbed PR.
+
 ## [5.0.0] - 2026-10-27
 
 ### Breaking

@@ -86,7 +86,12 @@ test('approvals "ask": no code typed, Claude Code\'s prompt confirms the deploym
   // confirm without the prompt having asked: refused
   assert.match(cli(dir, ['confirm', req.code]).stderr, /not confirmed in Claude Code's permission prompt/);
   const gate = (command) => spawnSync(process.execPath, [REVIEW_GATE], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command }, cwd: dir }), encoding: 'utf8' });
-  const asked = gate(`node "/x/kaizen.mjs" confirm ${req.code}`);
+  // a confirm the prompt could not show exactly is refused: code in a variable, something chained after it
+  assert.equal(gate(`C=${req.code}; node "$K" confirm $C`).status, 2);
+  assert.match(gate(`node "$K" confirm ${req.code} && git push`).stderr, /on its own/);
+  assert.match(cli(dir, ['confirm', req.code]).stderr, /not confirmed/, 'still not asked');
+  // the documented form reaches Claude Code's prompt
+  const asked = gate(`node "$K" confirm ${req.code}`);
   assert.equal(asked.status, 0);
   const out = JSON.parse(asked.stdout).hookSpecificOutput;
   assert.equal(out.permissionDecision, 'ask');

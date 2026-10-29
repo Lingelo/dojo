@@ -137,8 +137,8 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
   required;
 - **only the user can waive it**: at their request, `node "$K" review waive --reason "<their
   request>"` prints a code and an `instruction` to follow: ask them a question, the review as the
-  first option, and run `node "$K" confirm <code>` only if they choose to skip it (Claude Code asks
-  them to confirm); with `approvals: "code"`, ask them to type `kaizen waive <code>` themselves (30 min). You
+  first option, and run `node "$K" confirm <code>` only if they choose to skip it — on its own, the
+  code written out (the hook refuses anything else) — Claude Code asks them to confirm; with `approvals: "code"`, ask them to type `kaizen waive <code>` themselves (30 min). You
   cannot confirm it for them, and a confirmed waiver appears in the PR ("Review waived" section). In
   non-interactive mode, no waiver: stop and say why;
 - the review state files (`.kaizen/state/reviews.json`, `review-evidence.json`, `waivers.json`,

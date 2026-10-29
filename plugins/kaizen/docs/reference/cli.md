@@ -246,7 +246,9 @@ you confirm it: `confirm <code>` after Claude Code's prompt, or your message `ka
 
 With `approvals: "ask"` (default): confirms a pending review waiver, review gap or protected deployment
 — only after the review hook turned this very call into Claude Code's permission prompt and you
-accepted it (10 minutes, single use). Refused otherwise, and always with `approvals: "code"`.
+accepted it (10 minutes, single use). Refused otherwise, and always with `approvals: "code"`. The hook
+only lets it run on its own with the code written out (no variable, nothing chained after it), so the
+prompt shows exactly what you confirm.
 
 ### `review status` · `review check [--branch <name> --sha <sha>]`
 

@@ -144,7 +144,7 @@ The PreToolUse hook recognizes `git push` (including `git -C dir push`) in any B
 | Situation | Result |
 |---|---|
 | `review.require_before_push: false` | allowed |
-| `review.require_before_push: "ask"` and one of the refusals below | first push of the commit: stopped, Claude asks **you** — "Run the review" first, "Push without a review" second (logged `asked` in `friction.jsonl`). Second push of the same commit within 30 min: Claude Code's permission prompt, where you confirm the push without a review. The git `pre-push` hook cannot ask: it reminds and lets the push through |
+| `review.require_before_push: "ask"` and one of the refusals below | first push of the commit: stopped, Claude asks **you** — "Run the review" first, "Push without a review" second (logged `asked` in `friction.jsonl`). Second push of the same commit within 30 min: Claude Code's permission prompt, where you confirm the push without a review. The git `pre-push` hook cannot ask: for a push from Claude Code (`CLAUDECODE` set) it lets through only the push you just confirmed in the prompt (same branch and commit, 10 min, once) and refuses any other; from your own terminal it reminds and lets the push through |
 | detached HEAD, default branch, base not found, no code change on the branch | allowed (the default branch is guarded by the `git` plugin) |
 | deleting a remote branch, pushing only tags | allowed (no new code) |
 | no review recorded for the branch | **refused** |

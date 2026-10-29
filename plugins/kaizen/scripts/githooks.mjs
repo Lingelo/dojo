@@ -15,7 +15,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { git, loadConfig, logFriction, pushReasonKey } from './lib.mjs';
 import { HOOK_LOOKUP, MARKETPLACE, OPS_ID, PLUGIN_ID, opsNeeded, templateLookup } from './doctor.mjs';
-import { checkPush, currentBranch, pushRefusal } from './review-state.mjs';
+import { checkPush, currentBranch, pushRefusal, takePromptedPush } from './review-state.mjs';
 import { formatFindings, scan } from './secrets.mjs';
 
 export const HOOKS = ['pre-push', 'pre-commit'];
@@ -110,7 +110,7 @@ export function declarePlugin(root) {
 // whatever the local side (`HEAD`, a sha, a tag: `git push origin HEAD` must not slip through).
 // Deletions and tags publish no new branch code. The review is looked up under the local branch name
 // (`HEAD` → the current branch), else the remote one.
-export function prePush(root, stdin, K) {
+export function prePush(root, stdin, K, { env = process.env } = {}) {
   if (!existsSync(join(root, '.kaizen', 'config.json'))) return { code: 0 };
   const config = loadConfig(root);
   for (const line of String(stdin).split(/\r?\n/)) {
@@ -121,8 +121,19 @@ export function prePush(root, stdin, K) {
       : (localRef === 'HEAD' && currentBranch(root)) || remoteRef.slice('refs/heads/'.length);
     const res = checkPush(root, config, { branch, sha: localSha });
     if (!res.allowed) {
-      // `ask` leaves the call to the user: a git hook cannot ask them, so it only reminds.
       if (config.review.require_before_push === 'ask') {
+        // From Claude Code (CLAUDECODE is set in its Bash tool): only the push its review hook just put
+        // to the user. A push that hook did not see (another spelling, a script) asked nobody: refused.
+        if (env.CLAUDECODE) {
+          if (takePromptedPush(root, branch, localSha)) continue;
+          logFriction(root, { gate: 'push', kind: 'refused', reason: pushReasonKey(res), branch, source: 'git' });
+          return {
+            code: 1,
+            message: `[kaizen] Push of ${branch} refused: ${res.reason}, and the user was not asked about this push. ` +
+              'Run a plain `git push …` so Claude Code asks them (review first), or run /kaizen:review.\n',
+          };
+        }
+        // From the user's own terminal: their call; a git hook cannot ask them, so it only reminds.
         logFriction(root, { gate: 'push', kind: 'asked', reason: pushReasonKey(res), branch, source: 'git' });
         return { code: 0, message: `[kaizen] Pushing ${branch} without a review: ${res.reason} (review.require_before_push: "ask").\n` };
       }

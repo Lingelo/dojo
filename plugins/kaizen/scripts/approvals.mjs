@@ -1,10 +1,10 @@
 // Kaizen — the user's approvals (review waiver, review gap, protected deployment), by code or by question.
 //
-// `approvals: "code"` (default): the user types `kaizen waive|deploy <code>` themselves (UserPromptSubmit
-// hook). `approvals: "ask"`: Claude asks them a question whose FIRST option is the safe one; if they
-// pick the risky one, Claude runs `kaizen.mjs confirm <code>`, which the PreToolUse review hook turns
+// `approvals: "ask"` (default): Claude asks the user a question whose FIRST option is the safe one; if
+// they pick the risky one, Claude runs `node "$K" confirm <code>`, which the PreToolUse review hook turns
 // into Claude Code's own permission prompt (Claude cannot answer it) and marks as asked here. The CLI
-// only confirms a code asked about within ASK_MAX_AGE_MS, once. Like the rest of the review state, a
+// only confirms a code asked about within ASK_MAX_AGE_MS, once. `approvals: "code"`: the user types
+// `kaizen waive|deploy <code>` themselves (UserPromptSubmit hook). Like the rest of the review state, a
 // protection against reflexes and drift, not against an agent set on bypassing it.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -55,7 +55,7 @@ export function approvalInstruction(root, kind, code, what) {
   const [safe, risky] = CHOICES[kind];
   return (
     `approvals is "ask": ask the user with AskUserQuestion (in their language) whether to ${what}, the safe option FIRST — ` +
-    `1. "${safe}", 2. "${risky}". Never pick for them. Only if they choose "${risky}": run \`kaizen.mjs confirm ${code}\`; ` +
+    `1. "${safe}", 2. "${risky}". Never pick for them. Only if they choose "${risky}": run \`node "$K" confirm ${code}\` on its own; ` +
     'Claude Code then asks them to confirm (decline = the safe option). Non-interactive: nobody to ask, take the safe option.'
   );
 }
