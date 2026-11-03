@@ -33,10 +33,7 @@
         },
         {
             "name": "kioku",
-            "source": {
-                "source": "github",
-                "repo": "Lingelo/kioku"
-            },
+            "source": "./plugins/kioku",
             "description": "A guarded knowledge vault for Claude Code, on the LLM Wiki pattern: silos (work, personal…) sealed from each other by a PreToolUse hook, a bronze → silver → gold medallion, and a gate that admits a page to the wiki only after deterministic checks and an independent reviewer. Creates the vault (/kioku:setup), ingests, queries, triages, lints; local dashboard; optional Plaud capture",
             "category": "productivity"
         }

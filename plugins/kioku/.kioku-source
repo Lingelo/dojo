@@ -1,0 +1,3 @@
+# Copied by .github/scripts/sync-kioku.mjs. Do not edit plugins/kioku/: change kioku in its own repository.
+repository: https://github.com/Lingelo/kioku
+sha: 365c1112d80b31923482ee34b883789f5dd9c01a
