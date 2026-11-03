@@ -9,7 +9,7 @@ A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen), motion
 | [**kaizen**](plugins/kaizen/README.md) | AI-assisted SDLC (adapted from Compound Engineering): engineering constitution enforced as checks, brainstorm → plan (traceability, threats, rollback, PR-sized slices) → doc-review → work (quality gate) → multi-agent review → ship → watch-pr, UI polish, learnings and ADRs read back every cycle, DORA metrics and the cost of each feature or fix, release; review enforced by a hook before any push, prototype/product/critical profiles, a four-command start (`setup` → `plan` → `work` → `ship`), `/kaizen:help` to find your way | 20 skills, 22 agents, hooks (incl. secret scan before commit), CLI, Playwright MCP |
 | [**kaizen-ops**](plugins/kaizen-ops/README.md) | Kaizen's production commands, for teams that deploy with Kaizen: watched deployment with typed approval and rollback (`/kaizen-ops:deploy`), production signals and incidents (`/kaizen-ops:monitor`), blameless postmortems (`/kaizen-ops:postmortem`). Requires Kaizen ≥ 4.0.0; its CLI and gates stay in Kaizen | 3 skills, CLI resolver |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design as code: HTML/CSS/SVG/Canvas → MP4/WebM/GIF frame by frame, synced sound, voice-over and subtitles (Playwright + ffmpeg) | Skill, scripts |
-| [**kioku**](https://github.com/Lingelo/kioku) | A guarded knowledge vault on the LLM Wiki pattern: you drop raw sources, Claude maintains a structured wiki. Silos (work, personal…) sealed from each other by a hook, bronze → silver → gold medallion, a gate (deterministic checks + independent reviewer) before any page enters the wiki; `/kioku:setup` creates the vault in an empty folder, `npm run <silo>` opens a session. Lives in its own repository; the vault is your own private repository | Skills, reviewer agent, guard and gate hooks, CLI, local dashboard |
+| [**kioku**](plugins/kioku/README.md) | A guarded knowledge vault on the LLM Wiki pattern: you drop raw sources, Claude maintains a structured wiki. Silos (work, personal…) sealed from each other by a hook, bronze → silver → gold medallion, a gate (deterministic checks + independent reviewer) before any page enters the wiki; `/kioku:setup` creates the vault in an empty folder, `npm run <silo>` opens a session. Developed in [its own repository](https://github.com/Lingelo/kioku), copied here hourly; the vault is your own private repository | Skills, reviewer agent, guard and gate hooks, CLI, local dashboard |
 | [**slide-studio**](plugins/slide-studio/README.md) | Presentation decks as one HTML file: 19 layouts, 3 themes (`ink`, `paper`, `kaizen`) + brand tokens, presenter mode (steps, notes, overview), every slide audited in headless Chromium (overflow, collisions, contrast, density), export to PDF/PNG/contact sheet | Skill, scripts |
 
 Everything is in English. Claude still answers in the language you write in.
@@ -147,14 +147,14 @@ Documentation, threat model and limits: [Lingelo/kioku](https://github.com/Linge
 dojo/
 ├── .claude-plugin/
 │   └── marketplace.json      # Marketplace registry
-├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows; slide-studio.yml: same for Slide Studio)
+├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows; slide-studio.yml: same for Slide Studio; sync-kioku.yml: copies kioku hourly)
 ├── docs/                     # This repo's own brainstorms, plans and learnings
 ├── plugins/
 │   ├── kaizen/               # AI-assisted SDLC: skills, agents, hooks, zero-dependency CLI
 │   ├── kaizen-ops/           # Kaizen's production commands (deploy, monitor, postmortem); CLI and gates stay in kaizen
 │   ├── motion-studio/        # Motion design videos from HTML (Playwright + ffmpeg)
+│   ├── kioku/                # Guarded knowledge vault: a copy of Lingelo/kioku, synced by .github/workflows/sync-kioku.yml
 │   └── slide-studio/         # Presentation decks as one HTML file, audited and exported (Playwright)
-│                             # (kioku is listed in marketplace.json but lives in its own repository)
 ├── CLAUDE.md
 └── README.md
 ```
