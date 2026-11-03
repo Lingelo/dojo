@@ -151,6 +151,7 @@ dojo/
 ├── docs/                     # This repo's own brainstorms, plans and learnings
 ├── plugins/
 │   ├── kaizen/               # AI-assisted SDLC: skills, agents, hooks, zero-dependency CLI
+│   ├── kaizen-ops/           # Kaizen's production commands (deploy, monitor, postmortem); CLI and gates stay in kaizen
 │   ├── motion-studio/        # Motion design videos from HTML (Playwright + ffmpeg)
 │   └── slide-studio/         # Presentation decks as one HTML file, audited and exported (Playwright)
 │                             # (kioku is listed in marketplace.json but lives in its own repository)
