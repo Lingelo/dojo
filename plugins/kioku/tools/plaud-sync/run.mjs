@@ -3,28 +3,38 @@
  * Plaud -> coffre, en une commande (Windows, macOS, Linux : Node seulement) :
  * depot dans l'entrant, tri, ingestion bronze -> argent -> or, rapport.
  *
- *   node tools/plaud-sync/run.mjs                         depuis 7 jours
- *   node tools/plaud-sync/run.mjs --since 2026-09-14
- *   node tools/plaud-sync/run.mjs --dry-run               montre ce qui serait depose, ne lance aucune session
- *   node tools/plaud-sync/run.mjs --skip <id Plaud>       ecarte un enregistrement (repetable) : consigne dans seen.json, jamais redepose
- *   node tools/plaud-sync/run.mjs --skip-fetch            tri + ingestion de ce qui est deja dans l'entrant / la file
- *   node tools/plaud-sync/run.mjs --group-by-day          une session par JOURNEE et par domaine, au lieu d'une par source :
- *                                                         les seances d'un meme jour se recoupent et l'index n'est relu qu'une fois
- *   node tools/plaud-sync/run.mjs --vault <dossier>       vise un autre coffre que celui du script (ex. depuis un worktree)
- *   node tools/plaud-sync/run.mjs --allow-worktree        accepte de tourner dans un worktree git
- *   node tools/plaud-sync/run.mjs --init-structure        donne a chaque domaine declare le meme squelette : les 8 dossiers
- *                                                         (un .gitkeep si vide) et overview.md s'il manque. Aucun contenu de page.
- *   node tools/plaud-sync/run.mjs --skip-fetch --decide <fichier-de-l-entrant>=<domaine>
- *                                                         tranche une source que le tri avait laissee (repetable) :
- *                                                         la decision de l'utilisateur est transmise a la session de tri,
- *                                                         qui range sans s'abstenir. Le script ne deplace rien lui-meme.
- *   node tools/plaud-sync/run.mjs --drop <fichier-de-a-trancher>
- *                                                         ecarte pour de bon une source parquee (repetable) : son plaud_id
- *                                                         passe « ecarte » dans seen.json, le fichier et sa raison sont
- *                                                         supprimes. Ni fetch, ni session. Refus si pas de plaud_id.
- *   node tools/plaud-sync/run.mjs --yes                  ingere sans demander (voir ci-dessous) ; requis sans terminal
- *   node tools/plaud-sync/run.mjs --retries <n>          relances d'une ingestion qui echoue (defaut 1, 0 = aucune)
- *   node tools/plaud-sync/run.mjs --retry-delay <s>      attente avant chaque relance, en secondes (defaut 30)
+ * Depuis le coffre, par le CLI : `kioku plaud [options]` (relaie `node <core>/tools/plaud-sync/run.mjs --vault . [options]`).
+ * Les messages de ce script citent toujours la forme `kioku plaud` : run.mjs n'existe pas dans le coffre.
+ *
+ *   kioku plaud                         depuis 7 jours
+ *   kioku plaud --since 2026-09-14
+ *   kioku plaud --dry-run               montre ce qui serait depose, ne lance aucune session
+ *   kioku plaud --skip <id Plaud>       ecarte un enregistrement (repetable) : consigne dans seen.json, jamais redepose
+ *   kioku plaud --skip-fetch            tri + ingestion de ce qui est deja dans l'entrant / la file
+ *   kioku plaud --group-by-day          une session par JOURNEE et par domaine, au lieu d'une par source :
+ *                                       les seances d'un meme jour se recoupent et l'index n'est relu qu'une fois
+ *   kioku plaud --allow-worktree        accepte de tourner dans un worktree git
+ *   kioku plaud --init-structure        donne a chaque domaine declare le meme squelette : les 8 dossiers
+ *                                       (un .gitkeep si vide) et overview.md s'il manque. Aucun contenu de page.
+ *   kioku plaud --skip-fetch --decide <fichier-de-l-entrant>=<domaine>[:<org>,<org>]
+ *                                       tranche une source que le tri avait laissee (repetable) :
+ *                                       la decision de l'utilisateur est transmise a la session de tri,
+ *                                       qui range sans s'abstenir. Le script ne deplace rien lui-meme.
+ *                                       `:<org>` (domaine a extension org, registre seulement) impose
+ *                                       l'organisation montree a la confirmation et passee a l'ingestion.
+ *   kioku plaud --drop <fichier-de-a-trancher>
+ *                                       ecarte pour de bon une source parquee (repetable) : son plaud_id
+ *                                       passe « ecarte » dans seen.json, le fichier et sa raison sont
+ *                                       supprimes. Ni fetch, ni session. Refus si pas de plaud_id.
+ *   kioku plaud --requeue <domaine> <chemin relatif a raw/<domaine>/>
+ *                                       remet en file une source deplacee a la main vers un autre domaine
+ *                                       (apres un refus a la confirmation). Ni fetch, ni session.
+ *   kioku plaud --yes                   ingere sans demander (voir ci-dessous) ; requis sans terminal
+ *   kioku plaud --retries <n>           relances d'une ingestion qui echoue (defaut 1, 0 = aucune)
+ *   kioku plaud --retry-delay <s>       attente avant chaque relance, en secondes (defaut 30)
+ *   node <core>/tools/plaud-sync/run.mjs --vault <dossier>
+ *                                       vise un autre coffre (ex. depuis un worktree). Via `kioku plaud`, --vault
+ *                                       est deja pose a `.` et gagne : changer de dossier courant a la place.
  *
  * Une session d'ingestion qui rend un code non nul est relancee, a froid, apres une attente : le 05/11, une
  * erreur API 422 a fait tomber une session apres la redaction, et la relance a la main du relecteur est passee
@@ -32,6 +42,9 @@
  * le code n'est pas relancee, une source deja redigee (etat `argent`) repart avec la consigne de reprise. Le
  * code de sortie de claude ne dit pas si l'erreur est passagere : on relance sur tout echec, et c'est le
  * plafond (--retries) qui borne le cout d'un echec qui se reproduit a chaque fois.
+ *
+ * Les notes que le tri dit sans contenu (ligne VIDE : test de connexion, fragment) sont parquees comme les indecis,
+ * puis proposees a l'ecart (Entree = non). Ni --yes ni l'absence de terminal n'ecartent rien : l'ecart est irreversible.
  *
  * Entre le tri et l'ingestion, le script montre ce qui va entrer dans l'or, par domaine, et demande confirmation
  * (Entree = non). C'est le dernier moment ou une erreur de domaine du tri se corrige sans effort : apres, la
@@ -51,7 +64,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, renameSync, statSyn
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
-import { dropParked, pruneReasons } from './drop.mjs';
+import { dropParked, parseEmptyLines, pruneReasons } from './drop.mjs';
 import { acquire, release } from './lock.mjs';
 import { CORE_BIN, withCorePath } from '../core-path.mjs';
 import { skill } from '../names.mjs';
@@ -137,8 +150,8 @@ if (statSync(path.join(VAULT, '.git'), { throwIfNoEntry: false })?.isFile() && !
 // Tous les enfants visent CE coffre (fetch-notes et pending lisent CLAUDE_PROJECT_DIR).
 // Les sessions claude -p attendent le plugin avant leur premier tour : sans lui, la garde manquerait.
 const baseEnv = { ...withCorePath(process.env), CLAUDE_PROJECT_DIR: VAULT, CLAUDE_CODE_SYNC_PLUGIN_INSTALL: '1' };
-// Pas de session sans garde. Seuls le dry-run et --drop n'en ouvrent aucune (--decide passe par la session de tri).
-if (!flag('--dry-run') && !flag('--drop')) {
+// Pas de session sans garde. Seuls le dry-run, --drop et --requeue n'en ouvrent aucune (--decide passe par la session de tri).
+if (!flag('--dry-run') && !flag('--drop') && !flag('--requeue')) {
   const refusal = startupRefusal(VAULT);
   if (refusal) fail(`sessions refusees : ${refusal}`);
 }
@@ -199,11 +212,15 @@ const park = (file, reason) => {
   logReason(file, reason);
 };
 
-// Decisions explicites de l'utilisateur sur des indecis (--decide fichier=domaine) : transmises a la session de tri, qui range.
+// Decisions explicites de l'utilisateur sur des indecis (--decide fichier=domaine[:org,org]) : transmises a la session
+// de tri, qui range. L'organisation, facultative, est celle de l'utilisateur : elle remplace la proposition du tri
+// (validee contre le registre plus bas, une fois celui-ci charge). Sans elle, le tri la propose comme pour toute source.
 const decisions = argv.flatMap((a, i) => (a === '--decide' ? [argv[i + 1] ?? ''] : [])).map((d) => {
-  const [file, domain] = d.split('=');
-  if (!file || !DOMAINS.includes(domain)) fail(`--decide attend <fichier>=<${DOMAINS.join('|')}>, recu "${d}".`);
-  return { file, domain };
+  const [file, target = ''] = d.split('=');
+  const [domain, orgList] = target.split(':');
+  const orgIds = orgList === undefined ? null : [...new Set(orgList.split(',').map((s) => s.trim()).filter(Boolean))].sort();
+  if (!file || !DOMAINS.includes(domain) || orgIds?.length === 0) fail(`--decide attend <fichier>=<${DOMAINS.join('|')}>[:<org>,<org>], recu "${d}".`);
+  return { file, domain, orgIds };
 });
 
 // `pending.mjs list` rend <domaine>\t<chemin>\t<etat>[\t<candidates>], etat = neuf | argent (redigee mais pas
@@ -261,6 +278,26 @@ if (drops.length) {
   process.exit(failed ? 2 : 0);
 }
 
+// Remise en file (--requeue <domaine> <chemin>) : apres un refus a la confirmation, l'utilisateur deplace une source
+// `neuf` vers le bon domaine ; la file la connait encore sous l'ancien. Seule porte d'entree utilisateur vers
+// `pending.mjs add`, que le CLI ne relaie pas. Sous le verrou (une ingestion en cours lit la file), sans fetch ni
+// session, puis s'arrete. Le chemin reste sous raw/<domaine>/ : ni absolu, ni `..`.
+if (flag('--requeue')) {
+  if (flag('--dry-run')) fail('--requeue ne se combine pas avec --dry-run.');
+  const at = argv.indexOf('--requeue');
+  const domain = argv[at + 1];
+  const given = argv[at + 2];
+  const usage = `--requeue attend <${DOMAINS.join('|')}> <chemin relatif a raw/<domaine>/>`;
+  if (!DOMAINS.includes(domain) || !given || given.startsWith('--')) fail(`${usage}, recu "${[domain, given].filter(Boolean).join(' ')}".`);
+  // Le chemin tel que l'utilisateur l'a tape apres son `mv` : raw/<domaine>/…, ./…, ou un antislash (Windows).
+  const rel = given.replace(/\\/g, '/').replace(/^\.\//, '').replace(new RegExp(`^raw/${domain}/`), '');
+  if (path.isAbsolute(rel) || rel.split('/').includes('..')) fail(`${usage} : chemin hors de raw/${domain}/ refuse ("${given}").`);
+  const r = node(PENDING, ['add', domain, rel]);
+  if (r.status !== 0) process.exit(1);
+  console.log(`Remise en file. Suite : kioku plaud --skip-fetch`);
+  process.exit(0);
+}
+
 // Le registre des organisations du coffre vise (--vault), pas celui de la session qui lance ce script : celui que
 // declare l'extension org de la configuration. Declare mais absent ou invalide : rien ne part, le tri ne saurait pas
 // ce que couvre ce domaine. Aucun domaine a extension org : le tri ne propose aucune organisation.
@@ -275,6 +312,13 @@ if (target) {
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
   }
+}
+// Une organisation imposee par --decide : seulement dans le domaine qui porte l'extension org, et du registre.
+// Refus avant toute session : une organisation inconnue serait ignoree en silence par parseOrgLines.
+for (const d of decisions.filter((x) => x.orgIds)) {
+  if (d.domain !== ORG_DOMAIN || !orgs) fail(`--decide ${d.file} : une organisation ne s'impose que dans le domaine a extension org${ORG_DOMAIN ? ` (${ORG_DOMAIN})` : ' (aucun ici)'}.`);
+  const unknown = d.orgIds.filter((id) => !orgs.ids.has(id));
+  if (unknown.length) fail(`--decide ${d.file} : organisation hors registre : ${unknown.join(', ')} (registre : ${[...orgs.ids].join(', ')}).`);
 }
 const triageScope = { domains: DOMAINS.map((id) => CFG.domain(id)), orgDomain: ORG_DOMAIN };
 // Les organisations proposees par le tri, par source du domaine a extension org (chemin relatif a raw/<domaine>/).
@@ -296,6 +340,8 @@ if (flag('--dry-run')) {
 // Sans decision explicite, inbox/a-trancher/ n'est pas re-trie : une source indecise ne bloque pas les lancements suivants.
 const decided = decisions.map((d) => (existsSync(path.join(PARKED, d.file)) ? `a-trancher/${d.file}` : d.file));
 const toSort = [...new Set([...inbox(), ...decided])];
+// Les notes que le tri dit sans contenu (ligne VIDE), parquees comme les indecis : fichier -> raison.
+let empties = new Map();
 if (toSort.length) {
   title(`Tri de ${toSort.length} source(s) de l'entrant`);
   node(PENDING, ['snapshot'], { capture: true });
@@ -304,13 +350,59 @@ if (toSort.length) {
   node(PENDING, ['queue']);
   if (code !== 0) console.warn(`Attention : la session de tri a rendu le code ${code}.`);
   if (orgs) orgProposals = parseOrgLines(out, orgs, undefined, ORG_DOMAIN);
+  // L'organisation imposee par l'utilisateur (--decide f=pro:org) l'emporte sur celle du tri. La file connait la source
+  // par son chemin sous raw/<domaine>/, l'utilisateur par son nom dans l'entrant : on la retrouve par le nom.
+  const imposed = decisions.filter((x) => x.orgIds);
+  if (imposed.length) {
+    const filed = queue().filter((e) => e.domain === ORG_DOMAIN);
+    for (const d of imposed) {
+      const hit = filed.filter((e) => path.basename(e.rel) === d.file);
+      if (hit.length === 1) orgProposals.set(hit[0].rel, d.orgIds);
+      else console.warn(`  (organisation imposee pour ${d.file} non appliquee : source ${hit.length ? 'en double' : 'introuvable'} sous raw/${ORG_DOMAIN}/ apres le tri (renommee ou non rangee) ; l'ingestion decidera)`);
+    }
+  }
   // Les raisons dites par la session ; ce qu'elle a laisse dans l'entrant sans rien ranger est parque par le script (parquer ne classe rien).
-  const why = new Map([...out.matchAll(/^ABSTENTION\s+(\S+)\s*:\s*(.+)$/gm)].map((m) => [path.basename(m[1]), m[2].trim()]));
+  const why = new Map([
+    ...[...out.matchAll(/^ABSTENTION\s+(\S+)\s*:\s*(.+)$/gm)].map((m) => [path.basename(m[1]), m[2].trim()]),
+    ...[...out.matchAll(/^VIDE\s+(\S+)\s*:\s*(.+)$/gm)].map((m) => [path.basename(m[1]), `sans contenu : ${m[2].trim()}`]),
+  ]);
   const leftover = new Set(inbox());
   for (const [f, reason] of why) if (!leftover.has(f) && existsSync(path.join(PARKED, f))) logReason(f, reason);
   for (const f of leftover) park(f, why.get(f) ?? "tri sans resultat : la session ne l'a ni rangee ni signalee");
+  // Une source tranchee par l'utilisateur (--decide) n'est jamais proposee a l'ecart, meme si la session la dit vide.
+  const decidedFiles = new Set(decisions.map((d) => d.file));
+  empties = parseEmptyLines(out, parked().filter((f) => !decidedFiles.has(f)));
 } else {
   console.log('\nEntrant vide : rien a trier.');
+}
+
+// 2 ter. Ecart propose : les notes que le tri dit sans contenu (test de connexion, fragment, silence) restent
+// parquees, et l'utilisateur peut les ecarter ici d'un mot au lieu d'un `--drop` a part. Ecarter est irreversible
+// (plaud_id consigne « ecarte » dans seen.json, jamais redepose) : on montre taille et raison, Entree = non, et ni
+// --yes ni l'absence de terminal n'ecartent rien. --yes veut dire « ingere sans demander », pas « supprime ».
+if (empties.size) {
+  title(`${empties.size} note(s) sans contenu selon le tri, parquees dans inbox/a-trancher/`);
+  for (const [f, reason] of empties) console.log(`  ${f}  (${statSync(path.join(PARKED, f)).size} octets) : ${reason}`);
+  let drop = false;
+  if (flag('--yes') || !process.stdin.isTTY) {
+    console.log(`${flag('--yes') ? '--yes n\'ecarte rien' : 'Pas de terminal'} : elles restent parquees (kioku plaud --drop <fichier> pour les ecarter).`);
+  } else {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const a = (await rl.question('Les ecarter pour de bon (elles ne reviendront pas) ? [o]ui / [N]on ')).trim().toLowerCase();
+    rl.close();
+    drop = ['o', 'oui', 'y', 'yes'].includes(a);
+  }
+  if (drop) {
+    let failed = 0;
+    for (const f of empties.keys()) {
+      const r = dropParked(VAULT, f);
+      if (r.ok) console.log(`ecarte   ${f}  (${r.id}${r.registered ? '' : ', deja dans seen.json'})`);
+      else (failed++, console.error(`REFUSE   ${f} : ${r.reason}`));
+    }
+    console.log(`${empties.size - failed} / ${empties.size} ecartee(s). seen.json est versionne : a commiter.`);
+  } else if (process.stdin.isTTY && !flag('--yes')) {
+    console.log('Gardees : elles restent parquees et listees au rapport.');
+  }
 }
 
 // 3. Ingestion : une session par source, dans le domaine de son dossier raw/<domaine>/
@@ -396,8 +488,8 @@ if (go) {
       'Ingestion annulee : les sources restent dans raw/ et dans la file, rien n\'est ecrit.\n' +
         'Une source dans le mauvais domaine (etat neuf seulement) : deplace-la, remets-la dans la file, relance :\n' +
         '  mv raw/<de>/<chemin> raw/<vers>/<chemin>\n' +
-        '  node tools/plaud-sync/pending.mjs add <vers> <chemin>\n' +
-        '  node tools/plaud-sync/run.mjs --skip-fetch',
+        '  kioku plaud --requeue <vers> <chemin>\n' +
+        '  kioku plaud --skip-fetch',
     );
   }
 }
@@ -450,8 +542,8 @@ if (left.length) {
 }
 if (undecided.length) {
   console.log(`\nA trancher a part (${undecided.length}) : inbox/a-trancher/ (raisons dans _raisons.md). Pour en decider une :`);
-  console.log(`  node tools/plaud-sync/run.mjs --skip-fetch --decide <fichier>=<${DOMAINS.join('|')}>`);
-  console.log('  npm run plaud:drop -- <fichier> [<fichier>...]                   (ecartee pour de bon, ne revient pas)');
+  console.log(`  kioku plaud --skip-fetch --decide <fichier>=<${DOMAINS.join('|')}>${ORG_DOMAIN ? `[:<org>]` : ''}   (repetable${ORG_DOMAIN ? `, :<org> impose l'organisation en ${ORG_DOMAIN}` : ''})`);
+  console.log('  kioku plaud --drop <fichier> [<fichier>...]                      (ecartee pour de bon, ne revient pas)');
   for (const f of undecided) console.log(`  ${f}`);
 }
 console.log('\nA decider (retenues par la gate, codes seulement) :');

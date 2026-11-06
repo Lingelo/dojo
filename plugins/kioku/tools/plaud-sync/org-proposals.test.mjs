@@ -32,6 +32,23 @@ beforeEach(() => {
 afterEach(() => rmSync(vault, { recursive: true, force: true }));
 
 describe('prompt du tri depuis le registre', () => {
+  test('demande une ligne VIDE pour une note sans contenu, sans jamais rien supprimer', () => {
+    for (const p of [triagePrompt(registry(BASE), ['a.md'], [], SCOPE), triagePrompt(null, ['a.md'], [], { domains: SCOPE.domains, orgDomain: null })]) {
+      assert.match(p, /VIDE <fichier> : <raison en une phrase>/);
+      assert.match(p, /une note courte qui porte une decision, une date ou une action n'est pas vide/);
+      assert.match(p, /Ne supprime jamais rien/);
+      assert.doesNotMatch(p, /["\n]/, 'une seule ligne, sans guillemets (cmd.exe)');
+    }
+  });
+
+  test('transmet l organisation imposee par --decide et interdit de renommer', () => {
+    const p = triagePrompt(registry(BASE), ['a.md'], [{ file: 'a.md', domain: 'pro', orgIds: ['acme'] }, { file: 'b.md', domain: 'perso', orgIds: null }], SCOPE);
+    assert.match(p, /sans renommer le fichier/);
+    assert.match(p, /a\.md -> pro \(organisation acme, a reprendre telle quelle dans sa ligne ORG\)/);
+    assert.match(p, /b\.md -> perso(?! \()/);
+    assert.doesNotMatch(p, /["\n]/);
+  });
+
   test('cite l employeur et le client du registre', () => {
     const p = triagePrompt(registry(BASE), ['a.md'], [], SCOPE);
     assert.match(p, /employeur ACME \[acme\]/);

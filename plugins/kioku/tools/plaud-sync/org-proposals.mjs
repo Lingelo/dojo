@@ -53,11 +53,17 @@ export const triagePrompt = (reg, paths, decisions, scope) => {
       : '') +
     `. Au moindre doute (organisation sans lien avec les domaines, source mixte, donnee sensible) ne range pas : deplace le fichier vers inbox/a-trancher/ avec mv ` +
     `et ecris une ligne ABSTENTION <fichier> : <raison en une phrase, sans recopier de contenu sensible>. ` +
+    `Une note SANS CONTENU EXPLOITABLE (test de connexion, fragment d'une phrase, silence, rien qui puisse entrer dans un wiki) : ` +
+    `deplace-la de meme vers inbox/a-trancher/ et ecris une ligne VIDE <fichier> : <raison en une phrase> au lieu d'ABSTENTION ; ` +
+    `une note courte qui porte une decision, une date ou une action n'est pas vide. Ne supprime jamais rien : l'utilisateur decide de l'ecart. ` +
     (reg && orgDomain
       ? `Pour chaque source rangee en ${orgDomain}, ecris une ligne ORG <chemin relatif a raw/${orgDomain}/> : <identifiants du registre separes par des virgules>. `
       : '') +
     `Ne range que dans raw/<${ids.join('|')}>/. Ne pose aucune question.` +
-    (decisions?.length ? ` Decisions explicites de l'utilisateur, a appliquer sans t'abstenir : ${decisions.map((d) => `${d.file} -> ${d.domain}`).join(' ; ')}.` : '')
+    (decisions?.length
+      ? ` Decisions explicites de l'utilisateur, a appliquer sans t'abstenir et sans renommer le fichier : ` +
+        `${decisions.map((d) => `${d.file} -> ${d.domain}${d.orgIds?.length ? ` (organisation ${d.orgIds.join(',')}, a reprendre telle quelle dans sa ligne ORG)` : ''}`).join(' ; ')}.`
+      : '')
   );
 };
 
