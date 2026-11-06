@@ -15,7 +15,9 @@
  * la main, et une suppression silencieuse perdrait ce travail. Il est signale.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import { KIOKU_ID as PLUGIN_ID } from './plugin-install.mjs';
 
@@ -76,8 +78,8 @@ export const domainScripts = (d) => ({
   [`dashboard:serve:${d}`]: `kioku dashboard ${d} --serve`,
 });
 
-/** Tous les scripts geres d'un coffre : communs, par domaine, Plaud si le module est declare. */
-export const managedScripts = (domains, { plaud = false } = {}) => ({
+/** Tous les scripts geres d'un coffre : communs, par domaine, Plaud et mail si le module est declare. */
+export const managedScripts = (domains, { plaud = false, mail = false } = {}) => ({
   vault: 'kioku session',
   triage: 'kioku session --mode triage',
   setup: 'kioku session --mode setup',
@@ -89,6 +91,9 @@ export const managedScripts = (domains, { plaud = false } = {}) => ({
   ...Object.assign({}, ...domains.map(domainScripts)),
   ...(plaud
     ? { 'plaud:sync': 'kioku plaud', 'plaud:dry-run': 'kioku plaud --dry-run', 'plaud:pending': 'kioku plaud --skip-fetch', 'plaud:drop': 'kioku plaud --drop' }
+    : {}),
+  ...(mail
+    ? { 'mail:sync': 'kioku mail', 'mail:dry-run': 'kioku mail --dry-run', 'mail:pending': 'kioku mail --skip-fetch', 'mail:drop': 'kioku mail --drop', 'mail:login': 'kioku mail --login' }
     : {}),
 });
 
@@ -136,6 +141,20 @@ export const gitignoreBlock = ({ plaud = false } = {}) =>
     '.env.*',
     '# HTML du dashboard : le contenu du wiki en clair',
     'tools/dashboard/dashboard-*.html',
+    // L'etat local des circuits de capture, dans tout coffre, module Plaud ou non. Le verrou commun
+    // (tools/connectors/lock.mjs) est pris par tout circuit et par rotate-log, tag-org, tag-raw, upgrade, add-domain ;
+    // son miroir de transition (tools/plaud-sync/.lock.json) aussi, y compris dans un coffre sans module Plaud. La
+    // file et la photo vivent dans le dossier d'etat de chaque connecteur (tools/<connecteur>/). Un motif a un seul
+    // niveau sous tools/ couvre les trois, pour tout connecteur, sans nommer de module ici.
+    "# Etat local des circuits de capture : verrou du coffre, file d'ingestion, photo de raw/",
+    'tools/*/.lock.json',
+    'tools/*/.queue.json',
+    'tools/*/.snapshot.json',
+    // Les reglages propres au poste : kioku init / upgrade y posent une regle de refus absolue (XDG_CONFIG_HOME) ; Claude
+    // Code ignore ce fichier quand il le cree, pas quand c'est Kioku. Verifie : un settings.local.json suivi par git est
+    // tenu pour fourni par le depot (doc des permissions).
+    '# Reglages Claude Code propres a ce poste',
+    '.claude/settings.local.json',
     ...(plaud ? ['# Etat local du circuit Plaud', 'tools/plaud-sync/.snapshot.json', 'tools/plaud-sync/.queue.json', 'tools/plaud-sync/.lock.json'] : []),
     BLOCK_END,
   ].join('\n');
@@ -168,8 +187,76 @@ export const mergeSettings = (settings = {}) => {
   return { ...rest, ...(Object.keys(markets).length ? { extraKnownMarketplaces: markets } : {}), enabledPlugins: { ...plugins, [PLUGIN_ID]: true } };
 };
 
+/**
+ * Regles `permissions.deny` de Claude Code posees par le core (verification finale, point c) : une seconde barriere,
+ * tenue par Claude Code lui-meme, derriere la garde. Syntaxe de la documentation officielle
+ * (https://code.claude.com/docs/en/permissions, « Read and Edit ») : `~/chemin` part du dossier personnel, `//chemin`
+ * est absolu, `/chemin` est relatif au fichier de reglages (pour .claude/settings.json : la racine du coffre). Une
+ * regle Read en refus bloque aussi Edit et Write sur le meme chemin, pas NotebookEdit : d'ou les deux. Elles valent pour
+ * les outils de fichiers et pour les commandes Bash que Claude Code reconnait (cat, head, tee, redirections…), pas pour
+ * un sous-processus qui ouvre les fichiers lui-meme (la gate, le dashboard : c'est voulu). La casse des chemins dans
+ * ces regles n'est pas documentee : la garde reste la barriere principale.
+ *
+ * Portables (dans .claude/settings.json, versionne) : le dossier de configuration du module mail aux emplacements par
+ * defaut (macOS/Linux, Windows), et les zones qu'aucune session ne lit ni n'ecrit (la gate y passe par `kioku`).
+ */
+export const KIOKU_DENY = [
+  'Read(~/.config/kioku/**)',
+  'Edit(~/.config/kioku/**)',
+  'Read(~/AppData/Roaming/kioku/**)',
+  'Edit(~/AppData/Roaming/kioku/**)',
+  'Read(/quarantine/**)',
+  'Edit(/quarantine/**)',
+  'Read(/.verdicts/**)',
+  'Edit(/.verdicts/**)',
+];
+
+/**
+ * Regles propres a la machine (dans .claude/settings.local.json, non versionne) : un XDG_CONFIG_HOME qui n'est pas
+ * ~/.config, en chemin absolu (`//…`). Sans lui : aucune.
+ */
+/**
+ * Forme canonique d'un chemin : realpath du plus long parent existant (liens resolus, casse reelle du volume), le reste
+ * recolle. Sert a reconnaitre un XDG_CONFIG_HOME qui designe en fait ~/.config (lien, `..`, casse) : l'emplacement par
+ * defaut, deja couvert par la regle portable `~/.config/kioku/**`.
+ */
+const canonicalPath = (p) => {
+  let cur = path.resolve(p);
+  const rest = [];
+  while (!existsSync(cur)) {
+    const parent = path.dirname(cur);
+    if (parent === cur) return path.resolve(p);
+    rest.unshift(path.basename(cur));
+    cur = parent;
+  }
+  try {
+    return path.join(realpathSync.native(cur), ...rest);
+  } catch {
+    return path.resolve(p);
+  }
+};
+
+export const localDenyRules = (env = process.env, home = os.homedir()) => {
+  const xdg = env.XDG_CONFIG_HOME;
+  if (!xdg) return [];
+  const canonical = canonicalPath(xdg);
+  const fold = (s) => (process.platform === 'darwin' || process.platform === 'win32' ? s.toLowerCase() : s);
+  if (fold(canonical) === fold(canonicalPath(path.join(home, '.config')))) return [];
+  const posix = canonical.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (_, d) => `/${d.toLowerCase()}`);
+  const anchor = `/${posix}/kioku/**`.replace(/^\/+/, '//');
+  return [`Read(${anchor})`, `Edit(${anchor})`];
+};
+
+/** Ajoute les regles voulues a permissions.deny : ajout seul, ordre et regles de l'utilisateur conserves, aucun doublon. */
+export const mergeDenyRules = (settings = {}, rules = KIOKU_DENY) => {
+  const deny = Array.isArray(settings.permissions?.deny) ? settings.permissions.deny : [];
+  const missing = rules.filter((r) => !deny.includes(r));
+  if (!missing.length) return settings;
+  return { ...settings, permissions: { ...(settings.permissions ?? {}), deny: [...deny, ...missing] } };
+};
+
 /** Ajout seul : une cle absente de la config est posee, une valeur presente n'est jamais remplacee. */
-export const mergeConfig = (config, { domains, plaud = false }) => {
+export const mergeConfig = (config, { domains, plaud = false, mail = false }) => {
   const out = { ...config };
   const added = [];
   if (out.format === undefined) {
@@ -188,6 +275,11 @@ export const mergeConfig = (config, { domains, plaud = false }) => {
   if (plaud && modules.plaud === undefined) {
     modules.plaud = { state: 'tools/plaud-sync' };
     added.push('modules.plaud');
+  }
+  // Module mail : l'etat dans le coffre, les comptes a declarer par l'utilisateur (aucun par defaut).
+  if (mail && modules.mail === undefined) {
+    modules.mail = { state: 'tools/mail-sync', accounts: [] };
+    added.push('modules.mail');
   }
   out.modules = modules;
   return { config: out, added };

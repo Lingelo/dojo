@@ -2,11 +2,11 @@
 /**
  * kioku : creer un coffre, y ajouter un silo, prouver le cloisonnement (plan core/data, U9).
  *
- *   kioku init <dossier> [--domains a,b] [--org <domaine>] [--plaud] [--guard-hook]
+ *   kioku init <dossier> [--domains a,b] [--org <domaine>] [--plaud] [--mail] [--guard-hook]
  *   kioku add-domain <nom> [--preset <preset>] [--description <texte>] [--vault <dossier>]
  *   kioku doctor [--vault <dossier>]
  *   kioku upgrade [--write] [--vault <dossier>]   amene un coffre existant a la forme courante d'init (simulation par defaut)
- *   kioku session|dashboard|plaud …   les outils du core (lanceur, dashboard, Plaud), relayes tels quels (voir toolCommand)
+ *   kioku session|dashboard|plaud|mail …   les outils du core (lanceur, dashboard, Plaud, mail), relayes tels quels (voir toolCommand)
  *   kioku check|verdict|promote|stage|audit|undecided|… <arguments>   la gate (voir hooks/vault.mjs), relayee telle quelle
  *
  * `kioku` est l'entree unique du core : `bin/kioku` sur le PATH (le plugin ajoute son bin/ au PATH des sessions ; le
@@ -33,9 +33,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { CONFIG_NAME, DOMAIN_ID, loadConfig, locateVault, vaultMarkers } from '../hooks/config.mjs';
-import { appendTopLevelKeys, gitignoreBlock, INSTALL_HINT, managedScripts, mergeConfig, mergeGitignore, mergeScripts, mergeSettings, PLUGIN_ID, VAULT_FORMAT } from './managed.mjs';
+import { appendTopLevelKeys, gitignoreBlock, INSTALL_HINT, localDenyRules, managedScripts, mergeConfig, mergeDenyRules, mergeGitignore, mergeScripts, mergeSettings, PLUGIN_ID, VAULT_FORMAT } from './managed.mjs';
 import { formatRefusal } from './plugin-install.mjs';
-import { acquire, release } from './plaud-sync/lock.mjs';
+import { acquire, holderText, release } from './connectors/lock.mjs';
+import { fileWarning, secretStore } from './mail-sync/secret-store.mjs';
 
 export { PLUGIN_ID };
 
@@ -382,6 +383,16 @@ export const doctor = (vault, { live = false, pluginDir, home } = {}) => {
   if (!existsSync(schema)) problems.push(`${SCHEMA_REL} absent : les sessions n'ont pas le schema commun (CLAUDE.md l'importe)`);
   else if (readFileSync(schema, 'utf8') !== expected) notes.push(`${SCHEMA_REL} differe du schema de ce core : version differente, ou modifie a la main`);
 
+  // Module mail : ou sont ses secrets. En fichier (repli), on le dit a chaque doctor.
+  if (cfg.modules.mail) {
+    try {
+      const store = secretStore({ mode: cfg.modules.mail.secretStore ?? 'keychain' });
+      notes.push(store.file ? `mail : ${fileWarning(store)}` : `mail : secrets au ${store.kind} (service kioku-mail)`);
+    } catch (error) {
+      notes.push(`mail : magasin de secrets inutilisable (${error instanceof Error ? error.message : String(error)})`);
+    }
+  }
+
   if (!guard && !pluginDir) isolation.push(`garde non branchee : ${why}`);
   else {
     const script = guard ?? CORE_GUARD;
@@ -432,7 +443,7 @@ const domainJournals = (vault, d) => {
   for (const f of ['index.md', 'log.md']) create(path.join(vault, 'wiki', d, f), journalText(d, f));
 };
 
-export const init = (target, { domains = ['pro', 'perso'], org = null, plaud = false, guardHook = false } = {}) => {
+export const init = (target, { domains = ['pro', 'perso'], org = null, plaud = false, mail = false, guardHook = false } = {}) => {
   const vault = path.resolve(target);
   if (path.relative(CORE, vault) === '' ) return { code: EXIT.precondition, lines: ['init : refuse sur le core lui-meme'] };
   // Seul .git est tolere : un depot vide (git init, clone d'un depot neuf) ne porte aucune donnee de coffre.
@@ -451,7 +462,7 @@ export const init = (target, { domains = ['pro', 'perso'], org = null, plaud = f
     version: 1,
     format: VAULT_FORMAT,
     domains: domains.map((id) => (id === org ? { id, extensions: { org: { registry: 'orgs.json' } } } : { id })),
-    modules: { ...(plaud ? { plaud: { state: 'tools/plaud-sync' } } : {}), dashboard: {} },
+    modules: { ...(plaud ? { plaud: { state: 'tools/plaud-sync' } } : {}), ...(mail ? { mail: { state: 'tools/mail-sync', accounts: [] } } : {}), dashboard: {} },
     // Un `claude` lance a nu dans le coffre (sans le lanceur) ouvre une session query du premier domaine, pas un refus.
     default_session: { mode: 'query', domain: domains[0] },
   };
@@ -474,19 +485,24 @@ export const init = (target, { domains = ['pro', 'perso'], org = null, plaud = f
   const settings = guardHook
     ? { hooks: { PreToolUse: [{ matcher: 'Write|Edit|MultiEdit|NotebookEdit|Read|Grep|Glob|NotebookRead|Bash', hooks: [{ type: 'command', command: GUARD_HOOK_COMMAND(CORE_GUARD) }] }] } }
     : mergeSettings({});
-  create(path.join(vault, '.claude', 'settings.json'), `${JSON.stringify(settings, null, 2)}\n`);
+  // Les regles permissions.deny de Kioku (managed.mjs, KIOKU_DENY), en plus de la garde ; celles propres a la machine
+  // (un XDG_CONFIG_HOME hors ~/.config) dans settings.local.json, qui ne se versionne pas.
+  create(path.join(vault, '.claude', 'settings.json'), `${JSON.stringify(mergeDenyRules(settings), null, 2)}\n`);
+  const localRules = localDenyRules();
+  if (localRules.length) create(path.join(vault, '.claude', 'settings.local.json'), `${JSON.stringify(mergeDenyRules({}, localRules), null, 2)}\n`);
   create(path.join(vault, SCHEMA_REL), schemaText(guardHook ? {} : { KIOKU_PLUGIN: 'kioku' }));
   create(path.join(vault, 'CLAUDE.md'), readFileSync(path.join(TEMPLATES, 'vault-CLAUDE.md'), 'utf8'));
   create(path.join(vault, '.gitignore'), mergeGitignore('', gitignoreBlock({ plaud })));
   // Fins de ligne LF partout : la gate hache les contenus, la garde compare des chemins ; un CRLF de Windows les fausse.
   create(path.join(vault, '.gitattributes'), '* text=auto eol=lf\n');
-  create(path.join(vault, 'package.json'), `${JSON.stringify({ name: path.basename(vault).toLowerCase().replace(/[^a-z0-9-]+/g, '-'), private: true, scripts: managedScripts(domains, { plaud }) }, null, 2)}\n`);
+  create(path.join(vault, 'package.json'), `${JSON.stringify({ name: path.basename(vault).toLowerCase().replace(/[^a-z0-9-]+/g, '-'), private: true, scripts: managedScripts(domains, { plaud, mail }) }, null, 2)}\n`);
   mkdirSync(path.join(vault, 'inbox'), { recursive: true });
 
   const d = doctor(vault);
   const next = [
     'etapes suivantes :',
     ...(org ? [`  - remplir le registre des organisations : ${path.join(vault, 'orgs.json')}`] : []),
+    ...(mail ? ['  - mail : client OAuth Desktop dans ~/.config/kioku/mail/client.json, comptes dans modules.mail.accounts, puis npm run mail:login -- <compte> (guide : Capture modules)'] : []),
     `  - completer ${path.join(vault, 'CLAUDE.md')} (contexte propre a ce coffre)`,
     ...(guardHook
       ? ['  - garde : hook vers ce clone (--guard-hook), aucun plugin a installer']
@@ -519,6 +535,7 @@ const textOf = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
 export const planUpgrade = (vault, { only } = {}) => {
   const cfg = loadConfig(vault);
   const plaud = cfg.modules.plaud !== undefined;
+  const mail = cfg.modules.mail !== undefined;
   const changes = [];
   const notes = [];
   const want = (rel) => !only || only.includes(rel);
@@ -533,7 +550,7 @@ export const planUpgrade = (vault, { only } = {}) => {
       notes.push(`package.json ${r.error ?? 'n est pas un objet'} : non modifie, scripts a ajouter a la main`);
     } else {
       const pkg = r.data ?? { name: path.basename(vault).toLowerCase().replace(/[^a-z0-9-]+/g, '-'), private: true };
-      const m = mergeScripts(pkg.scripts ?? {}, managedScripts(cfg.domains, { plaud }));
+      const m = mergeScripts(pkg.scripts ?? {}, managedScripts(cfg.domains, { plaud, mail }));
       if (m.kept.length) notes.push(`package.json : ${m.kept.join(', ')} occupe(s) par un script maison (sans prefixe kioku), laisse(s)`);
       if (m.stale.length) notes.push(`package.json : ${m.stale.join(', ')} gere(s) mais plus produit(s) par init, laisse(s) : a retirer a la main si inutile(s)`);
       put('package.json', json({ ...pkg, scripts: m.scripts }));
@@ -550,7 +567,7 @@ export const planUpgrade = (vault, { only } = {}) => {
   if (want(CONFIG_NAME)) {
     // Ajout seul : rien a ajouter = fichier laisse tel quel (sa mise en forme comprise).
     const text = readFileSync(cfg.file, 'utf8');
-    const merged = mergeConfig(JSON.parse(text), { domains: cfg.domains, plaud });
+    const merged = mergeConfig(JSON.parse(text), { domains: cfg.domains, plaud, mail });
     if (merged.added.length) {
       // Cles de premier niveau seulement : inserees sans reformater le fichier ; sinon, reecriture complete.
       const topLevel = merged.added.every((k) => !k.includes('.'));
@@ -569,11 +586,25 @@ export const planUpgrade = (vault, { only } = {}) => {
     const r = readJson(path.join(vault, rel));
     const { guard, source: kind } = registeredGuard(vault, { home: null });
     if (r.error) notes.push(`${rel} ${r.error} : plugin non declare`);
-    else if (kind === 'projet' && guard) notes.push(`${rel} : hook de garde du projet present, plugin non active (sinon double garde) ; bascule vers le plugin a faire a la main`);
-    else {
-      // Deja a la forme voulue : fichier laisse tel quel, mise en forme comprise.
-      const merged = mergeSettings(r.data ?? {});
+    else if (kind === 'projet' && guard) {
+      notes.push(`${rel} : hook de garde du projet present, plugin non active (sinon double garde) ; bascule vers le plugin a faire a la main`);
+      // Les regles de refus valent aussi avec un hook du projet : seules elles sont ajoutees.
+      const merged = mergeDenyRules(r.data ?? {});
       if (JSON.stringify(merged) !== JSON.stringify(r.data)) put(rel, json(merged));
+    } else {
+      // Deja a la forme voulue : fichier laisse tel quel, mise en forme comprise.
+      const merged = mergeDenyRules(mergeSettings(r.data ?? {}));
+      if (JSON.stringify(merged) !== JSON.stringify(r.data)) put(rel, json(merged));
+    }
+  }
+  const localRel = path.join('.claude', 'settings.local.json');
+  const localRules = localDenyRules();
+  if (want(localRel) && localRules.length) {
+    const r = readJson(path.join(vault, localRel));
+    if (r.error) notes.push(`${localRel} ${r.error} : regles de refus propres a ce poste non ajoutees`);
+    else {
+      const merged = mergeDenyRules(r.data ?? {}, localRules);
+      if (JSON.stringify(merged) !== JSON.stringify(r.data)) put(localRel, json(merged));
     }
   }
   if (want(SCHEMA_REL)) {
@@ -615,8 +646,8 @@ export const upgrade = (vaultDir, { write = false } = {}) => {
       lines: [`upgrade : simulation, ${plan.changes.length} fichier(s) a modifier (relance avec --write pour appliquer)`, ...plan.changes.flatMap(showDiff), ...notes],
     };
   }
-  const lock = acquire(vault);
-  if (!lock.ok) return { code: EXIT.precondition, lines: [`upgrade : le circuit Plaud tourne (PID ${lock.held?.pid}), relance apres`] };
+  const lock = acquire(vault, { owner: 'kioku upgrade' });
+  if (!lock.ok) return { code: EXIT.precondition, lines: [`upgrade : ${holderText(lock.held)}, relance apres`] };
   try {
     for (const c of plan.changes) writeAtomic(path.join(vault, c.rel), c.after);
   } finally {
@@ -645,8 +676,8 @@ export const addDomain = (vaultDir, name, { preset = 'minimal', description } = 
   const leftovers = ['wiki', 'raw', 'silver', 'quarantine', 'domains'].map((z) => path.join(z, name)).filter((rel) => existsSync(path.join(vault, rel)));
   if (leftovers.length) return { code: EXIT.precondition, lines: [`add-domain : deja present sur le disque, rien n'est ecrit : ${leftovers.join(', ')}`] };
 
-  const lock = acquire(vault);
-  if (!lock.ok) return { code: EXIT.precondition, lines: [`add-domain : le circuit Plaud tourne (PID ${lock.held?.pid}), relance apres`] };
+  const lock = acquire(vault, { owner: 'kioku add-domain' });
+  if (!lock.ok) return { code: EXIT.precondition, lines: [`add-domain : ${holderText(lock.held)}, relance apres`] };
   try {
     skeleton(vault, name);
     domainJournals(vault, name);
@@ -674,7 +705,7 @@ export const addDomain = (vaultDir, name, { preset = 'minimal', description } = 
 
 const USAGE = [
   'usage :',
-  '  kioku init <dossier> [--domains a,b] [--org <domaine>] [--plaud] [--guard-hook]',
+  '  kioku init <dossier> [--domains a,b] [--org <domaine>] [--plaud] [--mail] [--guard-hook]',
   '      (le coffre active le plugin kioku@dojo de la marketplace dojo ; --guard-hook : hook vers ce clone, sans plugin)',
   '  kioku add-domain <nom> [--preset <preset>] [--description <texte>] [--vault <dossier>]',
   '  kioku upgrade [--write] [--vault <dossier>]   (simulation par defaut : diff des parties gerees ; --write applique)',
@@ -682,6 +713,7 @@ const USAGE = [
   '  kioku session [<domaine>] [--mode ingest|triage|setup] [--lint] [-- <args claude>]   (ouvre une session du coffre)',
   '  kioku dashboard [<domaine>|all] [--serve]   (HTML statique, ou serveur local au premier plan)',
   '  kioku plaud [--dry-run|--skip-fetch|--drop <fichier>|…]   (circuit Plaud du coffre courant)',
+  '  kioku mail [--login <compte>|--dry-run|--skip-fetch|--account <id>|--drop <fichier>|…]   (circuit mail du coffre courant)',
   `  kioku ${GATE_COMMANDS.join('|')} <arguments>   (la gate)`,
   'Retirer ou renommer un domaine ne passe pas par ce CLI : a la main, hors session (configuration, dossiers, regles),',
   'puis kioku doctor.',
@@ -703,7 +735,7 @@ const main = (argv, env) => {
   if (cmd === 'init') {
     if (!positional[0]) return { code: EXIT.precondition, lines: [USAGE] };
     const domains = (opt('--domains') ?? 'pro,perso').split(',').map((s) => s.trim()).filter(Boolean);
-    return init(positional[0], { domains, org: opt('--org') ?? null, plaud: rest.includes('--plaud'), guardHook: rest.includes('--guard-hook') });
+    return init(positional[0], { domains, org: opt('--org') ?? null, plaud: rest.includes('--plaud'), mail: rest.includes('--mail'), guardHook: rest.includes('--guard-hook') });
   }
   if (cmd === 'upgrade') {
     // Simulation par defaut : n'ecrit rien sans --write. L'ecriture touche la configuration : setup ou terminal.
@@ -728,6 +760,7 @@ const main = (argv, env) => {
  *   dashboard [<D>|all]       tools/dashboard/run.mjs                  (HTML statique)
  *   dashboard <D> --serve     tools/dashboard/serve.mjs <D>            (serveur au premier plan, Ctrl-C)
  *   plaud [args]              tools/plaud-sync/run.mjs --vault . [args]
+ *   mail [args]               tools/mail-sync/run.mjs --vault . [args]
  */
 export const toolCommand = (argv) => {
   const [cmd, ...rest] = argv;
@@ -739,6 +772,7 @@ export const toolCommand = (argv) => {
     return [path.join(tools, 'dashboard', 'run.mjs'), ...rest];
   }
   if (cmd === 'plaud') return [path.join(tools, 'plaud-sync', 'run.mjs'), '--vault', '.', ...rest];
+  if (cmd === 'mail') return [path.join(tools, 'mail-sync', 'run.mjs'), '--vault', '.', ...rest];
   return null;
 };
 

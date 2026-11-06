@@ -8,7 +8,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { isAlive } from '../plaud-sync/lock.mjs';
+import { isAlive } from '../connectors/lock.mjs';
 
 /**
  * Lit un fichier JSON de maniere sure, sans lever d'exception.
@@ -29,33 +29,39 @@ const safeReadJson = (filePath) => {
 /**
  * Lit les etats locaux de la machine pour le tableau de bord.
  */
+/** Les circuits de capture et leur dossier d'etat (relatif au coffre). */
+const CIRCUITS = [
+  ['plaud', 'tools/plaud-sync'],
+  ['mail', 'tools/mail-sync'],
+];
+
 export const readLocalState = (vaultRoot, domain = null) => {
   const stateDir = path.join(vaultRoot, 'tools', 'plaud-sync');
-  const queueFile = path.join(stateDir, '.queue.json');
   const snapshotFile = path.join(stateDir, '.snapshot.json');
-  const lockFile = path.join(stateDir, '.lock.json');
+  // Le verrou commun du coffre (tools/connectors/lock.mjs) ; l'ancien emplacement, tenu en miroir, en repli.
+  const canonicalLock = path.join(vaultRoot, 'tools', 'connectors', '.lock.json');
+  const lockFile = existsSync(canonicalLock) ? canonicalLock : path.join(stateDir, '.lock.json');
   const arbitrationDir = path.join(vaultRoot, 'inbox', 'a-trancher');
   const inboxDir = path.join(vaultRoot, 'inbox');
 
-  // 1. File d'attente d'ingestion Plaud (.queue.json)
-  const qRead = safeReadJson(queueFile);
+  // 1. Files d'attente d'ingestion des circuits (.queue.json de Plaud et du mail), additionnees ; byCircuit les detaille.
+  const queues = CIRCUITS.map(([name, rel]) => [name, safeReadJson(path.join(vaultRoot, ...rel.split('/'), '.queue.json'))]).filter(([, r]) => r.exists);
   let queueState;
-  if (!qRead.exists) {
+  const badQueue = queues.find(([, r]) => r.error || !Array.isArray(r.data));
+  if (!queues.length) {
     queueState = { status: 'unknown', count: null };
-  } else if (qRead.error) {
-    queueState = { status: 'corrupt', count: null, error: qRead.error };
-  } else if (Array.isArray(qRead.data)) {
-    queueState = {
-      status: qRead.data.length === 0 ? 'empty' : 'present',
-      count: qRead.data.length,
-    };
+  } else if (badQueue) {
+    queueState = { status: 'corrupt', count: null, error: badQueue[1].error ?? 'Format de file invalide (attendu tableau)' };
   } else {
-    queueState = { status: 'corrupt', count: null, error: 'Format de file invalide (attendu tableau)' };
+    const byCircuit = Object.fromEntries(queues.map(([name, r]) => [name, r.data.length]));
+    const count = Object.values(byCircuit).reduce((a, b) => a + b, 0);
+    queueState = { status: count === 0 ? 'empty' : 'present', count, byCircuit };
   }
 
   // 2. Photo du bronze (.snapshot.json)
   // Cloisonnement strict pro/perso : si un domaine est specifie, n'exposer que ce domaine
-  const snapRead = safeReadJson(snapshotFile);
+  // Un seul tri a la fois (verrou commun) : la photo est celle du circuit qui trie, s'il y en a une.
+  const snapRead = [snapshotFile, path.join(vaultRoot, 'tools', 'mail-sync', '.snapshot.json')].map(safeReadJson).find((r) => r.exists) ?? { exists: false };
   let snapshotState;
   if (!snapRead.exists) {
     snapshotState = { status: 'unknown', counts: null };
@@ -77,7 +83,7 @@ export const readLocalState = (vaultRoot, domain = null) => {
     snapshotState = { status: 'corrupt', counts: null, error: 'Format de snapshot invalide' };
   }
 
-  // 3. Verrou du circuit Plaud (.lock.json)
+  // 3. Verrou du coffre (circuits de capture, commandes de la gate) : qui le tient, s'il le dit
   const lockRead = safeReadJson(lockFile);
   let lockState;
   if (!lockRead.exists) {
@@ -88,9 +94,9 @@ export const readLocalState = (vaultRoot, domain = null) => {
     const held = lockRead.data;
     const pid = Number.isInteger(held?.pid) ? held.pid : null;
     if (pid && isAlive(pid)) {
-      lockState = { status: 'active', pid, started: held.started };
+      lockState = { status: 'active', pid, started: held.started, owner: typeof held.owner === 'string' ? held.owner : null };
     } else {
-      lockState = { status: 'stale', pid, started: held?.started };
+      lockState = { status: 'stale', pid, started: held?.started, owner: typeof held?.owner === 'string' ? held.owner : null };
     }
   }
 
