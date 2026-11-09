@@ -25,7 +25,6 @@ const STYLE = `
   .edge { font-size: 11px; fill: #5c6370; }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .skill { fill: #fdf1ea; stroke: #d97757; }
-  .ops { fill: #e8f5f4; stroke: #2e8a83; stroke-dasharray: 6 3; }
   .artifact { fill: #edf2fb; stroke: #5b7fbf; }
   .gate { fill: #fdeeee; stroke: #c94a4a; }
   .agent { fill: #ecf6ef; stroke: #3f8f5a; }
@@ -52,7 +51,6 @@ const STYLE = `
     text { fill: #e6edf3; }
     .desc, .sub, .small, .edge { fill: #9aa4b0; }
     .skill { fill: #3a2419; stroke: #e08b6c; }
-    .ops { fill: #15302e; stroke: #4fb8ae; }
     .artifact { fill: #1b2638; stroke: #7c9fd8; }
     .gate { fill: #3a1d1f; stroke: #e06c6c; }
     .agent { fill: #18301f; stroke: #5fb07a; }
@@ -81,7 +79,7 @@ function diagram(name, width, height, title, desc, build) {
   const parts = [];
   const boxes = {};
   const d = {
-    // A box: kind = skill | ops | artifact | gate | agent | outside | state | plain | band.
+    // A box: kind = skill | artifact | gate | agent | outside | state | plain | band.
     box(id, x, y, w, h, kind, label, sub = null, opts = {}) {
       boxes[id] = { x, y, w, h };
       const r = opts.round ?? (kind === 'state' ? h / 2 : 8);
@@ -197,7 +195,6 @@ ${parts.join('\n')}
 const written = [];
 const LEGEND = [
   ['skill', 'skill (/kaizen:…)'],
-  ['ops', 'kaizen-ops (/kaizen-ops:…)'],
   ['artifact', 'file in your repo'],
   ['gate', 'deterministic gate'],
   ['agent', 'subagent'],
@@ -233,19 +230,14 @@ written.push(
     const ox = (i) => 848 - i * 168;
     d.box('merge', ox(0), Y2, 124, 56, 'outside', 'you merge', 'Kaizen never does');
     d.box('release', ox(1), Y2, 124, 56, 'skill', 'release', 'notes · SemVer');
-    d.box('deploy', ox(2), Y2, 124, 56, 'ops', 'deploy', 'your commands');
-    d.box('monitor', ox(3), Y2, 124, 56, 'ops', 'monitor', 'incidents');
-    d.box('postmortem', ox(4), Y2, 124, 56, 'ops', 'postmortem', 'blameless');
+    d.box('deploy', ox(2), Y2, 124, 56, 'outside', 'you deploy', 'your own tools');
     d.arrow([[898, 224], [898, Y2]], { tone: 'accent' });
     d.arrow(['merge.l', 'release.r'], { tone: 'accent' });
-    d.arrow(['release.l', 'deploy.r'], { tone: 'accent' });
-    d.arrow(['deploy.l', 'monitor.r'], { tone: 'accent', label: 'watch', dy: -8 });
-    d.arrow(['monitor.l', 'postmortem.r'], { tone: 'bad', dashed: true, label: 'breach', dy: -8 });
-    d.text(ox(4), Y2 + 76, 'threshold breached → rollback first, then postmortem · production commands: kaizen-ops plugin', 'small');
+    d.arrow(['release.l', 'deploy.r'], { tone: 'accent', label: 'checklist', dy: -8 });
+    d.text(ox(2), Y2 + 76, 'Kaizen stops at the merge-ready PR: deploying and watching production are the team’s', 'small');
     // memory
-    d.box('memory', xs(1), 438, 1028 - 116, 58, 'artifact', 'Project memory — docs/learnings/ · docs/adr/ · docs/postmortems/ · kaizen-packs/ · constitution amendments', 'versioned in your repo, read back by learnings-researcher');
+    d.box('memory', xs(1), 438, 1028 - 116, 58, 'artifact', 'Project memory — docs/learnings/ · docs/adr/ · kaizen-packs/ · constitution amendments', 'versioned in your repo, read back by learnings-researcher');
     d.arrow(['learn.b', [d.pt('learn.b')[0], 438]], { tone: 'blue', label: 'writes', ly: 400, dx: 0 });
-    d.arrow(['postmortem.b', [d.pt('postmortem.b')[0], 438]], { tone: 'blue', label: 'learnings · pack rules · amendments', ly: 416, lx: 248, anchor: 'start' });
     // read back
     const yb = 262;
     d.arrow([[xs(1), 467], [96, 467], [96, yb], [d.pt('review.b')[0], yb]], { tone: 'ok', none: true });
@@ -315,7 +307,7 @@ written.push(
     d.text(856, 160, 'Slice:', 'small');
     d.text(900, 420, 'one slice = one PR\n≤ pr.max_lines (400)', 'small');
     d.box('check', 540, 470, 532, 120, 'gate', 'node $K plan check <plan>', 'frontmatter complete, no status field · R and U numbering continuous\nevery R and AE covered by a unit · every cited R/AE defined\nunit fields Covers, Files, Evidence, Verification · every article assessed\nno [NEEDS CLARIFICATION], TBD or TODO in a ready plan · rollout warnings');
-    d.box('signal', 540, 606, 532, 50, 'plain', 'Signal: `error_rate` > 1 % → rollback', 'the threshold is read by deploy and monitor watch; release puts it in the checklist', { mono: false });
+    d.box('signal', 540, 606, 532, 50, 'plain', 'Signal: `error_rate` > 1 % → rollback', 'release puts it in the production checklist, for whoever deploys', { mono: false });
   }),
 );
 
@@ -347,7 +339,7 @@ written.push(
     d.arrow(['cc.r', 'am.l@0.85'], { tone: 'accent', dashed: true, label: 'governance', dy: -8 });
     d.box('h', 36, 430, 1028, 40, 'band', 'Rule hierarchy:  constitution  >  Kaizen Pack rules  >  learnings  >  preferences');
     d.text(36, 500, 'Checked deterministically: plan check (every article cited as "IV." in the section) and constitution check (MAJOR.MINOR.PATCH version, dates, continuous Roman numbering,\nnon-empty rule and Check, unique titles, ≤ 12 articles advised, AI-policy article advised, approved amendment per version when approvers are declared).', 'small');
-    d.legend(36, 540, LEGEND.filter(([k]) => k !== 'agent' && k !== 'outside' && k !== 'ops'));
+    d.legend(36, 540, LEGEND.filter(([k]) => k !== 'agent' && k !== 'outside'));
   }),
 );
 
@@ -406,7 +398,7 @@ written.push(
     d.arrow(['ev.b', 'evf.t'], { tone: 'bad' });
     d.arrow(['evf.b', 'rec.t'], {});
     d.arrow(['rec.b', 'rf.t'], { tone: 'bad' });
-    d.text(44, 540, 'Direct writes to these state files and hand-made\ndeploy/ rollback/ incident/ resolve/ tags are refused.', 'small');
+    d.text(44, 540, 'Direct writes to these state files are refused.', 'small');
     // middle: decision
     d.box('push', 396, 96, 300, 50, 'outside', 'git push (any Bash command)');
     const checks = [
@@ -437,7 +429,7 @@ written.push(
     d.arrow(['w2.b', 'w3.t'], {});
     d.arrow(['w3.b', 'w4.t'], { tone: 'accent' });
     d.arrow(['w4.b', 'w5.t'], { tone: 'bad' });
-    d.legend(36, 622, LEGEND.filter(([k]) => k !== 'agent' && k !== 'ops').concat([['state', 'state in .kaizen/state/']]));
+    d.legend(36, 622, LEGEND.filter(([k]) => k !== 'agent').concat([['state', 'state in .kaizen/state/']]));
   }),
 );
 
@@ -538,73 +530,6 @@ written.push(
 );
 
 // ---------------------------------------------------------------------------------------------------
-// 8. Deployment
-// ---------------------------------------------------------------------------------------------------
-written.push(
-  diagram('deploy-flow', 1100, 620, 'A watched deployment (/kaizen-ops:deploy)', 'Your commands, your approval for production, a shared tag, the plan’s signals watched, rollback first when a threshold is breached.', (d) => {
-    d.box('pre', 36, 90, 250, 112, 'gate', 'Preconditions', 'merged commit, CI green\nshipped plans: rollback + signal\nrollback declared for the env\nsignals already healthy');
-    d.box('req', 320, 90, 230, 56, 'ops', 'deploy request <env>', 'protected env: pending approval, 30 min');
-    d.box('you', 320, 166, 230, 56, 'outside', 'you: "Deploy", then confirm', 'Claude Code prompt (Not now = first)');
-    d.box('run', 584, 90, 230, 70, 'ops', 'deploy run <env>', 'your command with KAIZEN_ENV,\nKAIZEN_REF, KAIZEN_SHA · timeout');
-    d.box('tag', 848, 90, 216, 70, 'artifact', 'deploy/<env>/<stamp>', 'annotated tag on the commit,\npushed (deploy.push_tags)');
-    d.arrow(['pre.r@0.3', 'req.l'], { tone: 'accent' });
-    d.arrow(['req.b', 'you.t'], {});
-    d.arrow(['you.r', [567, 194], [567, 125], 'run.l'], { tone: 'accent' });
-    d.arrow(['run.r', 'tag.l'], { tone: 'accent' });
-    d.box('watch', 584, 250, 230, 78, 'gate', 'monitor watch', 'watch_minutes (15) · every\ninterval_seconds (60) · breach =\nconsecutive (2) red samples');
-    d.arrow(['tag.b', [956, 230], [699, 230], 'watch.t'], { tone: 'accent' });
-    d.box('ok', 848, 250, 216, 56, 'plain', '✔ healthy', 'nothing to do');
-    d.arrow(['watch.r@0.3', 'ok.l'], { tone: 'ok' });
-    d.box('blind', 320, 250, 230, 78, 'plain', '◌ blind signal', 'metric command fails or prints\nno number: tool broken, not proven\ndown · no rollback, no incident');
-    d.arrow(['watch.l@0.5', 'blind.r@0.5'], { dashed: true });
-    d.box('inc', 584, 370, 230, 56, 'artifact', 'incident/<env>/<detected>', 'opened at detection');
-    d.box('rb', 320, 370, 230, 76, 'ops', 'deploy rollback <env>', 'no approval needed · automatic\nif deploy.auto_rollback · target =\nprevious successful deploy');
-    d.box('rbtag', 36, 370, 250, 56, 'artifact', 'rollback/<env>/<stamp>', 'resolves the incident');
-    d.box('pm', 36, 470, 250, 56, 'ops', '/kaizen-ops:postmortem', 'timeline from the tags');
-    d.arrow(['watch.b', 'inc.t'], { tone: 'bad', label: 'breach', anchor: 'start', dx: 8, dy: 4 });
-    d.arrow(['inc.l', 'rb.r@0.3'], { tone: 'bad' });
-    d.arrow(['rb.l@0.3', 'rbtag.r'], { tone: 'bad' });
-    d.arrow(['rbtag.b', 'pm.t'], { tone: 'blue' });
-    d.box('flag', 848, 370, 216, 56, 'ops', 'deploy flag on|off', 'your feature flag commands');
-    d.box('hook', 320, 470, 494, 56, 'gate', 'PreToolUse: the raw command of a protected env is refused', 'and so are hand-made deploy/ rollback/ incident/ resolve/ tags');
-    d.text(36, 566, 'Thresholds: a shipped plan’s **Signal** (`error_rate` > 1 %) overrides monitor.signals for that deployment. Every deploy, rollback, incident and resolve tag\nfeeds real DORA metrics (frequency, lead time to production, failure rate, time to restore). Deployment state is uncertain after a timeout: check before retrying.'.replace(/\*\*/g, ''), 'small');
-    d.legend(36, 606, LEGEND.filter(([k]) => k !== 'agent' && k !== 'skill'));
-  }),
-);
-
-// ---------------------------------------------------------------------------------------------------
-// 9. Incident lifecycle
-// ---------------------------------------------------------------------------------------------------
-written.push(
-  diagram('incident-lifecycle', 1100, 560, 'Incidents: detection, resolution, learning', 'An incident is a dated git tag, so time to restore and postmortem timelines are measured, not remembered.', (d) => {
-    const src = [
-      ['w', 'monitor watch', 'after a deployment'],
-      ['p', 'monitor patrol --env e', 'scheduled: routine, cron, CI'],
-      ['a', 'monitor alert', 'Alertmanager · PagerDuty ·\nDatadog · plain JSON'],
-      ['m', 'monitor incident open', 'by hand, --at, --summary'],
-    ];
-    src.forEach(([id, l, s], i) => d.box(id, 36, 86 + i * 82, 250, 62, 'ops', l, s));
-    d.box('inc', 360, 190, 270, 96, 'artifact', 'incident/<env>/<detected>', 'on the commit live at detection\nidempotent while one is open\nnote: source · summary · signals');
-    src.forEach(([id], i) => d.arrow([`${id}.r`, `inc.l@${0.2 + i * 0.2}`], { tone: 'bad' }));
-    d.box('rb', 700, 110, 364, 62, 'ops', 'deploy rollback <env>', 'rollback/<env>/… resolves the open incident');
-    d.box('rs', 700, 196, 364, 62, 'ops', 'monitor incident resolve · resolved alert', 'resolve/<env>/… (never before detection)');
-    d.arrow(['inc.r@0.3', 'rb.l'], { tone: 'ok' });
-    d.arrow(['inc.r@0.6', 'rs.l'], { tone: 'ok' });
-    d.region(360, 330, 704, 150, 'Who reads the incident tags');
-    const use = [
-      ['me', 'metrics', 'failure rate · time to restore\n(detection → resolution)'],
-      ['pm', 'postmortem', 'timeline: real start,\ndetection, mitigation'],
-      ['st', 'status / help', 'open incident first, then a\nresolved one without postmortem'],
-    ];
-    use.forEach(([id, l, s], i) => d.box(id, 376 + i * 228, 360, 212, 96, id === 'pm' ? 'ops' : 'skill', l, s));
-    d.arrow(['inc.b', [495, 330]], { tone: 'blue' });
-    d.text(36, 426, 'Alert time wins over reception time.\n--env wins over the alert’s env label.\nA resolution older than the detection\nis moved to the detection time.\nA blind signal (broken metric command)\nopens none; an unreachable health-check does.', 'small');
-    d.legend(36, 546, LEGEND.filter(([k]) => k === 'skill' || k === 'ops' || k === 'artifact'));
-  }),
-);
-
-
-// ---------------------------------------------------------------------------------------------------
 // 10. Learnings: the compounding effect
 // ---------------------------------------------------------------------------------------------------
 written.push(
@@ -618,8 +543,6 @@ written.push(
     d.text(346, 186, 'docs/learnings/<category>/<slug>.md', 'small mono');
     d.text(346, 210, 'title · date · module · problem_type\ncomponent · severity · tags (≤ 8)\nbug: symptoms · root_cause · resolution_type\nknowledge: applies_when (≤ 5)', 'small');
     d.arrow(['learn.r', [330, 224]], { tone: 'blue', label: 'yes · validated', dy: -8 });
-    d.box('pm', 36, 384, 220, 56, 'ops', '/kaizen-ops:postmortem', 'incident → learning');
-    d.arrow(['pm.r', [300, 412], [300, 262], 'file.l@0.8'], { tone: 'blue' });
     d.box('pack', 330, 330, 210, 56, 'artifact', 'kaizen-packs/<pack>/', 'team-wide → pack rule (approved)');
     d.arrow([[420, 288], [420, 330]], { tone: 'blue', dashed: true });
     d.box('lr', 678, 90, 394, 92, 'agent', 'learnings-researcher', 'learnings search, weighted match: title & tags ×4\nmodule & components ×3 · applies_when, symptoms,\nroot cause ×2 · body ×1 · bonus per term matched');
@@ -697,14 +620,11 @@ written.push(
 written.push(
   diagram('help-routing', 1100, 624, 'What /kaizen:help recommends next', 'node $K status reads the repo and returns the first situation that applies, in this order.', (d) => {
     const rules = [
-      ['open incident on an environment', '/kaizen-ops:monitor <env>', 'bad'],
-      ['incident resolved < 14 days ago, no postmortem', '/kaizen-ops:postmortem', 'bad'],
       ['Kaizen not initialized', '/kaizen:setup', null],
       ['quality gate active', '/kaizen:work (resume) or gate off', null],
       ['feature branch with changes · waiver pending', 'answer Claude’s question', null],
       ['feature branch · reviewed, committed, clean', '/kaizen:ship', 'ok'],
       ['feature branch · not reviewed or changed since', '/kaizen:review', null],
-      ['default branch · commits not deployed', '/kaizen-ops:deploy <env>', null],
       ['latest plan is requirements only', '/kaizen:plan <plan>', null],
       ['latest plan is ready', '/kaizen:work <plan>', null],
       ['otherwise', '/kaizen:plan <what to build> · brainstorm · debug', 'ok'],
@@ -713,12 +633,12 @@ written.push(
     rules.forEach(([cond, cmd, tone], i) => {
       const y = 84 + i * 40;
       d.box(`c${i}`, 36, y, 480, 32, 'gate', cond, null, { align: 'left', round: 6 });
-      d.box(`n${i}`, 600, y, 464, 32, cmd.startsWith('/kaizen-ops:') ? 'ops' : 'skill', cmd, null, { align: 'left', round: 6, mono: true });
+      d.box(`n${i}`, 600, y, 464, 32, 'skill', cmd, null, { align: 'left', round: 6, mono: true });
       d.arrow([`c${i}.r`, `n${i}.l`], { tone: tone || undefined });
       d.text(24, y + 21, String(i + 1), 'small', 'end');
     });
-    d.text(36, 580, 'The first two come before everything else; "otherwise" applies when nothing is pending; the constitution is only offered after the next step. /kaizen:help explains the result.', 'small');
-    d.legend(36, 610, LEGEND.filter(([k]) => k === 'gate' || k === 'skill' || k === 'ops').map(([k, l]) => [k, k === 'gate' ? 'situation read by status' : l]));
+    d.text(36, 580, '"Otherwise" applies when nothing is pending; the constitution is only offered after the next step. /kaizen:help explains the result.', 'small');
+    d.legend(36, 610, LEGEND.filter(([k]) => k === 'gate' || k === 'skill').map(([k, l]) => [k, k === 'gate' ? 'situation read by status' : l]));
   }),
 );
 
@@ -739,7 +659,7 @@ written.push(
     d.box('ups', 740, 76, 324, 56, 'gate', 'UserPromptSubmit', 'review-hooks.mjs --confirm:\ntyped codes (approvals: "code")');
     d.arrow(['msg.r', 'ups.l'], {});
     d.box('tool', 170, 234, 230, 40, 'plain', 'Claude calls a tool');
-    d.box('pre1', 440, 148, 270, 96, 'gate', 'PreToolUse (Bash, Write, Edit)', 'secret-gate.mjs: commit carrying a\nsecret, --no-verify · review-gate.mjs:\npush without review, raw protected\ndeploy, forged tags, state writes → 2');
+    d.box('pre1', 440, 148, 270, 96, 'gate', 'PreToolUse (Bash, Write, Edit)', 'secret-gate.mjs: commit carrying a\nsecret, --no-verify · review-gate.mjs:\npush without review, state\nwrites → 2');
     d.box('pre2', 440, 274, 270, 60, 'gate', 'PreToolUse (Agent / Task)', 'review-hooks.mjs --launch: logs\neach reviewer launched (slice, run)');
     d.box('post1', 740, 160, 324, 64, 'gate', 'PostToolUse (Bash)', 'quality-gate.mjs --claim: binds the\ngate to the session after gate on');
     d.box('post2', 740, 272, 324, 64, 'gate', 'PostToolUse (Agent / Task)', 'review-hooks.mjs --evidence: logs\nreviewers run, cycle subagents');
@@ -762,32 +682,30 @@ written.push(
 // 14. Files Kaizen writes and reads
 // ---------------------------------------------------------------------------------------------------
 written.push(
-  diagram('artifacts-map', 1100, 750, 'What Kaizen writes in your repo, and who reads it', 'Deliverables are versioned and shared; local state stays on your machine; tags carry the deployment history.', (d) => {
+  diagram('artifacts-map', 1100, 750, 'What Kaizen writes in your repo, and who reads it', 'Deliverables are versioned and shared; local state stays on your machine.', (d) => {
     const rows = [
-      ['brainstorm · plan', 'docs/plans/<date>-<type>-<topic>-plan.md', 'work · review · ship · release · monitor · metrics'],
+      ['brainstorm · plan', 'docs/plans/<date>-<type>-<topic>-plan.md', 'work · review · ship · release · metrics'],
       ['learn · prune-learnings', 'docs/learnings/<category>/<slug>.md', 'researcher → brainstorm, plan, review, debug'],
       ['decide', 'docs/adr/NNNN-<title>.md', 'learnings-researcher · metrics'],
-      ['postmortem', 'docs/postmortems/<date>-<title>.md', 'learnings-researcher · metrics · status'],
       ['ideate · metrics', 'docs/ideation/ · docs/metrics/', 'brainstorm · trend over time'],
       ['constitution', 'CONSTITUTION.md', 'plan check · doc-review · review · ship'],
       ['setup · learn', 'kaizen-packs/<pack>/<rule>.md', 'brainstorm · plan · review'],
       ['setup · init', '.kaizen/config.json', 'every skill, the CLI and the hooks'],
-      ['CLI · hooks', '.kaizen/state/ (git-ignored)', 'gates · watch-pr · deploy · metrics · cost (ledger)'],
-      ['deploy · monitor', 'tags deploy/ rollback/ incident/ resolve/', 'metrics · postmortem · release · status'],
+      ['CLI · hooks', '.kaizen/state/ (git-ignored)', 'gates · watch-pr · metrics · cost (ledger)'],
     ];
     d.text(36, 88, 'WRITTEN BY', 'regionlabel');
     d.text(296, 88, 'FILE', 'regionlabel');
     d.text(678, 88, 'READ BY', 'regionlabel');
     rows.forEach(([w, f, r], i) => {
       const y = 100 + i * 58;
-      d.box(`w${i}`, 36, y, 230, 44, i === 3 || i === 9 ? 'ops' : 'skill', w);
-      d.box(`f${i}`, 296, y, 350, 44, i === 8 ? 'state' : 'artifact', f, null, { mono: true, round: i === 8 ? 10 : 8, cls: 't12' });
+      d.box(`w${i}`, 36, y, 230, 44, 'skill', w);
+      d.box(`f${i}`, 296, y, 350, 44, i === 7 ? 'state' : 'artifact', f, null, { mono: true, round: i === 7 ? 10 : 8, cls: 't12' });
       d.box(`r${i}`, 678, y, 386, 44, 'plain', r, null, { cls: 't12' });
       d.arrow([`w${i}.r`, `f${i}.l`], { tone: 'accent' });
       d.arrow([`f${i}.r`, `r${i}.l`], { tone: 'blue' });
     });
     d.text(36, 700, 'Default root docs/ (docs_root). No deliverable carries mutable state: progress is read from git, never from a "status" field.', 'small');
-    d.legend(36, 732, LEGEND.filter(([k]) => k === 'skill' || k === 'ops' || k === 'artifact').concat([['state', 'local state']]));
+    d.legend(36, 732, LEGEND.filter(([k]) => k === 'skill' || k === 'artifact').concat([['state', 'local state']]));
   }),
 );
 

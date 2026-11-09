@@ -6,7 +6,7 @@ automated, what stays yours, and how the parts fit together. Each skill has its 
 [guide](../README.md#the-guides-skill-by-skill); the mechanisms are detailed in the other
 [concept pages](../README.md#how-it-works).
 
-![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem, and the project memory read back by the next cycle](../media/diagrams/kaizen-loop.svg)
+![The Kaizen loop: constitution band, the build row from ideate to learn, and the project memory read back by the next cycle](../media/diagrams/kaizen-loop.svg)
 
 ## The principle
 
@@ -19,7 +19,7 @@ Two consequences shape everything else:
   incident.
 - **What a cycle learns is written where the next cycle reads it.** A learning in
   `docs/learnings/` is searched by the `learnings-researcher` agent at the next brainstorm, plan,
-  review and debug. A postmortem turns into learnings, pack rules and constitution amendments. That
+  review and debug. An incident's lesson becomes a learning, a pack rule or a constitution amendment. That
   feedback is what makes the effect compound; [`/kaizen:metrics`](../guides/metrics.md) measures
   whether it really happens.
 
@@ -38,9 +38,8 @@ Two consequences shape everything else:
 | Follow | [`watch-pr`](../guides/watch-pr.md), [`address-feedback`](../guides/address-feedback.md) | Is the PR ready to merge? | feedback handled, CI repaired, a true final state |
 | **You merge** | — | — | Kaizen never merges |
 | Release | [`release`](../guides/release.md) | Which version, what changed, how to go live? | notes, SemVer, CHANGELOG, checklist |
-| Deploy | [`deploy`](../../../kaizen-ops/docs/guides/deploy.md) | Release it, watch it, roll back if needed | `deploy/<env>/…` tag, signal watch |
-| Operate | [`monitor`](../../../kaizen-ops/docs/guides/monitor.md) | Is production healthy? | samples, incidents (`incident/<env>/…`) |
-| Learn | [`learn`](../guides/learn.md), [`postmortem`](../../../kaizen-ops/docs/guides/postmortem.md) | What should the next cycle know? | learnings, pack rules, amendments |
+| **You deploy** | your own tools | — | Kaizen no longer deploys nor monitors (6.0) |
+| Learn | [`learn`](../guides/learn.md) | What should the next cycle know? | learnings, pack rules, amendments |
 
 Around the loop: [`debug`](../guides/debug.md) (cause before fix), [`polish`](../guides/polish.md)
 (user-guided UI touch-ups on a running dev server), [`decide`](../guides/decide.md) (hard decisions as
@@ -55,7 +54,7 @@ ADRs), [`prune-learnings`](../guides/prune-learnings.md) (keep the memory true),
 | What the product must do, the scope, the trade-offs | **you**, through one question at a time (brainstorm, plan, doc-review) |
 | How to build it, within the plan | Claude, with justified decisions you can read (KTD) |
 | Whether checks pass, whether a review happened, whether a push may go | **deterministic gates** (CLI and hooks), not Claude’s word |
-| Skipping the review, deploying to a protected environment | **only you**: Claude asks (the safe option first), you confirm in Claude Code's prompt |
+| Skipping the review | **only you**: Claude asks (the safe option first), you confirm in Claude Code's prompt |
 | Merging a PR | **only you** |
 | Changing the constitution | a declared human approver (an agent never approves) |
 
@@ -67,12 +66,11 @@ Nine hook registrations work without you invoking anything (see [hooks](gates-an
 
 - a **SessionStart** hook records that Kaizen's hooks run in this repo, for `kaizen doctor`;
 - three **PreToolUse** hooks: one refuses a commit carrying a secret; one refuses `git push` of an
-  unreviewed branch, the raw deploy command of a protected environment, hand-made deployment tags and
-  direct writes to the review state; one logs each reviewer as it is launched;
+  unreviewed branch and direct writes to the review state; one logs each reviewer as it is launched;
 - two **PostToolUse** hooks bind the quality gate to its session and log which reviewers really ran;
 - two **Stop** hooks: one keeps Claude from finishing a turn on red checks during `work` and
   `autopilot`, the other charges the turn's tokens to the work item (`kaizen cost`);
-- a **UserPromptSubmit** hook recognizes `kaizen waive <code>` and `kaizen deploy <code>` in your own
+- a **UserPromptSubmit** hook recognizes `kaizen waive <code>` in your own
   messages, for teams that chose typed codes (`"approvals": "code"`); by default you approve in Claude
   Code's own permission prompt.
 
@@ -81,11 +79,11 @@ Nine hook registrations work without you invoking anything (see [hooks](gates-an
 `/kaizen:help` (backed by `node $K status`) reads the repo and recommends the next command. It walks
 these situations in order and stops at the first that applies:
 
-![The order in which /kaizen:help picks the next command: incidents first, then setup, constitution, gate, branch review state, deployment, plans, and brainstorm otherwise](../media/diagrams/help-routing.svg)
+![The order in which /kaizen:help picks the next command: setup first, then gate, branch review state, plans, and plan otherwise, the constitution as an optional later step](../media/diagrams/help-routing.svg)
 
 Details: [`help`](../guides/help.md), and `node $K status --json` for the raw diagnosis (branch,
-commits ahead, uncommitted files, profile, constitution validity, plans, learnings, gate, deployments,
-incidents, review state, next steps).
+commits ahead, uncommitted files, profile, constitution validity, plans, learnings, gate, review state,
+next steps).
 
 ## Autopilot
 
@@ -101,7 +99,7 @@ irreversible action was not granted.
 ## Where everything lives
 
 Kaizen writes deliverables into your repo (versioned, shared), keeps working state in `.kaizen/state/`
-(local, ignored by git) and records deployments as git tags (shared through the remote):
+(local, ignored by git):
 
 ![Map of the files and tags Kaizen writes, which skill writes each, and who reads them](../media/diagrams/artifacts-map.svg)
 

@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Installs the Kaizen SDLC in a repo and audits it — project maturity diagnosis (audit: CI, tests, secrets, branch protection, CODEOWNERS, dependencies, deployment, rollback, monitoring, constitution) with a prioritized roadmap and guided fixes; creates .kaizen/config.json and the deliverable folders, detects the stack, the verification commands and the deployment platform, sets profile, models, language and tracker, creates a Kaizen Pack (pack:<name>), health check (check). Use when the user says "install/configure kaizen", "set up the SDLC", "audit the project", "what is this repo missing?", /kaizen:setup.
+description: Installs the Kaizen SDLC in a repo and audits it — project maturity diagnosis (audit: CI, tests, secrets, branch protection, CODEOWNERS, dependencies, constitution, Kaizen loop) with a prioritized roadmap and guided fixes; creates .kaizen/config.json and the deliverable folders, detects the stack and the verification commands, sets profile, models, language and tracker, creates a Kaizen Pack (pack:<name>), health check (check). Use when the user says "install/configure kaizen", "set up the SDLC", "audit the project", "what is this repo missing?", /kaizen:setup.
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, AskUserQuestion
 argument-hint: "[audit] [pack:<name>] [check]"
 ---
@@ -28,19 +28,14 @@ A gate left active without work in progress (`gate status` active) → propose `
 For a project starting with Kaizen, or one that wants to know what it is missing.
 
 1. `node "$K" audit` (add `--no-github` if `gh` is not authenticated). Show the areas and their score,
-   then the list **by priority**: P1 first (what protects: CI, tests, secrets, branch protection,
-   deployment and rollback), then P2 and P3. Nothing green needs redoing.
+   then the list **by priority**: P1 first (what protects: CI, tests, secrets, branch protection),
+   then P2 and P3. Nothing green needs redoing.
 2. Offer to handle the points **one by one**, highest priority first, one question at a time
    (**fix** (Recommended) · **later** · **never for this repo**):
    - **scaffold** (`scaffold` not null) → `node "$K" audit fix <id>` (CODEOWNERS: ask for
-     `--owner @…` first, never invent it; `monitor_patrol`: also offer `monitor_alert` if the team has
-     alerts, and a pinned `--ref <sha>` of the Kaizen repository — same for `secret_scanning`). Show the written file; it stays
+     `--owner @…` first, never invent it; `secret_scanning`: a pinned `--ref <sha>` of the Kaizen
+     repository). Show the written file; it stays
      uncommitted, to be reviewed;
-   - **deployment** → `node "$K" deploy detect`, show the candidates (commands, rollback, confidence,
-     notes), have the user choose, then `node "$K" deploy configure <id>`; nothing recognized →
-     installation step 9;
-   - **monitoring / health** → declare at least the health-check (environment URL, health route
-     found), then `node "$K" monitor check --env <env>`;
    - **branch protection** → give the exact settings (required PR, one approval, required CI): it is a
      repository administration setting, you do not change it;
    - **skill** (`skill` not null: constitution, setup) → propose it, only chain it with approval.
@@ -80,14 +75,7 @@ For a project starting with Kaizen, or one that wants to know what it is missing
    cares about. Run it now only if the user wants to; never make it a step before the first plan.
    Present → `node "$K" constitution check`.
 8. **PR size** — `pr.max_lines` (400 by default): ask whether the team has another limit.
-9. **Deployment and monitoring** (optional) — if the team wants Kaizen to drive production releases
-   too: `node "$K" deploy detect` recognizes the platform (Vercel, Netlify, Fly.io, Heroku, Kamal,
-   Capistrano, Helm, Kustomize, Serverless, SAM, Firebase, GitHub Actions workflows, Makefile, npm
-   scripts, Compose, Terraform) and proposes commands, rollback and health-check. Show them with their
-   notes, have the user choose, then `node "$K" deploy configure <id>`. Nothing recognized → ask for
-   the commands, never invent them. Complete the signals (error rate, latency: a command printing a
-   number). `production` is protected by default. Check with `node "$K" monitor check --env <env>`.
-9b. **Guard rails without the plugin** — Kaizen's gates are Claude Code hooks: in a clone or a cloud
+9. **Guard rails without the plugin** — Kaizen's gates are Claude Code hooks: in a clone or a cloud
    session where the plugin is not loaded, nothing refuses anything. Offer, one question each:
    - **declare the plugin** (Recommended when `doctor` says it is not): `node "$K" audit fix
      claude_settings` merges the dojo marketplace and `kaizen@dojo` into the versioned
@@ -100,8 +88,7 @@ For a project starting with Kaizen, or one that wants to know what it is missing
 10. **Profile** — ask (one question), chosen by the **stakes of the repo**, never by the team's
    experience with Kaizen: **prototype** (prototype, spike, internal tool: minimal ceremony, gates kept) ·
    **product** (a product in production) · **critical** (regulated or critical domains: payment, health,
-   sensitive data at scale). Mark as Recommended the one the repo suggests (deployment detected, risk
-   surfaces, domain); unsure → **product**. The profile also sets
+   sensitive data at scale). Mark as Recommended the one the repo suggests (risk surfaces, domain); unsure → **product**. The profile also sets
    **each agent's model** (`node "$K" models`): show it, and offer to adjust a role (`models.roles`)
    or an agent (`models.agents`) if the team has a cost or quality constraint. Write `profile` in
    `.kaizen/config.json`. Team of several people → propose `approvers` in `CONSTITUTION.md` and a

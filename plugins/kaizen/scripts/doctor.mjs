@@ -18,8 +18,6 @@ import { readAgentSkills } from './agentskills.mjs';
 
 export const MARKETPLACE = 'dojo';
 export const PLUGIN_ID = `kaizen@${MARKETPLACE}`;
-// Since Kaizen 4.0 the production commands (deploy, monitor, postmortem) live in a second plugin.
-export const OPS_ID = `kaizen-ops@${MARKETPLACE}`;
 // Addy Osmani's agent-skills, shipped in the same marketplace: the base Kaizen converges on (5.2+).
 export const AGENT_SKILLS_ID = `agent-skills@${MARKETPLACE}`;
 const DAY_MS = 24 * 3600 * 1000;
@@ -48,34 +46,6 @@ export function pluginDeclared(root) {
   if (!enabled) return { declared: false, why: `${PLUGIN_ID} not enabled in .claude/settings.json` };
   if (!market) return { declared: false, why: `marketplace "${MARKETPLACE}" not declared in .claude/settings.json` };
   return { declared: true };
-}
-
-// Why this repository needs Kaizen's production commands (kaizen-ops), or null: declared environments
-// or signals, or a production history — postmortems, deployment or incident tags — left by the
-// commands that moved in 4.0 (a team that only wrote postmortems declares no deployment).
-export function opsNeeded(root, config = loadConfig(root)) {
-  if (Object.keys(config.deploy?.environments || {}).length) return 'declares deployment environments';
-  if (Object.keys(config.monitor?.signals || {}).length) return 'declares production signals';
-  try {
-    if (readdirSync(join(docsRoot(root, config), 'postmortems')).some((f) => f.endsWith('.md'))) return 'has postmortems';
-  } catch {}
-  const tags = git(root, ['tag', '-l', 'deploy/*', 'rollback/*', 'incident/*', 'resolve/*'], { allowFail: true });
-  return tags ? 'has deployment or incident tags' : null;
-}
-
-// Is kaizen-ops enabled in the versioned project settings (what every clone gets)?
-export function opsDeclaredForClones(root) {
-  return readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins?.[OPS_ID] === true;
-}
-
-// Is kaizen-ops enabled for this repository: project settings, local settings or the user's settings.
-export function opsDeclared(root, env = process.env) {
-  const files = [
-    join(root, '.claude', 'settings.json'),
-    join(root, '.claude', 'settings.local.json'),
-    join(env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude'), 'settings.json'),
-  ];
-  return files.some((f) => readJson(f)?.enabledPlugins?.[OPS_ID] === true);
 }
 
 // Is a plugin enabled for this repository: project settings, local settings or the user's settings.
@@ -164,20 +134,6 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     decl.declared ? `.claude/settings.json enables ${PLUGIN_ID}` : `${decl.why}: a fresh clone or a cloud session runs without Kaizen`,
     decl.declared ? null : 'node "$K" audit fix claude_settings',
   );
-
-  const why = opsNeeded(root, config);
-  if (why) {
-    const on = opsDeclared(root);
-    add(
-      'ops_plugin',
-      'Production commands (kaizen-ops)',
-      on ? 'ok' : 'warn',
-      on
-        ? `${OPS_ID} enabled: /kaizen-ops:deploy, /kaizen-ops:monitor, /kaizen-ops:postmortem`
-        : `this repo ${why}, but the production commands moved to kaizen-ops in Kaizen 4.0 and ${OPS_ID} is not enabled`,
-      on ? null : `"enabledPlugins": { "${OPS_ID}": true } in .claude/settings.json (node "$K" audit fix claude_settings), then a new session`,
-    );
-  }
 
   // agent-skills: only spoken about when it is enabled or its files are here.
   const as = readAgentSkills(root);

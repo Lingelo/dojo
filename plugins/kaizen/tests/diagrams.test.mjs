@@ -37,7 +37,8 @@ const codeReviewers = agents.filter((a) => a.endsWith('-reviewer') && !a.startsW
 const planReviewers = agents.filter((a) => a.startsWith('plan-') && a.endsWith('-reviewer'));
 const researchers = agents.filter((a) => !a.endsWith('-reviewer'));
 const skills = readdirSync(join(PLUGIN, 'skills')).filter((d) => statSync(join(PLUGIN, 'skills', d)).isDirectory());
-const MOVED = ['deploy', 'monitor', 'postmortem'];
+// Production commands, removed in 6.0 (kaizen-ops and the core deploy/monitor CLI).
+const REMOVED = ['deploy', 'monitor', 'postmortem'];
 
 test('the SVGs are exactly what the generator writes (edit diagrams.mjs, then run it)', () => {
   const out = mkdtempSync(join(tmpdir(), 'kaizen diagrams '));
@@ -61,20 +62,20 @@ test('review diagram: exactly the code reviewers of agents/', () => {
   assert.deepEqual([...drawn].sort(), [...codeReviewers].sort());
 });
 
-test('no diagram draws a kaizen-ops command as a Kaizen core skill', () => {
+test('no diagram draws a production command removed in 6.0', () => {
   for (const f of svgs) {
     const text = svg(f);
-    assert.doesNotMatch(text, new RegExp(`/kaizen:(${MOVED.join('|')})\\b`), `${f}: names a command moved to kaizen-ops`);
+    assert.doesNotMatch(text, /kaizen-ops|\/kaizen:(deploy|monitor|postmortem)\b/, `${f}: names a removed production command`);
     for (const b of boxes(text)) {
       if (b.kind !== 'skill') continue;
-      const name = b.label.replace(/^\/kaizen(-ops)?:/, '').split(/[ ·]/)[0];
-      assert.ok(!MOVED.includes(name), `${f}: "${b.label}" drawn as a core skill, it is kaizen-ops (kind 'ops')`);
+      const name = b.label.replace(/^\/kaizen:/, '').split(/[ ·]/)[0];
+      assert.ok(!REMOVED.includes(name), `${f}: "${b.label}" drawn as a skill, removed in 6.0`);
     }
   }
 });
 
 test('every diagram is used by a page, every page links an existing diagram', () => {
-  const pages = [join(ROOT, 'README.md'), ...walk(join(PLUGIN)), ...walk(join(ROOT, 'plugins', 'kaizen-ops'))];
+  const pages = [join(ROOT, 'README.md'), ...walk(join(PLUGIN))];
   const used = new Set();
   for (const p of pages) {
     for (const [, name] of readFileSync(p, 'utf8').matchAll(/media\/diagrams\/([\w-]+\.svg)/g)) {

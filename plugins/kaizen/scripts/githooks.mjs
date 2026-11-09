@@ -14,7 +14,7 @@ import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSy
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { git, loadConfig, logFriction, pushReasonKey } from './lib.mjs';
-import { HOOK_LOOKUP, MARKETPLACE, OPS_ID, PLUGIN_ID, opsNeeded, templateLookup } from './doctor.mjs';
+import { HOOK_LOOKUP, MARKETPLACE, PLUGIN_ID, templateLookup } from './doctor.mjs';
 import { checkPush, currentBranch, pushRefusal, takePromptedPush } from './review-state.mjs';
 import { formatFindings, scan } from './secrets.mjs';
 
@@ -94,8 +94,7 @@ export function declarePlugin(root) {
   }
   const markets = (settings.extraKnownMarketplaces ||= {});
   const plugins = (settings.enabledPlugins ||= {});
-  // A repository that deploys with Kaizen also needs the production commands (kaizen-ops, since 4.0).
-  const wanted = opsNeeded(root) ? [PLUGIN_ID, OPS_ID] : [PLUGIN_ID];
+  const wanted = [PLUGIN_ID];
   const missing = wanted.filter((id) => plugins[id] !== true);
   if (markets[MARKETPLACE] && !missing.length) throw new Error(`${wanted.join(' and ')} already declared`);
   markets[MARKETPLACE] ||= { source: { source: 'github', repo: KAIZEN_SOURCE } };

@@ -1,8 +1,8 @@
 // Kaizen — project maturity diagnosis: what a solid SDLC assumes, what is in place, what is missing,
 // and how to fix it, in priority order.
 //
-// Five areas, from the base to the loop: Foundations (CI, tests, secrets), Flow (review, ownership,
-// dependencies), Delivery (deployment, rollback), Operations (signals, health), Kaizen loop.
+// Three areas, from the base to the loop: Foundations (CI, tests, secrets), Flow (review, ownership,
+// dependencies), Kaizen loop. Deployment and operations are the team's own (Kaizen 6.0 removed them).
 // Each check returns { id, area, title, status: ok|warn|missing|unknown, evidence, fix, priority }.
 // Read-only. Simple, unambiguous fixes have a **scaffold** (`audit fix <id>`), which never overwrites an
 // existing file; the others point to the skill that handles them.
@@ -11,8 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { loadConstitution, validateConstitution } from './constitution.mjs';
-import { detectDeploy } from './deploydetect.mjs';
-import { OPS_ID, gitHooksState, opsDeclaredForClones, opsNeeded, pluginDeclared } from './doctor.mjs';
+import { gitHooksState, pluginDeclared } from './doctor.mjs';
 import { declarePlugin, installGitHooks } from './githooks.mjs';
 import { defaultBranch, ghCommand, git, loadConfig, verifyCommands } from './lib.mjs';
 
@@ -126,38 +125,6 @@ export function audit(root, { github = true } = {}) {
   add('dependency_updates', 'Flow', 'Automated dependency updates', deps ? 'ok' : 'missing', deps || 'neither Dependabot nor Renovate', { how: 'small regular update PRs rather than one big yearly jump', scaffold: stacks.length ? 'dependabot' : null }, 3);
   add('claude_md', 'Flow', 'Project instructions for agents (CLAUDE.md)', has(root, 'CLAUDE.md') ? 'ok' : 'missing', has(root, 'CLAUDE.md') ? 'CLAUDE.md' : 'no CLAUDE.md', { how: '/init, then /kaizen:setup adds the Kaizen section' }, 2);
 
-  // --- Delivery ---------------------------------------------------------------------------------------
-  const envs = config.deploy.environments || {};
-  const envNames = Object.keys(envs);
-  const candidates = envNames.length ? [] : detectDeploy(root);
-  add('deploy', 'Delivery', 'Tooled deployment', envNames.length ? 'ok' : candidates.length ? 'warn' : 'missing',
-    envNames.length ? `environments: ${envNames.join(', ')}` : candidates.length ? `recognized, not configured: ${candidates.map((c) => c.id).join(', ')}` : 'no recognized deployment mechanism',
-    { how: candidates.length ? `node kaizen.mjs deploy configure ${candidates[0].id} (after reviewing the commands: deploy detect)` : 'declare deploy.environments (a deploy command per environment)', skill: '/kaizen:setup' }, 1);
-  if (envNames.length) {
-    const noRb = envNames.filter((e) => !envs[e].rollback);
-    add('rollback', 'Delivery', 'Declared rollback', noRb.length ? 'missing' : 'ok', noRb.length ? `no rollback: ${noRb.join(', ')}` : 'every environment has its rollback', { how: 'deploy.environments.<env>.rollback (deploy detect proposes the platform\'s native command)' }, 1);
-    const prod = envs.production;
-    if (prod) add('protected', 'Delivery', 'Protected production', prod.protected === false ? 'warn' : 'ok', prod.protected === false ? 'production declared unprotected' : 'human approval required', { how: 'remove "protected": false from production' }, 2);
-  }
-
-  // --- Operations -------------------------------------------------------------------------------------
-  const signals = config.monitor.signals || {};
-  const names = Object.keys(signals);
-  const httpSignals = names.filter((n) => signals[n].type === 'http');
-  // A real route declaration, not a stray string: app.get('/health'…), @app.route("/up"),
-  // HandleFunc("/healthz"…), @GetMapping("/health"), get "/up" (Rails)…
-  const ROUTE = /(\.(get|route|all|handle|HandleFunc|Get|GET)\s*\(|@(app|router|bp|api)\.(get|route)\s*\(|@(Get|Request)Mapping\s*\(\s*(value\s*=\s*)?|\bpath\s*\(|^\s*get\s+)\s*['"`]\/(health|healthz|healthcheck|up|ready|readyz|livez)['"`]/m;
-  const healthRoute = files.filter((f) => !TEST_FILE.test(f)).slice(0, 1500).find((f) => ROUTE.test(read(root, f) || ''));
-  add('monitoring', 'Operations', 'Watched production signals', names.length ? 'ok' : 'missing', names.length ? `signals: ${names.join(', ')}` : 'no signal (monitor.signals)', { how: 'declare at least one HTTP health-check, then error rate and latency (a command that prints a number)' }, envNames.length ? 1 : 2);
-  if (envNames.length && names.length) {
-    const wf = ls(root, '.github/workflows').map((f) => read(root, `.github/workflows/${f}`) || '').join('\n');
-    const continuous = /monitor\s+(patrol|alert)\b/.test(wf);
-    add('continuous_monitoring', 'Operations', 'Continuous incident detection', continuous ? 'ok' : 'warn',
-      continuous ? 'monitor patrol/alert workflow present' : 'signals only watched during the post-deployment window (or by a routine outside the repo)',
-      { how: 'scheduled check (patrol) as a safety net, the team\'s alerts (alert) as the main path', scaffold: 'monitor_patrol' }, 3);
-  }
-  add('health', 'Operations', 'Health endpoint', httpSignals.length ? 'ok' : healthRoute ? 'warn' : 'missing', httpSignals.length ? `health-check: ${httpSignals.join(', ')}` : healthRoute ? `health route found in ${healthRoute}, not watched` : 'no health route found', { how: 'expose /health (critical dependencies included) and declare it in monitor.signals' }, 2);
-
   // --- Kaizen loop -----------------------------------------------------------------------------------
   const initialized = has(root, '.kaizen/config.json');
   add('kaizen', 'Kaizen loop', 'Kaizen initialized', initialized ? 'ok' : 'missing', initialized ? `profile ${config.profile}` : 'no .kaizen/config.json', { how: '/kaizen:setup', skill: '/kaizen:setup' }, 1);
@@ -166,11 +133,8 @@ export function audit(root, { github = true } = {}) {
   add('constitution', 'Kaizen loop', 'Engineering constitution', c ? (valid ? 'ok' : 'warn') : 'missing', c ? `v${c.meta.version} — ${c.articles.length} article(s)${valid ? '' : ', invalid'}` : 'no CONSTITUTION.md', { how: '/kaizen:constitution', skill: '/kaizen:constitution' }, 2);
   if (initialized) {
     const decl = pluginDeclared(root);
-    // A repository with production use also needs kaizen-ops for every clone (doctor: ops_plugin).
-    const opsWhy = opsNeeded(root, config);
-    const opsMissing = decl.declared && opsWhy && !opsDeclaredForClones(root);
-    const evidence = !decl.declared ? decl.why : opsMissing ? `${OPS_ID} not enabled although this repo ${opsWhy}` : `.claude/settings.json enables kaizen@dojo${opsWhy ? ` and ${OPS_ID}` : ''}`;
-    add('claude_settings', 'Kaizen loop', 'Plugin declared for every clone', decl.declared && !opsMissing ? 'ok' : 'missing', evidence, { how: 'declare the dojo marketplace, kaizen@dojo (and kaizen-ops@dojo when the repo deploys with Kaizen) in the versioned .claude/settings.json', scaffold: 'claude_settings' }, 2);
+    const evidence = decl.declared ? '.claude/settings.json enables kaizen@dojo' : decl.why;
+    add('claude_settings', 'Kaizen loop', 'Plugin declared for every clone', decl.declared ? 'ok' : 'missing', evidence, { how: 'declare the dojo marketplace and kaizen@dojo in the versioned .claude/settings.json', scaffold: 'claude_settings' }, 2);
     const hooks = gitHooksState(root);
     const hooksStatus = hooks.wired && !hooks.outdated.length ? 'ok' : hooks.present.length ? 'warn' : 'missing';
     const hooksEvidence = hooks.outdated.length
@@ -276,65 +240,8 @@ ${eco.map((e) => `  - package-ecosystem: ${e}\n    directory: /\n    schedule:\n
 `;
 }
 
-// Continuous detection workflows (the monitor guide, "Continuous monitoring"). The Kaizen CLI,
-// dependency-free, comes from the marketplace repository: pin `ref` to a commit (sha) rather than a
-// branch. Incident tags are pushed by the CLI: it needs write access and a git identity.
+// The Kaizen CLI, dependency-free, comes from the marketplace repository: pin `ref` to a commit (sha).
 const KAIZEN_SOURCE = 'Lingelo/dojo';
-
-function monitorWorkflow(kind, { env, ref }) {
-  const header =
-    kind === 'patrol'
-      ? `# Scheduled check of ${env} signals (generated by Kaizen, audit fix monitor_patrol): review it.
-# A confirmed breach opens an incident (incident/${env}/… tag) and fails the job.
-name: kaizen-patrol
-
-on:
-  schedule:
-    - cron: '*/30 * * * *'
-  workflow_dispatch:
-`
-      : `# Team alerts → Kaizen incidents (generated by Kaizen, audit fix monitor_alert): review it.
-# The alerting tool (or a relay) calls POST /repos/<owner>/<repo>/dispatches
-#   {"event_type": "alert", "client_payload": <Alertmanager, PagerDuty, Datadog or plain JSON payload>}
-name: kaizen-alert
-
-on:
-  repository_dispatch:
-    types: [alert]
-`;
-  const run =
-    kind === 'patrol'
-      ? `      - run: node .kaizen-cli/plugins/kaizen/scripts/kaizen.mjs monitor patrol --env ${env}`
-      : `      # Payload passed through the environment, never interpolated into the script: no injection.
-      - env:
-          PAYLOAD: \${{ toJson(github.event.client_payload) }}
-        run: printf '%s' "$PAYLOAD" | node .kaizen-cli/plugins/kaizen/scripts/kaizen.mjs monitor alert --env ${env} --file -`;
-  return `${header}
-permissions:
-  contents: write   # push incident/… and resolve/… tags
-
-concurrency:
-  group: kaizen-incidents-${env}
-  cancel-in-progress: false
-
-jobs:
-  ${kind}:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # deploy/… and incident/… tags included
-      - uses: actions/checkout@v4
-        with:
-          repository: ${KAIZEN_SOURCE}
-          ref: ${ref}   # pin a sha
-          path: .kaizen-cli
-      - run: |
-          git config user.name "kaizen[bot]"
-          git config user.email "kaizen[bot]@users.noreply.github.com"
-${run}
-`;
-}
 
 // Every PR's commits scanned for secrets, whoever wrote them (the hook only sees Claude's commits).
 function secretsWorkflow({ base, ref }) {
@@ -364,7 +271,7 @@ jobs:
 `;
 }
 
-export function scaffold(root, id, { owner, env, ref } = {}) {
+export function scaffold(root, id, { owner, ref } = {}) {
   const write = (path, content) => {
     if (has(root, path)) throw new Error(`${path} already exists: nothing is overwritten`);
     mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -384,16 +291,6 @@ export function scaffold(root, id, { owner, env, ref } = {}) {
       const rules = ['/CONSTITUTION.md', '/kaizen-packs/', '/.kaizen/config.json'].map((p) => `${p} ${owner}`).join('\n');
       return write('.github/CODEOWNERS', `# Default owners (generated by Kaizen, audit fix codeowners): refine per folder.\n* ${owner}\n\n# Engineering rules: changes to them are reviewed by the approvers.\n${rules}\n`);
     }
-    case 'monitor_patrol':
-    case 'monitor_alert': {
-      const envs = Object.keys(loadConfig(root).deploy.environments || {});
-      const target = env || (envs.includes('production') ? 'production' : envs[0]);
-      if (!target) throw new Error('no environment in deploy.environments: configure deployment first (deploy detect)');
-      if (!/^[\w.-]+$/.test(target)) throw new Error(`invalid environment: ${target}`);
-      if (ref !== undefined && !/^[\w./-]+$/.test(ref)) throw new Error(`invalid --ref: ${ref}`);
-      const kind = id === 'monitor_patrol' ? 'patrol' : 'alert';
-      return write(`.github/workflows/kaizen-${kind}.yml`, monitorWorkflow(kind, { env: target, ref: ref || 'main' }));
-    }
     case 'secret_scanning':
       if (ref !== undefined && !/^[\w./-]+$/.test(ref)) throw new Error(`invalid --ref: ${ref}`);
       return write('.github/workflows/kaizen-secrets.yml', secretsWorkflow({ base: defaultBranch(root) || 'main', ref: ref || 'main' }));
@@ -408,6 +305,6 @@ export function scaffold(root, id, { owner, env, ref } = {}) {
     case 'claude_settings':
       return declarePlugin(root);
     default:
-      throw new Error(`no scaffold for "${id}" (scaffolds: ci, pr_template, dependabot, codeowners, gitignore_env, secret_scanning, monitor_patrol, monitor_alert, git_hooks, claude_settings)`);
+      throw new Error(`no scaffold for "${id}" (scaffolds: ci, pr_template, dependabot, codeowners, gitignore_env, secret_scanning, git_hooks, claude_settings)`);
   }
 }

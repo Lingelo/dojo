@@ -51,8 +51,8 @@ before publishing, never invent them.
 - feature flags to toggle, and their default;
 - the release's rollback and what is irreversible;
 - signals to watch after the release, **with their threshold** and the action when it is breached; a
-  threshold breached after the release → rollback, then `/kaizen-ops:postmortem` (that is how production
-  comes back into the loop);
+  threshold breached after the release → rollback with the team's tools, then `/kaizen:learn` (that is how
+  production comes back into the loop);
 - communication (users, support) for visible changes.
 
 ## 5. Publish (only with approval)
@@ -63,6 +63,5 @@ deliver the notes, the version and the checklist, and give the commands.
 
 ## 6. Deploy
 
-`release` does not deploy. If `deploy.environments` is configured, finish by proposing
-`/kaizen-ops:deploy <env> vX.Y.Z` (staging first if it exists): preconditions, approval by the user
-for production, watch of the checklist's signals, rollback ready.
+`release` does not deploy, and Kaizen has no deployment command (removed in 6.0): hand the checklist
+to whoever deploys, with the team's own tools.

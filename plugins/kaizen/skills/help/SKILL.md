@@ -18,16 +18,16 @@ behalf. Answer in the user's language.
 `node "$K" doctor --in-skill` first ([guard rails](../../references/conventions.md#guard-rails)), then
 `node "$K" status --json` (outside a git repo: say so, and only answer on the substance). It gives
 initialization, profile, constitution, latest plan and its stage, the gate, the branch's review state,
-open incidents or incidents without a postmortem, and `next`: the next step inferred from the state.
+and `next`: the next step inferred from the state.
 Use it as a fact, not as an order: the situation the user describes wins.
 
 ## 2. Answer according to the invocation
 
 **Without an argument** — in under 30 lines:
 1. Kaizen in three sentences: an AI-assisted development cycle, from the project's constitution to a
-   watched production release; **deterministic** gates (green tests before finishing, recorded review
-   before any push, PR size); a learning loop (learnings, ADRs, postmortems) read back by the next
-   cycle. Merging stays with the human.
+   merge-ready pull request; **deterministic** gates (green tests before finishing, recorded review
+   before any push, PR size); a learning loop (learnings, ADRs) read back by the next cycle. Merging
+   and production stay with the team.
 2. The loop diagram (below).
 3. **Where this repo stands**: 3 to 5 lines from `status`.
 4. **Next**: the recommended command, with its reason, and at most two alternatives.
@@ -58,8 +58,7 @@ ideate → brainstorm → plan ─► doc-review → work → review → ship �
                        ▲                                                         │
                        └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
 debug → fix → review → learn       polish: user-guided UI touch-ups
-release → deploy → monitor ─(threshold breached)→ rollback → postmortem → learnings, amendments
-decide → ADR     metrics (real DORA, cost)
+decide → ADR     metrics (approximated DORA, cost)     release
 autopilot: from request to ready PR, autonomously
 ```
 
@@ -67,8 +66,8 @@ autopilot: from request to ready PR, autonomously
 
 | Situation | Command | Why that one |
 |---|---|---|
-| Kaizen never used in this repo | `/kaizen:setup` | config, verification commands, detected deployment, profile (by the repo's stakes) |
-| Set up the SDLC, find out what the project lacks | `/kaizen:setup audit` | maturity per area (CI, tests, secrets, review, deployment, monitoring) and guided fixes by priority |
+| Kaizen never used in this repo | `/kaizen:setup` | config, verification commands, profile (by the repo's stakes) |
+| Set up the SDLC, find out what the project lacks | `/kaizen:setup audit` | maturity per area (CI, tests, secrets, review, Kaizen loop) and guided fixes by priority |
 | Choose or adjust the agents' model | `node $K models`, then `models` in `.kaizen/config.json` | one model per role depending on the profile: frugal research, critical judgments on the strongest |
 | Lay down the project's rules | `/kaizen:constitution` | 5 to 9 principles, each with a check that plan and review enforce |
 | Does not know what to do next | `/kaizen:ideate` | ideas grounded in the code, critiqued, ranked |
@@ -86,11 +85,9 @@ autopilot: from request to ready PR, autonomously
 | A decision that is hard to undo | `/kaizen:decide <question>` | options compared on evidence, then an ADR |
 | A non-obvious problem was just solved | `/kaizen:learn` | a learning the next plan and the next review will read |
 | Many or stale learnings | `/kaizen:prune-learnings` | keep, update, merge, delete |
-| A production incident | `/kaizen-ops:postmortem` | blameless: timeline, factors, actions, learnings |
-| Prepare a release | `/kaizen:release` | notes, SemVer, CHANGELOG, production checklist |
-| Deploy to production, or roll back | `/kaizen-ops:deploy <env> [ref]`, `/kaizen-ops:deploy rollback <env>` | the team's commands, typed approval for production, tag, watch, rollback |
-| Is production healthy? | `/kaizen-ops:monitor [env] [watch n]` | declared signals against the config's and plans' thresholds |
-| Detect incidents continuously, an alert just fired | `/kaizen-ops:monitor production continuous`, `/kaizen-ops:monitor production incidents` | scheduled check (`patrol`) or the team's alerts wired in, dated incidents |
+| A production incident just fixed | `/kaizen:learn` | what broke and why, read back by the next plan and review |
+| Prepare a release | `/kaizen:release` | notes, SemVer, CHANGELOG, rollout reminders from the plans |
+| Deploy, watch production, roll back | — | the team's own tools: Kaizen no longer deploys (6.0) |
 | Know whether things improve | `/kaizen:metrics` | approximated DORA, learning reuse, cycle cost |
 | Push refused, gate blocking, skill not triggering | — | `docs/troubleshooting.md`, then `/kaizen:setup check` |
 

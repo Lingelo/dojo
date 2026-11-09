@@ -233,11 +233,10 @@ test('size: counts the diff vs the base, ignores lockfiles, applies the limit', 
   cleanup(dir);
 });
 
-test('adr and postmortem: numbering and reservation', () => {
+test('adr: numbering and reservation', () => {
   const dir = tempRepo({});
   assert.equal(cli(dir, ['adr', 'new', '--title', 'Job queue']).stdout.trim(), 'docs/adr/0001-job-queue.md');
   assert.equal(cli(dir, ['adr', 'new', '--title', "Choosing a vendor's API"]).stdout.trim(), 'docs/adr/0002-choosing-a-vendor-s-api.md');
-  assert.match(cli(dir, ['postmortem', 'new', '--title', 'Export outage']).stdout, /^docs\/postmortems\/\d{4}-\d{2}-\d{2}-export-outage\.md/);
   cleanup(dir);
 });
 

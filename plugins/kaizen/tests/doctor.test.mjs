@@ -154,33 +154,6 @@ test('a branch already pushed without a review is reported', () => {
   cleanup(bare);
 });
 
-test('a repository that deploys with Kaizen is told to enable kaizen-ops (AE5 of the split plan)', () => {
-  const home = tempRepo({});
-  const env = { CLAUDE_CONFIG_DIR: home };
-  const dir = tempRepo({ '.kaizen/config.json': { deploy: { environments: { production: { command: 'make deploy' } } } }, 'a.js': '1\n' });
-  let ops = check(cli(dir, ['doctor', '--json'], { env }), 'ops_plugin');
-  assert.equal(ops.status, 'warn');
-  assert.match(ops.evidence, /moved to kaizen-ops in Kaizen 4\.0/);
-  assert.match(ops.fix, /"kaizen-ops@dojo": true/);
-  writeFiles(home, { 'settings.json': { enabledPlugins: { 'kaizen-ops@dojo': true } } });
-  ops = check(cli(dir, ['doctor', '--json'], { env }), 'ops_plugin');
-  assert.equal(ops.status, 'ok', 'enabled in the user settings counts');
-  const plain = tempRepo({ '.kaizen/config.json': {}, 'a.js': '1\n' });
-  assert.equal(check(cli(plain, ['doctor', '--json'], { env }), 'ops_plugin'), undefined, 'no deployment, no signal: nothing to say');
-  for (const d of [home, dir, plain]) cleanup(d);
-});
-
-test('ops_plugin also fires on a production history without config: postmortems, deployment or incident tags', () => {
-  const home = tempRepo({});
-  const env = { CLAUDE_CONFIG_DIR: home };
-  const pm = tempRepo({ '.kaizen/config.json': {}, 'docs/postmortems/2026-10-01-vat.md': '# VAT\n' });
-  assert.match(check(cli(pm, ['doctor', '--json'], { env }), 'ops_plugin').evidence, /this repo has postmortems/);
-  const tagged = tempRepo({ '.kaizen/config.json': {}, 'a.js': '1\n' });
-  gitc(tagged, ['tag', '-a', 'incident/production/20261001T000000Z', '-m', '{}']);
-  assert.match(check(cli(tagged, ['doctor', '--json'], { env }), 'ops_plugin').evidence, /deployment or incident tags/);
-  for (const d of [home, pm, tagged]) cleanup(d);
-});
-
 // --- agent-skills (Addy Osmani's plugin, the base Kaizen converges on) -----------------------------------
 
 const AS = (...lines) => lines.join('\n') + '\n';

@@ -8,7 +8,7 @@ voice-over and [subtitles](../../../media/kaizen/kaizen-presentation.srt)).
 
 The cycle you are about to run, end to end ([explained here](concepts/the-loop.md)):
 
-![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem, and the project memory read back by the next cycle](media/diagrams/kaizen-loop.svg)
+![The Kaizen loop: constitution band, the build row from ideate to learn, and the project memory read back by the next cycle](media/diagrams/kaizen-loop.svg)
 
 > **The short path.** A first feature only needs four commands: `/kaizen:setup`, `/kaizen:plan <what to
 > build>`, `/kaizen:work <plan>`, `/kaizen:ship` — `plan` runs the plan review and `ship` runs the code
@@ -53,7 +53,7 @@ Or interactively: `/plugin marketplace add Lingelo/dojo`, then
 ```
 
 Existing project? Start with `/kaizen:setup audit`: it scores what is in place (CI, tests, secrets,
-review, deployment, monitoring) and fixes the most important things first.
+review, Kaizen loop) and fixes the most important things first.
 
 Claude creates `.kaizen/config.json` and the `docs/plans`, `docs/learnings` and `docs/ideation`
 folders. It detects the stack and shows you the verification commands it found (`npm test`,
@@ -172,14 +172,12 @@ turn it into a test.
 
 ## What next
 
-- Deploy: declare your commands and signals (`/kaizen:setup`, or `node $K deploy detect`), then
-  `/kaizen-ops:deploy staging` and `/kaizen-ops:deploy production`. The signals cited by the plan are watched
-  after the deployment, with a rollback if a threshold is breached. See [deploy](../../kaizen-ops/docs/guides/deploy.md) and
-  [monitor](../../kaizen-ops/docs/guides/monitor.md).
+- Deploy with your own tools: Kaizen stops at the merge-ready PR. `/kaizen:release` gives the
+  checklist (rollback, signals and thresholds from the plans) to whoever deploys.
 - Lost about what to run: `/kaizen:help` looks at the repo's state (`node $K status`) and recommends
   the next command.
 - Chain everything: after a brainstorm, `/kaizen:autopilot` executes the plan, the review, the
   delivery and the PR follow-up without interrupting you.
 - Measure after a few weeks: `/kaizen:metrics` (PR size, lead time, rework rate, learnings actually
   reused, cycle cost).
-- An incident? `/kaizen-ops:postmortem`. A heavy decision? `/kaizen:decide`.
+- An incident taught something? `/kaizen:learn`. A heavy decision? `/kaizen:decide`.

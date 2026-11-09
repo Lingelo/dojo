@@ -1,4 +1,4 @@
-# Tasks: Kaizen 5.2, agent-skills as the base
+# Tasks: Kaizen 6.0, agent-skills as the base
 
 Spec: `docs/SPEC.md` · Plan: `tasks/plan.md`
 
@@ -109,6 +109,32 @@ when both plugins are on. Never a warning when agent-skills is absent.
 
 **Estimated scope:** Small
 
+## Task 4b: Remove production (decided 2026-11-09: "on supprime ops")
+
+**Description:** delete the kaizen-ops plugin and Kaizen core's production: `deploy`, `monitor`,
+`postmortem new`, `deploydetect`, deployment approvals and tag refusals, `deploy`/`monitor` config keys,
+the audit's Delivery and Operations areas, DORA from deployment tags, production evals, docs and
+diagrams. `kaizen upgrade` lists a repository's leftovers (`production-removed`, by hand).
+
+**Acceptance criteria:**
+- [x] No skill, agent, script, hook, eval or doc sends anyone to `/kaizen-ops:` or a removed command (contract test)
+- [x] `kaizen upgrade` reports `deploy`/`monitor` keys and `kaizen-ops@dojo`, never edits them
+- [x] `metrics` keeps working: DORA approximated from merges, GitHub, fixes and reverts
+- [x] Diagrams regenerated without the operate row, `deploy-flow` and `incident-lifecycle`
+
+**Verification:**
+- [x] Tests pass: `node --test plugins/kaizen/tests/*.test.mjs`
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `plugins/kaizen-ops/` (deleted)
+- `plugins/kaizen/scripts/` (deploy, monitor, deploydetect deleted; kaizen, metrics, audit, doctor, githooks, upgrade, review-gate, review-hooks, approvals, lib)
+- `plugins/kaizen/docs/`, `plugins/kaizen/skills/`, `plugins/kaizen/references/`
+- `.claude-plugin/marketplace.json`, `.github/workflows/kaizen.yml`, `README.md`, `CLAUDE.md`
+
+**Estimated scope:** Large
+
 ## Checkpoint: After Tasks 3-4
 
 - [ ] All tests pass on this machine
@@ -167,18 +193,18 @@ payload fixtures from their official hook docs, marked "documented, not measured
 
 **Estimated scope:** Medium
 
-## Task 7: Guide, hosts page, release 5.2.0
+## Task 7: Guide, hosts page, release 6.0.0
 
 **Description:** `docs/guides/agent-skills.md` (why, enabling both, which command to use while both
-exist, what the engine does with each of his files, what 5.3 changes, and that
-production (`kaizen-ops`, `deploy`, `monitor`) is deprecated in 5.3 and removed in 6.0); `docs/hosts.md` (Task 6's
-findings, dated, measured vs documented); positioning gains an agent-skills column; CHANGELOG 5.2.0;
-version 5.2.0; `CLAUDE.md` updated.
+exist, what the engine does with each of his files, what 6.1 changes, and that
+production (`kaizen-ops`, `deploy`, `monitor`, `postmortem`) is removed in 6.0); `docs/hosts.md` (Task 6's
+findings, dated, measured vs documented); positioning gains an agent-skills column; CHANGELOG 6.0.0;
+version 6.0.0; `CLAUDE.md` updated.
 
 **Acceptance criteria:**
 - [ ] Both pages indexed in `docs/README.md`, every relative link resolves
-- [ ] CHANGELOG 5.2.0 with Added, no Breaking; `plugin.json` at 5.2.0
-- [ ] The guide names 5.3's deprecations so users are not surprised
+- [x] CHANGELOG 6.0.0 (Breaking: production removed; Added: agent-skills files, doctor checks); `plugin.json` at 6.0.0
+- [ ] The guide names 6.1's deprecations so users are not surprised
 
 **Verification:**
 - [ ] Tests pass: `node --test plugins/kaizen/tests/*.test.mjs plugins/kaizen-ops/tests/*.test.mjs`

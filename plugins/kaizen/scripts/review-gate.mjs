@@ -23,9 +23,7 @@ const filePath = String(input.tool_input?.file_path || input.tool_input?.noteboo
 const PUSH = /(^|[\s;&|(])(\S*\/)?git(\s+(-[cC]\s+\S+|--[\w-]+(=\S+)?))*\s+push(\s|$)/;
 // Any call of the CLI's `confirm` (`node "$K" confirm <code>`, `node …/kaizen.mjs confirm <code>`).
 const CONFIRM_CALL = /(kaizen\.mjs|\$\{?K\}?)["']?\s+confirm\b/;
-const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|deploy-approvals|push-offers|confirm-asks)\.json|deployments\.jsonl|review-hooks\.mjs/;
-// Hand-made deployment tags: they would distort DORA metrics and postmortems.
-const FORGED_TAG = /\bgit\b[^;&|]*\btag\b[^;&|]*\b(deploy|rollback|incident|resolve)\//;
+const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|push-offers|confirm-asks)\.json|review-hooks\.mjs/;
 const tamper = input.tool_name === 'Bash'
   ? TAMPER.test(command) && /\.kaizen|review-hooks\.mjs/.test(command)
   : /\.kaizen[\\/]state[\\/]/.test(filePath) && TAMPER.test(filePath);
@@ -43,11 +41,8 @@ function askUser(reason, safe, context = null) {
   process.stdout.write(JSON.stringify({ hookSpecificOutput: out }));
   process.exit(0);
 }
-const forged = isBash && FORGED_TAG.test(command) && !/\s(-d|--delete|-l|--list)\b/.test(command);
-// A protected environment's deploy command is only known after reading the config: every non-trivial
-// Bash command therefore goes through this check in a Kaizen repo (reading one JSON file).
-if (!tamper && !forged && (!isBash || (!PUSH.test(command) && !command.trim()))) process.exit(0);
 const confirmCall = isBash && CONFIRM_CALL.test(command);
+if (!tamper && (!isBash || (!PUSH.test(command) && !confirmCall))) process.exit(0);
 
 try {
   const { existsSync } = await import('node:fs');
@@ -59,16 +54,10 @@ try {
   if (tamper) {
     logFriction(root, { gate: 'state', kind: 'refused', source: 'claude' });
     process.stderr.write(
-      '[kaizen] Review and deployment evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, push-offers.json, confirm-asks.json, ' +
-        'deploy-approvals.json, deployments.jsonl) is only written ' +
+      '[kaizen] Review evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, push-offers.json, confirm-asks.json) is only written ' +
         'by the CLI and the hooks. To read the state: `review status`. To waive the review: `review waive --reason`, ' +
         'confirmed by the user.\n',
     );
-    process.exit(2);
-  }
-  if (forged) {
-    logFriction(root, { gate: 'tag', kind: 'refused', source: 'claude' });
-    process.stderr.write('[kaizen] deploy/…, rollback/…, incident/… and resolve/… tags are only created by `kaizen.mjs deploy` and `kaizen.mjs monitor`: they carry DORA metrics and postmortem timelines.\n');
     process.exit(2);
   }
   // `approvals: "ask"`: the user picked the risky option of Claude's question — Claude Code's own prompt
@@ -87,25 +76,8 @@ try {
     const p = approvalMode(loadConfig(root)) === 'ask' && pendingApproval(root, m[1]);
     if (p) {
       markAsked(root, p.code);
-      logFriction(root, { gate: p.kind === 'deploy' ? 'deploy' : 'push', kind: 'confirm_asked', approval: p.kind, source: 'claude' });
+      logFriction(root, { gate: 'push', kind: 'confirm_asked', approval: p.kind, source: 'claude' });
       askUser(`[kaizen] You chose to ${p.text} — confirm?`, 'Take the safe option (no confirmation)');
-    }
-  }
-  // Direct deployment of a protected environment: it goes through /kaizen-ops:deploy (approval typed by
-  // the user, tag, watch), never through its raw command.
-  if (!/kaizen\.mjs/.test(command)) {
-    const { loadConfig } = await import('./lib.mjs');
-    const envs = loadConfig(root).deploy.environments || {};
-    for (const [name, e] of Object.entries(envs)) {
-      const prot = e.protected ?? name === 'production';
-      if (prot && e.command && command.includes(e.command)) {
-        logFriction(root, { gate: 'deploy', kind: 'refused', env: name, source: 'claude' });
-        process.stderr.write(
-          `[kaizen] Direct deployment of ${name} refused: go through /kaizen-ops:deploy ${name} ` +
-            '(approval by the user, deployment tag, signal watch, rollback ready).\n',
-        );
-        process.exit(2);
-      }
     }
   }
   if (!PUSH.test(command)) process.exit(0);

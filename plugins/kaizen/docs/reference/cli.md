@@ -15,7 +15,7 @@ Conventions:
 - Flags are `--name value` or boolean `--name`. Paths are printed POSIX-style on every OS.
 - Output: human-readable text, or JSON for commands that return data (most accept `--json`).
 - **Exit codes**: `0` success · `1` a check is red (verify, size, secrets scan, plan check,
-  constitution check, learnings validate, review check, deploy/rollback/flag failure, monitor breach, dev probe unreachable,
+  constitution check, learnings validate, review check, dev probe unreachable,
   `plan latest` without a plan) · `2` usage error or exception (message on stderr, `kaizen: …`).
 
 ## Orientation
@@ -25,8 +25,7 @@ Conventions:
 Where the repo stands in the loop and what to run next — the backend of
 [`/kaizen:help`](../guides/help.md). Reports branch, commits ahead of the base, uncommitted files,
 initialization and profile, constitution (version, validity), number of plans and the latest one with
-its stage and `plan check` errors, number of learnings, gate state, deploy environments and undeployed
-commits, open incidents and resolved ones without a postmortem, review state and push decision, and the
+its stage and `plan check` errors, number of learnings, gate state, review state and push decision, and the
 ordered `next` list ([decision order](../concepts/the-loop.md#knowing-where-you-are)).
 
 ### `doctor [--in-skill] [--json] [--strict]`
@@ -52,7 +51,7 @@ touches, and — when it cannot be automated — the steps to run by hand.
 | `learnings-folder` | 2.0.0 | `<docs>/solutions/` exists, `<docs>/learnings/` does not | by hand: `git mv` |
 | `marketplace-dojo` | 3.1.0 | `.claude/settings.json` enables `kaizen@<other>` but not `kaizen@dojo` | adds `kaizen@dojo`; the old key is left to the team |
 | `profile-names` | 3.4.0 | `"profile": "lean"`, `"standard"` or `"full"` in `.kaizen/config.json` or `config.local.json` | rewrites that value only |
-| `kaizen-ops` | 4.0.0 | the repo deploys with Kaizen (environments, signals, postmortems, tags) and kaizen-ops is enabled nowhere | enables `kaizen-ops@dojo` for clones |
+| `production-removed` | 6.0.0 | `deploy` or `monitor` in `.kaizen/config.json` / `config.local.json`, or `kaizen-ops@dojo` in `.claude/settings.json` | by hand: remove them (move the commands to your own tools) |
 | `hook-lookup` | 4.1.2 | a Kaizen git hook has an older CLI lookup line | refreshes that line, keeps the rest |
 
 `--apply` runs the automatable ones that still apply, writes only what each owns (formatting and team
@@ -85,9 +84,9 @@ Stack and verification commands as JSON: `stacks` (e.g. `node (pnpm)`, `python`)
 (`test`, `lint`, `typecheck`, `audit` — configuration wins, detection fills the gaps), `configured`
 (keys coming from the config).
 
-### `audit [--json] [--no-github]` · `audit fix <id> [--owner @x] [--env e] [--ref sha]`
+### `audit [--json] [--no-github]` · `audit fix <id> [--owner @x] [--ref sha]`
 
-SDLC maturity in five areas with a score each, and the to-do list by priority. `audit fix` writes a
+SDLC maturity in three areas with a score each, and the to-do list by priority. `audit fix` writes a
 scaffold without ever overwriting a file. See [Audit](audit.md).
 
 ### `profile [--json] [--plan <path> | --files a,b | --base <ref>]`
@@ -208,10 +207,6 @@ refuses a non-empty folder.
 `new` reserves `<docs_root>/adr/NNNN-<title>.md` (next number, atomic) and prints the path. `list`:
 JSON of path, title, status, date.
 
-### `postmortem new --title "…"`
-
-Reserves `<docs_root>/postmortems/YYYY-MM-DD-<title>.md` (`-2`, `-3`… if taken).
-
 ## Review
 
 ### `review record --verdict ready|concerns|blocked [--run <folder>] [--allow-missing a,b]`
@@ -244,7 +239,7 @@ you confirm it: `confirm <code>` after Claude Code's prompt, or your message `ka
 
 ### `confirm <code>`
 
-With `approvals: "ask"` (default): confirms a pending review waiver, review gap or protected deployment
+With `approvals: "ask"` (default): confirms a pending review waiver or review gap
 — only after the review hook turned this very call into Claude Code's permission prompt and you
 accepted it (10 minutes, single use). Refused otherwise, and always with `approvals: "code"`. The hook
 only lets it run on its own with the code written out (no variable, nothing chained after it), so the
@@ -281,42 +276,19 @@ repository. Mechanics in [Pull requests](../concepts/pull-requests.md#driving-th
 
 `KAIZEN_GH` replaces `gh` (a binary or a Node script, used by the tests).
 
-## Release and production
+## Release
 
 ### `release notes [--from <tag>] [--to <ref>]`
 
 JSON: `from`, `to`, `commits`, `non_conventional`, `breaking`, `level`, `current`, `next`, `groups`,
 `rollout` (shipped plans with their rollout fields and what is missing). See
-[Production](../concepts/production.md#release).
-
-### `deploy detect [--json]` · `deploy configure <id> [--force]`
-
-Recognized deployment candidates (commands per environment, rollback, signals, confidence, notes); write
-one into the configuration without overwriting an existing environment unless `--force`.
-
-### `deploy request <env> [--ref r]` · `deploy run <env> [--ref r]` · `deploy rollback <env> [--reason …] [--to r]` · `deploy list [--env e]` · `deploy flag on|off <name> [--env e]`
-
-See [Deploy](../concepts/production.md#deploy). `run`, `rollback` and `flag` exit 1 on failure; `run`
-refuses a protected environment without a confirmed approval for that commit.
-
-### `monitor check|watch|patrol|alert|incident …`
-
-| Command | Exit 1 when |
-|---|---|
-| `monitor check [--env e] [--plan p]` | a signal is out of threshold |
-| `monitor watch [--env e] [--plan p] [--minutes 15] [--interval 60]` | a confirmed breach (incident opened; rollback if `auto_rollback`), or a signal blind throughout (`status: blind`, nothing opened) |
-| `monitor patrol --env e [--plan p] [--interval 60]` | a confirmed breach (incident opened), or a blind signal (`status: blind`, no incident) |
-| `monitor alert [--env e] [--file f\|-]` | — (prints the parsed alert and the action) |
-| `monitor incident open --env e [--at iso] [--summary …] [--source s]` · `resolve --env e [--at iso] [--summary …]` · `list [--env e]` | — |
-
-`watch` prints one line per sample on stderr (`✔/✘ name=value…`). See
-[Monitor](../concepts/production.md#monitor) and [Incidents](../concepts/production.md#incidents).
+[Plans](../concepts/plans.md).
 
 ## Metrics and dev server
 
 ### `metrics [--since 90d] [--no-github]`
 
-JSON with `window`, `deployments`, `changes`, `throughput`, `instability`, `batch_size`, `kaizen_loop`,
+JSON with `window`, `changes`, `throughput`, `instability`, `batch_size`, `kaizen_loop`,
 `cycle_cost`, `friction`, `work_items`. Every computation: [Metrics](../concepts/metrics.md).
 
 ### `cost [<item> | current] [--since 90d] [--json]`

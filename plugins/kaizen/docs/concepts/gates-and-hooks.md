@@ -25,7 +25,7 @@ Declared in [`hooks/hooks.json`](../../hooks/hooks.json):
 
 Common rules:
 
-- **Inactive outside a Kaizen repo**, except the secret scan. The review and deployment gates require
+- **Inactive outside a Kaizen repo**, except the secret scan. The review gate requires
   `.kaizen/config.json`; the quality gate requires an active `gate.json`. The secret scan runs in every
   git repo, because a leaked key costs the same whether or not Kaizen was initialized.
 - **Cheap first.** Each script filters on the tool name or the command text before importing anything,
@@ -162,8 +162,7 @@ Line counts exclude `pr.ignore` (lockfiles, minified, snapshots, generated files
 These hooks only exist when Claude Code loads the plugin. In a clone or a cloud session where it does
 not, nothing is refused — `kaizen doctor` reports it (plugin not declared in `.claude/settings.json`, no
 heartbeat from the SessionStart hook, branch pushed without a review). Two opt-in fallbacks:
-`audit fix claude_settings` declares `kaizen@dojo` in the versioned settings (and `kaizen-ops@dojo`
-when the repo declares deployments or signals, or has postmortems or deployment and incident tags — the doctor's `ops_plugin` check, also scored by `audit`), and `audit fix git_hooks`
+`audit fix claude_settings` declares `kaizen@dojo` in the versioned settings, and `audit fix git_hooks`
 installs `.githooks/pre-push` (the same decision, for every branch the push updates, at the pushed
 commit — whatever the local refspec, `HEAD` included) and `.githooks/pre-commit` (staged secrets). They
 run a pinned CLI (`git config kaizen.cli`, `$KAIZEN_CLI`, or the dojo marketplace's plugin cache only)
@@ -196,11 +195,8 @@ Claude cannot confirm for you, and non-interactive modes never waive.
 The same PreToolUse hook refuses:
 
 - Bash commands or file writes touching `reviews.json`, `review-evidence.json`, `review-launches.json`,
-  `hooks-seen.json`, `waivers.json`, `deploy-approvals.json` or `deployments.jsonl` under `.kaizen/state/`, or calling `review-hooks.mjs`
-  by hand;
-- hand-made `deploy/…`, `rollback/…`, `incident/…` and `resolve/…` git tags (listing and deleting are
-  allowed): they carry the DORA metrics and postmortem timelines;
-- the raw deploy command of a **protected** environment (see [production](production.md)).
+  `hooks-seen.json`, `waivers.json`, `push-offers.json` or `confirm-asks.json` under `.kaizen/state/`, or calling
+  `review-hooks.mjs` by hand.
 
 These gates stop forgetfulness and drift, not a determined attempt to bypass them; they make bypassing
 visible and deliberate.
@@ -217,7 +213,6 @@ Not hooks, but CLI checks the skills must pass and cannot argue with:
 | secrets | `node $K secrets scan [--staged \| --base ref]` | a key or token in added lines (exit 1) |
 | constitution | `node $K constitution check` | see [Constitution](constitution.md#validation-constitution-check) |
 | learnings | `node $K learnings validate` | invalid frontmatter (exit 1) |
-| deployment approval | `node $K deploy run <env>` | protected environment without your confirmed code |
 
 `verify` runs the commands from `.kaizen/config.json → verify`, filling the gaps with what it detects
 (`node $K detect`): npm/pnpm/yarn/bun scripts (`test`, `lint`, `typecheck`…, `tsc --noEmit` with a

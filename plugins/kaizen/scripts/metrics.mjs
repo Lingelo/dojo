@@ -1,13 +1,12 @@
 // Kaizen — delivery metrics (DORA, approximated from git and GitHub) and loop health.
 //
 // DORA 2025: throughput (deployment frequency, change lead time, rework rate) and instability
-// (change failure rate, time to restore). Without access to the deployment system, these values are
-// **approximations** from the default branch; each metric states its method.
+// (change failure rate, time to restore). Kaizen does not deploy (production commands removed in 6.0):
+// these values are **approximations** from the default branch and GitHub; each metric states its method.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { deployments } from './deploy.mjs';
 import { DEFAULT_WEIGHTS } from './estimate.mjs';
 import { costByKind, itemCosts, readLedger } from './ledger.mjs';
 import { FRICTION, defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, usageTotal, walkMarkdown } from './lib.mjs';
@@ -144,48 +143,6 @@ function loopHealth(root, from, branch) {
   };
 }
 
-// DORA measured on real deployments (deploy/<env>/… and rollback/<env>/… tags created by
-// `kaizen.mjs deploy`), when there are any in the window: frequency, commit → production lead time,
-// failure rate (deployment followed by a rollback or an incident before the next one), time to
-// restore (incident detection — or the deployment, with no recorded incident — → rollback or
-// resolution). Incidents (`incident/<env>/…`) come from monitor watch, patrol or an alert.
-function doraFromDeployments(root, from, env) {
-  const all = deployments(root, { env });
-  const deploys = all.filter((d) => d.kind === 'deploy');
-  const inWindow = deploys.filter((d) => Date.parse(d.at) >= from.getTime());
-  if (!inWindow.length) return null;
-  const lead = [];
-  let failed = 0;
-  const restore = [];
-  for (const d of inWindow) {
-    const prev = deploys[deploys.indexOf(d) - 1];
-    const range = prev ? `${prev.sha}..${d.sha}` : d.sha;
-    const times = (git(root, ['log', '--format=%aI', range, '-n', '500'], { allowFail: true }) || '').split('\n').filter(Boolean).map(Date.parse);
-    for (const t of times) lead.push((Date.parse(d.at) - t) / 3600000);
-    const next = deploys[deploys.indexOf(d) + 1];
-    const during = (x) => x.at >= d.at && (!next || x.at < next.at);
-    const rb = all.find((x) => x.kind === 'rollback' && during(x));
-    const inc = all.find((x) => x.kind === 'incident' && during(x));
-    if (rb || inc) {
-      failed++;
-      const start = inc && (!rb || inc.at <= rb.at) ? inc.at : d.at;
-      const end = all.find((x) => (x.kind === 'rollback' || x.kind === 'resolve') && x.at >= start);
-      if (end) restore.push((Date.parse(end.at) - Date.parse(start)) / 3600000);
-    }
-  }
-  const windowed = (kind) => all.filter((x) => x.kind === kind && Date.parse(x.at) >= from.getTime());
-  return {
-    env,
-    deployments: inWindow.length,
-    rollbacks: windowed('rollback').length,
-    incidents: windowed('incident').length,
-    lead_time_hours_median: round(median(lead.filter((h) => h >= 0))),
-    change_failure_rate: round(failed / inWindow.length, 2),
-    time_to_restore_hours_median: round(median(restore)),
-    method: `tags deploy/${env}/…, rollback/${env}/…, incident/${env}/… and resolve/${env}/… (kaizen.mjs deploy, monitor): lead time = first commit → deployment, failure = rollback or incident before the next deployment, restore = incident detection (otherwise, deployment) → rollback or resolution`,
-  };
-}
-
 // Cost of finished work/autopilot cycles (`gate off`), recorded locally: duration, quality gate
 // blocks, tokens of the main session and its subagents, broken down by role (model policy). Local to
 // the machine, like .kaizen/state/.
@@ -265,25 +222,22 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
   const sizes = prs?.length ? prs.map((p) => p.additions + p.deletions) : changes.map((c) => c.lines);
   const config = loadConfig(root);
 
-  const real = doraFromDeployments(root, from, config.deploy.metrics_env || 'production');
-  const weeksReal = real ? round(real.deployments / weeks) : null;
-
   return {
     window: { since, days, from: from.toISOString().slice(0, 10), default_branch: branch },
-    deployments: real,
     changes: changes.length,
     throughput: {
-      deployment_frequency_per_week: real ? weeksReal : round(changes.length / weeks),
-      deployment_frequency_method: real ? `real deployments to ${real.env} (deploy/ tags)` : 'changes that reached the default branch (deployment proxy)',
-      lead_time_hours_median: real?.lead_time_hours_median ?? round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
-      lead_time_method: real?.lead_time_hours_median != null ? `first commit → deployment to ${real.env}` : leadFromPrs.length ? 'PR opened → merged (GitHub)' : leadFromMerges.length ? 'first commit → merge (git)' : 'unavailable (squash merges without GitHub access)',
+      deployment_frequency_per_week: round(changes.length / weeks),
+      deployment_frequency_method: 'changes that reached the default branch (deployment proxy)',
+      lead_time_hours_median: round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
+      lead_time_method: leadFromPrs.length ? 'PR opened → merged (GitHub)' : leadFromMerges.length ? 'first commit → merge (git)' : 'unavailable (squash merges without GitHub access)',
       rework_rate: changes.length ? round(changes.filter((c) => c.fix).length / changes.length, 2) : null,
       rework_method: 'share of fix / hotfix / revert changes',
     },
     instability: {
-      change_failure_rate: real ? real.change_failure_rate : nonFix ? round(failed / nonFix, 2) : null,
-      change_failure_method: real ? `deployments to ${real.env} followed by a rollback` : 'changes followed within 7 days by a fix or revert touching the same files',
-      time_to_restore_hours_median: real?.time_to_restore_hours_median ?? null,
+      change_failure_rate: nonFix ? round(failed / nonFix, 2) : null,
+      change_failure_method: 'changes followed within 7 days by a fix or revert touching the same files',
+      time_to_restore_hours_median: null,
+      time_to_restore_method: 'unavailable: Kaizen records no deployment nor incident (production removed in 6.0)',
     },
     batch_size: {
       lines_median: round(median(sizes), 0),

@@ -29,12 +29,11 @@ In depth: [state and files](../reference/state-and-files.md).
 
 ## The audit: setting up the SDLC
 
-`node $K audit` scores the project on five areas — foundations, flow, delivery, operations, Kaizen loop —
+`node $K audit` scores the project on three areas — foundations, flow, Kaizen loop —
 each check `ok`, `warn`, `missing` or `unknown` with its evidence and a priority. Claude then offers to
 fix each point, **P1 first**, one by one, with your approval: scaffolds generated from your stack and
 never written over an existing file (`audit fix ci`, `pr_template`, `dependabot`, `codeowners`,
-`gitignore_env`, `secret_scanning`, `monitor_patrol`, `monitor_alert`, `git_hooks`, `claude_settings`), deployment through
-`deploy detect`, the exact branch protection settings for you to apply. The audit is rerun at the end to
+`gitignore_env`, `secret_scanning`, `git_hooks`, `claude_settings`), the exact branch protection settings for you to apply. The audit is rerun at the end to
 show the before/after. Every check and scaffold: [SDLC audit](../reference/audit.md).
 
 ## The installation, step by step
@@ -51,8 +50,7 @@ show the before/after. Every check and scaffold: [SDLC audit](../reference/audit
    `docs/learnings/` before planning or debugging.
 7. **Constitution**: proposed if missing, checked if it exists.
 8. **PR size**: `pr.max_lines` (400 by default).
-9. **Deployment and monitoring** (optional): `deploy detect` recognizes your platform and proposes
-   commands, rollback and health-check; you choose. See [deploy](../../../kaizen-ops/docs/guides/deploy.md).
+9. **Guard rails without the plugin**: see below.
 10. **Profile**, by the repo's stakes: `prototype` (spike, internal tool), `product` (product in
     production) or `critical` (regulated or critical domains). It also sets each agent's model.
     See [Configuration](../configuration.md#profile) and
@@ -73,7 +71,7 @@ Config, detected checks, learnings, packs, constitution, gate, review state and 
 ## Guard rails without the plugin
 
 Setup starts with `kaizen doctor`. After a Kaizen update, it lists what the repository still has to
-change (`kaizen upgrade`: renamed profile, kaizen-ops to enable, git hooks to refresh, a folder to rename
+change (`kaizen upgrade`: renamed profile, production configuration to remove, git hooks to refresh, a folder to rename
 by hand) and offers `kaizen upgrade --apply` for the automatable ones; `setup check` runs it too. It offers, with your consent: `audit fix claude_settings`
 (declares `kaizen@dojo` in the versioned `.claude/settings.json`, so every clone loads Kaizen) and
 `audit fix git_hooks` (git hooks that refuse an unreviewed push and a staged secret even when the plugin

@@ -70,9 +70,8 @@ settling it in one KTD line.
   always. Once the units are written, `node "$K" profile --json --plan <path>` gives the cycle's profile
   (raised one step on a risk surface): apply that one, not the repo's.
 - **Rollout**: `kaizen:rollout` section — exposure (flag?), order, rollback, what is irreversible,
-  signal to watch. Cite the signal by its name declared in `monitor.signals` (`node "$K" config`) with
-  its threshold, `` `error_rate` > 1 % → rollback ``: that is what `/kaizen-ops:deploy` will watch after the
-  release. Signal needed but not declared → say so in the plan (to add to the config). `prototype` profile:
+  signal to watch with its threshold (`` error rate > 1 % → rollback ``), named as the team's own
+  monitoring names it: Kaizen does not deploy nor watch production, the team does. `prototype` profile:
   only if the change reaches production in a way that is hard to undo (migration, public API, data);
   otherwise one line is enough.
 

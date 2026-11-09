@@ -44,15 +44,12 @@ export const DEFAULT_CONFIG = {
   // Risk surfaces raise the profile one step for the cycle (scripts/risk.mjs): team globs per surface.
   risk: { escalate: true, paths: {}, ignore: [] },
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
-  // How the user approves a review waiver, a review gap or a protected deployment: a code they type, or
+  // How the user approves a review waiver or a review gap: a code they type, or
   // a question (safe option first) confirmed in Claude Code's prompt — scripts/approvals.mjs.
   approvals: 'ask',
   // cost_weights: relative weight of a million tokens per model; confirm_above_cost: ask before a
   // review estimated above it (null = never ask).
   review: { require_before_push: 'ask', max_unreviewed_lines: 80, cost_weights: {}, confirm_above_cost: null },
-  // Deployment and monitoring: the team's commands, Kaizen knows no platform.
-  deploy: { environments: {}, watch_minutes: 15, auto_rollback: false, push_tags: true, timeout_seconds: 1800, flags: {} },
-  monitor: { signals: {}, interval_seconds: 60, consecutive: 2 },
   // Model per agent role: profile defaults (scripts/models.mjs), adjustable per role or per agent.
   models: { roles: {}, agents: {} },
   // Secret scan before every commit Claude makes (secret-gate hook); ignore = path globs.
@@ -105,11 +102,9 @@ export function loadConfig(root) {
   merged.verify = { ...(base.verify || {}), ...(local.verify || {}) };
   merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
   merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
-  merged.deploy = { ...DEFAULT_CONFIG.deploy, ...(base.deploy || {}), ...(local.deploy || {}) };
   merged.perf = { ...DEFAULT_CONFIG.perf, ...(base.perf || {}), ...(local.perf || {}) };
   merged.secrets = { ...DEFAULT_CONFIG.secrets, ...(base.secrets || {}), ...(local.secrets || {}) };
   merged.risk = { ...DEFAULT_CONFIG.risk, ...(base.risk || {}), ...(local.risk || {}) };
-  merged.monitor = { ...DEFAULT_CONFIG.monitor, ...(base.monitor || {}), ...(local.monitor || {}) };
   merged.models = {
     roles: { ...(base.models?.roles || {}), ...(local.models?.roles || {}) },
     agents: { ...(base.models?.agents || {}), ...(local.models?.agents || {}) },

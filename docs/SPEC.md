@@ -1,4 +1,4 @@
-# Spec: Kaizen 5.2, agent-skills as the base
+# Spec: Kaizen 6.0, agent-skills as the base
 
 Written in agent-skills' format (`spec-driven-development`): this repository now uses Addy Osmani's
 artifacts for its own work. Background and decisions: `docs/ideation/2026-11-09-kaizen-6-ideation.md`
@@ -8,7 +8,8 @@ artifacts for its own work. Background and decisions: `docs/ideation/2026-11-09-
 
 Kaizen converges on [agent-skills](https://github.com/addyosmani/agent-skills): his skills become the
 base, Kaizen becomes the engine that makes them hold (gates, evidence, memory, production, hosts).
-5.2 is the first step: a team enables `agent-skills@dojo` next to Kaizen, works with his commands
+6.0 is the first step — and, decided on 2026-11-09 ("on supprime ops"), the release that removes
+production from Kaizen (kaizen-ops, `deploy`, `monitor`, `postmortem`): a team enables `agent-skills@dojo` next to Kaizen, works with his commands
 (`/spec`, `/plan`, `/build`, `/review`, `/ship`…) and his files (`SPEC.md`, `tasks/`, `CONSTRAINTS.md`),
 and keeps Kaizen's gates **without running a Kaizen command for them**.
 
@@ -81,7 +82,7 @@ export function reviewerOf(toolInput = {}) {
   parameters; adding a dependency; anything that changes the push gate for repos without agent-skills.
 - **Never:** add a CLI command Osmani's workflow does not need (decided 2026-11-09: the engine shrinks,
   it does not grow); edit files under `plugins/agent-skills/` or `plugins/kioku/`; push the agent-skills sync
-  directly to `main`; remove or rewrite Kaizen skills in 5.2 (deprecation is 5.3).
+  directly to `main`; remove or rewrite Kaizen's development skills in 6.0 (their deprecation is 6.1).
 
 ## Success Criteria
 
@@ -90,15 +91,16 @@ export function reviewerOf(toolInput = {}) {
 2. A newer upstream commit arrives as a pull request whose body lists changed hooks and scripts under
    "Executable changes"; `main` is untouched until merge. kioku's sync is unchanged.
 3. Kaizen reads his four files (spec, plan, tasks with their files and verification, constraints)
-   without any new command: the parser feeds `doctor` now and the gates in 5.3.
+   without any new command: the parser feeds `doctor` now and the gates in 6.1.
 4. `kaizen doctor` reports whether `agent-skills@dojo` is enabled, which of his files exist, whether
    his floor guard is wired when `CONSTRAINTS.md` exists, and an info line when both plugins are on.
 5. After `agent-skills:code-reviewer` reviews a 120-line branch with no Critical finding, `git push`
    is allowed without any Kaizen command; with a `Critical:` finding, pushing the same tree is refused
    until the code changes and a new review is clean.
-6. `docs/guides/agent-skills.md` explains running both in 5.2; `docs/hosts.md` records, dated, what
+6. `docs/guides/agent-skills.md` explains running both in 6.0; `docs/hosts.md` records, dated, what
    was measured on Claude Code and what is documented-only for Codex and Copilot CLI.
-7. All test commands green on the three OSes; Kaizen 5.2.0 released.
+7. All test commands green on the three OSes; Kaizen 6.0.0 released, with production removed and
+   `kaizen upgrade` listing a repository's production leftovers (`production-removed`).
 
 ## Open Questions
 

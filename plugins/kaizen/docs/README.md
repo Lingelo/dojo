@@ -33,7 +33,7 @@ writes in your repo (plans, learnings, ADRs, PR descriptions) follow `language` 
 
 ## The loop
 
-![The Kaizen loop: constitution band, the build row from ideate to learn, the operate row from merge to postmortem, and the project memory read back by the next cycle](media/diagrams/kaizen-loop.svg)
+![The Kaizen loop: constitution band, the build row from ideate to learn, and the project memory read back by the next cycle](media/diagrams/kaizen-loop.svg)
 
 `/kaizen:autopilot` chains everything after the brainstorm, without stopping (it never merges and never
 deploys). The whole loop is explained in [The Kaizen loop](concepts/the-loop.md).
@@ -50,7 +50,6 @@ In-depth pages: what each mechanism does exactly, with its rules, limits and dia
 | [Gates and hooks](concepts/gates-and-hooks.md) | the hooks, `kaizen doctor` and the git-hook fallback, the secret scan before `git commit`, the Stop-hook quality gate, the review required before `git push`, waivers, tamper protection, `verify` |
 | [The review system](concepts/review.md) | code review depth, reviewer selection, the reviewer contract, synthesis, verdicts; plan review |
 | [Pull requests](concepts/pull-requests.md) | PR description, answering feedback, the snapshot, watcher verdicts, one watch-pr cycle |
-| [Production](concepts/production.md) | release notes and SemVer, deployment and approval, platform detection, signals, watch/patrol/alert, incidents, postmortems |
 | [Learnings](concepts/learnings.md) | durability test, schema, validation, search scoring, read vs applied, pruning, packs |
 | [Metrics](concepts/metrics.md) | every DORA, loop and cycle-cost indicator and how it is computed |
 | [Agents and models](concepts/agents-and-models.md) | the 22 agents, when each runs, the model policy per profile |
@@ -86,12 +85,10 @@ In-depth pages: what each mechanism does exactly, with its rules, limits and dia
 - [address-feedback](guides/address-feedback.md) — handle review feedback
 - [watch-pr](guides/watch-pr.md) — drive a PR to "ready"
 - [release](guides/release.md) — prepare a version
-- deploy, monitor — in [kaizen-ops](../../kaizen-ops/docs/README.md) since 4.0
 
 **Learn and measure**
 - [learn](guides/learn.md) — capture a learning
 - [prune-learnings](guides/prune-learnings.md) — maintain the learnings
-- postmortem — in [kaizen-ops](../../kaizen-ops/docs/README.md) since 4.0
 - [metrics](guides/metrics.md) — measure delivery and the compounding effect
 
 **Orchestrate**

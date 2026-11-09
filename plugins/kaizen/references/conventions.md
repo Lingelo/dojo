@@ -8,7 +8,7 @@ ideate → brainstorm → plan ─► doc-review → work → review → ship �
                        ▲                                                         │
                        └──────────── docs/learnings/ · docs/adr/ ◄───────────────┘
 debug → fix → review → learn      polish: user-guided UI touch-ups      prune-learnings: learning upkeep
-decide → ADR      postmortem → learnings, packs, amendments      metrics: DORA + reuse      release
+decide → ADR      metrics: DORA + reuse      release      production: the team's own tools
 ```
 
 **Rule hierarchy**: constitution > Kaizen Pack rules > learnings > preferences — for a **ratified**
@@ -31,8 +31,7 @@ node "$K" status [--json]          # where the repo stands in the loop + next co
 node "$K" doctor --in-skill        # are the guard rails on? (entry skills, see "Guard rails")
 node "$K" profile [--json] [--plan p | --files a,b]   # profile for this cycle: the repo's, raised one step on a risk surface
 node "$K" models [--json] [--agent a] [--profile p]  # model of each agent (profile + config): pass it to the Agent tool
-node "$K" audit [--json] | audit fix <id>       # project SDLC maturity, scaffolds (ci, pr_template, dependabot, codeowners, gitignore_env, secret_scanning, monitor_patrol, monitor_alert, git_hooks, claude_settings)
-node "$K" deploy detect | deploy configure <id> # recognized deployment platform → config
+node "$K" audit [--json] | audit fix <id>       # project SDLC maturity, scaffolds (ci, pr_template, dependabot, codeowners, gitignore_env, secret_scanning, git_hooks, claude_settings)
 node "$K" root                     # paths: docs_root, plans, learnings, ideation (JSON)
 node "$K" config                   # effective configuration
 node "$K" init [--profile prototype]    # creates .kaizen/config.json and the deliverable folders
@@ -59,11 +58,7 @@ node "$K" pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch   #
 node "$K" dev detect | dev probe --url <u>      # dev server
 node "$K" metrics [--since 90d]    # approximated DORA + loop health
 node "$K" adr new --title "…" | adr list        # architecture decisions
-node "$K" postmortem new --title "…"            # postmortem
 node "$K" release notes [--from <tag>]          # release notes + SemVer
-node "$K" deploy request|run <env> [--ref r] | rollback <env> | list | flag on|off <name>   # deployment (deploy/<env>/… tag)
-node "$K" monitor check|watch [--env e] [--plan p] [--minutes n]   # production signals against their thresholds
-node "$K" monitor patrol --env e | alert [--file f] | incident open|resolve|list   # continuous detection, incidents
 node "$K" run-dir reviews         # local working folder for a run (ignored by git)
 ```
 
@@ -80,9 +75,6 @@ before anything else:
   run them by hand at each step (`verify`, `secrets scan --staged` before a commit, `review check`
   before a push) until the plugin is enabled;
 - **plugin not declared** → offer `node "$K" audit fix claude_settings` (a versioned file: ask first);
-- **production commands moved (`ops_plugin`)** → the repo deploys or watches signals with Kaizen: say the
-  commands are now `/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`, and offer
-  `node "$K" audit fix claude_settings`, which enables `kaizen-ops@dojo` (ask first);
 - **Kaizen migrations pending (`upgrade`)** → Kaizen was updated and the repo still has changes to make:
   run `node "$K" upgrade`, show the list (each migration's version, why, files), offer
   `node "$K" upgrade --apply` for the automatable ones (versioned files: ask first, then name the files to
@@ -148,13 +140,8 @@ has recorded the pushed state. Every skill that pushes first checks `node "$K" r
 
 ## Deployment
 
-Kaizen only deploys through `/kaizen-ops:deploy`, with the commands the team declared
-(`deploy.environments`), never guessed ones. A protected environment (`production` by default)
-requires the user's approval — a question, "Not now" first, confirmed in Claude Code's prompt
-(`confirm <code>`), or with `approvals: "code"` a code they type (`kaizen deploy <code>`); its raw command is refused by the
-hook, and `deploy/…` / `rollback/…` / `incident/…` / `resolve/…` tags are only created by the CLI.
-After each deployment, signals (`monitor.signals`, plan thresholds) are watched; a breached threshold
-→ rollback first, postmortem next. `autopilot` never deploys.
+Kaizen does not deploy nor watch production (removed in 6.0): the team's own tools do. A skill never
+deploys, and a plan's rollout section describes what the team will do, in the team's words.
 
 ## Deliverables root
 
@@ -166,12 +153,11 @@ Read `node "$K" root` before composing a path. By default everything lives under
 | `<root>/learnings/` | captured learnings, one per file, validated frontmatter | learn, prune-learnings |
 | `<root>/ideation/` | ranked ideas | ideate |
 | `<root>/adr/` | numbered architecture decisions (`NNNN-title.md`) | decide |
-| `<root>/postmortems/` | incident postmortems | postmortem |
 | `<root>/metrics/` | measurement reports (optional) | metrics |
 | `CONSTITUTION.md` | non-negotiable, versioned engineering principles | constitution |
 | `kaizen-packs/<pack>/` | prescriptive team rules | setup, learn (with approval) |
 | `.kaizen/config.json` | versioned configuration (`config.local.json` = personal override, ignored by git) | setup |
-| `.kaizen/state/` | local state (gate, reviews, deployments) — auto-ignored by git | CLI |
+| `.kaizen/state/` | local state (gate, reviews, cost) — auto-ignored by git | CLI |
 
 No deliverable carries mutable state ("in progress", "done"): progress is read from git.
 
@@ -181,13 +167,13 @@ These instructions are written in English; **the conversation and the deliverabl
 English.**
 - **Talk to the user in their language** — the language of their messages. A French-speaking user
   gets French answers, questions and reports, even though this skill is written in English.
-- **Deliverables** (plans, learnings, ADRs, postmortems, constitution, PR descriptions, review
+- **Deliverables** (plans, learnings, ADRs, constitution, PR descriptions, review
   replies) follow `config.language`: `auto` (default) = the language of the conversation, otherwise
   `en`, `fr`… Section titles and fixed labels shown in these instructions (for example "Reviewer
   guide", "Review waived", "looks ready") are translated into that language.
 - **Never translated**, because tools rely on them: `<!-- kaizen:<id> -->` markers, frontmatter keys
-  and values, ids (R1, AE1, KTD1, U1, S1), CLI commands and flags, `kaizen waive <code>` /
-  `kaizen deploy <code>` confirmations, `confirm <code>`, file paths.
+  and values, ids (R1, AE1, KTD1, U1, S1), CLI commands and flags, `kaizen waive <code>`
+  confirmations, `confirm <code>`, file paths.
 - The deterministic tools accept the plan and constitution field names in English and, for older
   repos, in French (`**Check:**`/`**Contrôle :**`, `**Covers:**`/`**Couvre :**`,
   `NON-NEGOTIABLE`/`NON NÉGOCIABLE`, `[NEEDS CLARIFICATION: …]`/`[À CLARIFIER : …]`…).

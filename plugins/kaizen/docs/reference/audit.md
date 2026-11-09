@@ -32,22 +32,6 @@ protects first).
 | `dependency_updates` | automated dependency updates | Dependabot or Renovate config | 3 | `dependabot` |
 | `claude_md` | project instructions for agents | `CLAUDE.md` | 2 | — (`/init`) |
 
-### Delivery
-
-| Id | Check | `ok` when | Priority |
-|---|---|---|---|
-| `deploy` | tooled deployment | `deploy.environments` declared (`warn` if `deploy detect` recognizes something not configured) | 1 |
-| `rollback` | declared rollback | every environment has a `rollback` | 1 |
-| `protected` | protected production | `production` is not declared `"protected": false` | 2 |
-
-### Operations
-
-| Id | Check | `ok` when | Priority | Scaffold |
-|---|---|---|---|---|
-| `monitoring` | watched production signals | `monitor.signals` declared | 1 with environments, 2 otherwise | — |
-| `continuous_monitoring` | continuous incident detection | a workflow running `monitor patrol` or `monitor alert` | 3 | `monitor_patrol` (and `monitor_alert`) |
-| `health` | health endpoint | an HTTP signal (`warn` if a `/health`, `/healthz`, `/up`, `/ready`… route exists in the code but is not watched) | 2 | — |
-
 ### Kaizen loop
 
 | Id | Check | `ok` when | Priority |
@@ -71,8 +55,6 @@ everything `missing` or `warn` by priority, with the fix, the scaffold id and th
 | `codeowners` | `.github/CODEOWNERS` | requires `--owner @user` or `@org/team`; default owner, plus `/CONSTITUTION.md`, `/kaizen-packs/`, `/.kaizen/config.json` |
 | `gitignore_env` | appends to `.gitignore` | `.env`, `.env.*`, `!.env.example` |
 | `secret_scanning` | `.github/workflows/kaizen-secrets.yml` | `secrets scan --base origin/<target branch>` on every PR (`--ref <sha>` pins the Kaizen checkout) |
-| `monitor_patrol` | `.github/workflows/kaizen-patrol.yml` | scheduled `monitor patrol` (`--env`, default production or the first environment; `--ref <sha>` pins the Kaizen checkout) |
-| `monitor_alert` | `.github/workflows/kaizen-alert.yml` | `repository_dispatch` entry point passing the payload to `monitor alert` through the environment (no script injection) |
 | `git_hooks` | `.githooks/pre-push`, `.githooks/pre-commit`, `core.hooksPath` | refuse an unreviewed push and a staged secret without the plugin; an existing hook is never overwritten — of a Kaizen hook written by an older version only the CLI lookup line is refreshed (`warn` until then), and when hooks are already in use (`core.hooksPath`, `.git/hooks`) the path is left alone and `chain` gives the line to add |
 | `claude_settings` | merges into `.claude/settings.json` | declares the `dojo` marketplace and enables `kaizen@dojo`, keeping every other key; refused on invalid JSON |
 

@@ -10,7 +10,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { docsRoot, loadConfig, PROFILE_ALIASES } from './lib.mjs';
-import { PLUGIN_ID, gitHooksState, opsDeclared, opsNeeded } from './doctor.mjs';
+import { PLUGIN_ID, gitHooksState } from './doctor.mjs';
 import { declarePlugin, refreshHookLookups } from './githooks.mjs';
 
 export const KAIZEN_VERSION = JSON.parse(readFileSync(fileURLToPath(new URL('../.claude-plugin/plugin.json', import.meta.url)), 'utf8')).version;
@@ -54,6 +54,21 @@ function declare(root) {
   }
 }
 
+// What Kaizen's production commands (removed in 6.0) left in a repository: `deploy` / `monitor` in the
+// Kaizen config files, kaizen-ops enabled in the project settings.
+const OPS_ID = 'kaizen-ops@dojo';
+const CONFIG_FILES = ['.kaizen/config.json', '.kaizen/config.local.json'];
+function productionLeftovers(root) {
+  const found = [];
+  for (const f of CONFIG_FILES) {
+    const c = readJson(join(root, f));
+    for (const key of ['deploy', 'monitor']) if (c && key in c) found.push(`${f} (${key})`);
+  }
+  for (const f of ['.claude/settings.json', '.claude/settings.local.json']) {
+    if (OPS_ID in (readJson(join(root, f))?.enabledPlugins || {})) found.push(`${f} (${OPS_ID})`);
+  }
+  return found;
+}
 // Releases with a Breaking or Deprecated section that ask nothing of a repository, with the reason
 // (tests/upgrade.test.mjs requires one or the other from 4.3.0 on).
 export const NO_MIGRATION = {
@@ -111,16 +126,19 @@ export const MIGRATIONS = [
     },
   },
   {
-    id: 'kaizen-ops',
-    since: '4.0.0',
-    title: 'deploy, monitor and postmortem moved to the kaizen-ops plugin',
-    applies(root, config) {
-      const why = opsNeeded(root, config);
-      if (!why || opsDeclared(root)) return null;
-      return `this repo ${why}, and kaizen-ops is not enabled: /kaizen-ops:deploy, monitor and postmortem are missing`;
+    id: 'production-removed',
+    since: '6.0.0',
+    title: 'Kaizen no longer deploys nor monitors: kaizen-ops and the deploy/monitor configuration are gone',
+    applies(root) {
+      const found = productionLeftovers(root);
+      return found.length ? `${found.join(', ')}: unused since Kaizen 6.0 — deploy and monitor with the team's own tools` : null;
     },
-    files: () => ['.claude/settings.json'],
-    apply: declare,
+    files: (root) => [...new Set(productionLeftovers(root).map((f) => f.split(' ')[0]))],
+    // Removing configuration the team wrote is their call (they may move the commands to their own CD).
+    manual: (root) => productionLeftovers(root).map((f) => {
+      const [file, what] = [f.split(' ')[0], f.slice(f.indexOf('(') + 1, -1)];
+      return what === OPS_ID ? `remove "${OPS_ID}" from enabledPlugins in ${file}` : `remove the "${what}" key from ${file} (keep its commands in your own deploy tooling if you use them)`;
+    }),
   },
   {
     id: 'hook-lookup',

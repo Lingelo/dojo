@@ -16,7 +16,7 @@ const read = (dir, f) => readFileSync(join(dir, f), 'utf8');
 // A repository left as Kaizen 3.x/4.1 shaped it (AE1).
 function oldRepo() {
   const dir = tempRepo({
-    '.kaizen/config.json': '{\n  "profile":  "lean",\n  "deploy": { "environments": { "production": { "command": "make deploy", "rollback": "make rollback" } } }\n}\n',
+    '.kaizen/config.json': '{\n  "profile":  "lean"\n}\n',
     '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true } },
     '.githooks/pre-push': OLD_HOOK('pre-push').replace(/^exec /m, 'echo team-check\nexec '),
   });
@@ -38,15 +38,14 @@ test('AE1: an old repository lists every migration it needs, with version, reaso
   const dir = oldRepo();
   const r = run(dir, ['upgrade', '--json']);
   assert.equal(r.code, 0, r.stderr);
-  assert.deepEqual(ids(r), ['profile-names', 'kaizen-ops', 'hook-lookup']);
+  assert.deepEqual(ids(r), ['profile-names', 'hook-lookup']);
   const byId = Object.fromEntries(r.json.pending.map((m) => [m.id, m]));
   assert.equal(byId['profile-names'].since, '3.4.0');
   assert.deepEqual(byId['profile-names'].files, ['.kaizen/config.json']);
-  assert.match(byId['kaizen-ops'].reason, /declares deployment environments/);
   assert.deepEqual(byId['hook-lookup'].files, ['.githooks/pre-push']);
   assert.ok(r.json.pending.every((m) => m.auto));
   const text = run(dir, ['upgrade']).stdout;
-  assert.match(text, /3 migration\(s\) pending/);
+  assert.match(text, /2 migration\(s\) pending/);
   assert.match(text, /node \$K upgrade --apply/);
   cleanup(dir);
 });
@@ -55,11 +54,10 @@ test('AE2: --apply fixes them in place, keeps formatting and team lines, then ha
   const dir = oldRepo();
   const r = run(dir, ['upgrade', '--apply', '--json']);
   assert.equal(r.code, 0, r.stderr);
-  assert.deepEqual(r.json.applied.map((a) => a.id), ['profile-names', 'kaizen-ops', 'hook-lookup']);
-  assert.deepEqual([...r.json.written].sort(), ['.claude/settings.json', '.githooks/pre-push', '.kaizen/config.json']);
+  assert.deepEqual(r.json.applied.map((a) => a.id), ['profile-names', 'hook-lookup']);
+  assert.deepEqual([...r.json.written].sort(), ['.githooks/pre-push', '.kaizen/config.json']);
   // The one value rewritten, the file's own spacing kept.
-  assert.match(read(dir, '.kaizen/config.json'), /^ {2}"profile": {2}"prototype",$/m);
-  assert.equal(JSON.parse(read(dir, '.claude/settings.json')).enabledPlugins['kaizen-ops@dojo'], true);
+  assert.match(read(dir, '.kaizen/config.json'), /^ {2}"profile": {2}"prototype"$/m);
   assert.match(read(dir, '.githooks/pre-push'), /echo team-check\nexec node "\$cli" githook pre-push/);
   assert.doesNotMatch(run(dir, ['doctor', '--json']).json.checks.find((c) => c.id === 'git_hooks').evidence, /older Kaizen/);
   // Idempotent.
@@ -103,6 +101,25 @@ test('marketplace-dojo: an old marketplace id gets kaizen@dojo, the old key is l
   cleanup(dir);
 });
 
+test('production-removed: deploy/monitor config and kaizen-ops listed by hand, never touched (6.0)', () => {
+  const dir = tempRepo({
+    '.kaizen/config.json': { deploy: { environments: { production: { command: 'make deploy' } } }, monitor: { signals: {} } },
+    '.claude/settings.json': { enabledPlugins: { 'kaizen@dojo': true, 'kaizen-ops@dojo': true } },
+  });
+  const [m] = run(dir, ['upgrade', '--json']).json.pending;
+  assert.equal(m.id, 'production-removed');
+  assert.equal(m.since, '6.0.0');
+  assert.equal(m.auto, false);
+  assert.deepEqual(m.files, ['.kaizen/config.json', '.claude/settings.json']);
+  assert.equal(m.manual.length, 3);
+  assert.match(m.manual.join('\n'), /remove the "deploy" key from \.kaizen\/config\.json/);
+  assert.match(m.manual.join('\n'), /remove "kaizen-ops@dojo" from enabledPlugins in \.claude\/settings\.json/);
+  const before = read(dir, '.kaizen/config.json');
+  run(dir, ['upgrade', '--apply']);
+  assert.equal(read(dir, '.kaizen/config.json'), before, 'never edited by Kaizen');
+  cleanup(dir);
+});
+
 test('each migration: does not apply once fixed by hand, nor when its trigger is absent', () => {
   // Profile renamed by hand, in config.json and config.local.json alike.
   const dir = tempRepo({ '.kaizen/config.json': { profile: 'critical' } });
@@ -110,12 +127,11 @@ test('each migration: does not apply once fixed by hand, nor when its trigger is
   assert.deepEqual(run(dir, ['upgrade', '--json']).json.pending[0].files, ['.kaizen/config.local.json']);
   run(dir, ['upgrade', '--apply']);
   assert.equal(read(dir, '.kaizen/config.local.json'), '{ "profile": "critical" }\n');
-  // kaizen-ops enabled in the user's own settings: nothing to migrate.
+  // Production leftovers removed by hand: nothing to migrate.
   const ops = tempRepo({ '.kaizen/config.json': { monitor: { signals: { up: { type: 'http', url: 'https://x' } } } } });
-  const home = mkdtempSync(join(tmpdir(), 'kaizen-claude-'));
-  assert.deepEqual(cli(ops, ['upgrade', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }).json.pending.map((m) => m.id), ['kaizen-ops']);
-  writeFileSync(join(home, 'settings.json'), JSON.stringify({ enabledPlugins: { 'kaizen-ops@dojo': true } }));
-  assert.deepEqual(cli(ops, ['upgrade', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }).json.pending, []);
+  assert.deepEqual(run(ops, ['upgrade', '--json']).json.pending.map((m) => m.id), ['production-removed']);
+  writeFileSync(join(ops, '.kaizen', 'config.json'), '{}\n');
+  assert.deepEqual(run(ops, ['upgrade', '--json']).json.pending, []);
   // Hooks that are not Kaizen's: not a migration.
   const foreign = tempRepo({ '.kaizen/config.json': {} });
   mkdirSync(join(foreign, '.githooks'));
@@ -129,7 +145,7 @@ test('AE4: doctor reports pending migrations with their count, ids and the fix',
   const check = (d) => run(d, ['doctor', '--json']).json.checks.find((c) => c.id === 'upgrade');
   const before = check(dir);
   assert.equal(before.status, 'warn');
-  assert.equal(before.evidence, '3 Kaizen migration(s) pending (profile-names, kaizen-ops, hook-lookup)');
+  assert.equal(before.evidence, '2 Kaizen migration(s) pending (profile-names, hook-lookup)');
   assert.match(before.fix, /node "\$K" upgrade/);
   run(dir, ['upgrade', '--apply']);
   assert.deepEqual([check(dir).status, check(dir).evidence], ['ok', 'nothing to migrate']);

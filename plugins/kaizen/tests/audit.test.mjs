@@ -28,7 +28,8 @@ const status = (r, id) => r.checks.find((c) => c.id === id)?.status;
 test('bare project: everything missing, ordered priorities, scores per area', () => {
   const dir = tempRepo({ 'a.txt': '1' });
   const r = audit(dir);
-  for (const id of ['remote', 'ci', 'tests', 'gitignore_env', 'deploy', 'monitoring', 'kaizen', 'constitution']) assert.equal(status(r, id), 'missing', id);
+  assert.deepEqual(Object.keys(r.areas).sort(), ['Flow', 'Foundations', 'Kaizen loop'], 'no Delivery nor Operations since 6.0');
+  for (const id of ['remote', 'ci', 'tests', 'gitignore_env', 'kaizen', 'constitution']) assert.equal(status(r, id), 'missing', id);
   assert.equal(status(r, 'branch_protection'), 'unknown');
   assert.deepEqual(r.next.map((n) => n.priority), [...r.next.map((n) => n.priority)].sort());
   assert.ok(r.areas.Foundations.score < 20, `score ${r.areas.Foundations.score}`);
@@ -45,43 +46,21 @@ test('tooled project: every check green (branch protection not checked outside G
     'src/app.test.js': '',
     '.gitignore': 'node_modules\n.env\n',
     '.github/workflows/ci.yml': 'on: [pull_request]\njobs:\n  t:\n    steps:\n      - run: npm test\n',
-    '.github/workflows/kaizen-patrol.yml': 'on: schedule\njobs:\n  p:\n    steps:\n      - run: node kaizen.mjs monitor patrol --env production\n',
     '.github/CODEOWNERS': '* @acme/web\n',
     '.github/pull_request_template.md': '## Why\n',
     '.github/dependabot.yml': 'version: 2\n',
     '.gitleaks.toml': 'title = "gitleaks"\n',
     'CLAUDE.md': '# Project\nLearnings: docs/learnings/\n',
     'CONSTITUTION.md': CONSTITUTION,
-    '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true, 'kaizen-ops@dojo': true } },
+    '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true } },
     '.githooks/pre-push': readFileSync(join(PLUGIN, 'templates', 'githooks', 'pre-push'), 'utf8'),
-    '.kaizen/config.json': {
-      deploy: { environments: { production: { command: 'make deploy', rollback: 'make rollback' } } },
-      monitor: { signals: { health: { type: 'http', url: 'https://shop.example/health' } } },
-    },
+    '.kaizen/config.json': {},
   });
   writeFiles(dir, {});
   gitc(dir, ['config', 'core.hooksPath', '.githooks'], ['update-index', '--chmod=+x', '.githooks/pre-push'], ['commit', '-qm', 'chore: hook mode']);
   const r = audit(dir);
   const notOk = r.checks.filter((c) => c.status !== 'ok').map((c) => `${c.id}:${c.status}`);
   assert.deepEqual(notOk, ['remote:missing', 'branch_protection:unknown']);
-  cleanup(dir);
-});
-
-test('intermediate signals: deployment recognized but not configured, health route not watched, rollback missing', () => {
-  const dir = tempRepo({
-    'fly.toml': 'app = "shop"\n',
-    'server.py': '@app.get("/healthz")\ndef health():\n    return "ok"\n',
-    'notes.js': "const tag = '/up'; // a string, not a route\n",
-  });
-  let r = audit(dir);
-  assert.equal(status(r, 'deploy'), 'warn');
-  assert.match(r.next.find((n) => n.id === 'deploy').how, /deploy configure fly/);
-  assert.equal(status(r, 'health'), 'warn');
-  assert.match(r.checks.find((c) => c.id === 'health').evidence, /server\.py/);
-  writeFiles(dir, { '.kaizen/config.json': { deploy: { environments: { production: { command: 'fly deploy', protected: false } } } } });
-  r = audit(dir);
-  assert.equal(status(r, 'rollback'), 'missing');
-  assert.equal(status(r, 'protected'), 'warn');
   cleanup(dir);
 });
 
@@ -135,31 +114,6 @@ test('scaffolds: PR template, dependabot per ecosystem, CODEOWNERS (owner requir
   cleanup(dir);
 });
 
-test('continuous detection: check and patrol / alert workflow scaffolds', () => {
-  const dir = tempRepo({
-    '.kaizen/config.json': { deploy: { environments: { staging: { command: 'x' }, production: { command: 'y' } } }, monitor: { signals: { health: { type: 'http', url: 'https://x/health' } } } },
-  });
-  const check = () => cli(dir, ['audit', '--json', '--no-github']).json.checks.find((c) => c.id === 'continuous_monitoring');
-  assert.equal(check().status, 'warn');
-  assert.equal(check().fix.scaffold, 'monitor_patrol');
-  assert.equal(cli(dir, ['audit', 'fix', 'monitor_patrol', '--ref', '0123abc']).code, 0);
-  const patrol = readFileSync(join(dir, '.github/workflows/kaizen-patrol.yml'), 'utf8');
-  assert.match(patrol, /monitor patrol --env production/);
-  assert.match(patrol, /ref: 0123abc/);
-  assert.match(patrol, /contents: write/);
-  assert.match(patrol, /fetch-depth: 0/);
-  assert.equal(check().status, 'ok');
-  cli(dir, ['audit', 'fix', 'monitor_alert', '--env', 'staging']);
-  const alert = readFileSync(join(dir, '.github/workflows/kaizen-alert.yml'), 'utf8');
-  assert.match(alert, /repository_dispatch/);
-  assert.match(alert, /PAYLOAD: \$\{\{ toJson\(github\.event\.client_payload\) \}\}/);
-  assert.match(alert, /monitor alert --env staging --file -/);
-  assert.doesNotMatch(alert, /echo .*\$\{\{/, 'payload never interpolated into the script');
-  assert.notEqual(cli(dir, ['audit', 'fix', 'monitor_alert']).code, 0, 'nothing is overwritten');
-  assert.notEqual(cli(dir, ['audit', 'fix', 'monitor_patrol', '--env', 'prod; rm -rf /']).code, 0);
-  cleanup(dir);
-});
-
 test('secret scanning: Kaizen scan in CI counts, scaffolded per PR, never overwritten', () => {
   const dir = tempRepo({ 'README.md': '# app\n' });
   const check = () => cli(dir, ['audit', '--json', '--no-github']).json.checks.find((c) => c.id === 'secret_scanning');
@@ -178,13 +132,3 @@ test('secret scanning: Kaizen scan in CI counts, scaffolded per PR, never overwr
   cleanup(dir);
 });
 
-test('claude_settings: a repo that deploys with Kaizen but lacks kaizen-ops@dojo is not ok for every clone', () => {
-  const dir = tempRepo({
-    '.kaizen/config.json': { deploy: { environments: { production: { command: 'make deploy' } } } },
-    '.claude/settings.json': { extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } }, enabledPlugins: { 'kaizen@dojo': true } },
-  });
-  const item = cli(dir, ['audit', '--json', '--no-github']).json.checks.find((c) => c.id === 'claude_settings');
-  assert.equal(item.status, 'missing');
-  assert.match(item.evidence, /kaizen-ops@dojo not enabled although this repo declares deployment environments/);
-  cleanup(dir);
-});

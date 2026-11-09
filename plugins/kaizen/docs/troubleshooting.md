@@ -60,16 +60,11 @@ must be Kaizen core (its `.claude-plugin/plugin.json` names `kaizen`); a `git co
 `kaizen doctor` says "`.githooks/` present but core.hooksPath unset": this clone has the hooks but
 does not run them — `git config core.hooksPath .githooks`.
 
-## Deployment refused
+## Kaizen 6.0: deploy, monitor, postmortem are gone
 
 | Message | What to do |
 |---|---|
-| `/kaizen:deploy` → `/kaizen-ops:deploy` (same for monitor and postmortem): the command is unknown | since Kaizen 4.0 the production commands are in the kaizen-ops plugin (`/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`): `"enabledPlugins": { "kaizen-ops@dojo": true }` in `.claude/settings.json` (`node $K audit fix claude_settings` does it), then a new session; `kaizen doctor` reports it |
-| "Direct deployment of production refused" | go through `/kaizen-ops:deploy production`: it asks for your approval, creates the tag and watches |
-| "production is protected: approval required" | approve the deployment when Claude asks, then in Claude Code's prompt (with `"approvals": "code"`: type `kaizen deploy <code>`, 30 min, for this commit) |
-| "unknown environment" | declare it in `.kaizen/config.json` → `deploy.environments` ([configuration](configuration.md#deploy--deployment-and-rollback)), or `node $K deploy detect` |
-| "deploy/…, rollback/…, incident/… and resolve/… tags are only created by kaizen.mjs" | do not create these tags by hand: they carry the DORA metrics and the incident timelines |
-| "Command killed after N s: state of … is uncertain" | the deploy command exceeded `deploy.timeout_seconds`: check the environment (`node $K monitor check --env <env>`) before retrying |
+| `/kaizen-ops:deploy` (or monitor, postmortem) is unknown, `kaizen.mjs deploy` says "unknown command" | Kaizen no longer deploys nor monitors (6.0): use your own deployment and monitoring tools. `node $K upgrade` lists what your repository still configures for them (`deploy`, `monitor` keys, `kaizen-ops@dojo`) |
 
 ## `plan check` is red
 

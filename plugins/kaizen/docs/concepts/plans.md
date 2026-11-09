@@ -2,8 +2,8 @@
 
 A plan is **one Markdown file per topic** that grows through the loop: `/kaizen:brainstorm` writes
 *what* to build, `/kaizen:plan` adds *how* in the same file, `/kaizen:work` executes it, `/kaizen:review`
-checks the code against it, `/kaizen:ship` turns it into a PR description, `/kaizen:release` and
-`/kaizen-ops:deploy` read its rollout section. The full example lives in
+checks the code against it, `/kaizen:ship` turns it into a PR description, `/kaizen:release` reads
+its rollout section. The full example lives in
 [`templates/plan-example.md`](../../templates/plan-example.md); the contract Claude follows is
 [`references/plan-contract.md`](../../references/plan-contract.md).
 
@@ -132,11 +132,8 @@ the bottleneck; slices keep each PR reviewable, and each slice must leave the de
 - **Signal**: `error_rate` > 1 % or `p95_ms` > 1000 for 10 min → rollback
 ```
 
-The signal names refer to `monitor.signals` in the configuration. `monitor watch` applies these
-thresholds as they are after `/kaizen-ops:deploy` (they override the configured ones for that deployment),
-and `release notes` copies the section into the production checklist. Recognized threshold forms:
-`` `name` `` followed by `>`, `>=`, `<`, `<=`, `≥` or `≤` and a number, optionally a percentage
-(`1 %` = 0.01).
+The signal names are the team's own monitoring names: Kaizen does not watch production. `release notes`
+copies the section into the production checklist for whoever deploys.
 
 ## Stages and checks
 
@@ -187,5 +184,4 @@ The output summarizes the stage and the counts:
 | review | R, AE, KTD, units | plan conformance table, findings |
 | ship | goal, R, rollout, constitution exceptions | PR description and reviewer guide |
 | release | rollout of the plans shipped since the last tag | production checklist |
-| deploy / monitor | rollout signals and thresholds of the shipped plans | — |
 | metrics | learnings cited by recent plans, constitution exceptions | — |

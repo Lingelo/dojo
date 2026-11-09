@@ -13,7 +13,6 @@
   .edge { font-size: 11px; fill: #5c6370; }
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .skill { fill: #fdf1ea; stroke: #d97757; }
-  .ops { fill: #e8f5f4; stroke: #2e8a83; stroke-dasharray: 6 3; }
   .artifact { fill: #edf2fb; stroke: #5b7fbf; }
   .gate { fill: #fdeeee; stroke: #c94a4a; }
   .agent { fill: #ecf6ef; stroke: #3f8f5a; }
@@ -40,7 +39,6 @@
     text { fill: #e6edf3; }
     .desc, .sub, .small, .edge { fill: #9aa4b0; }
     .skill { fill: #3a2419; stroke: #e08b6c; }
-    .ops { fill: #15302e; stroke: #4fb8ae; }
     .artifact { fill: #1b2638; stroke: #7c9fd8; }
     .gate { fill: #3a1d1f; stroke: #e06c6c; }
     .agent { fill: #18301f; stroke: #5fb07a; }
@@ -112,34 +110,21 @@
 <rect class="skill" x="680" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="742" y="333" text-anchor="middle">release</text>
 <text class="sub" x="742" y="348" text-anchor="middle">notes · SemVer</text>
-<rect class="ops" x="512" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="574" y="333" text-anchor="middle">deploy</text>
-<text class="sub" x="574" y="348" text-anchor="middle">your commands</text>
-<rect class="ops" x="344" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="406" y="333" text-anchor="middle">monitor</text>
-<text class="sub" x="406" y="348" text-anchor="middle">incidents</text>
-<rect class="ops" x="176" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="238" y="333" text-anchor="middle">postmortem</text>
-<text class="sub" x="238" y="348" text-anchor="middle">blameless</text>
+<rect class="outside" x="512" y="308" width="124" height="56" rx="8" stroke-width="1.5"/>
+<text class="label" x="574" y="333" text-anchor="middle">you deploy</text>
+<text class="sub" x="574" y="348" text-anchor="middle">your own tools</text>
 <path class="line accent" d="M898,224 L898,308" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M848,336 L804,336" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M680,336 L636,336" marker-end="url(#h-accent)"/>
-<path class="line accent" d="M512,336 L468,336" marker-end="url(#h-accent)"/>
-<rect class="pill" x="469.75" y="317" width="40.5" height="17" rx="4"/>
-<text class="edge" x="490" y="328" text-anchor="middle">watch</text>
-<path class="line bad dashed" d="M344,336 L300,336" marker-end="url(#h-bad)"/>
-<rect class="pill" x="298.7" y="317" width="46.599999999999994" height="17" rx="4"/>
-<text class="edge" x="322" y="328" text-anchor="middle">breach</text>
-<text class="small" x="176" y="384" text-anchor="start">threshold breached → rollback first, then postmortem · production commands: kaizen-ops plugin</text>
+<rect class="pill" x="625.55" y="317" width="64.9" height="17" rx="4"/>
+<text class="edge" x="658" y="328" text-anchor="middle">checklist</text>
+<text class="small" x="512" y="384" text-anchor="start">Kaizen stops at the merge-ready PR: deploying and watching production are the team’s</text>
 <rect class="artifact" x="152" y="438" width="912" height="58" rx="8" stroke-width="1.5"/>
-<text class="label" x="608" y="464" text-anchor="middle" style="font-size:12.9px">Project memory — docs/learnings/ · docs/adr/ · docs/postmortems/ · kaizen-packs/ · constitution amendments</text>
+<text class="label" x="608" y="464" text-anchor="middle">Project memory — docs/learnings/ · docs/adr/ · kaizen-packs/ · constitution amendments</text>
 <text class="sub" x="608" y="479" text-anchor="middle">versioned in your repo, read back by learnings-researcher</text>
 <path class="line blue" d="M1014,224 L1014,438" marker-end="url(#h-blue)"/>
 <rect class="pill" x="990.7" y="389" width="46.599999999999994" height="17" rx="4"/>
 <text class="edge" x="1014" y="400" text-anchor="middle">writes</text>
-<path class="line blue" d="M238,364 L238,438" marker-end="url(#h-blue)"/>
-<rect class="pill" x="243" y="405" width="223.5" height="17" rx="4"/>
-<text class="edge" x="248" y="416" text-anchor="start">learnings · pack rules · amendments</text>
 <path class="line ok" d="M152,467 L96,467 L96,262 L666,262"/>
 <path class="line ok" d="M202,262 L202,224" marker-end="url(#h-ok)"/>
 <path class="line ok" d="M318,262 L318,224" marker-end="url(#h-ok)"/>
@@ -168,11 +153,9 @@
 <text class="sub" x="972" y="592" text-anchor="middle">what to run now</text>
 <rect class="skill" x="36" y="658" width="18" height="12" rx="3" stroke-width="1.3"/>
 <text class="small" x="60" y="668">skill (/kaizen:…)</text>
-<rect class="ops" x="187.4" y="658" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="211.4" y="668">kaizen-ops (/kaizen-ops:…)</text>
-<rect class="artifact" x="394.6" y="658" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="418.6" y="668">file in your repo</text>
-<rect class="outside" x="546" y="658" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="570" y="668">you / outside world</text>
+<rect class="artifact" x="187.4" y="658" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="211.4" y="668">file in your repo</text>
+<rect class="outside" x="338.8" y="658" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="362.8" y="668">you / outside world</text>
 <text class="small" x="1064" y="668" text-anchor="end">start here: setup → plan → work → ship · constitution optional</text>
 </svg>

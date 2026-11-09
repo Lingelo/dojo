@@ -35,19 +35,6 @@ See the effective configuration: `node $K config`. Create the file: `/kaizen:set
   "review": { "require_before_push": "ask", "max_unreviewed_lines": 80 },
   "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] },
   "secrets": { "scan": true, "ignore": ["test/fixtures/**"] },
-  "deploy": {
-    "environments": {
-      "staging":    { "command": "make deploy ENV=staging", "rollback": "make rollback ENV=staging" },
-      "production": { "command": "make deploy ENV=production", "rollback": "make rollback ENV=production", "url": "https://shop.example" }
-    },
-    "watch_minutes": 15
-  },
-  "monitor": {
-    "signals": {
-      "health":     { "type": "http", "url": "https://shop.example/health", "expect": 200 },
-      "error_rate": { "command": "curl -s https://prom.example/api/v1/query?query=… | jq -r '.data.result[0].value[1]'", "max": 0.01 }
-    }
-  },
   "models": { "roles": { "research": "haiku" } },
   "packs": [
     { "source": "kaizen-packs/house-rules" },
@@ -61,7 +48,7 @@ See the effective configuration: `node $K config`. Create the file: `/kaizen:set
 ### `docs_root`
 
 Default: `"docs"`. Root folder of the documents: `plans/`, `learnings/`, `ideation/`, `adr/`,
-`postmortems/` and `metrics/` live under it. The path must be relative, stay inside the repo, and not
+and `metrics/` live under it. The path must be relative, stay inside the repo, and not
 be `.git`. An invalid value is **refused**, never silently replaced by `docs`. Change it if `docs/` is
 already a published documentation site, for example `"engineering"`.
 
@@ -69,7 +56,7 @@ already a published documentation site, for example `"engineering"`.
 
 Default: `"auto"`, i.e. the language of the conversation. Kaizen's skills are written in English but
 always talk to you in your language. `language` decides the language of the **deliverables** (plans,
-learnings, ADRs, postmortems, constitution, PR descriptions and replies): set `"en"`, `"fr"` or any
+learnings, ADRs, constitution, PR descriptions and replies): set `"en"`, `"fr"` or any
 other language to impose it for the whole team. `<!-- kaizen:… -->` markers, frontmatter keys, ids
 (R1, AE1, KTD1, U1, S1) and the field names the tools read (`**Covers:**`, `**Check:**`…) are never
 translated. Plans and constitutions written in French before Kaizen 3.0 (`**Couvre :**`,
@@ -169,13 +156,13 @@ session and subagents, per role), logged by `gate off` for [`metrics`](guides/me
 
 ### `approvals` — how you approve what only you can
 
-`"ask"` (default) or `"code"`. Applies to a review waiver, a review recorded with a missing reviewer
-(`--allow-missing`) and a deployment to a protected environment.
+`"ask"` (default) or `"code"`. Applies to a review waiver and a review recorded with a missing reviewer
+(`--allow-missing`).
 
 | Value | What you do |
 |---|---|
-| `"code"` | for teams that want it typed: the code Claude shows you: `kaizen waive <code>`, `kaizen deploy <code>` (30 min, single use) |
-| `"ask"` (default) | Claude asks you a question, **the safe option first** ("Run the review", "Relaunch the missing reviewer(s)", "Not now"); choose the other one and Claude runs `node $K confirm <code>`, which Claude Code's own permission prompt asks you to confirm — Claude cannot answer it. `confirm` refuses a code that prompt did not ask about (10 min, single use) |
+| `"code"` | for teams that want it typed: the code Claude shows you: `kaizen waive <code>` (30 min, single use) |
+| `"ask"` (default) | Claude asks you a question, **the safe option first** ("Run the review", "Relaunch the missing reviewer(s)"); choose the other one and Claude runs `node $K confirm <code>`, which Claude Code's own permission prompt asks you to confirm — Claude cannot answer it. `confirm` refuses a code that prompt did not ask about (10 min, single use) |
 
 A typed code makes you read what you approve; the question is quicker. For a push, see also
 `review.require_before_push: "ask"`, which needs no waiver at all.
@@ -247,52 +234,10 @@ timed out, or did not print a metric that has a threshold — an unmeasured budg
 trusted like the `verify` commands (same file, same reviewers). Run it where a plan requires performance;
 it is not part of the Stop-hook gate.
 
-### `deploy` — deployment and rollback
+### `deploy`, `monitor` — removed in 6.0
 
-Optional. The commands `/kaizen-ops:deploy` releases with: Kaizen knows no platform and never guesses a
-command. `node $K deploy detect` recognizes the common platforms and `node $K deploy configure <id>`
-writes the proposed commands here (see [deploy](../../kaizen-ops/docs/guides/deploy.md)).
-
-| Key | Default | Role |
-|---|---|---|
-| `environments.<env>.command` | — | deploys; receives `KAIZEN_ENV`, `KAIZEN_REF`, `KAIZEN_SHA` |
-| `environments.<env>.rollback` | — | rolls back (to the previous deployment by default) |
-| `environments.<env>.url` | — | the environment's address, shown during the watch |
-| `environments.<env>.protected` | `true` for `production` | requires **your** approval ([`approvals`](#approvals--how-you-approve-what-only-you-can): question then prompt, or `kaizen deploy <code>` typed); the raw command is refused by a hook |
-| `environments.<env>.timeout_seconds` | `deploy.timeout_seconds` | timeout for this environment's commands |
-| `watch_minutes` | `15` | duration of the signal watch after a deployment |
-| `auto_rollback` | `false` | automatic rollback as soon as a threshold is breached |
-| `timeout_seconds` | `1800` | maximum time of a deploy, rollback or flag command; beyond it, its whole process tree is killed and the deployment fails, without a tag |
-| `push_tags` | `true` | pushes the `deploy/<env>/…`, `rollback/<env>/…`, `incident/<env>/…` and `resolve/<env>/…` tags (source of the real DORA metrics) |
-| `flags.on` / `flags.off` | — | feature flag commands, with `{flag}` and `{env}` (`kaizen.mjs deploy flag on|off <name>`) |
-| `metrics_env` | `production` | environment whose deployments feed `/kaizen:metrics` |
-
-```json
-"deploy": {
-  "environments": {
-    "staging":    { "command": "make deploy ENV=staging", "rollback": "make rollback ENV=staging" },
-    "production": { "command": "make deploy ENV=production", "rollback": "make rollback ENV=production", "url": "https://shop.example" }
-  },
-  "flags": { "on": "unleash toggle {flag} --env {env} --on", "off": "unleash toggle {flag} --env {env} --off" }
-}
-```
-
-### `monitor` — production signals
-
-Optional. The signals `/kaizen-ops:monitor` and `/kaizen-ops:deploy` compare to their thresholds.
-
-| Key | Default | Role |
-|---|---|---|
-| `signals.<name>.type: "http"` + `url`, `expect` | `expect: 200` | native health-check, no tool needed |
-| `signals.<name>.command` | — | any command whose last printed word is a number (Prometheus, Datadog, CloudWatch, SQL, logs); `{env}` replaced |
-| `signals.<name>.max` / `min` | — | thresholds; replaced by those of the shipped plan (`` `name` > threshold `` in its "Rollout and rollback" section) |
-| `signals.<name>.env` | all | restricts the signal to one or more environments |
-| `interval_seconds` | `60` | interval between two samples |
-| `consecutive` | `2` | samples out of threshold in a row to count a breach |
-
-Incidents (detected by `monitor watch`, `monitor patrol` or an alert received by `monitor alert`) are
-recorded as `incident/<env>/…` tags, resolved by a rollback or a `resolve/<env>/…` tag. See
-[monitor](../../kaizen-ops/docs/guides/monitor.md#continuous-monitoring).
+Kaizen no longer deploys nor watches production. These keys are ignored; `node $K upgrade` lists them
+so you can move their commands to your own tools and delete them.
 
 ### `models` — the right model for each task
 
@@ -337,16 +282,12 @@ List of declared Kaizen Packs. See [Kaizen Packs](packs.md).
 |---|---|
 | `gate.json` | gate state (active, plan, session, number of blocks, current cycle usage) |
 | `cycles.jsonl` | one `work`/`autopilot` cycle per line, written by `gate off`: plan, duration, blocks, tokens of the main session and of subagents per role (read by `metrics` → `cycle_cost`) |
-| `deployments.jsonl` | deployments, rollbacks and flags run from this machine (git tags are authoritative) |
-| `deploy-approvals.json` | protected deployment approvals pending or confirmed, 30 min |
-| `monitor.jsonl` | signal samples (`monitor check` / `watch` / `patrol`), for postmortem timelines |
 | `reviews.json` | last recorded review per branch (reviewed tree, verdict, reviewers, models, waiver) |
 | `agent-runs.jsonl` | subagents launched during the current cycle (hook on the `Agent` tool): role, model, id — to break `cycle_cost` down; cleared by `gate off` |
 | `review-evidence.json` | code reviewers actually launched (hook on the `Agent` tool), 12 h |
 | `waivers.json` | waivers waiting for the user's confirmation, 30 min |
 | `pr/<owner>-<repo>-<n>.json` | what `watch-pr` already handled (threads, comments, checks) |
 | `reviews/<timestamp>/` | raw reviewer returns of a review (`node $K run-dir reviews`) |
-| `rollback-worktree/` | throwaway worktree of a generic rollback, removed afterwards |
 
 Deleting `.kaizen/state/` is harmless: the only effect is forgetting the work in progress.
 
@@ -355,5 +296,4 @@ Deleting `.kaizen/state/` is harmless: the only effect is forgetting the work in
 | Variable | Role |
 |---|---|
 | `CLAUDE_PLUGIN_DATA` | the plugin's cache folder (clones of git packs). Provided by Claude Code. |
-| `KAIZEN_ENV`, `KAIZEN_REF`, `KAIZEN_SHA` | passed to deploy, rollback and flag commands |
 | `KAIZEN_GH` | binary to use instead of `gh` (tests) |

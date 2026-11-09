@@ -2,6 +2,36 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [6.0.0] - 2026-11-09
+
+Kaizen converges on Addy Osmani's [agent-skills](https://github.com/addyosmani/agent-skills): his skills
+become the base, Kaizen the engine that makes them hold (decision and roadmap:
+`docs/ideation/2026-11-09-kaizen-6-ideation.md` and `docs/SPEC.md` of the dojo repository). This
+release removes production from Kaizen and starts reading agent-skills' files.
+
+### Breaking
+- **Production removed.** Kaizen no longer deploys nor watches production: the kaizen-ops plugin
+  (`/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`) and the core CLI commands
+  `deploy`, `monitor` and `postmortem new` are gone, with platform detection (`deploydetect`), deployment
+  approvals, the protected-environment and deployment-tag refusals of the review hook, the `kaizen deploy
+  <code>` confirmation, the `deploy` and `monitor` configuration keys, the audit's Delivery and
+  Operations areas and its `monitor_patrol` / `monitor_alert` scaffolds, the `ops_plugin` doctor check and
+  the production evals. Plans keep their rollout section, for whoever deploys with the team's own tools.
+  `kaizen upgrade` reports the leftovers (`production-removed`: `deploy` / `monitor` keys,
+  `kaizen-ops@dojo`), to remove by hand.
+- **DORA metrics are approximations only**: deployment frequency and lead time from merges and GitHub,
+  change failure rate from fixes and reverts; time to restore is no longer measured.
+
+### Added
+- **agent-skills' files read by the engine** (`scripts/agentskills.mjs`): `SPEC.md` or `docs/SPEC.md`
+  (sections, boundaries Always / Ask first / Never), `tasks/plan.md`, `tasks/todo.md` (tasks with their
+  acceptance criteria, verification commands, dependencies and files likely touched) and
+  `CONSTRAINTS.md` (floor, enforced rows with their command, measured metrics, exceptions) — read-only,
+  tolerant to missing sections and CRLF.
+- **`kaizen doctor`**: `agent_skills` (is `agent-skills@dojo` enabled, which of its files Kaizen reads)
+  and `floor_guard` (when `CONSTRAINTS.md` exists: does agent-skills' floor guard run from a git hook, a
+  pre-commit configuration, `package.json` or a CI workflow).
+
 ## [5.1.0] - 2026-10-29
 
 Three ideas from the latest Compound Engineering releases, adapted to Kaizen's gates.

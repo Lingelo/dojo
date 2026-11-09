@@ -6,8 +6,7 @@ A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen, converg
 
 | Plugin | Description | Components |
 |---|---|---|
-| [**kaizen**](plugins/kaizen/README.md) | AI-assisted SDLC (adapted from Compound Engineering): engineering constitution enforced as checks, brainstorm → plan (traceability, threats, rollback, PR-sized slices) → doc-review → work (quality gate) → multi-agent review → ship → watch-pr, UI polish, learnings and ADRs read back every cycle, DORA metrics and the cost of each feature or fix, release; review enforced by a hook before any push, prototype/product/critical profiles, a four-command start (`setup` → `plan` → `work` → `ship`), `/kaizen:help` to find your way | 20 skills, 22 agents, hooks (incl. secret scan before commit), CLI, Playwright MCP |
-| [**kaizen-ops**](plugins/kaizen-ops/README.md) | Kaizen's production commands, for teams that deploy with Kaizen: watched deployment with typed approval and rollback (`/kaizen-ops:deploy`), production signals and incidents (`/kaizen-ops:monitor`), blameless postmortems (`/kaizen-ops:postmortem`). Requires Kaizen ≥ 4.0.0; its CLI and gates stay in Kaizen | 3 skills, CLI resolver |
+| [**kaizen**](plugins/kaizen/README.md) | AI-assisted SDLC (converging on Addy Osmani's agent-skills since 6.0; learning loop from Compound Engineering): engineering constitution enforced as checks, brainstorm → plan (traceability, threats, rollback, PR-sized slices) → doc-review → work (quality gate) → multi-agent review → ship → watch-pr, UI polish, learnings and ADRs read back every cycle, DORA metrics and the cost of each feature or fix, release; review enforced by a hook before any push, prototype/product/critical profiles, a four-command start (`setup` → `plan` → `work` → `ship`), `/kaizen:help` to find your way | 20 skills, 22 agents, hooks (incl. secret scan before commit), CLI, Playwright MCP |
 | [**agent-skills**](plugins/agent-skills/README.md) | [Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills) (MIT), copied unmodified: engineering workflows for AI coding agents from spec to ship (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`…), with rationalization tables and verification gates in every skill. The base Kaizen converges on (see [docs/SPEC.md](docs/SPEC.md)); proposed here by pull request at each upstream change, never edited in this repository | Skills, commands, reviewer personas |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design as code: HTML/CSS/SVG/Canvas → MP4/WebM/GIF frame by frame, synced sound, voice-over and subtitles (Playwright + ffmpeg) | Skill, scripts |
 | [**kioku**](plugins/kioku/README.md) | A guarded knowledge vault on the LLM Wiki pattern: you drop raw sources, Claude maintains a structured wiki. Silos (work, personal…) sealed from each other by a hook, bronze → silver → gold medallion, a gate (deterministic checks + independent reviewer) before any page enters the wiki; `/kioku:setup` creates the vault in an empty folder, `npm run <silo>` opens a session. Developed in [its own repository](https://github.com/Lingelo/kioku), copied here hourly; the vault is your own private repository | Skills, reviewer agent, guard and gate hooks, CLI, local dashboard |
@@ -45,7 +44,6 @@ Or interactively:
 ```bash
 /plugin install motion-studio@dojo
 /plugin install kaizen@dojo
-/plugin install kaizen-ops@dojo      # only if you deploy with Kaizen
 /plugin install agent-skills@dojo    # Addy Osmani's workflows, read by Kaizen's engine since 5.2
 /plugin install slide-studio@dojo
 /plugin install kioku@dojo           # user scope: kioku vaults enable it themselves
@@ -67,7 +65,6 @@ Add to your project's `.claude/settings.json` to configure every team member aut
   },
   "enabledPlugins": {
     "kaizen@dojo": true,
-    "kaizen-ops@dojo": true,
     "motion-studio@dojo": true,
     "slide-studio@dojo": true
   }
@@ -96,8 +93,8 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 
 ```bash
 /kaizen:help                                    # what it is, where the repo stands, which command to run
-/kaizen:setup audit                             # what the project lacks (CI, secrets, deployment…), fixed by priority
-/kaizen:setup                                   # config, profile (by the repo's stakes), detected deployment
+/kaizen:setup audit                             # what the project lacks (CI, secrets, review…), fixed by priority
+/kaizen:setup                                   # config, profile (by the repo's stakes), verification commands
 /kaizen:constitution                            # the project's non-negotiable principles
 /kaizen:brainstorm orders CSV export            # WHAT to build → docs/plans/…-plan.md
 /kaizen:plan                                    # HOW → units, tests, rollback + plan review
@@ -105,7 +102,6 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 /kaizen:ship                                    # reviewable PR, then /kaizen:watch-pr until "ready"
 /kaizen:learn                                   # the learning, read back by the next plan
 /kaizen:autopilot                               # or chain everything after the brainstorm
-/kaizen-ops:deploy production                   # approved, watched production release, rollback ready (kaizen-ops)
 ```
 
 Documentation: [getting started](plugins/kaizen/docs/getting-started.md) ·
@@ -154,7 +150,6 @@ dojo/
 ├── tasks/                    # plan.md and todo.md of the current work, in agent-skills' format
 ├── plugins/
 │   ├── kaizen/               # AI-assisted SDLC: skills, agents, hooks, zero-dependency CLI
-│   ├── kaizen-ops/           # Kaizen's production commands (deploy, monitor, postmortem); CLI and gates stay in kaizen
 │   ├── agent-skills/         # Addy Osmani's agent-skills: a copy of addyosmani/agent-skills, proposed by pull request by .github/workflows/sync-agent-skills.yml
 │   ├── motion-studio/        # Motion design videos from HTML (Playwright + ffmpeg)
 │   ├── kioku/                # Guarded knowledge vault: a copy of Lingelo/kioku, synced by .github/workflows/sync-kioku.yml

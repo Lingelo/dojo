@@ -12,29 +12,26 @@ These indicators measure a **delivery system**, never people.
 `--since` takes `30d`, `12w` or `6m` (a month counts 30 days); default `90d`. Changes are read on the
 default branch (`origin/<branch>` if it exists), first-parent history, up to 1,000 commits.
 
-## Real or approximated
+## Approximated, and why
 
-If the window contains `deploy/<env>/…` tags for the metrics environment (`deploy.metrics_env`,
-default `production`), the DORA indicators come from **real deployments**. Otherwise they are
-**approximations** from the default branch. The output says which (`deployment_frequency_method`,
-`lead_time_method`, `change_failure_method`).
+Kaizen does not deploy (production removed in 6.0): the DORA indicators are **approximations** from the
+default branch and GitHub. The output says how each one was measured (`deployment_frequency_method`,
+`lead_time_method`, `change_failure_method`, `time_to_restore_method`).
 
 ## Throughput
 
-| Indicator | With real deployments | Approximation |
-|---|---|---|
-| Deployment frequency (per week) | deployments in the window / weeks | changes (first-parent commits) on the default branch / weeks |
-| Lead time for changes (median, hours) | for each deployment, from every commit since the previous deployment (author date) to the deployment | median *PR opened → merged* from GitHub (`gh pr list --state merged`, up to 300), otherwise *first commit of the merged branch → merge* from git, otherwise unavailable (squash merges without GitHub access) |
-| Rework rate | — | share of changes whose subject starts with `fix`, `hotfix`, `revert` (or `Revert "`) |
+| Indicator | Approximation |
+|---|---|
+| Deployment frequency (per week) | changes (first-parent commits) on the default branch / weeks |
+| Lead time for changes (median, hours) | median *PR opened → merged* from GitHub (`gh pr list --state merged`, up to 300), otherwise *first commit of the merged branch → merge* from git, otherwise unavailable (squash merges without GitHub access) |
+| Rework rate | share of changes whose subject starts with `fix`, `hotfix`, `revert` (or `Revert "`) |
 
 ## Instability
 
-| Indicator | With real deployments | Approximation |
-|---|---|---|
-| Change failure rate | deployments followed, before the next deployment, by a rollback or an incident | non-fix changes followed within 7 days by a fix or revert touching one of the same files |
-| Time to restore (median, hours) | from the incident detection (or the deployment, with a rollback but no incident) to the first rollback or resolve | — (the postmortems’ `detected` → `resolved` appears in the loop section) |
-
-Deployment counters (deployments, rollbacks, incidents in the window) are returned under `deployments`.
+| Indicator | Approximation |
+|---|---|
+| Change failure rate | non-fix changes followed within 7 days by a fix or revert touching one of the same files |
+| Time to restore (median, hours) | unavailable: Kaizen records no incident (the postmortems' `detected` → `resolved`, if the repository has any, appears in the loop section) |
 
 ## Batch size
 
@@ -93,7 +90,7 @@ turn is never counted twice. Metrics reports the median cost per kind (feature, 
 most expensive items; the dashboard shows **Cost per work item**.
 
 **Friction** (`friction`): every time a guard rail stops the work — push refused, quality gate block,
-secret refused, direct deploy or state write refused — the hook appends an event to
+secret refused, state write refused — the hook appends an event to
 `.kaizen/state/friction.jsonl`, and so do what lifts it (review recorded, waiver confirmed). Metrics
 reads the refusals by reason, the median time a branch stays blocked on push (first refusal → next
 review or waiver), the waiver share of cleared pushes, and the checks that block the quality gate most.

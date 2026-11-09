@@ -24,17 +24,17 @@ is an approximation.
 ## 2. Read honestly
 
 Each metric has its **method** in the output: report it. These are approximations from the default
-branch, unless real deployments exist (`deploy/` tags). Report the visible limits: shallow history
+branch and GitHub: Kaizen records no deployment (production removed in 6.0). Report the visible limits: shallow history
 (`--depth` clone), squash merges without GitHub access (lead time unavailable), window too short (fewer
 than 10 changes → trends not significant).
 
 | Metric | Reading |
 |---|---|
 | Delivery frequency | higher and regular = small batches integrating fast |
-| Change lead time | median PR opened → merged, or first commit → deployment; a long lead time often comes from review (DORA 2025) |
+| Change lead time | median PR opened → merged, or first commit → merge; a long lead time often comes from review (DORA 2025) |
 | Rework rate | share of changes that fix; rising = we ship defects |
-| Change failure rate | changes followed by a fix within 7 days on the same files, or deployments followed by a rollback or an incident |
-| Time to restore | from recorded incidents (`/kaizen-ops:monitor`, detection → resolution) when there are real deployments, otherwise from postmortems (`detected` → `resolved`) |
+| Change failure rate | changes followed by a fix within 7 days on the same files |
+| Time to restore | unavailable: Kaizen records no incident; read it from the team's incident tool |
 | Batch size | median and share above `pr.max_lines` — the first lever according to DORA |
 | Kaizen loop | new learnings, **read** (cited by a recent plan), **applied** (cited by a commit), never cited, constitution exceptions |
 | Work items | `work_items`: what each feature or fix cost end to end (every turn charged to the Jira key, plan or branch), median per kind (`by_kind`), the most expensive (`top`), share of tokens `unattributed` — local to the machine |

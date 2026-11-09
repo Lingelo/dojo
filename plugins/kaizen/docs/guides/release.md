@@ -11,7 +11,7 @@
 | **When to use it** | "Prepare the release", "release notes", "which version?", "changelog" |
 | **When not to use it** | Shipping a PR (→ [ship](ship.md)) |
 | **What it produces** | Release notes, proposed version, `CHANGELOG.md` entry (Keep a Changelog format), checklist |
-| **What next** | `publish` to tag and create the GitHub release, after confirmation; then [deploy](../../../kaizen-ops/docs/guides/deploy.md) |
+| **What next** | `publish` to tag and create the GitHub release, after confirmation; then deploy with your own tools |
 
 ## Examples
 
@@ -25,8 +25,8 @@
 
 1. `node $K release notes` (`--from <tag>`, `--to <ref>`): grouped commits (Features, Fixes,
    Performance, Refactoring, Documentation, Reverts, Other), breaking changes (`!` or
-   `BREAKING CHANGE:`), proposed version. In 0.x, a breaking change bumps the minor. `deploy/…`,
-   `rollback/…` tags are never taken as the previous version.
+   `BREAKING CHANGE:`), proposed version. In 0.x, a breaking change bumps the minor. Tags that are
+   not versions are never taken as the previous version.
 2. **Verification**: the diffs of public interfaces (routes, schemas, package exports) are read, so
    that a breaking change does not hide in a `fix`. The project's version files (`package.json`,
    `pyproject.toml`, `plugin.json`…) are compared to the proposed version.
@@ -47,8 +47,8 @@
    3. annotated tag;
    4. push;
    5. `gh release create`.
-6. **Deployment**: `release` does not deploy; it proposes `/kaizen-ops:deploy <env> vX.Y.Z`
-   ([deploy](../../../kaizen-ops/docs/guides/deploy.md)) when environments are configured.
+6. **Deployment**: `release` does not deploy, and Kaizen has no deployment command since 6.0: the
+   checklist goes to whoever deploys, with the team's own tools.
 
 ## Good to know
 
@@ -57,7 +57,7 @@
 
 ## See also
 
-In depth: [production](../concepts/production.md#release).
+In depth: [plans](../concepts/plans.md) (the rollout section).
 
 
-[ship](ship.md) · [deploy](../../../kaizen-ops/docs/guides/deploy.md) · [metrics](metrics.md)
+[ship](ship.md) · [metrics](metrics.md)
