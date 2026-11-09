@@ -287,6 +287,137 @@ falls back to T1 without losing a guarantee that T1 covers.
 Claude-marketplace support, record which hooks fire and with which payloads, and list what breaks. The
 measured result replaces the "reported" cells of the table above.
 
+## Second pass: more from Addy Osmani
+
+Requested on 2026-11-09 ("on peut s'inspirer plus d'Addy Osmani ?"). Read this time: the skills
+[`using-agent-skills`](https://github.com/addyosmani/agent-skills/blob/main/skills/using-agent-skills/SKILL.md),
+[`doubt-driven-development`](https://github.com/addyosmani/agent-skills/blob/main/skills/doubt-driven-development/SKILL.md),
+[`constraint-driven-development`](https://github.com/addyosmani/agent-skills/blob/main/skills/constraint-driven-development/SKILL.md),
+the [routing evals](https://github.com/addyosmani/agent-skills/tree/main/evals), the repository layout,
+and the article [How to write a good spec for AI agents](https://addyo.substack.com/p/how-to-write-a-good-spec-for-ai-agents).
+His later posts on software factories and self-improving agents were only read through mirrors and
+summaries; the ideas taken from them are marked `reasoned`.
+
+### 8. Verify the verifier, and protect the bar itself
+
+*Axis: guarantees · basis: external + direct · effort M · risk low*
+
+From `constraint-driven-development`: "before calling any check enforced, confirm it fails on a
+deliberate violation and on scanner errors, and passes on a clean control", and the red flag "the
+constraints file changed in the same commit as the feature it was blocking".
+
+- **Canary per verify command**: `kaizen verify --prove` (in `setup`, then in `doctor` weekly) plants
+  a deliberate failure in a scratch worktree (a failing test, a lint error, a type error) and checks
+  that each declared command **goes red**. A check that stays green on a violation is reported as
+  blind — the same word `monitor patrol` already uses for a broken signal.
+- **The bar is protected like the state**: today `review-gate.mjs` protects `.kaizen/state/*` files,
+  but nothing stops a change that weakens `verify` commands in `.kaizen/config.json`, a CI step, a
+  coverage threshold or `CONSTITUTION.md` **in the same branch as the feature** (grep: no rule on
+  `config.json` in the gates). Such a diff is refused unless the user approves it, through the existing
+  approvals.
+- **Ratchets and dated exceptions**: a constitution article or a `perf`/coverage check can hold
+  "today's value, must not fall" (tolerance 0.5 %) instead of a target, and every exception has an
+  owner and an expiry (90 days by default), reported by `doctor` when expired.
+- **External checks first**: tests written by the agent "only show you agree with yourself". `audit`
+  scores whether at least one check is external (vulnerability database, axe, real-browser
+  measurement) and `define constraints` proposes one.
+
+### 9. Doubt as a protocol, not a reviewer
+
+*Axis: intent · basis: external · effort M · risk low*
+
+Replaces the "Doubt at decision time" combination with Addy's precise protocol, which Kaizen's
+reviewers do not follow today:
+
+1. **Claim** — the decision in 2–3 lines; if it cannot be stated so briefly, it is not a decision yet.
+2. **Extract** — the smallest reviewable artifact plus its contract (plan unit, R, AE), **without the
+   author's reasoning and never the claim**, so the reviewer is not anchored.
+3. **Doubt** — fresh context, adversarial prompt ("find what breaks under this contract", never "is
+   it good?").
+4. **Reconcile** — each finding classified: contract misread (fix the plan text) · valid (fix the code)
+   · valid trade-off (told to the user, written in the PR) · noise (the missing context goes into the
+   contract or a learning).
+5. **Stop** — trivial findings, or 3 cycles then escalate to the user.
+
+Triggers are deterministic where possible: branching logic added, a module boundary crossed, an
+irreversible effect (migration, public API, data write — already detected by `risk.mjs`). A second
+model is **offered** to the user every interactive time, never silently skipped, never silently
+replaced after a failure; in autopilot it is skipped and the skip is said. The same reconcile
+classification is used by `address-feedback` for human review comments.
+
+### 10. Routing evals: free, deterministic, in CI
+
+*Axis: surface · basis: external + direct · effort S · risk low*
+
+Kaizen's evals are end-to-end runs of `claude -p` (`evals/run.mjs`, "costly"); nothing checks
+cheaply that a request reaches the right skill. Copy Addy's tier 2: one file per skill
+(`evals/routing/<skill>.json`) with at least 3 positive prompts written the way users talk (French
+and English, since Claude talks in the user's language) and 2 negatives naming the skill that should
+win; a TF-IDF ranking over the descriptions; CI fails under a 95 % rank-1 rate or on two descriptions
+too similar (≥ 75 %). This is what makes idea 6 (merging 20 skills into 7) and idea 5 (shorter
+descriptions) safe, and it runs the same for every host (idea 7).
+
+### 11. Boundaries in three tiers, and an `AGENTS.md` that every host reads
+
+*Axis: intent + reach · basis: external · effort S · risk low*
+
+From the spec article: a study of 2,500+ agent configuration files found six areas that matter —
+commands, testing, project structure, code style, git workflow, **boundaries** — the latter as
+**Always / Ask first / Never**. Kaizen already knows the commands (`detect`), the git workflow and the
+gates. `setup` writes them as an `AGENTS.md` section (read by Codex, Copilot, Cursor, Gemini), and
+the constitution gains an optional boundaries block whose "Never" rows with a pattern (paths, commands)
+are enforced by the PreToolUse adapters and the git hooks. This is the T0 layer of idea 7, written from
+facts Kaizen has already checked rather than from prose.
+
+### 12. Fresh context per unit (autopilot)
+
+*Axis: guarantees · basis: reasoned (factory and self-improving agents posts, read through mirrors) +
+direct · effort M · risk medium*
+
+Addy's advice — "one task at a time, with only the relevant spec section" — and the self-improving
+agents loop (fresh agent per task, machine-readable task spec, closed-loop gates, memory in
+`AGENTS.md`). Kaizen's plans are already machine-readable (units with Files, Covers, Evidence,
+Verification). `autopilot` runs each unit in a **fresh subagent** that receives only the goal capsule,
+the unit, the R and AE it covers, the cited learnings and the constitution — not the whole plan nor the
+history. Context rot on long plans goes away, and each unit's evidence is recorded separately (idea 3).
+On hosts without subagents, a new session per unit through the host's headless mode.
+
+### 13. A map of human attention in the PR
+
+*Axis: guarantees · basis: reasoned (factory model: review capacity does not scale with the number of agents) · effort S · risk low*
+
+The human reviewer is the bottleneck, so the PR tells them **where** to look, generated from facts
+Kaizen holds: files outside the plan (idea 4), trade-offs accepted in doubt cycles (idea 9),
+exceptions and ratchets touched (idea 8), risk surfaces (`risk.mjs`), units whose evidence is an
+exception, AE without a recorded run (idea 3). Everything else is marked "checked by machine, see
+evidence". A section of `ship`'s PR description, the same on every host.
+
+### 14. The operating behaviors and the ten failure modes, in the router
+
+*Axis: intent · basis: external · effort S · risk low*
+
+`using-agent-skills` carries the shared conduct once, for every skill: surface assumptions, manage
+confusion (stop, name the conflict, wait), push back with a quantified downside, enforce simplicity,
+scope discipline (including "do not remove code, comments or features without approval"), verify
+rather than assume. And ten failure modes to avoid (sycophantic agreement, plowing ahead while
+confused, removing what is not understood…). Kaizen's router (`/kaizen` in idea 6, `help` until then)
+and the generated `AGENTS.md` (idea 11) carry this block, so each skill's own Rationalizations table
+(idea 1) stays specific instead of repeating it. Deletions of code or comments outside the plan are
+listed by the scope report (idea 4).
+
+### Also worth taking, smaller
+
+- **Repository layout for hosts** — Addy's repo is the reference for idea 7: shared `skills/`, then one
+  thin folder per host (`.claude-plugin/`, `.codex-plugin/` + `.agents/plugins/`, `.gemini/commands/`
+  as TOML wrappers, `.opencode/`, a root `plugin.json` for Copilot) and a CI script checking
+  **command parity** across hosts (`validate-commands.js`). Copy the shape, generate the wrappers.
+- **Unfinished work as a silenced check** — add to idea 2: a stub that throws "not implemented", an
+  empty `catch`, a `TODO` in place of an implementation.
+- **Interview mode** — one question at a time until the agent can state the goal with confidence, as a
+  `define interview` mode (idea 6), cheaper than a full brainstorm.
+- **Source-driven** — framework choices cite the official doc they rely on; unverified claims are
+  flagged. Goes into the doubt protocol's contract (idea 9) and `standards-reviewer`.
+
 ## Combinations
 
 - **Living rationalizations (1 + 2 + 3 + compounding).** agent-skills' tables are static. Kaizen
@@ -295,7 +426,7 @@ measured result replaces the "reported" cells of the table above.
   repo's own table (`docs/learnings/` type `rationalization`, read by the skill at its Rationalizations
   step). Each refusal makes the next one less likely. This is the core idea of Compound Engineering,
   applied to the agent's own behavior.
-- **Doubt at decision time (1 + 3).** During `build`, any `decisions_flagged`, any KTD departure and
+- **Doubt at decision time (1 + 3)** — superseded by idea 9, which gives it a protocol. During `build`, any `decisions_flagged`, any KTD departure and
   any irreversible step (migration, data write, public API) gets a fresh-context check by
   `adversarial-reviewer`, optionally on another model family (a `doubt` role in `models.mjs`).
   Framework API choices must cite their source (`docs-researcher`); the verdict goes into the evidence
@@ -336,11 +467,11 @@ lands already portable.
 
 | Release | Portability | Other ideas | Breaking |
 |---|---|---|---|
-| 5.2 | spike on Codex and Copilot CLI; host-neutral skill text (resolver instead of `${CLAUDE_PLUGIN_ROOT}`, question tool wording) + contract test | idea 1 on the same files (5 skills), conduct rules of idea 4 | no |
-| 5.3 | normalized hook contract, adapters Claude + Codex + Copilot CLI with recorded fixtures, `kaizen install --host`, `doctor` per host | idea 2 at T1 **and** T2, idea 3 | no |
-| 5.4 | agents generated per host, reviewers in sequence where there are no subagents, `approvals: "code"` default off Claude Code, evals per host | scope drift (idea 4), doubt at decision time | no |
-| 5.5 | adapters Cursor + Gemini CLI, `kaizen verify-pr` CI step (T1 floor complete), generated `AGENTS.md` | idea 5, living rationalizations | no |
-| 6.0 | packaging per host (Claude format, Codex manifest, Agent Plugins 1.0), "for coding agents" everywhere | idea 6, concept cuts, full doc rewrite, new video | yes, with `upgrade` migration |
+| 5.2 | spike on Codex and Copilot CLI; host-neutral skill text (resolver instead of `${CLAUDE_PLUGIN_ROOT}`, question tool wording) + contract test; routing evals (idea 10) | idea 1 on the same files (5 skills), conduct block of idea 14 | no |
+| 5.3 | normalized hook contract, adapters Claude + Codex + Copilot CLI with recorded fixtures, `kaizen install --host`, `doctor` per host | idea 2 (with unfinished work) at T1 **and** T2, idea 3, idea 8 (canary, protected bar) | no |
+| 5.4 | agents generated per host, reviewers in sequence where there are no subagents, `approvals: "code"` default off Claude Code, evals per host | scope drift (idea 4), doubt protocol (idea 9), attention map (idea 13) | no |
+| 5.5 | adapters Cursor + Gemini CLI, `kaizen verify-pr` CI step (T1 floor complete), `AGENTS.md` with boundaries (idea 11) | idea 5, idea 12 (fresh context per unit), living rationalizations, ratchets and dated exceptions | no |
+| 6.0 | packaging per host on Addy's layout (Claude format, Codex manifest, Agent Plugins 1.0, Gemini wrappers) with command parity in CI, "for coding agents" everywhere | idea 6 (with `define interview` and `define constraints`), concept cuts, full doc rewrite, new video | yes, with `upgrade` migration |
 
 Every release carries its own documentation: see the next section.
 
@@ -363,6 +494,13 @@ each counted claim).
 | 5.4 | `concepts/review.md` (scope drift finding, doubt at decision time), `concepts/pull-requests.md` ("Outside the plan", assumptions), `concepts/metrics.md` (scope-drift rate), `concepts/agents-and-models.md` (`doubt` role) | `review-pipeline.svg` |
 | 5.5 | `concepts/learnings.md` (rationalization learnings, `harvest`), `reference/cli.md` (`context`), the trimmed `conventions.md` described in `concepts/the-loop.md` | `learnings-loop.svg`; new `living-rationalizations.svg` |
 | 6.0 | **full rewrite**: README "Start here" (7 commands), `getting-started.md`, 7 lifecycle guides replacing the 20 per-skill guides (old pages kept as one-line redirects for one major), `docs/README.md` index, `positioning.md`, CHANGELOG with Breaking section, migration guide for `kaizen upgrade` (`lifecycle-commands`), each guarantee labeled T0/T1/T2 in `gates-and-hooks.md`; root `README.md` and `CLAUDE.md` of this repository | `kaizen-loop.svg`, `help-routing.svg`, `autopilot.svg`, `artifacts-map.svg`; new `guarantee-levels.svg` |
+
+Second-pass ideas add, in the release that ships them: `concepts/doubt.md` (protocol and
+classification, idea 9), `evals/README` section and `CONTRIBUTING` rule on routing evals (idea 10),
+`concepts/constitution.md` (boundaries, ratchets, dated exceptions, external checks, idea 8 and 11),
+`reference/cli.md` (`verify --prove`), `concepts/pull-requests.md` (attention map, idea 13), the
+autopilot guide (fresh context per unit, idea 12); diagrams: new `doubt-protocol.svg`, updated
+`autopilot.svg`.
 
 A contract test to add in 5.2, so nothing is forgotten later: each Breaking or new CLI command in the
 CHANGELOG names the doc page that explains it (same idea as `tests/upgrade.test.mjs` for migrations).
@@ -414,6 +552,9 @@ before/after captures, as for any rendering change.
 
 ## Sources
 
+- [using-agent-skills](https://github.com/addyosmani/agent-skills/blob/main/skills/using-agent-skills/SKILL.md), [doubt-driven-development](https://github.com/addyosmani/agent-skills/blob/main/skills/doubt-driven-development/SKILL.md), [constraint-driven-development](https://github.com/addyosmani/agent-skills/blob/main/skills/constraint-driven-development/SKILL.md), [routing evals](https://github.com/addyosmani/agent-skills/tree/main/evals)
+- [How to write a good spec for AI agents](https://addyo.substack.com/p/how-to-write-a-good-spec-for-ai-agents)
+- [Do you need a software factory?](https://youmind.com/es-ES/landing/x-viral-articles/do-you-need-software-factory) and [Self-improving coding agents](https://engineered.at/articles/self-improving-coding-agents) (mirrors, not the originals)
 - [Codex hooks (official)](https://learn.chatgpt.com/docs/hooks)
 - [GitHub Copilot hooks reference (official)](https://docs.github.com/en/copilot/reference/hooks-reference)
 - [Agent Plugins 1.0](https://blakecrosley.com/fr/blog/agent-plugins-standard) (secondary)
