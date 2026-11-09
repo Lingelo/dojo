@@ -1,122 +1,97 @@
 ---
 name: learn
-description: Captures a solved problem as a durable learning in docs/learnings/ (validated frontmatter, corpus vocabulary, update rather than duplicate) so the next /kaizen:plan and the next /kaizen:review read it back — the step that makes each cycle make the next one easier. Use after verified work that produced non-obvious reasoning (a trap, a surprising cause, a decision costly to rediscover): "document this", "remember the lesson", /kaizen:learn. Not for a routine fix the code already explains.
-allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, Grep, Agent, AskUserQuestion
-argument-hint: "[short context] [harvest] [mode:auto]"
+description: Keeps the project's memory — captures one solved problem as a durable learning in docs/learnings/ (validated frontmatter, corpus vocabulary, updated rather than duplicated), harvests every lesson of a finished piece of work one at a time, or prunes the learnings that went stale or duplicate. Kaizen's hooks add the matching learnings to Claude's context when agent-skills' SPEC.md or tasks/ are written, so the next spec and plan read them back. Use when the user says "capture this", "remember this", "write a learning", "what did we learn", "clean up the learnings", /kaizen:learn [harvest | prune].
+allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, Grep, AskUserQuestion
+argument-hint: "[context] [harvest | prune] [mode:auto]"
 ---
 
-# Learn — capturing the learning
+# Learn — each unit of work makes the next one easier
 
-**Outcome:** **one** qualified learning written (or updated) under `<root>/learnings/`, checked against
-the current code, validated by the CLI, and findable by the next agent. If no learning qualifies:
-nothing is written and the report says why.
+## Overview
 
-**One learning per run.** A session that produced several = several successive runs, never a batch (a
-batch mixes vocabularies and produces catch-all documents). `harvest` organizes those runs.
-
-## `harvest` — every lesson of a cycle, one at a time
-
-At the end of a long cycle, lessons get lost: only the freshest is written. With `harvest`:
-1. **List candidates** from the whole cycle: the branch's `git log` (fix commits, reverts, commits that
-   undo an earlier one), review findings fixed (`.kaizen/state/reviews/*/`), debug notes, plan
-   amendments (`amended:`), and what the conversation shows was tried and failed. One line each:
-   symptom → cause, and the evidence (commit, file).
-2. **Filter**: apply the durability test (step 1) to each; for the survivors,
-   `node "$K" learnings search <words>` — an existing learning is an **update** candidate, not a new one.
-3. **Choose**: show the list (new / update / dropped and why) and ask which to write, in one question
-   (`multiSelect`). In `mode:auto`: every survivor.
-4. **Write** each chosen learning with steps 2 to 8, **one complete run per learning** (gather, look,
-   classify, write, validate), never a merged document.
-5. Report the paths written, updated and dropped.
+A learning is a lesson a future developer would otherwise pay for again: a surprising root cause, a
+framework trap, what did **not** work and why, a decision costly to reconstruct. It lives in
+`<docs>/learnings/<folder>/<slug>.md`, one per file, and comes back by itself: when agent-skills'
+`SPEC.md` or `tasks/plan.md` is written, Kaizen adds the matching learnings to Claude's context.
 
 Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md` and
-`${CLAUDE_PLUGIN_ROOT}/references/learnings-schema.md`.
-`K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
+`${CLAUDE_PLUGIN_ROOT}/references/learnings-schema.md`. `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-**`mode:auto`** (set by `/kaizen:autopilot` or `/kaizen:work`): no questions; no change to the project's
-instructions; end with exactly `Learning written: <path>` or `Learning not written: <reason>`.
+Three modes: **capture** (default, one learning), **harvest** (every lesson of a branch, one run each),
+**prune** (keep the corpus true). `mode:auto`: no question, and the report ends with exactly
+`Learning written: <path>` or `Learning not written: <reason>`.
 
-## 1. Preconditions — the durability test
+## When to Use
 
-The problem is **solved and verified** (green tests, observed behavior). Then apply the counterfactual
-from `learnings-schema.md`: without this document, would a future developer reading the final code make
-the mistake again or redo the same investigation? Judge from the session, without asking. An explicit
-invocation asks for the judgment now, it does not lower the bar.
+- A problem was just solved and verified, and its cause was not obvious.
+- A piece of work is finished (`harvest`): several lessons, none should be lost.
+- Learnings are old, contradicted by the code, or duplicated (`prune`; `/kaizen:metrics` lists the ones
+  never cited).
 
-Typically qualifying: a surprising root cause, an API or framework trap, what **did not** work and why,
-an architecture decision costly to reconstruct, a convention set after discussion. Not qualifying: a
-typo, a fix the test and the commit message fully explain, an explanation of what the code already
-says.
+**Not for:** documenting what the code already says, or a typo — the durability test says no.
 
-Test failed → write nothing; say in one or two sentences why, and where the knowledge already lives
-(test, comment, commit).
+## Process — capture
 
-## 2. Gather
+1. **Durability test.** The problem is solved **and verified** (green tests, observed behavior).
+   Without this document, would someone reading the final code make the mistake again or redo the
+   investigation? No → write nothing, say in one sentence where the knowledge already lives (test,
+   commit, comment).
+2. **Gather** from the session and `git log`/`git diff`: symptoms (exact messages), what was tried and
+   failed, the solution, **why** it works, how to avoid it. One question at most if a key element is
+   missing.
+3. **Look for an existing one.** `node "$K" learnings search <keywords>`, read the candidates: same
+   problem and still true → complete it; now wrong → **update** it; partial duplicate → note it for
+   `prune`.
+4. **Classify.** `node "$K" learnings stats` for the corpus vocabulary; track bug or knowledge through
+   `problem_type`, then `component`, `root_cause`, folder. Severity = how serious what it prevents is.
+5. **Write** from `${CLAUDE_PLUGIN_ROOT}/templates/learning-bug.md` or `learning-knowledge.md`, in the
+   configured language (frontmatter keys unchanged). Every path, symbol and command is checked against
+   the current tree. No absolute path, secret or personal data. Keep "What didn't work". Add `files:`
+   (globs) when the lesson is about specific files. `retire_when` only for a state outside the repo,
+   with a check that runs without changing it (issue URL, `npm view`), checked now.
+6. **Validate.** `node "$K" learnings validate <file>` until green.
+7. **Report** the path, new or updated, the track, and the words it will be found by.
 
-From the session (and the branch's `git log`/`git diff`): problem and impact, exact symptoms (error
-messages), what was tried and failed, the solution, **why** it works, how to avoid recurrence.
-Interactively, if a key element is missing (e.g. the exact error message), a single question.
+## Process — harvest
 
-## 3. Look for what exists
+1. List candidates from the branch: fix and revert commits, review findings fixed, what the
+   conversation shows was tried and failed. One line each: symptom → cause, with its evidence.
+2. Durability test on each; search for existing ones (update candidates).
+3. Show the list (new / update / dropped and why), ask which to write (`multiSelect`); `mode:auto`: all
+   survivors.
+4. Run **capture** once per chosen learning — never one merged document.
 
-`node "$K" learnings search <keywords>` then read the candidates. An existing learning on the **same**
-problem:
-- still accurate → complete it (new symptom, new variant) rather than creating one;
-- now inaccurate or incomplete → **update it**: leaving it would mislead;
-- a partial duplicate elsewhere → mention it in the report for `/kaizen:prune-learnings`.
+## Process — prune
 
-## 4. Classify
+1. `node "$K" learnings list`, `node "$K" learnings list --retire`, and `node "$K" metrics` →
+   `kaizen_loop.learnings_never_cited_sample`.
+2. For each candidate, check against the current code: paths and symbols still there? `retire_when` met
+   (run its check)? Same lesson elsewhere?
+3. Decide, with the evidence quoted: **Keep** · **Update** (code moved) · **Merge** (duplicates, keep the
+   better one) · **Replace** (lesson now wrong) · **Delete** (the problem cannot happen any more). A
+   `retire_when` met while the workaround is still in the code: keep, and recommend removing the
+   workaround — never remove it yourself.
+4. Ask before deleting or merging (`mode:auto`: only Update and Keep, report the rest). Never touch
+   product code.
 
-`node "$K" learnings stats` for the corpus vocabulary. Choose the track (bug / knowledge) through
-`problem_type`, then `component`, `root_cause`, folder per the "corpus first" rule. Severity = how
-serious what the learning prevents is, not how hard the investigation was.
+## Common Rationalizations
 
-## 5. Write
+| Excuse | Reality |
+|---|---|
+| "Everything we did today is worth keeping." | A learning nobody needs is noise that hides the one that matters. Apply the durability test. |
+| "I'll write one big summary of the session." | A batch mixes vocabularies and is never found. One learning per problem. |
+| "The commit message says it all." | Then no learning — say so. If it does not (the dead ends, the why), the learning does. |
+| "This old learning is probably still right." | Check the paths and symbols it cites. A wrong learning misleads the next plan. |
 
-- Template: `${CLAUDE_PLUGIN_ROOT}/templates/learning-bug.md` or `learning-knowledge.md`, in the
-  configured language (frontmatter keys unchanged).
-- Path: `<root>/learnings/<folder>/<title-slug>.md`.
-- Every claim about the code is **checked against the current tree**: existing paths, quoted symbols
-  present, exact commands. No absolute path, no secret, no personal data (replace with `<REDACTED>`).
-- The "What didn't work" section is often the most valuable: do not skip it if the session hit dead
-  ends.
-- `retire_when` only if the learning depends on a state **outside the repo** (open upstream bug, tool
-  version): the change that would retire it **and** a check that runs without changing the repo
-  (issue URL, `npm view`, release page). Check it now: a condition already met means no learning, or
-  a different one.
-- Validate: `node "$K" learnings validate <file>`; fix until green.
+## Red Flags
 
-## 6. Promote (interactive only)
+- A learning about a problem not yet verified as solved.
+- Paths or symbols that do not exist in the current tree.
+- A new file when `learnings search` returned the same problem.
+- Product code changed during `prune`.
 
-If the learning is actually a **prescriptive rule** valid for the whole team ("every CSV export starts
-with a BOM"), offer to also add it to a declared Kaizen Pack (`node "$K" packs`) or create one
-(`node "$K" pack new <name>`): a rule file with `title`, `applies_when`, `tags`, and a body citing the
-learning. Packs are read by plan and review; the learning keeps the story.
+## Verification
 
-## 7. Vocabulary
-
-If the learning names a domain concept used under several names in the code or the conversation and
-`CONCEPTS.md` exists, add or refine the entry (canonical name, one-sentence definition, aliases to
-avoid). Do not create `CONCEPTS.md` here.
-
-## 8. Be findable (interactive, with approval)
-
-Check that the project's instructions (`CLAUDE.md`) lead an agent to `<root>/learnings/` before working
-in a documented area. Otherwise, offer to add the smallest useful sentence, for example:
-
-> Before planning or debugging, look for the project's learnings: `docs/learnings/` (frontmatter:
-> module, tags, symptoms, applies_when).
-
-Only edit an existing instructions file, never a new one.
-
-## 9. Report
-
-```
-Learning written: docs/learnings/runtime-errors/csv-export-excel-accents.md  (new | updated)
-- track: bug · problem_type: runtime_error · module: exports
-- validated ✔ · findable by: csv, excel, encoding, bom
-- read by: the next /kaizen:plan and /kaizen:review touching exports
-```
-
-Only commit if the user asks or if the caller (`work`, `autopilot`) handles the commit; in that case,
-only the files written by this skill.
+- [ ] `node "$K" learnings validate` is green for every file written.
+- [ ] Each claim about the code was checked against the current tree.
+- [ ] The report names what was written, updated, dropped — and why.

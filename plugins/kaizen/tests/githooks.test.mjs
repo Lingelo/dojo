@@ -1,11 +1,11 @@
-// Git hooks (audit fix git_hooks): review and secrets refused at the git level, without the plugin.
+// Git hooks (install git-hooks): review and secrets refused at the git level, without the plugin.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { CLI, PLUGIN, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
+import { CLI, PLUGIN, cleanup, cli, gitc, personaReview, tempRepo, writeFiles } from './helpers.mjs';
 
 // An empty Claude config dir: only what a test puts in it is found.
 function claudeHome() {
@@ -29,13 +29,13 @@ function git(dir, args, env = {}) {
 
 test('install: hooks written and wired, never overwritten', () => {
   const { dir, bare } = featureRepo();
-  const r = cli(dir, ['audit', 'fix', 'git_hooks']);
+  const r = cli(dir, ['install', 'git-hooks']);
   assert.equal(r.code, 0, r.stderr);
   assert.deepEqual(r.json.written, ['.githooks/pre-push', '.githooks/pre-commit']);
   assert.equal(r.json.wired, true);
   assert.equal(git(dir, ['config', 'core.hooksPath']).stdout.trim(), '.githooks');
   writeFileSync(join(dir, '.githooks', 'pre-push'), '#!/bin/sh\n# mine\n');
-  assert.deepEqual(cli(dir, ['audit', 'fix', 'git_hooks']).json.written, []);
+  assert.deepEqual(cli(dir, ['install', 'git-hooks']).json.written, []);
   assert.match(readFileSync(join(dir, '.githooks', 'pre-push'), 'utf8'), /# mine/);
   cleanup(dir);
   cleanup(bare);
@@ -45,7 +45,7 @@ test('install: hooks written and wired, never overwritten', () => {
 const OLD = (h) => readFileSync(join(PLUGIN, 'tests', 'fixtures', 'githooks', `${h}-4.1.1`), 'utf8').replace(/\r\n/g, '\n');
 const lookupLine = (text) => text.split(/\r?\n/).find((l) => l.startsWith('cli=$(node -e'));
 
-test('outdated hooks: doctor and audit warn, audit fix refreshes the lookup line only', () => {
+test('outdated hooks: doctor warns, install git-hooks refreshes the lookup line only', () => {
   const { dir, bare } = featureRepo();
   mkdirSync(join(dir, '.githooks'), { recursive: true });
   // pre-push as 4.1.1 wrote it plus a team line; pre-commit as 4.1.1 wrote it, with CRLF (Windows checkout).
@@ -56,10 +56,9 @@ test('outdated hooks: doctor and audit warn, audit fix refreshes the lookup line
   const before = check(cli(dir, ['doctor', '--json']));
   assert.equal(before.status, 'warn');
   assert.match(before.evidence, /pre-push, pre-commit: CLI lookup of an older Kaizen/);
-  assert.match(before.fix, /audit fix git_hooks/);
-  assert.equal(check(cli(dir, ['audit', '--json', '--no-github'])).status, 'warn');
+  assert.match(before.fix, /install git-hooks/);
 
-  const r = cli(dir, ['audit', 'fix', 'git_hooks']);
+  const r = cli(dir, ['install', 'git-hooks']);
   assert.equal(r.code, 0, r.stderr);
   assert.deepEqual(r.json.written, ['.githooks/pre-push (CLI lookup refreshed: commit it)', '.githooks/pre-commit (CLI lookup refreshed: commit it)']);
   for (const h of ['pre-push', 'pre-commit']) {
@@ -69,10 +68,9 @@ test('outdated hooks: doctor and audit warn, audit fix refreshes the lookup line
   assert.match(readFileSync(join(dir, '.githooks', 'pre-push'), 'utf8'), /echo team-check\nexec node "\$cli" githook pre-push/, 'the team line is kept');
   assert.equal((readFileSync(join(dir, '.githooks', 'pre-commit'), 'utf8').match(/\r\n/g) || []).length, OLD('pre-commit').split('\n').length - 1, 'CRLF kept');
   assert.equal(check(cli(dir, ['doctor', '--json'])).status, 'ok');
-  assert.equal(check(cli(dir, ['audit', '--json', '--no-github'])).status, 'ok');
   // Idempotent, and a hook that is not Kaizen's is never touched.
   writeFileSync(join(dir, '.githooks', 'pre-push'), `#!/bin/sh\n${lookupLine(OLD('pre-push'))}\nmake lint\n`);
-  assert.deepEqual(cli(dir, ['audit', 'fix', 'git_hooks']).json.written, []);
+  assert.deepEqual(cli(dir, ['install', 'git-hooks']).json.written, []);
   assert.match(readFileSync(join(dir, '.githooks', 'pre-push'), 'utf8'), /make lint/);
   cleanup(dir);
   cleanup(bare);
@@ -81,7 +79,7 @@ test('outdated hooks: doctor and audit warn, audit fix refreshes the lookup line
 test('install: hooks already in use are never shadowed, the chaining line is given', () => {
   const { dir, bare } = featureRepo();
   gitc(dir, ['config', 'core.hooksPath', '.husky']);
-  const r = cli(dir, ['audit', 'fix', 'git_hooks']);
+  const r = cli(dir, ['install', 'git-hooks']);
   assert.equal(r.json.wired, false);
   assert.match(r.json.chain[0], /\.husky\/pre-push: add the line {2}\.githooks\/pre-push "\$@"/);
   assert.equal(git(dir, ['config', 'core.hooksPath']).stdout.trim(), '.husky');
@@ -89,7 +87,7 @@ test('install: hooks already in use are never shadowed, the chaining line is giv
   cleanup(bare);
   const second = featureRepo();
   writeFileSync(join(second.dir, '.git', 'hooks', 'pre-commit'), '#!/bin/sh\n');
-  assert.equal(cli(second.dir, ['audit', 'fix', 'git_hooks']).json.wired, false);
+  assert.equal(cli(second.dir, ['install', 'git-hooks']).json.wired, false);
   assert.equal(git(second.dir, ['config', 'core.hooksPath']).status, 1, 'core.hooksPath left unset');
   cleanup(second.dir);
   cleanup(second.bare);
@@ -101,7 +99,7 @@ test('install from a linked worktree never shadows the main repo hooks', () => {
   const wt = mkdtempSync(join(tmpdir(), 'kaizen-wt-'));
   cleanup(wt);
   gitc(dir, ['worktree', 'add', '-q', '-b', 'feat/wt', wt]);
-  const r = cli(wt, ['audit', 'fix', 'git_hooks']);
+  const r = cli(wt, ['install', 'git-hooks']);
   assert.equal(r.json.wired, false, JSON.stringify(r.json));
   assert.match(r.json.reason, /pre-commit/);
   cleanup(wt);
@@ -111,7 +109,7 @@ test('install from a linked worktree never shadows the main repo hooks', () => {
 
 test('pre-push: an unreviewed branch is refused like the Claude Code gate; reviewed, deleted and tags pass (AE2)', () => {
   const { dir, bare } = featureRepo();
-  cli(dir, ['audit', 'fix', 'git_hooks']);
+  cli(dir, ['install', 'git-hooks']);
   gitc(dir, ['config', 'kaizen.cli', CLI]);
   let r = git(dir, ['push', '-u', 'origin', 'feat/x']);
   assert.notEqual(r.status, 0);
@@ -119,7 +117,7 @@ test('pre-push: an unreviewed branch is refused like the Claude Code gate; revie
   assert.match(r.stderr, /review waive --reason/);
   assert.equal(git(dir, ['tag', 'v1']).status, 0);
   assert.equal(git(dir, ['push', 'origin', 'v1']).status, 0, 'a tag publishes no branch');
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  assert.equal(personaReview(dir).code, 0);
   r = git(dir, ['push', '-u', 'origin', 'feat/x']);
   assert.equal(r.status, 0, r.stderr);
   assert.equal(git(dir, ['push', 'origin', '--delete', 'feat/x']).status, 0, 'a deletion publishes no code');
@@ -129,9 +127,9 @@ test('pre-push: an unreviewed branch is refused like the Claude Code gate; revie
 
 test('pre-push checks the pushed commit, not HEAD', () => {
   const { dir, bare } = featureRepo();
-  cli(dir, ['audit', 'fix', 'git_hooks']);
+  cli(dir, ['install', 'git-hooks']);
   gitc(dir, ['config', 'kaizen.cli', CLI]);
-  cli(dir, ['review', 'record', '--verdict', 'ready']);
+  personaReview(dir);
   gitc(dir, ['checkout', '-qb', 'feat/y', 'main']);
   writeFiles(dir, { 'other.js': Array.from({ length: 200 }, (_, i) => `l${i}`).join('\n') });
   gitc(dir, ['add', '-A'], ['commit', '-qm', 'feat: unreviewed']);
@@ -144,7 +142,7 @@ test('pre-push checks the pushed commit, not HEAD', () => {
 
 test('pre-push: HEAD, sha and tag refspecs onto a branch are checked too', () => {
   const { dir, bare } = featureRepo();
-  cli(dir, ['audit', 'fix', 'git_hooks']);
+  cli(dir, ['install', 'git-hooks']);
   gitc(dir, ['config', 'kaizen.cli', CLI], ['tag', 'v2']);
   const sha = git(dir, ['rev-parse', 'HEAD']).stdout.trim();
   for (const spec of ['HEAD', 'HEAD:feat/x', `${sha}:refs/heads/feat/z`, 'v2:refs/heads/feat/t']) {
@@ -152,7 +150,7 @@ test('pre-push: HEAD, sha and tag refspecs onto a branch are checked too', () =>
     assert.notEqual(r.status, 0, `${spec} must be refused`);
     assert.match(r.stderr, /Push refused/, spec);
   }
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  assert.equal(personaReview(dir).code, 0);
   assert.equal(git(dir, ['push', 'origin', 'HEAD']).status, 0, 'reviewed: HEAD passes');
   cleanup(dir);
   cleanup(bare);
@@ -160,7 +158,7 @@ test('pre-push: HEAD, sha and tag refspecs onto a branch are checked too', () =>
 
 test('CLI not found: the hook refuses (fail closed) and a decoy marketplace is never run', () => {
   const { dir, bare } = featureRepo();
-  cli(dir, ['audit', 'fix', 'git_hooks']);
+  cli(dir, ['install', 'git-hooks']);
   const home = claudeHome();
   const decoy = join(home, 'plugins', 'cache', 'evil', 'kaizen', '9.9.9');
   mkdirSync(join(decoy, '.claude-plugin'), { recursive: true });
@@ -180,7 +178,7 @@ test('CLI not found: the hook refuses (fail closed) and a decoy marketplace is n
 
 test('the newest kaizen of the dojo marketplace is found in the plugin cache', () => {
   const { dir, bare } = featureRepo();
-  cli(dir, ['audit', 'fix', 'git_hooks']);
+  cli(dir, ['install', 'git-hooks']);
   const home = claudeHome();
   for (const v of ['3.2.1', '3.10.0']) {
     const root = join(home, 'plugins', 'cache', 'dojo', 'kaizen', v);
@@ -199,7 +197,7 @@ test('the newest kaizen of the dojo marketplace is found in the plugin cache', (
 
 test('pre-commit: a staged secret is refused; secrets.scan false lets it through', () => {
   const { dir, bare } = featureRepo();
-  cli(dir, ['audit', 'fix', 'git_hooks']);
+  cli(dir, ['install', 'git-hooks']);
   gitc(dir, ['config', 'kaizen.cli', CLI]);
   writeFiles(dir, { 'conf.js': `const key = "AKIA${'Q'.repeat(16)}";\n` });
   gitc(dir, ['add', 'conf.js']);
@@ -212,16 +210,17 @@ test('pre-commit: a staged secret is refused; secrets.scan false lets it through
   cleanup(bare);
 });
 
-test('claude_settings: declares kaizen@dojo, keeps existing keys, never twice', () => {
+test('install settings: declares kaizen@dojo and agent-skills@dojo, keeps existing keys, never twice', () => {
   const dir = tempRepo({ '.kaizen/config.json': {}, '.claude/settings.json': { permissions: { allow: ['Bash(npm test)'] } } });
-  assert.equal(cli(dir, ['audit', 'fix', 'claude_settings']).code, 0);
+  assert.equal(cli(dir, ['install', 'settings']).code, 0);
   const s = JSON.parse(readFileSync(join(dir, '.claude', 'settings.json'), 'utf8'));
   assert.deepEqual(s.permissions.allow, ['Bash(npm test)']);
   assert.equal(s.enabledPlugins['kaizen@dojo'], true);
+  assert.equal(s.enabledPlugins['agent-skills@dojo'], true);
   assert.equal(s.extraKnownMarketplaces.dojo.source.repo, 'Lingelo/dojo');
-  assert.match(cli(dir, ['audit', 'fix', 'claude_settings']).stderr, /already declared/);
+  assert.match(cli(dir, ['install', 'settings']).stderr, /already declared/);
   writeFiles(dir, { '.claude/settings.json': '{ broken' });
-  assert.match(cli(dir, ['audit', 'fix', 'claude_settings']).stderr, /not valid JSON/);
+  assert.match(cli(dir, ['install', 'settings']).stderr, /not valid JSON/);
   cleanup(dir);
 });
 

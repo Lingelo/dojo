@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="640" viewBox="0 0 1100 640" role="img" aria-labelledby="t d">
 <title id="t">The review required before git push</title>
-<desc id="d">A PreToolUse hook stops the push until a review recorded the pushed tree, or you choose to skip it. Evidence comes from hooks, not from the agent’s word.</desc>
+<desc id="d">agent-skills reviews; Kaizen records the tree it reviewed and the verdict it wrote. A PreToolUse hook stops an unreviewed push, or you choose to skip it.</desc>
 <style>
   .bg { fill: #fbfaf7; stroke: #e4e0d8; }
   text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
@@ -64,33 +64,45 @@
 <defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
 <rect class="bg" x="0.5" y="0.5" width="1099" height="639" rx="14"/>
 <text class="title" x="28" y="38">The review required before git push</text>
-<text class="desc" x="28" y="58">A PreToolUse hook stops the push until a review recorded the pushed tree, or you choose to skip it. Evidence comes from hooks, not from the agent’s word.</text>
+<text class="desc" x="28" y="58">agent-skills reviews; Kaizen records the tree it reviewed and the verdict it wrote. A PreToolUse hook stops an unreviewed push, or you choose to skip it.</text>
 <rect class="region" x="28" y="76" width="330" height="520" rx="12"/>
-<text class="regionlabel" x="40" y="93">RECORDING A REVIEW</text>
-<rect class="skill" x="44" y="106" width="298" height="52" rx="8" stroke-width="1.5"/>
-<text class="label" x="193" y="129" text-anchor="middle">/kaizen:review</text>
-<text class="sub" x="193" y="144" text-anchor="middle">launches reviewers through the Agent tool</text>
-<rect class="gate" x="44" y="186" width="298" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="193" y="211" text-anchor="middle" style="font-size:13.3px">Agent hooks --launch, --evidence</text>
-<text class="sub" x="193" y="226" text-anchor="middle" style="font-size:11.2px">log each kaizen:*-reviewer launched, then run</text>
-<rect class="state" x="44" y="270" width="298" height="46" rx="10" stroke-width="1.5"/>
-<text class="label" x="193" y="297" text-anchor="middle">review-evidence.json</text>
-<rect class="gate" x="44" y="344" width="298" height="70" rx="8" stroke-width="1.5"/>
-<text class="label" x="193" y="362" text-anchor="middle">review record --verdict [--run]</text>
-<text class="sub" x="193" y="377" text-anchor="middle">refused without a reviewer since the last</text>
-<text class="sub" x="193" y="391" text-anchor="middle" style="font-size:11.2px">review (light ≤ 20, update ≤ 80 lines aside);</text>
-<text class="sub" x="193" y="405" text-anchor="middle">--run: a reviewer left no output</text>
-<rect class="state" x="44" y="442" width="298" height="66" rx="10" stroke-width="1.5"/>
-<text class="label" x="193" y="465" text-anchor="middle">reviews.json[branch]</text>
-<text class="sub" x="193" y="480" text-anchor="middle" style="font-size:11.4px">tree · head · verdict ready|concerns|blocked</text>
-<text class="sub" x="193" y="494" text-anchor="middle" style="font-size:10.9px">depth agents|light|update · reviewers · models</text>
-<path class="line accent" d="M193,158 L193,186" marker-end="url(#h-accent)"/>
-<path class="line bad" d="M193,242 L193,270" marker-end="url(#h-bad)"/>
-<path class="line" d="M193,316 L193,344" marker-end="url(#h-default)"/>
-<path class="line bad" d="M193,414 L193,442" marker-end="url(#h-bad)"/>
-<text class="small" x="44" y="540" text-anchor="start">Direct writes to these state files are refused.</text>
+<text class="regionlabel" x="40" y="93">THE REVIEW RECORDS ITSELF</text>
+<rect class="agent" x="44" y="106" width="140" height="60" rx="8" stroke-width="1.5"/>
+<text class="label" x="114" y="126" text-anchor="middle">/review</text>
+<text class="sub" x="114" y="141" text-anchor="middle">skill, in the</text>
+<text class="sub" x="114" y="155" text-anchor="middle">conversation</text>
+<rect class="agent" x="202" y="106" width="140" height="60" rx="8" stroke-width="1.5"/>
+<text class="label" x="272" y="126" text-anchor="middle">/ship</text>
+<text class="sub" x="272" y="141" text-anchor="middle">code-reviewer</text>
+<text class="sub" x="272" y="155" text-anchor="middle">persona</text>
+<rect class="gate" x="44" y="196" width="140" height="64" rx="8" stroke-width="1.5"/>
+<text class="label" x="114" y="218" text-anchor="middle" style="font-size:10.8px">PostToolUse Skill</text>
+<text class="sub" x="114" y="233" text-anchor="middle">leaves a mark</text>
+<text class="sub" x="114" y="247" text-anchor="middle" style="font-size:11.4px">review-pending.json</text>
+<rect class="gate" x="44" y="290" width="140" height="64" rx="8" stroke-width="1.5"/>
+<text class="label" x="114" y="312" text-anchor="middle">Stop --stop</text>
+<text class="sub" x="114" y="327" text-anchor="middle">reads the turn’s</text>
+<text class="sub" x="114" y="341" text-anchor="middle">last message</text>
+<rect class="gate" x="202" y="196" width="140" height="64" rx="8" stroke-width="1.5"/>
+<text class="label" x="272" y="218" text-anchor="middle" style="font-size:10.8px">PostToolUse Agent</text>
+<text class="sub" x="272" y="233" text-anchor="middle">reads the</text>
+<text class="sub" x="272" y="247" text-anchor="middle">persona’s return</text>
+<path class="line accent" d="M114,166 L114,196" marker-end="url(#h-accent)"/>
+<path class="line" d="M114,260 L114,290" marker-end="url(#h-default)"/>
+<path class="line accent" d="M272,166 L272,196" marker-end="url(#h-accent)"/>
+<rect class="plain" x="44" y="384" width="298" height="64" rx="8" stroke-width="1.5"/>
+<text class="label" x="193" y="406" text-anchor="middle">verdict</text>
+<text class="sub" x="193" y="421" text-anchor="middle">Critical finding → blocked</text>
+<text class="sub" x="193" y="435" text-anchor="middle" style="font-size:10.5px">Verdict: REQUEST CHANGES → concerns · else ready</text>
+<path class="line" d="M114,354 L114,384" marker-end="url(#h-default)"/>
+<path class="line" d="M272,260 L272,384" marker-end="url(#h-default)"/>
+<rect class="state" x="44" y="476" width="298" height="66" rx="10" stroke-width="1.5"/>
+<text class="label" x="193" y="506" text-anchor="middle">reviews.json[branch]</text>
+<text class="sub" x="193" y="521" text-anchor="middle">tree · head · verdict · reviewer</text>
+<path class="line bad" d="M193,448 L193,476" marker-end="url(#h-bad)"/>
+<text class="small" x="44" y="568" text-anchor="start">Direct writes to these state files are refused.</text>
 <rect class="outside" x="396" y="96" width="300" height="50" rx="8" stroke-width="1.5"/>
-<text class="label" x="546" y="125" text-anchor="middle">git push (any Bash command)</text>
+<text class="label" x="546" y="125" text-anchor="middle">git push (any spelling)</text>
 <rect class="gate" x="396" y="176" width="300" height="44" rx="8" stroke-width="1.5"/>
 <text class="label" x="546" y="202" text-anchor="middle">require_before_push: false?</text>
 <rect class="gate" x="396" y="238" width="300" height="44" rx="8" stroke-width="1.5"/>
@@ -132,14 +144,14 @@
 <rect class="plain" x="396" y="556" width="300" height="44" rx="8" stroke-width="1.5"/>
 <text class="label" x="546" y="582" text-anchor="middle">otherwise: push allowed ✔</text>
 <path class="line ok" d="M546,530 L546,556" marker-end="url(#h-ok)"/>
-<path class="line blue dashed" d="M342,475 L374,475 L374,300 L396,322" marker-end="url(#h-blue)"/>
-<rect class="pill" x="356.8" y="381" width="34.4" height="17" rx="4"/>
-<text class="edge" x="374" y="392" text-anchor="middle">read</text>
+<path class="line blue dashed" d="M342,509 L374,509 L374,300 L396,322" marker-end="url(#h-blue)"/>
+<rect class="pill" x="356.8" y="409" width="34.4" height="17" rx="4"/>
+<text class="edge" x="374" y="420" text-anchor="middle">read</text>
 <rect class="region" x="760" y="76" width="312" height="520" rx="12"/>
 <text class="regionlabel" x="772" y="93">SKIPPING IT: ONLY YOU DECIDE</text>
 <rect class="outside" x="776" y="106" width="280" height="46" rx="8" stroke-width="1.5"/>
 <text class="label" x="916" y="133" text-anchor="middle">stop: Claude asks you</text>
-<rect class="skill" x="776" y="176" width="280" height="56" rx="8" stroke-width="1.5"/>
+<rect class="agent" x="776" y="176" width="280" height="56" rx="8" stroke-width="1.5"/>
 <text class="label" x="916" y="201" text-anchor="middle" style="font-size:12.9px">1. Run the review (Recommended)</text>
 <text class="sub" x="916" y="216" text-anchor="middle">2. Push without a review</text>
 <rect class="state" x="776" y="256" width="280" height="46" rx="10" stroke-width="1.5"/>
@@ -153,20 +165,20 @@
 <rect class="state" x="776" y="482" width="280" height="62" rx="10" stroke-width="1.5"/>
 <text class="label" x="916" y="503" text-anchor="middle">pushed without a review</text>
 <text class="sub" x="916" y="518" text-anchor="middle">logged in friction.jsonl</text>
-<text class="sub" x="916" y="532" text-anchor="middle">(declined → /kaizen:review)</text>
+<text class="sub" x="916" y="532" text-anchor="middle">(declined → /agent-skills:review)</text>
 <path class="line" d="M916,152 L916,176" marker-end="url(#h-default)"/>
 <path class="line" d="M916,232 L916,256" marker-end="url(#h-default)"/>
 <path class="line" d="M916,302 L916,326" marker-end="url(#h-default)"/>
 <path class="line accent" d="M916,378 L916,402" marker-end="url(#h-accent)"/>
 <path class="line bad" d="M916,458 L916,482" marker-end="url(#h-bad)"/>
-<rect class="skill" x="36" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="60" y="622">skill (/kaizen:…)</text>
-<rect class="artifact" x="187.4" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="211.4" y="622">file in your repo</text>
-<rect class="gate" x="338.8" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="362.8" y="622">deterministic gate</text>
-<rect class="outside" x="496.40000000000003" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="520.4000000000001" y="622">you / outside world</text>
-<rect class="state" x="660.2" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="684.2" y="622">state in .kaizen/state/</text>
+<rect class="agent" x="36" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="60" y="622">agent-skills (/agent-skills:…)</text>
+<rect class="gate" x="268" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="292" y="622">Kaizen hook or check</text>
+<rect class="artifact" x="438" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="462" y="622">file in your repo</text>
+<rect class="outside" x="589.4" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="613.4" y="622">you</text>
+<rect class="state" x="654" y="612" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="678" y="622">state in .kaizen/state/</text>
 </svg>

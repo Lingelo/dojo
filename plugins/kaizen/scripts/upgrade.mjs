@@ -9,7 +9,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { docsRoot, loadConfig, PROFILE_ALIASES } from './lib.mjs';
+import { docsRoot, loadConfig } from './lib.mjs';
 import { PLUGIN_ID, gitHooksState } from './doctor.mjs';
 import { declarePlugin, refreshHookLookups } from './githooks.mjs';
 
@@ -33,10 +33,6 @@ function readFileSafe(path) {
   }
 }
 
-const CONFIGS = ['.kaizen/config.json', '.kaizen/config.local.json'];
-// `"profile": "lean"`, whatever the spacing: the value is rewritten in place, the file is never reformatted.
-const OLD_PROFILE = new RegExp(`("profile"\\s*:\\s*")(${Object.keys(PROFILE_ALIASES).join('|')})(")`);
-
 // `kaizen@<marketplace>` keys other than the dojo one, enabled in the versioned settings.
 function oldMarketplaceIds(root) {
   const plugins = readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins || {};
@@ -54,10 +50,11 @@ function declare(root) {
   }
 }
 
+const CONFIG_FILES = ['.kaizen/config.json', '.kaizen/config.local.json'];
+
 // What Kaizen's production commands (removed in 6.0) left in a repository: `deploy` / `monitor` in the
 // Kaizen config files, kaizen-ops enabled in the project settings.
 const OPS_ID = 'kaizen-ops@dojo';
-const CONFIG_FILES = ['.kaizen/config.json', '.kaizen/config.local.json'];
 function productionLeftovers(root) {
   const found = [];
   for (const f of CONFIG_FILES) {
@@ -69,6 +66,24 @@ function productionLeftovers(root) {
   }
   return found;
 }
+// What Kaizen 6.0 no longer reads, because agent-skills covers it: config keys of removed features,
+// the constitution (→ agent-skills' CONSTRAINTS.md), Kaizen Packs.
+const REMOVED_KEYS = ['profile', 'models', 'risk', 'perf', 'packs', 'tracker'];
+function surfaceLeftovers(root) {
+  const found = [];
+  for (const f of CONFIG_FILES) {
+    const c = readJson(join(root, f));
+    const keys = c ? REMOVED_KEYS.filter((k) => k in c) : [];
+    if (keys.length) found.push({ file: f, step: `remove ${keys.map((k) => `"${k}"`).join(', ')} from ${f} (no longer read)` });
+  }
+  if (existsSync(join(root, 'CONSTITUTION.md')) && !existsSync(join(root, 'CONSTRAINTS.md'))) {
+    found.push({ file: 'CONSTITUTION.md', step: 'turn CONSTITUTION.md into agent-skills\' CONSTRAINTS.md with /agent-skills:constraints (its articles become the floor and the enforced rows), then delete it' });
+  }
+  if (existsSync(join(root, 'kaizen-packs'))) found.push({ file: 'kaizen-packs/', step: 'move the rules of kaizen-packs/ you still want into CONSTRAINTS.md or AGENTS.md, then delete the folder' });
+  return found;
+}
+const AS_ID = 'agent-skills@dojo';
+
 // Releases with a Breaking or Deprecated section that ask nothing of a repository, with the reason
 // (tests/upgrade.test.mjs requires one or the other from 4.3.0 on).
 export const NO_MIGRATION = {
@@ -105,27 +120,6 @@ export const MIGRATIONS = [
     manual: (root) => oldMarketplaceIds(root).map((id) => `remove "${id}" (and its marketplace) from .claude/settings.json once ${PLUGIN_ID} works`),
   },
   {
-    id: 'profile-names',
-    since: '3.4.0',
-    title: 'profiles are named by stakes: lean → prototype, standard → product, full → critical',
-    applies(root) {
-      const hits = CONFIGS.map((f) => [f, readFileSafe(join(root, f)).match(OLD_PROFILE)?.[2]]).filter(([, p]) => p);
-      if (!hits.length) return null;
-      return hits.map(([f, p]) => `"profile": "${p}" in ${f} (read as "${PROFILE_ALIASES[p]}", reported deprecated)`).join('; ');
-    },
-    files: (root) => CONFIGS.filter((f) => OLD_PROFILE.test(readFileSafe(join(root, f)))),
-    apply(root) {
-      const written = [];
-      for (const f of CONFIGS) {
-        const text = readFileSafe(join(root, f));
-        if (!OLD_PROFILE.test(text)) continue;
-        writeFileSync(join(root, f), text.replace(OLD_PROFILE, (_, a, p, b) => `${a}${PROFILE_ALIASES[p]}${b}`));
-        written.push(f);
-      }
-      return written;
-    },
-  },
-  {
     id: 'production-removed',
     since: '6.0.0',
     title: 'Kaizen no longer deploys nor monitors: kaizen-ops and the deploy/monitor configuration are gone',
@@ -139,6 +133,24 @@ export const MIGRATIONS = [
       const [file, what] = [f.split(' ')[0], f.slice(f.indexOf('(') + 1, -1)];
       return what === OPS_ID ? `remove "${OPS_ID}" from enabledPlugins in ${file}` : `remove the "${what}" key from ${file} (keep its commands in your own deploy tooling if you use them)`;
     }),
+  },
+  {
+    id: 'agent-skills-base',
+    since: '6.0.0',
+    title: 'agent-skills is the base of the workflow; Kaizen keeps the engine, learnings, PR follow-up and metrics',
+    applies(root) {
+      const plugins = readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins || {};
+      const missing = plugins[PLUGIN_ID] === true && plugins[AS_ID] !== true;
+      const left = surfaceLeftovers(root);
+      if (!missing && !left.length) return null;
+      return [missing && `.claude/settings.json enables ${PLUGIN_ID} but not ${AS_ID}`, ...left.map((l) => `${l.file}: no longer read`)].filter(Boolean).join('; ');
+    },
+    files: (root) => ['.claude/settings.json', ...surfaceLeftovers(root).map((l) => l.file)],
+    apply(root) {
+      const plugins = readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins || {};
+      return plugins[PLUGIN_ID] === true && plugins[AS_ID] !== true ? declare(root) : [];
+    },
+    manual: (root) => surfaceLeftovers(root).map((l) => l.step),
   },
   {
     id: 'hook-lookup',

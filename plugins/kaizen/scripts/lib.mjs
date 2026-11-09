@@ -30,34 +30,20 @@ export function repoRoot(cwd = process.cwd()) {
   }
 }
 
-// Adoption profiles, named after the repo's stakes: ceremony scales, deterministic gates stay.
-export const PROFILES = ['prototype', 'product', 'critical'];
-// Names before 3.4.0, still read (reported as deprecated by `config`).
-export const PROFILE_ALIASES = { lean: 'prototype', standard: 'product', full: 'critical' };
-
 export const DEFAULT_CONFIG = {
   docs_root: 'docs',
   language: 'auto',
-  tracker: 'auto',
   verify: {},
-  profile: 'product',
-  // Risk surfaces raise the profile one step for the cycle (scripts/risk.mjs): team globs per surface.
-  risk: { escalate: true, paths: {}, ignore: [] },
+  // Quality gate (Stop hook): on as soon as a session edits code, off when the checks are green.
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
-  // How the user approves a review waiver or a review gap: a code they type, or
-  // a question (safe option first) confirmed in Claude Code's prompt — scripts/approvals.mjs.
+  // How the user approves a review waiver: a question (safe option first) confirmed in Claude Code's
+  // prompt, or a code they type — scripts/approvals.mjs.
   approvals: 'ask',
-  // cost_weights: relative weight of a million tokens per model; confirm_above_cost: ask before a
-  // review estimated above it (null = never ask).
-  review: { require_before_push: 'ask', max_unreviewed_lines: 80, cost_weights: {}, confirm_above_cost: null },
-  // Model per agent role: profile defaults (scripts/models.mjs), adjustable per role or per agent.
-  models: { roles: {}, agents: {} },
+  // cost_weights: relative weight of a million tokens per model family, for `kaizen cost` and metrics.
+  review: { require_before_push: 'ask', max_unreviewed_lines: 80, cost_weights: {} },
   // Secret scan before every commit Claude makes (secret-gate hook); ignore = path globs.
   secrets: { scan: true, ignore: [] },
-  // Performance budget (kaizen perf): command printing name=value lines, thresholds per metric.
-  perf: { command: null, timeout_seconds: 600, thresholds: {} },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
-  packs: [],
 };
 
 // JSON state under .kaizen/state/ (ignored by git). Reading never creates the folder: hooks read it
@@ -102,22 +88,7 @@ export function loadConfig(root) {
   merged.verify = { ...(base.verify || {}), ...(local.verify || {}) };
   merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
   merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
-  merged.perf = { ...DEFAULT_CONFIG.perf, ...(base.perf || {}), ...(local.perf || {}) };
   merged.secrets = { ...DEFAULT_CONFIG.secrets, ...(base.secrets || {}), ...(local.secrets || {}) };
-  merged.risk = { ...DEFAULT_CONFIG.risk, ...(base.risk || {}), ...(local.risk || {}) };
-  merged.models = {
-    roles: { ...(base.models?.roles || {}), ...(local.models?.roles || {}) },
-    agents: { ...(base.models?.agents || {}), ...(local.models?.agents || {}) },
-  };
-  // A former name still applies; a mistyped profile must not break the hooks: fall back to
-  // "product". Both are reported by `config`.
-  if (PROFILE_ALIASES[merged.profile]) {
-    merged.profile_warning = `deprecated profile: "${merged.profile}" — rename it "${PROFILE_ALIASES[merged.profile]}" in .kaizen/config.json`;
-    merged.profile = PROFILE_ALIASES[merged.profile];
-  } else if (!PROFILES.includes(merged.profile)) {
-    merged.profile_warning = `unknown profile: "${merged.profile}" (expected: ${PROFILES.join(', ')}) — "product" applied`;
-    merged.profile = 'product';
-  }
   if (base.docs_root) merged.docs_root = base.docs_root;
   return merged;
 }
@@ -617,18 +588,6 @@ export function readUsage(text, from, seen, usage = emptyUsage()) {
   return usage;
 }
 
-export function transcriptUsage(file, since) {
-  let text;
-  try {
-    text = readFileSync(file, 'utf8');
-  } catch {
-    return null;
-  }
-  return readUsage(text, since ? Date.parse(since) : 0, new Set());
-}
-
-// Subagent transcripts of a session: Claude Code stores them next to the main transcript,
-// `<project>/<session>.jsonl` → `<project>/<session>/subagents/[…/]agent-<id>.jsonl`.
 export function subagentTranscripts(file) {
   const dir = join(file.replace(/\.jsonl$/, ''), 'subagents');
   const found = [];
@@ -648,51 +607,3 @@ export function subagentTranscripts(file) {
   return found.sort();
 }
 
-// Start of the first user message of a subagent transcript: the prompt that launched it.
-export function promptKey(text) {
-  return String(text || '').replace(/\s+/g, ' ').trim().slice(0, 200);
-}
-
-function firstPrompt(text) {
-  for (const line of text.split('\n')) {
-    if (!line.includes('"user"')) continue;
-    try {
-      const entry = JSON.parse(line);
-      if (entry.type !== 'user' && entry.message?.role !== 'user') continue;
-      const c = entry.message?.content;
-      return promptKey(typeof c === 'string' ? c : Array.isArray(c) ? c.filter((p) => p.type === 'text').map((p) => p.text).join('\n') : '');
-    } catch {}
-  }
-  return '';
-}
-
-// Subagent tokens of a session since a date, broken down by role. Each transcript is matched to the
-// launch logged by the Agent hook (`launches`: { agent_id, prompt, role }), by agent id, otherwise by
-// the start of the prompt; without a match, the role is `unknown`.
-// → { agents, usage, by_role: { role: usage } }; null if the main transcript is unreadable.
-export function subagentUsage(file, since, launches = []) {
-  if (!file || !existsSync(file)) return null;
-  const from = since ? Date.parse(since) : 0;
-  const seen = new Set();
-  const result = { agents: 0, usage: emptyUsage(), by_role: {} };
-  for (const path of subagentTranscripts(file)) {
-    let text;
-    try {
-      text = readFileSync(path, 'utf8');
-    } catch {
-      continue;
-    }
-    const usage = readUsage(text, from, seen);
-    if (!usage.messages) continue;
-    const id = /agent-(.+)\.jsonl$/.exec(path)[1];
-    const prompt = firstPrompt(text);
-    const launch = launches.find((l) => l.agent_id && l.agent_id === id) || launches.find((l) => prompt && l.prompt && l.prompt === prompt);
-    const role = launch?.role || 'unknown';
-    result.agents++;
-    addUsage(result.usage, usage);
-    result.by_role[role] = addUsage(result.by_role[role] || emptyUsage(), usage);
-    // Agents per role: what a review agent costs on average (estimate.mjs).
-    result.by_role[role].agents = (result.by_role[role].agents || 0) + 1;
-  }
-  return result;
-}

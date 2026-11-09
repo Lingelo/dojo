@@ -1,4 +1,4 @@
-// Kaizen — the user's approvals (review waiver, review gap), by code or by question.
+// Kaizen — the user's approval of a review waiver, by code or by question.
 //
 // `approvals: "ask"` (default): Claude asks the user a question whose FIRST option is the safe one; if
 // they pick the risky one, Claude runs `node "$K" confirm <code>`, which the PreToolUse review hook turns
@@ -19,17 +19,15 @@ export const approvalMode = (config) => (config.approvals === 'ask' ? 'ask' : 'c
 export function pendingApproval(root, code) {
   const c = String(code).toUpperCase();
   const w = pendingWaiver(root, c);
-  if (w?.kind === 'gap') return { kind: 'gap', code: c, text: `record the review of ${w.branch} without ${w.review.gaps.join(', ')}` };
   if (w) return { kind: 'waiver', code: c, text: `push ${w.branch} without a review (${w.reason})` };
   return null;
 }
 
 const CHOICES = {
   waiver: ['Run the review (Recommended)', 'Push without a review'],
-  gap: ['Relaunch the missing reviewer(s) (Recommended)', 'Accept the gap'],
 };
 
-// What `review waive` and `review record --allow-missing` tell Claude to do.
+// What `review waive` tells Claude to do.
 export function approvalInstruction(root, kind, code, what) {
   if (approvalMode(loadConfig(root)) === 'code') return `Ask the user to type it themselves: kaizen waive ${code}`;
   const [safe, risky] = CHOICES[kind];

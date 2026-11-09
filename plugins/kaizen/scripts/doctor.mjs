@@ -95,7 +95,7 @@ export function gitHooksState(root) {
   const hooksPath = git(root, ['config', '--get', 'core.hooksPath'], { allowFail: true }) || null;
   const foreign = present.filter((f) => !readFileSync(join(dir, f), 'utf8').includes(`githook ${f}`));
   // Kaizen's hooks whose CLI lookup is not this version's: install never overwrites a hook, so an older
-  // lookup stays until `audit fix git_hooks` refreshes that one line.
+  // lookup stays until `install git-hooks` refreshes that one line.
   const outdated = present.filter((f) => !foreign.includes(f) && readFileSync(join(dir, f), 'utf8').match(HOOK_LOOKUP)?.[0] !== templateLookup(f));
   const notExecutable = present.filter((f) => {
     const staged = git(root, ['ls-files', '-s', `.githooks/${f}`], { allowFail: true });
@@ -116,7 +116,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     'Kaizen configured',
     existsSync(join(root, '.kaizen', 'config.json')) ? 'ok' : 'warn',
     existsSync(join(root, '.kaizen', 'config.json')) ? '.kaizen/config.json' : 'no .kaizen/config.json: the gates stay inactive in this repo',
-    '/kaizen:setup',
+    '/kaizen',
   );
 
   // What a Kaizen update still asks of this repo, detected from its state (kaizen upgrade).
@@ -132,10 +132,10 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     'Plugin declared for every clone',
     decl.declared ? 'ok' : 'warn',
     decl.declared ? `.claude/settings.json enables ${PLUGIN_ID}` : `${decl.why}: a fresh clone or a cloud session runs without Kaizen`,
-    decl.declared ? null : 'node "$K" audit fix claude_settings',
+    decl.declared ? null : 'node "$K" install settings',
   );
 
-  // agent-skills: only spoken about when it is enabled or its files are here.
+  // agent-skills: the base of the workflow since Kaizen 6.0.
   const as = readAgentSkills(root);
   const asOn = pluginEnabled(root, AGENT_SKILLS_ID);
   const files = [
@@ -144,16 +144,14 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     as.tasks && `${as.tasks.path} (${as.tasks.list.filter((t) => t.done).length}/${as.tasks.list.length} tasks done)`,
     as.constraints?.path,
   ].filter(Boolean);
-  if (asOn || files.length) {
+  {
     const seen = files.length ? `reads ${files.join(', ')}` : 'none of its files yet (SPEC.md, tasks/, CONSTRAINTS.md)';
     add(
       'agent_skills',
-      'agent-skills (Addy Osmani)',
-      'info',
-      asOn ? `${AGENT_SKILLS_ID} enabled; Kaizen ${seen}` : `Kaizen ${seen}, but ${AGENT_SKILLS_ID} is not enabled`,
-      asOn
-        ? 'while both plugins have overlapping commands (5.x), see docs/guides/agent-skills.md'
-        : `"enabledPlugins": { "${AGENT_SKILLS_ID}": true } in .claude/settings.json, then a new session`,
+      'agent-skills (the workflow Kaizen guards)',
+      asOn ? 'ok' : 'warn',
+      asOn ? `${AGENT_SKILLS_ID} enabled; Kaizen ${seen}` : `${AGENT_SKILLS_ID} is not enabled: /agent-skills:spec, plan, build, review, ship are missing, and no review can record itself`,
+      asOn ? null : 'node "$K" install settings (declares it next to kaizen@dojo), then a new session',
     );
   }
   if (as.constraints) {
@@ -178,12 +176,12 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
   }
 
   const gh = gitHooksState(root);
-  if (gh.wired && gh.outdated.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/${gh.outdated.join(', ')}: CLI lookup of an older Kaizen (it may run a file that is not Kaizen core)`, 'node "$K" audit fix git_hooks  (refreshes that line only), then commit .githooks/');
+  if (gh.wired && gh.outdated.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/${gh.outdated.join(', ')}: CLI lookup of an older Kaizen (it may run a file that is not Kaizen core)`, 'node "$K" install git-hooks  (refreshes that line only), then commit .githooks/');
   else if (gh.wired) add('git_hooks', 'Git hooks', 'ok', `.githooks/ (${gh.present.join(', ')}) wired through core.hooksPath`);
   else if (gh.notExecutable.length) add('git_hooks', 'Git hooks', 'warn', `${gh.notExecutable.join(', ')} not executable in git (committed from Windows?): git ignores them`, `git update-index --chmod=+x ${gh.notExecutable.map((f) => `.githooks/${f}`).join(' ')}`);
   else if (gh.foreign.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/${gh.foreign.join(', ')} is not Kaizen's: the review and secret checks are not installed`, 'chain it: add  node "$K" githook <name> "$@" || exit 1  to that hook');
   else if (gh.present.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/ present but core.hooksPath is ${gh.hooksPath ? `"${gh.hooksPath}"` : 'unset'} (fresh clone?): the hooks do not run`, 'git config core.hooksPath .githooks');
-  else add('git_hooks', 'Git hooks', 'info', 'not installed: without the plugin, nothing refuses an unreviewed push', 'node "$K" audit fix git_hooks');
+  else add('git_hooks', 'Git hooks', 'info', 'not installed: without the plugin, nothing refuses an unreviewed push', 'node "$K" install git-hooks');
 
   const verify = verifyCommands(root, config);
   const names = Object.keys(verify.commands);
@@ -192,7 +190,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
   const branch = currentBranch(root);
   if (branch) {
     const push = checkPush(root, config);
-    add('review', `Review of ${branch}`, push.allowed ? 'ok' : 'warn', `${push.reason}${push.branch_lines ? ` (${push.branch_lines} lines on the branch)` : ''}`, push.allowed ? null : '/kaizen:review');
+    add('review', `Review of ${branch}`, push.allowed ? 'ok' : 'warn', `${push.reason}${push.branch_lines ? ` (${push.branch_lines} lines on the branch)` : ''}`, push.allowed ? null : '/agent-skills:review');
     // What already left the machine: the upstream commit, checked like a push of it.
     const upstream = git(root, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'], { allowFail: true });
     const sha = upstream && git(root, ['rev-parse', '@{u}'], { allowFail: true });
@@ -200,7 +198,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     const covered = sha && push.review?.head && git(root, ['merge-base', '--is-ancestor', sha, push.review.head], { allowFail: true }) !== null;
     if (sha && !covered) {
       const pushed = checkPush(root, config, { branch, sha });
-      if (!pushed.allowed) add('pushed', `Pushed state of ${branch}`, 'warn', `${upstream} (${sha.slice(0, 7)}) was pushed without a recorded review: ${pushed.reason}`, '/kaizen:review, then push again');
+      if (!pushed.allowed) add('pushed', `Pushed state of ${branch}`, 'warn', `${upstream} (${sha.slice(0, 7)}) was pushed without a recorded review: ${pushed.reason}`, '/agent-skills:review, then push again');
     }
   }
 

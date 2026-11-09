@@ -94,7 +94,8 @@ export function declarePlugin(root) {
   }
   const markets = (settings.extraKnownMarketplaces ||= {});
   const plugins = (settings.enabledPlugins ||= {});
-  const wanted = [PLUGIN_ID];
+  // Kaizen is the engine around agent-skills: a clone gets both.
+  const wanted = [PLUGIN_ID, `agent-skills@${MARKETPLACE}`];
   const missing = wanted.filter((id) => plugins[id] !== true);
   if (markets[MARKETPLACE] && !missing.length) throw new Error(`${wanted.join(' and ')} already declared`);
   markets[MARKETPLACE] ||= { source: { source: 'github', repo: KAIZEN_SOURCE } };
@@ -129,7 +130,7 @@ export function prePush(root, stdin, K, { env = process.env } = {}) {
           return {
             code: 1,
             message: `[kaizen] Push of ${branch} refused: ${res.reason}, and the user was not asked about this push. ` +
-              'Run a plain `git push …` so Claude Code asks them (review first), or run /kaizen:review.\n',
+              'Run a plain `git push …` so Claude Code asks them (review first), or run /agent-skills:review.\n',
           };
         }
         // From the user's own terminal: their call; a git hook cannot ask them, so it only reminds.

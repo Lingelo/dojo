@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { friction } from '../scripts/metrics.mjs';
 import { pushReasonKey } from '../scripts/lib.mjs';
-import { GATE, PLUGIN, REVIEW_GATE, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
+import { GATE, PLUGIN, POST_EDIT, REVIEW_GATE, cleanup, cli, gitc, personaReview, tempRepo, writeFiles } from './helpers.mjs';
 
 const SECRET_GATE = join(PLUGIN, 'scripts', 'secret-gate.mjs');
 const run = (script, dir, payload) => spawnSync(process.execPath, [script], { input: JSON.stringify({ cwd: dir, ...payload }), encoding: 'utf8' });
@@ -25,10 +25,10 @@ test('the gates log their stops, and what lifts them', () => {
   gitc(dir, ['commit', '-qam', 'feat: b']);
 
   assert.equal(run(REVIEW_GATE, dir, { tool_name: 'Bash', tool_input: { command: 'git push -u origin feat/x' } }).status, 2);
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0, 'light review');
+  personaReview(dir);
   assert.equal(run(SECRET_GATE, dir, { tool_name: 'Bash', tool_input: { command: 'git commit --no-verify -m x' } }).status, 2);
-  cli(dir, ['gate', 'on']);
-  assert.equal(run(GATE, dir, {}).status, 2);
+  run(POST_EDIT, dir, { session_id: 'S1', tool_name: 'Edit', tool_input: { file_path: join(dir, 'app.js') } });
+  assert.equal(run(GATE, dir, { session_id: 'S1' }).status, 2);
 
   assert.deepEqual(events(dir).map((e) => [e.gate, e.kind]), [
     ['push', 'refused'],

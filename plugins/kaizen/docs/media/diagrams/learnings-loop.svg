@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="600" viewBox="0 0 1100 600" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="t d">
 <title id="t">How learnings compound</title>
-<desc id="d">A lesson only counts once it is read back and applied. Kaizen measures both, and prunes what nobody uses.</desc>
+<desc id="d">A lesson only counts once it is read back. Kaizen reads it back by itself, measures the reuse, and prunes what nobody uses.</desc>
 <style>
   .bg { fill: #fbfaf7; stroke: #e4e0d8; }
   text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
@@ -62,12 +62,12 @@
   }
 </style>
 <defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
-<rect class="bg" x="0.5" y="0.5" width="1099" height="599" rx="14"/>
+<rect class="bg" x="0.5" y="0.5" width="1099" height="559" rx="14"/>
 <text class="title" x="28" y="38">How learnings compound</text>
-<text class="desc" x="28" y="58">A lesson only counts once it is read back and applied. Kaizen measures both, and prunes what nobody uses.</text>
-<rect class="skill" x="36" y="90" width="220" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="146" y="115" text-anchor="middle">verified work</text>
-<text class="sub" x="146" y="130" text-anchor="middle" style="font-size:11px">work · debug · review · autopilot</text>
+<text class="desc" x="28" y="58">A lesson only counts once it is read back. Kaizen reads it back by itself, measures the reuse, and prunes what nobody uses.</text>
+<rect class="outside" x="36" y="90" width="220" height="56" rx="8" stroke-width="1.5"/>
+<text class="label" x="146" y="115" text-anchor="middle">a problem solved</text>
+<text class="sub" x="146" y="130" text-anchor="middle">and verified</text>
 <rect class="skill" x="36" y="186" width="220" height="76" rx="8" stroke-width="1.5"/>
 <text class="label" x="146" y="214" text-anchor="middle">/kaizen:learn</text>
 <text class="sub" x="146" y="229" text-anchor="middle">durability test: would someone</text>
@@ -78,67 +78,55 @@
 <path class="line" d="M146,262 L146,300" marker-end="url(#h-default)"/>
 <rect class="pill" x="149" y="274" width="22.2" height="17" rx="4"/>
 <text class="edge" x="154" y="285" text-anchor="start">no</text>
-<rect class="artifact" x="330" y="160" width="330" height="128" rx="8" stroke-width="1.5"/>
-<text class="label" x="342" y="228" text-anchor="start"></text>
-<text class="small mono" x="346" y="186" text-anchor="start">docs/learnings/&lt;category&gt;/&lt;slug&gt;.md</text>
-<text class="small" x="346" y="210" text-anchor="start">title · date · module · problem_type</text>
-<text class="small" x="346" y="225" text-anchor="start">component · severity · tags (≤ 8)</text>
-<text class="small" x="346" y="240" text-anchor="start">bug: symptoms · root_cause · resolution_type</text>
-<text class="small" x="346" y="255" text-anchor="start">knowledge: applies_when (≤ 5)</text>
-<path class="line blue" d="M256,224 L330,224" marker-end="url(#h-blue)"/>
-<rect class="pill" x="242.25" y="205" width="101.5" height="17" rx="4"/>
-<text class="edge" x="293" y="216" text-anchor="middle">yes · validated</text>
-<rect class="artifact" x="330" y="330" width="210" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="435" y="355" text-anchor="middle">kaizen-packs/&lt;pack&gt;/</text>
-<text class="sub" x="435" y="370" text-anchor="middle" style="font-size:10.7px">team-wide → pack rule (approved)</text>
-<path class="line blue dashed" d="M420,288 L420,330" marker-end="url(#h-blue)"/>
-<rect class="agent" x="678" y="90" width="394" height="92" rx="8" stroke-width="1.5"/>
-<text class="label" x="875" y="119" text-anchor="middle">learnings-researcher</text>
-<text class="sub" x="875" y="134" text-anchor="middle">learnings search, weighted match: title &amp; tags ×4</text>
-<text class="sub" x="875" y="148" text-anchor="middle">module &amp; components ×3 · applies_when, symptoms,</text>
-<text class="sub" x="875" y="162" text-anchor="middle">root cause ×2 · body ×1 · bonus per term matched</text>
-<path class="line ok" d="M660,185.6 L678,163.60000000000002" marker-end="url(#h-ok)"/>
-<rect class="skill" x="678" y="214" width="94" height="40" rx="8" stroke-width="1.5"/>
-<text class="label" x="725" y="238" text-anchor="middle" style="font-size:12.6px">brainstorm</text>
-<rect class="skill" x="778" y="214" width="94" height="40" rx="8" stroke-width="1.5"/>
-<text class="label" x="825" y="238" text-anchor="middle">plan</text>
-<rect class="skill" x="878" y="214" width="94" height="40" rx="8" stroke-width="1.5"/>
-<text class="label" x="925" y="238" text-anchor="middle">review</text>
-<rect class="skill" x="978" y="214" width="94" height="40" rx="8" stroke-width="1.5"/>
-<text class="label" x="1025" y="238" text-anchor="middle">debug</text>
-<path class="line ok" d="M725,182 L725,214" marker-end="url(#h-ok)"/>
-<path class="line ok" d="M825,182 L825,214" marker-end="url(#h-ok)"/>
-<path class="line ok" d="M925,182 L925,214" marker-end="url(#h-ok)"/>
-<path class="line ok" d="M1025,182 L1025,214" marker-end="url(#h-ok)"/>
-<rect class="state" x="678" y="290" width="186" height="66" rx="12" stroke-width="1.5"/>
-<text class="label" x="771" y="320" text-anchor="middle">cited by a plan</text>
-<text class="sub" x="771" y="335" text-anchor="middle">= read</text>
-<rect class="state" x="886" y="290" width="186" height="66" rx="12" stroke-width="1.5"/>
-<text class="label" x="979" y="320" text-anchor="middle" style="font-size:12.7px">commit body: Applies</text>
-<text class="sub" x="979" y="335" text-anchor="middle">docs/learnings/… = applied</text>
-<path class="line" d="M825,254 L752.4,290" marker-end="url(#h-default)"/>
-<path class="line" d="M855,254 L941.8,290" marker-end="url(#h-default)"/>
-<rect class="skill" x="678" y="400" width="394" height="76" rx="8" stroke-width="1.5"/>
-<text class="label" x="875" y="428" text-anchor="middle">/kaizen:metrics → kaizen_loop</text>
-<text class="sub" x="875" y="443" text-anchor="middle">total · new · cited by plans · applied in commits</text>
-<text class="sub" x="875" y="457" text-anchor="middle">reuse rate · never cited · constitution exceptions</text>
-<path class="line blue" d="M771,356 L771,400" marker-end="url(#h-blue)"/>
-<path class="line blue" d="M979,356 L979,400" marker-end="url(#h-blue)"/>
-<rect class="skill" x="330" y="430" width="300" height="76" rx="8" stroke-width="1.5"/>
-<text class="label" x="480" y="458" text-anchor="middle">/kaizen:prune-learnings</text>
-<text class="sub" x="480" y="473" text-anchor="middle">Keep · Update · Merge · Replace · Delete</text>
-<text class="sub" x="480" y="487" text-anchor="middle">with evidence; never touches product code</text>
-<path class="line accent dashed" d="M678,438 L630,468" marker-end="url(#h-accent)"/>
-<rect class="pill" x="615.45" y="464" width="77.1" height="17" rx="4"/>
-<text class="edge" x="654" y="475" text-anchor="middle">never cited</text>
-<path class="line blue dashed" d="M585,430 L585,288" marker-end="url(#h-blue)"/>
-<text class="small" x="36" y="560" text-anchor="start">Search excludes nothing but README.md and _archived/; validation (learnings validate) rejects missing fields, unknown enums, more than 5 symptoms or 8 tags.</text>
-<rect class="skill" x="36" y="576" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="60" y="586">skill (/kaizen:…)</text>
-<rect class="artifact" x="187.4" y="576" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="211.4" y="586">file in your repo</text>
-<rect class="agent" x="338.8" y="576" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="362.8" y="586">subagent</text>
-<rect class="state" x="434.4" y="576" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="458.4" y="586">signal</text>
+<rect class="artifact" x="320" y="160" width="330" height="128" rx="8" stroke-width="1.5"/>
+<text class="label" x="332" y="228" text-anchor="start"></text>
+<text class="small mono" x="336" y="186" text-anchor="start">docs/learnings/&lt;folder&gt;/&lt;slug&gt;.md</text>
+<text class="small" x="336" y="210" text-anchor="start">title · date · module · problem_type</text>
+<text class="small" x="336" y="225" text-anchor="start">component · severity · tags · files</text>
+<text class="small" x="336" y="240" text-anchor="start">bug: symptoms · root_cause · resolution_type</text>
+<text class="small" x="336" y="255" text-anchor="start">knowledge: applies_when</text>
+<path class="line blue" d="M256,224 L320,224" marker-end="url(#h-blue)"/>
+<rect class="pill" x="237.25" y="205" width="101.5" height="17" rx="4"/>
+<text class="edge" x="288" y="216" text-anchor="middle">yes · validated</text>
+<rect class="region" x="690" y="76" width="382" height="230" rx="12"/>
+<text class="regionlabel" x="702" y="93">READ BACK BY POST-EDIT.MJS (NO COMMAND)</text>
+<rect class="agent" x="706" y="112" width="350" height="64" rx="8" stroke-width="1.5"/>
+<text class="label" x="881" y="134" text-anchor="middle">SPEC.md or tasks/ written</text>
+<text class="sub" x="881" y="149" text-anchor="middle">matching learnings added to Claude’s</text>
+<text class="sub" x="881" y="163" text-anchor="middle">context, cited in tasks/plan.md</text>
+<rect class="gate" x="706" y="196" width="350" height="64" rx="8" stroke-width="1.5"/>
+<text class="label" x="881" y="218" text-anchor="middle">a file edited</text>
+<text class="sub" x="881" y="233" text-anchor="middle">learnings whose files: globs match it,</text>
+<text class="sub" x="881" y="247" text-anchor="middle">once per session</text>
+<path class="line ok" d="M650,198.4 L706,144" marker-end="url(#h-ok)"/>
+<path class="line ok" d="M650,249.6 L706,228" marker-end="url(#h-ok)"/>
+<rect class="state" x="706" y="330" width="166" height="60" rx="12" stroke-width="1.5"/>
+<text class="label" x="789" y="357" text-anchor="middle">cited by a plan</text>
+<text class="sub" x="789" y="372" text-anchor="middle">= read</text>
+<rect class="state" x="890" y="330" width="166" height="60" rx="12" stroke-width="1.5"/>
+<text class="label" x="973" y="357" text-anchor="middle" style="font-size:13.2px">cited by a commit</text>
+<text class="sub" x="973" y="372" text-anchor="middle">= applied</text>
+<rect class="skill" x="690" y="420" width="382" height="66" rx="8" stroke-width="1.5"/>
+<text class="label" x="881" y="450" text-anchor="middle">/kaizen:metrics → kaizen_loop</text>
+<text class="sub" x="881" y="465" text-anchor="middle">reuse rate · never cited</text>
+<path class="line blue" d="M789,390 L789,420" marker-end="url(#h-blue)"/>
+<path class="line blue" d="M973,390 L973,420" marker-end="url(#h-blue)"/>
+<rect class="skill" x="320" y="420" width="330" height="66" rx="8" stroke-width="1.5"/>
+<text class="label" x="485" y="443" text-anchor="middle">/kaizen:learn prune</text>
+<text class="sub" x="485" y="458" text-anchor="middle">Keep · Update · Merge · Replace · Delete</text>
+<text class="sub" x="485" y="472" text-anchor="middle">with evidence; never touches product code</text>
+<path class="line accent dashed" d="M690,453 L650,453" marker-end="url(#h-accent)"/>
+<rect class="pill" x="631.45" y="464" width="77.1" height="17" rx="4"/>
+<text class="edge" x="670" y="475" text-anchor="middle">never cited</text>
+<path class="line blue dashed" d="M485,420 L485,288" marker-end="url(#h-blue)"/>
+<rect class="agent" x="36" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="60" y="540">agent-skills (/agent-skills:…)</text>
+<rect class="skill" x="268" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="292" y="540">Kaizen (/kaizen:…)</text>
+<rect class="gate" x="425.6" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="449.6" y="540">Kaizen hook or check</text>
+<rect class="artifact" x="595.6" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="619.6" y="540">file in your repo</text>
+<rect class="state" x="747" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="771" y="540">signal</text>
 </svg>

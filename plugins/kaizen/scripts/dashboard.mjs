@@ -1,64 +1,11 @@
-// Kaizen — cost dashboard: one self-contained HTML file over the cycles recorded on this machine.
+// Kaizen — cost dashboard: one self-contained HTML file over the work recorded on this machine.
 //
-// `kaizen metrics dashboard` reads `.kaizen/state/cycles.jsonl` (written by `gate off`) and writes a
-// page with no dependency and no network: period filter, stat tiles, tokens per cycle by role, cost
-// by model, tokens by role, and the table of cycles. Cost is in the relative units of `review
-// estimate` (`review.cost_weights`), computed only for cycles that recorded tokens per model.
+// `kaizen metrics dashboard` reads the ledger (`.kaizen/state/ledger.jsonl`, every turn charged to its
+// work item by the Stop hook) and the friction log, and writes a page with no dependency and no network:
+// period filter, stat tiles, cost per work item, cost by model, guard rails, and the table of work items.
+// Cost is in relative units (`review.cost_weights`), computed from the tokens of each model family.
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { usageTotal } from './lib.mjs';
-import { DEFAULT_WEIGHTS } from './estimate.mjs';
-
-// Roles folded into a few groups: a stacked column stays readable with six colors at most.
-const GROUPS = ['main', 'implement', 'research', 'review', 'plan_review', 'other'];
-const GROUP_OF = { implement: 'implement', research: 'research', review: 'review', review_critical: 'review', plan_review: 'plan_review', plan_review_critical: 'plan_review' };
-
-export function readCycles(root) {
-  let lines = [];
-  try {
-    lines = readFileSync(join(root, '.kaizen', 'state', 'cycles.jsonl'), 'utf8').split('\n').filter(Boolean);
-  } catch {
-    return [];
-  }
-  return lines
-    .map((l) => {
-      try {
-        return JSON.parse(l);
-      } catch {
-        return null;
-      }
-    })
-    .filter((c) => c && c.ended && !Number.isNaN(Date.parse(c.ended)));
-}
-
-// One row per cycle, ready to chart: tokens per group and per model family, cost when known.
-export function cycleRows(cycles, weights = DEFAULT_WEIGHTS) {
-  const weightOf = (m) => weights[m] ?? Math.max(...Object.values(weights));
-  return cycles
-    .map((c) => {
-      const groups = Object.fromEntries(GROUPS.map((g) => [g, 0]));
-      groups.main = usageTotal(c.usage);
-      for (const [role, u] of Object.entries(c.subagents?.by_role || {})) groups[GROUP_OF[role] || 'other'] += usageTotal(u);
-      const models = {};
-      for (const u of [c.usage, c.subagents?.usage]) {
-        for (const [m, mu] of Object.entries(u?.by_model || {})) models[m] = (models[m] || 0) + usageTotal(mu);
-      }
-      const known = Object.keys(models).length > 0;
-      return {
-        ended: c.ended,
-        plan: c.plan || null,
-        minutes: Number(c.minutes) || 0,
-        gate_blocks: Number(c.gate_blocks) || 0,
-        agents: Number(c.subagents?.agents) || 0,
-        tokens: Object.values(groups).reduce((a, b) => a + b, 0),
-        groups,
-        models,
-        cost: known ? Math.round(Object.entries(models).reduce((n, [m, t]) => n + (t / 1e6) * weightOf(m), 0) * 100) / 100 : null,
-      };
-    })
-    .sort((a, b) => Date.parse(a.ended) - Date.parse(b.ended));
-}
 
 // Friction events reduced to what the page shows (no branch names or plan paths needed).
 export function frictionRows(events) {
@@ -83,9 +30,9 @@ export function ledgerRows(entries) {
   return [...by.values()];
 }
 
-export function renderDashboard({ repo, rows, weights, friction = [], items = [], generated = new Date().toISOString() }) {
+export function renderDashboard({ repo, weights, friction = [], items = [], generated = new Date().toISOString() }) {
   // JSON inside <script>: `<` escaped so no data (a plan name) can close the tag.
-  const data = JSON.stringify({ repo, rows, weights, friction, items, generated, groups: GROUPS }).replace(/</g, '\\u003c');
+  const data = JSON.stringify({ repo, weights, friction, items, generated }).replace(/</g, '\\u003c');
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -159,7 +106,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
 <main>
   <header>
     <h1>Kaizen cost — <span id="repo"></span></h1>
-    <p>Work items, work/autopilot cycles and guard rails recorded on this machine. Generated <span id="gen"></span>.</p>
+    <p>Work items and guard rails recorded on this machine. Generated <span id="gen"></span>.</p>
   </header>
   <div class="filters" role="group" aria-label="Period">
     <button data-days="7">Last 7 days</button>
@@ -173,23 +120,14 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     <p class="desc" id="items-desc">Every turn charged to its Jira key, plan or branch: what each feature or fix cost, end to end.</p>
     <div id="items"></div>
   </section>
-  <section class="card">
-    <h2>Tokens per cycle</h2>
-    <p class="desc">Main session and subagents, by role. Hover a column for the breakdown.</p>
-    <div class="legend" id="legend"></div>
-    <div id="cycles"></div>
-  </section>
-  <div class="grid2">
-    <section class="card"><h2>Cost by model</h2><p class="desc">Relative cost units, from the tokens of each model family.</p><div id="models"></div></section>
-    <section class="card"><h2>Tokens by role</h2><p class="desc">Where the tokens of the period went.</p><div id="roles"></div></section>
-  </div>
+  <section class="card"><h2>Cost by model</h2><p class="desc">Relative cost units, from the tokens of each model family.</p><div id="models"></div></section>
   <section class="card">
     <h2>Guard rails</h2>
     <p class="desc">Stops by the gates, and what lifted them, in the period (.kaizen/state/friction.jsonl).</p>
     <div id="friction"></div>
   </section>
   <section class="card">
-    <h2>Cycles</h2>
+    <h2>Work items</h2>
     <div class="table-wrap"><table id="table"></table></div>
   </section>
   <footer id="foot"></footer>
@@ -199,8 +137,6 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
 <script>
 (() => {
   const D = JSON.parse(document.getElementById('data').textContent);
-  const NAMES = { main: 'Main session', implement: 'Implementation', research: 'Research', review: 'Code review', plan_review: 'Plan review', other: 'Other' };
-  const COLOR = Object.fromEntries(D.groups.map((g, i) => [g, 'var(--s' + (i + 1) + ')']));
   const NS = 'http://www.w3.org/2000/svg';
   const $ = (id) => document.getElementById(id);
   const el = (tag, attrs = {}, text) => {
@@ -210,8 +146,6 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     return e;
   };
   const compact = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'K' : String(Math.round(n));
-  const planName = (p) => (p ? p.split(/[\\/]/).pop().replace(/\.md$/, '') : null);
-  const day = (iso) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   const median = (a) => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
   const niceMax = (v) => { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const f of [1, 2, 2.5, 5, 10]) if (f * p >= v) return f * p; return 10 * p; };
 
@@ -243,47 +177,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
     node.addEventListener('blur', hideTip);
   };
 
-  // Rounded data-end (4px) on top, square on the baseline.
-  const topRounded = (x, y, w, h, r) => { r = Math.min(r, w / 2, h); return 'M' + x + ',' + (y + h) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h) + 'Z'; };
   const rightRounded = (x, y, w, h, r) => { r = Math.min(r, h / 2, w); return 'M' + x + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h - r) + 'Q' + (x + w) + ',' + (y + h) + ' ' + (x + w - r) + ',' + (y + h) + 'H' + x + 'Z'; };
-
-  function stackedColumns(host, rows) {
-    host.replaceChildren();
-    if (!rows.length) { host.append(el('p', { class: 'empty' }, 'No cycle in this period.')); return; }
-    const W = Math.max(280, host.clientWidth), H = 240, L = 44, B = 22, T = 8;
-    const max = niceMax(Math.max(...rows.map((r) => r.tokens)));
-    const svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': 'Tokens per cycle, stacked by role' });
-    for (let i = 0; i <= 4; i++) {
-      const v = (max / 4) * i, y = T + (H - T - B) * (1 - v / max);
-      svg.append(el('line', { x1: L, x2: W, y1: y, y2: y, stroke: i ? 'var(--grid)' : 'var(--axis)', 'stroke-width': 1 }));
-      svg.append(el('text', { x: L - 6, y: y + 4, 'text-anchor': 'end' }, compact(v)));
-    }
-    const band = (W - L) / rows.length, bw = Math.max(2, Math.min(24, band * 0.7)), gap = bw >= 6 ? 2 : 0;
-    const every = Math.ceil(rows.length / Math.max(1, Math.floor((W - L) / 64)));
-    rows.forEach((r, i) => {
-      const x = L + band * i + (band - bw) / 2;
-      const g = el('g');
-      let y = H - B;
-      const parts = D.groups.filter((k) => r.groups[k] > 0);
-      parts.forEach((k, j) => {
-        const h = ((H - T - B) * r.groups[k]) / max;
-        const top = j === parts.length - 1;
-        const hh = Math.max(0, h - (top ? 0 : gap));
-        y -= h;
-        g.append(top ? el('path', { d: topRounded(x, y, bw, hh, 4), fill: COLOR[k] }) : el('rect', { x, y: y + gap, width: bw, height: hh, fill: COLOR[k] }));
-      });
-      // Hit target: the whole band, taller than the marks.
-      g.append(el('rect', { x: L + band * i, y: T, width: band, height: H - T - B, fill: 'transparent' }));
-      hover(g, day(r.ended) + (r.plan ? ' — ' + planName(r.plan) : ''), [
-        ...D.groups.filter((k) => r.groups[k] > 0).reverse().map((k) => ({ label: NAMES[k], value: compact(r.groups[k]), color: COLOR[k] })),
-        { label: 'Total', value: compact(r.tokens) },
-        ...(r.cost !== null ? [{ label: 'Cost', value: r.cost.toFixed(2) }] : []),
-      ]);
-      svg.append(g);
-      if (i % every === 0) svg.append(el('text', { x: L + band * i + band / 2, y: H - 6, 'text-anchor': 'middle' }, day(r.ended)));
-    });
-    host.append(svg);
-  }
 
   function hbars(host, items, fmt, empty) {
     host.replaceChildren();
@@ -314,76 +208,63 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
 
   function render(days) {
     const from = days ? Date.now() - days * 864e5 : 0;
-    const rows = D.rows.filter((r) => Date.parse(r.ended) >= from);
     for (const b of document.querySelectorAll('.filters button')) b.setAttribute('aria-pressed', String(Number(b.dataset.days) === days));
-    const priced = rows.filter((r) => r.cost !== null);
     // Work items (ledger): every turn of the period, summed per item.
     const weightOf = (m) => D.weights[m] ?? Math.max(...Object.values(D.weights));
     const fromDay = from ? new Date(from).toISOString().slice(0, 10) : '';
     const perItem = new Map();
+    const models = {};
     for (const r of (D.items || []).filter((x) => x.day >= fromDay)) {
-      const it = perItem.get(r.item) || { item: r.item, kind: r.kind, title: r.title, tokens: 0, cost: 0 };
+      const it = perItem.get(r.item) || { item: r.item, kind: r.kind, title: r.title, tokens: 0, cost: 0, days: new Set() };
       it.tokens += r.tokens;
       it.cost += Object.entries(r.models).reduce((n, [m, t]) => n + (t / 1e6) * weightOf(m), 0);
+      it.days.add(r.day);
       if (r.title) it.title = r.title;
       if (r.kind !== 'other') it.kind = r.kind;
       perItem.set(r.item, it);
+      for (const [m, t] of Object.entries(r.models)) models[m] = (models[m] || 0) + t;
     }
     const items = [...perItem.values()].sort((a, b) => b.cost - a.cost);
     const itemsCost = items.reduce((n, i) => n + i.cost, 0);
+    const tokens = items.reduce((n, i) => n + i.tokens, 0);
     const kinds = {};
     for (const i of items.filter((x) => x.item !== 'unattributed')) (kinds[i.kind] ||= []).push(i.cost);
     const fr = (D.friction || []).filter((e) => Date.parse(e.at) >= from);
     const n = (gate, kind) => fr.filter((e) => (!gate || e.gate === gate) && e.kind === kind).length;
     const stops = fr.filter((e) => ['refused', 'blocked', 'no_verify'].includes(e.kind)).length;
     const waived = n('push', 'waiver_confirmed'), reviewed = n('push', 'review_recorded');
-    const tokens = rows.reduce((n, r) => n + r.tokens, 0);
-    const sub = rows.reduce((n, r) => n + r.tokens - r.groups.main, 0);
+    const attributed = items.filter((i) => i.item !== 'unattributed');
     $('tiles').replaceChildren(
-      items.length
-        ? tile('Cost', itemsCost.toFixed(2), 'all work · ' + items.filter((i) => i.item !== 'unattributed').length + ' item(s)', true)
-        : tile('Cost', priced.length ? priced.reduce((n, r) => n + r.cost, 0).toFixed(2) : '—', priced.length < rows.length ? priced.length + ' of ' + rows.length + ' cycles priced' : 'cycles · relative units', true),
-      tile('Cycles', String(rows.length), rows.length ? 'median ' + Math.round(median(rows.map((r) => r.minutes))) + ' min' : ''),
-      tile('Cycle tokens', compact(tokens), rows.length ? 'median ' + compact(median(rows.map((r) => r.tokens))) + ' per cycle' : ''),
-      tile('Subagent share', tokens ? Math.round((sub / tokens) * 100) + '%' : '—', 'of tokens'),
+      tile('Cost', items.length ? itemsCost.toFixed(2) : '—', 'relative units', true),
+      tile('Work items', String(attributed.length), attributed.length ? 'median ' + median(attributed.map((i) => i.cost)).toFixed(2) + ' per item' : ''),
+      tile('Tokens', compact(tokens), items.length ? 'unattributed ' + (tokens ? Math.round(((perItem.get('unattributed')?.tokens || 0) / tokens) * 100) : 0) + '%' : ''),
       tile('Stops', String(stops), n('push', 'refused') + ' push · ' + n('quality', 'blocked') + ' quality · ' + n('secrets', 'refused') + ' secrets'),
       tile('Waivers', String(waived), reviewed + waived ? Math.round((waived / (reviewed + waived)) * 100) + '% of pushes cleared' : 'no review recorded'),
     );
     $('items-desc').textContent = 'Every turn charged to its Jira key, plan or branch: what each feature or fix cost, end to end.' +
       (Object.keys(kinds).length ? ' Median: ' + Object.entries(kinds).map(([k, xs]) => k + ' ' + median(xs).toFixed(2) + ' (' + xs.length + ')').join(' · ') + '.' : '');
-    hbars($('items'), items.slice(0, 10).map((i) => ({ label: i.item.length > 16 ? i.item.slice(0, 15) + '…' : i.item, value: i.cost, detail: [i.title, i.kind, compact(i.tokens) + ' tokens'].filter(Boolean).join(' · ') })), (v) => v.toFixed(2), 'No turn recorded yet: the ledger fills at the end of every turn (Kaizen 3.9+).');
+    hbars($('items'), items.slice(0, 10).map((i) => ({ label: i.item.length > 16 ? i.item.slice(0, 15) + '…' : i.item, value: i.cost, detail: [i.title, i.kind, compact(i.tokens) + ' tokens'].filter(Boolean).join(' · ') })), (v) => v.toFixed(2), 'No turn recorded yet: the ledger fills at the end of every turn in a Kaizen repo.');
+    hbars($('models'), Object.entries(models).map(([m, t]) => ({ label: m, value: (t / 1e6) * weightOf(m), detail: compact(t) + ' tokens × ' + weightOf(m) })).sort((a, b) => b.value - a.value), (v) => v.toFixed(2), 'No tokens recorded per model in this period.');
     hbars($('friction'), [
       { label: 'Push refused', value: n('push', 'refused') },
       { label: 'Quality gate', value: n('quality', 'blocked') },
       { label: 'Gate released', value: n('quality', 'released') },
       { label: 'Secrets refused', value: n('secrets', 'refused') + n('secrets', 'no_verify') },
-      { label: 'Other refusals', value: fr.filter((e) => ['deploy', 'state', 'tag'].includes(e.gate)).length },
+      { label: 'State writes refused', value: n('state', 'refused') },
       { label: 'Reviews recorded', value: reviewed },
       { label: 'Waivers', value: waived },
     ].map((it) => ({ ...it, detail: 'Events' })), (v) => String(v), 'No stop logged in this period.');
-    const legend = $('legend');
-    legend.replaceChildren();
-    for (const g of D.groups) {
-      if (!rows.some((r) => r.groups[g] > 0)) continue;
-      const s = el('span'); const i = el('i'); i.style.background = COLOR[g];
-      s.append(i, document.createTextNode(NAMES[g])); legend.append(s);
-    }
-    stackedColumns($('cycles'), rows);
-    const models = {};
-    for (const r of rows) for (const [m, t] of Object.entries(r.models)) models[m] = (models[m] || 0) + t;
-    hbars($('models'), Object.entries(models).map(([m, t]) => ({ label: m, value: (t / 1e6) * weightOf(m), detail: compact(t) + ' tokens × ' + weightOf(m) })).sort((a, b) => b.value - a.value), (v) => v.toFixed(2), 'No cycle recorded tokens per model yet (Kaizen 3.7+).');
-    hbars($('roles'), D.groups.map((g) => ({ label: NAMES[g], value: rows.reduce((n, r) => n + r.groups[g], 0), detail: 'Tokens' })).sort((a, b) => b.value - a.value), compact, 'No cycle in this period.');
     const table = $('table');
     table.replaceChildren();
     const head = el('tr');
-    for (const [h, n] of [['Ended', 0], ['Plan', 0], ['Minutes', 1], ['Tokens', 1], ['Cost', 1], ['Agents', 1], ['Gate blocks', 1]]) head.append(el('th', n ? { class: 'n' } : {}, h));
+    for (const [h, num] of [['Work item', 0], ['Kind', 0], ['Title', 0], ['Days', 1], ['Tokens', 1], ['Cost', 1]]) head.append(el('th', num ? { class: 'n' } : {}, h));
     const thead = el('thead');
     thead.append(head);
     table.append(thead);
     const body = el('tbody');
-    for (const r of [...rows].reverse()) {
+    for (const i of items) {
       const tr = el('tr');
-      tr.append(el('td', {}, new Date(r.ended).toLocaleString()), el('td', { title: r.plan || '' }, planName(r.plan) || '—'), el('td', { class: 'n' }, String(r.minutes)), el('td', { class: 'n' }, compact(r.tokens)), el('td', { class: 'n' }, r.cost === null ? '—' : r.cost.toFixed(2)), el('td', { class: 'n' }, String(r.agents)), el('td', { class: 'n' }, String(r.gate_blocks)));
+      tr.append(el('td', {}, i.item), el('td', {}, i.kind), el('td', {}, i.title || '—'), el('td', { class: 'n' }, String(i.days.size)), el('td', { class: 'n' }, compact(i.tokens)), el('td', { class: 'n' }, i.cost.toFixed(2)));
       body.append(tr);
     }
     table.append(body);
@@ -393,10 +274,10 @@ footer { color: var(--muted); font-size: 12px; margin-top: 16px; }
   let current = 30;
   $('repo').textContent = D.repo;
   $('gen').textContent = new Date(D.generated).toLocaleString();
-  $('foot').textContent = 'Cost = tokens per model family × weight per million tokens (' + Object.entries(D.weights).map(([m, w]) => m + ' ' + w).join(', ') + '; review.cost_weights in .kaizen/config.json). Cache reads dominate subagent tokens: an order of magnitude, not a bill. Local to this machine.';
+  $('foot').textContent = 'Cost = tokens per model family × weight per million tokens (' + Object.entries(D.weights).map(([m, w]) => m + ' ' + w).join(', ') + '; review.cost_weights in .kaizen/config.json). Cache reads dominate the tokens: an order of magnitude, not a bill. Local to this machine.';
   for (const b of document.querySelectorAll('.filters button')) b.addEventListener('click', () => render(Number(b.dataset.days)));
   let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => render(current), 120); });
-  render(D.rows.some((r) => Date.parse(r.ended) >= Date.now() - 30 * 864e5) ? 30 : 0);
+  render((D.items || []).some((r) => r.day >= new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10)) ? 30 : 0);
 })();
 </script>
 </body>

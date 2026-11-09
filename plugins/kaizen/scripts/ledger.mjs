@@ -12,6 +12,9 @@
 
 import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readFileSync, readSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+// Relative weight of a million tokens per model family (`review.cost_weights` overrides it).
+export const DEFAULT_WEIGHTS = { haiku: 1, sonnet: 3, opus: 5 };
+
 import { changedFiles, defaultBranch, diffBase, docsRoot, emptyUsage, git, parseFrontmatter, readUsage, subagentTranscripts, usageTotal } from './lib.mjs';
 
 export const LEDGER = join('.kaizen', 'state', 'ledger.jsonl');

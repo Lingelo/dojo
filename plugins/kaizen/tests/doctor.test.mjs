@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { PLUGIN, REVIEW_GATE, REVIEW_HOOKS, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
+import { PLUGIN, REVIEW_GATE, REVIEW_HOOKS, cleanup, cli, gitc, personaReview, tempRepo, writeFiles } from './helpers.mjs';
 
 const check = (r, id) => r.json.checks.find((c) => c.id === id);
 
@@ -29,8 +29,8 @@ test('no heartbeat and unreviewed commits: hooks not verified, the branch and it
   assert.match(check(r, 'hooks').evidence, /not verified/);
   assert.equal(check(r, 'review').status, 'warn');
   assert.match(check(r, 'review').evidence, /no review recorded/);
-  assert.equal(check(r, 'review').fix, '/kaizen:review');
-  assert.match(check(r, 'plugin_declared').fix, /audit fix claude_settings/);
+  assert.equal(check(r, 'review').fix, '/agent-skills:review');
+  assert.match(check(r, 'plugin_declared').fix, /install settings/);
   cleanup(dir);
 });
 
@@ -75,12 +75,12 @@ test('plugin declared in the versioned settings, all green after a review', () =
   const dir = featureRepo({
     '.claude/settings.json': {
       extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } },
-      enabledPlugins: { 'kaizen@dojo': true },
+      enabledPlugins: { 'kaizen@dojo': true, 'agent-skills@dojo': true },
     },
     'package.json': { scripts: { test: 'node -e 0' } },
   });
   heartbeat(dir);
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  personaReview(dir);
   const r = cli(dir, ['doctor', '--json']);
   assert.equal(check(r, 'plugin_declared').status, 'ok');
   assert.equal(check(r, 'review').status, 'ok');
@@ -130,12 +130,11 @@ test('a pushed commit inside the history of the recorded review is not reported'
   const bare = mkdtempSync(join(tmpdir(), 'kaizen-bare-'));
   gitc(bare, ['init', '-q', '--bare']);
   gitc(dir, ['remote', 'add', 'origin', bare], ['push', '-q', 'origin', 'main']);
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  personaReview(dir);
   gitc(dir, ['push', '-q', '-u', 'origin', 'feat/x']);
   writeFiles(dir, { 'big.js': Array.from({ length: 120 }, (_, i) => `l${i}`).join('\n') });
   gitc(dir, ['add', '-A'], ['commit', '-qm', 'feat: more']);
-  spawnSync(process.execPath, [REVIEW_HOOKS, '--evidence'], { input: JSON.stringify({ cwd: dir, session_id: 'S1', tool_name: 'Agent', tool_input: { subagent_type: 'kaizen:correctness-reviewer' } }), encoding: 'utf8' });
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0, 'a new review of the larger branch');
+  personaReview(dir); // a new review of the larger branch
   const r = cli(dir, ['doctor', '--json']);
   assert.equal(check(r, 'pushed'), undefined, JSON.stringify(r.json.checks));
   cleanup(dir);
@@ -159,15 +158,18 @@ test('a branch already pushed without a review is reported', () => {
 const AS = (...lines) => lines.join('\n') + '\n';
 const settings = (plugins) => ({ extraKnownMarketplaces: { dojo: {} }, enabledPlugins: plugins });
 
-test('agent_skills: nothing about agent-skills → no check, no noise', () => {
+test('agent_skills: not enabled → warn with the fix, since agent-skills is the workflow Kaizen guards', () => {
   const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
-  const dir = tempRepo({ '.kaizen/config.json': {}, 'app.js': 'a\n' });
-  assert.equal(check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills'), undefined);
+  const dir = tempRepo({ '.kaizen/config.json': {}, 'docs/SPEC.md': AS('# Spec: X') });
+  const c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
+  assert.equal(c.status, 'warn');
+  assert.match(c.evidence, /agent-skills@dojo is not enabled/);
+  assert.match(c.fix, /install settings/);
   cleanup(dir);
   cleanup(home);
 });
 
-test('agent_skills: both plugins enabled → both reported, his files listed, the guide named (AE5)', () => {
+test('agent_skills: enabled → ok, with the files Kaizen reads', () => {
   const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
   const dir = tempRepo({
     '.kaizen/config.json': {},
@@ -176,25 +178,12 @@ test('agent_skills: both plugins enabled → both reported, his files listed, th
     'tasks/todo.md': AS('# Tasks', '', '## Task 1: A', '', '**Acceptance criteria:**', '- [x] a', '', '## Task 2: B', '', '**Acceptance criteria:**', '- [ ] b'),
   });
   const c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
-  assert.equal(c.status, 'info');
-  assert.match(c.evidence, /agent-skills@dojo enabled/);
-  assert.match(c.evidence, /SPEC\.md/);
-  assert.match(c.evidence, /tasks\/todo\.md \(1\/2 tasks done\)/);
-  assert.match(c.fix, /docs\/guides\/agent-skills\.md/);
-  cleanup(dir);
-  cleanup(home);
-});
-
-test('agent_skills: his files present but the plugin not enabled → info with the line to add', () => {
-  const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
-  const dir = tempRepo({ '.kaizen/config.json': {}, 'docs/SPEC.md': AS('# Spec: X') });
-  const c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
-  assert.equal(c.status, 'info');
-  assert.match(c.evidence, /docs\/SPEC\.md/);
-  assert.match(c.evidence, /agent-skills@dojo is not enabled/);
-  assert.match(c.fix, /"agent-skills@dojo": true/);
-  cleanup(dir);
-  cleanup(home);
+  assert.equal(c.status, 'ok');
+  assert.match(c.evidence, /agent-skills@dojo enabled; Kaizen reads SPEC\.md, tasks\/todo\.md \(1\/2 tasks done\)/);
+  const user = tempRepo({ '.kaizen/config.json': {} });
+  writeFiles(home, { 'settings.json': { enabledPlugins: { 'agent-skills@dojo': true } } });
+  assert.equal(check(cli(user, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills').status, 'ok', 'enabled in the user settings counts');
+  for (const d of [dir, user, home]) cleanup(d);
 });
 
 test('agent_skills: CONSTRAINTS.md without a wired floor guard → warn with the reference; wired in CI or a git hook → ok', () => {

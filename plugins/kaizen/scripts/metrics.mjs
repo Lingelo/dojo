@@ -7,8 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { DEFAULT_WEIGHTS } from './estimate.mjs';
-import { costByKind, itemCosts, readLedger } from './ledger.mjs';
+import { DEFAULT_WEIGHTS, costByKind, itemCosts, readLedger } from './ledger.mjs';
 import { FRICTION, defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, usageTotal, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
@@ -85,32 +84,30 @@ function loopHealth(root, from, branch) {
   }
   const learningsDir = join(docs, 'learnings');
   const learnings = walkMarkdown(learningsDir).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
-  const plans = walkMarkdown(join(docs, 'plans'));
-  const recentPlans = plans.filter((f) => {
+  // What plans the work: agent-skills' spec and plan, and the plans of Kaizen before 6.0 (read only).
+  const planFiles = [join(root, 'SPEC.md'), join(root, 'docs', 'SPEC.md'), join(root, 'tasks', 'plan.md'), join(root, 'tasks', 'todo.md')].filter((f) => existsSync(f));
+  const plans = [...planFiles, ...walkMarkdown(join(docs, 'plans'))];
+  // A plan touched in the window counts as recent: agent-skills' files carry no date.
+  const touched = (f) => {
     const d = parseFrontmatter(readFileSync(f, 'utf8')).data?.date;
-    return d && Date.parse(d) >= from.getTime();
-  });
+    if (d) return Date.parse(d) >= from.getTime();
+    const last = git(root, ['log', '-1', '--format=%cI', '--', relative(root, f)], { allowFail: true });
+    return last ? Date.parse(last) >= from.getTime() : true;
+  };
+  const recentPlans = plans.filter(touched);
   const cited = new Set();
-  let exceptions = 0;
-  for (const p of recentPlans) {
-    const text = readFileSync(p, 'utf8');
-    for (const m of text.matchAll(LEARNING_REF)) cited.add(m[0]);
-    const cc = text.split('<!-- kaizen:constitution -->')[1]?.split(/<!-- kaizen:[a-z-]+ -->/)[0] || '';
-    exceptions += (cc.match(/⚠️/g) || []).length;
-  }
+  for (const p of recentPlans) for (const m of readFileSync(p, 'utf8').matchAll(LEARNING_REF)) cited.add(m[0]);
   // A citation in a plan says a learning was read; a citation in a commit message that reached the
-  // default branch says it changed code (a unit or a review fix applying it).
+  // default branch says it changed code.
   const appliedIn = new Set();
   const ref = git(root, ['rev-parse', '--verify', '--quiet', `origin/${branch}`], { allowFail: true }) ? `origin/${branch}` : branch;
   const bodies = git(root, ['log', ref, `--since=${from.toISOString()}`, '--format=%B'], { allowFail: true }) || '';
   for (const m of bodies.matchAll(LEARNING_REF)) appliedIn.add(m[0]);
 
-  // Never cited anywhere (plans, ADRs, postmortems, commits) and older than the window: a candidate
-  // for /kaizen:prune-learnings — a learning nobody reads back closes no loop.
+  // Never cited anywhere (plans, commits) and older than the window: a candidate for pruning
+  // (/kaizen:learn prune) — a learning nobody reads back closes no loop.
   const everCited = new Set(appliedIn);
-  for (const f of [...plans, ...walkMarkdown(join(docs, 'adr')), ...walkMarkdown(join(docs, 'postmortems'))]) {
-    for (const m of readFileSync(f, 'utf8').matchAll(LEARNING_REF)) everCited.add(m[0]);
-  }
+  for (const f of plans) for (const m of readFileSync(f, 'utf8').matchAll(LEARNING_REF)) everCited.add(m[0]);
   const allBodies = git(root, ['log', ref, '--format=%B', '-n', '5000'], { allowFail: true }) || '';
   for (const m of allBodies.matchAll(LEARNING_REF)) everCited.add(m[0]);
   const key = (f) => `learnings/${relative(learningsDir, f).split(sep).join('/')}`;
@@ -118,82 +115,17 @@ function loopHealth(root, from, branch) {
     .filter((l) => !(l.data.date && Date.parse(l.data.date) >= from.getTime()))
     .map((l) => key(l.f))
     .filter((k) => ![...everCited].some((c) => c.endsWith(k)));
-
-  const postmortems = walkMarkdown(join(docs, 'postmortems')).map((f) => parseFrontmatter(readFileSync(f, 'utf8')).data || {});
-  const recovery = postmortems
-    .filter((p) => p.detected && p.resolved && Date.parse(p.detected) >= from.getTime())
-    .map((p) => (Date.parse(p.resolved) - Date.parse(p.detected)) / 3600000)
-    .filter((h) => h >= 0);
-  const adrs = existsSync(join(docs, 'adr')) ? walkMarkdown(join(docs, 'adr')).length : 0;
   const used = new Set([...cited, ...appliedIn]);
   return {
     learnings_total: learnings.length,
     learnings_new: learnings.filter((l) => l.data.date && Date.parse(l.data.date) >= from.getTime()).length,
-    plans_new: recentPlans.length,
-    learnings_cited_by_new_plans: cited.size,
+    plans_touched: recentPlans.length,
+    learnings_cited_by_plans: cited.size,
     learnings_applied_in_commits: appliedIn.size,
     learning_reuse_rate: learnings.length && (recentPlans.length || appliedIn.size) ? round(used.size / learnings.length, 2) : null,
-    learning_reuse_method: 'distinct learnings cited by a recent plan or a commit message in the window / existing learnings — a plan citation means "read", a commit citation means "applied"',
+    learning_reuse_method: 'distinct learnings cited by a plan touched in the window (SPEC.md, tasks/, docs/plans/) or by a commit message in the window / existing learnings — a plan citation means "read", a commit citation means "applied"',
     learnings_never_cited: neverCited.length,
     learnings_never_cited_sample: neverCited.slice(0, 10),
-    constitution_exceptions: exceptions,
-    postmortems: postmortems.length,
-    recovery_hours_median: round(median(recovery)),
-    adrs,
-  };
-}
-
-// Cost of finished work/autopilot cycles (`gate off`), recorded locally: duration, quality gate
-// blocks, tokens of the main session and its subagents, broken down by role (model policy). Local to
-// the machine, like .kaizen/state/.
-function cycleCost(root, from) {
-  let lines = [];
-  try {
-    lines = readFileSync(join(root, '.kaizen', 'state', 'cycles.jsonl'), 'utf8').split('\n').filter(Boolean);
-  } catch {
-    return null;
-  }
-  const cycles = lines
-    .map((l) => {
-      try {
-        return JSON.parse(l);
-      } catch {
-        return null;
-      }
-    })
-    .filter((c) => c && Date.parse(c.ended) >= from.getTime());
-  if (!cycles.length) return null;
-  const withUsage = cycles.filter((c) => c.usage);
-  // Cycles recorded before subagent tracking only have the main session.
-  const withSub = withUsage.filter((c) => c.subagents);
-  const subTotal = (c) => usageTotal(c.subagents?.usage);
-  const mainSum = withSub.reduce((n, c) => n + usageTotal(c.usage), 0);
-  const subSum = withSub.reduce((n, c) => n + subTotal(c), 0);
-  const byRole = {};
-  for (const c of withSub) {
-    for (const [role, u] of Object.entries(c.subagents.by_role || {})) {
-      const r = (byRole[role] ||= { tokens: 0, output_tokens: 0 });
-      r.tokens += usageTotal(u);
-      r.output_tokens += Number(u.output_tokens) || 0;
-    }
-  }
-  return {
-    cycles: cycles.length,
-    minutes_median: round(median(cycles.map((c) => c.minutes))),
-    tokens_median: round(median(withUsage.map((c) => usageTotal(c.usage) + subTotal(c))), 0),
-    output_tokens_median: round(median(withUsage.map((c) => (c.usage.output_tokens || 0) + (Number(c.subagents?.usage?.output_tokens) || 0))), 0),
-    main_tokens_median: round(median(withUsage.map((c) => usageTotal(c.usage))), 0),
-    subagent_tokens_median: withSub.length ? round(median(withSub.map(subTotal)), 0) : null,
-    subagents_median: withSub.length ? round(median(withSub.map((c) => c.subagents.agents || 0)), 0) : null,
-    subagent_share: mainSum + subSum ? round(subSum / (mainSum + subSum), 2) : null,
-    tokens_by_role: withSub.length ? byRole : null,
-    gate_blocks_total: cycles.reduce((n, c) => n + (c.gate_blocks || 0), 0),
-    cycles_with_gate_block_share: round(cycles.filter((c) => c.gate_blocks > 0).length / cycles.length, 2),
-    method:
-      '/kaizen:work and /kaizen:autopilot cycles closed by gate off on this machine; tokens = main session + subagents ' +
-      '(Claude Code <session>/subagents/ transcripts, deduplicated per message); a subagent\'s role comes from its launch ' +
-      'logged by the Agent hook (agent id, otherwise start of the prompt), `unknown` without a match; share and breakdown ' +
-      `computed over ${withSub.length}/${withUsage.length} recorded cycle(s) with subagents`,
   };
 }
 
@@ -247,7 +179,6 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
       source: prs?.length ? 'GitHub PRs' : 'diffstat git',
     },
     kaizen_loop: loopHealth(root, from, branch),
-    cycle_cost: cycleCost(root, from),
     friction: friction(root, from),
     work_items: workItems(root, from, config),
   };

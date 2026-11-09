@@ -2,7 +2,7 @@
 // Kaizen — PreToolUse hook (Bash): no `git push` of a branch without a recorded review.
 //
 // The "mandatory" review of work/autopilot/ship no longer relies on the prompt alone: this hook
-// refuses the push until `/kaizen:review` has recorded the pushed state (`review record`), or the user
+// refuses the push until agent-skills' review (`/agent-skills:review` or `/agent-skills:ship`) has recorded the pushed state, or the user
 // has waived it themselves (`review waive`, confirmed by their message).
 // It also refuses direct writes to the review state files and manual calls to the evidence hooks:
 // these states are only written by the CLI and the hooks.
@@ -23,7 +23,7 @@ const filePath = String(input.tool_input?.file_path || input.tool_input?.noteboo
 const PUSH = /(^|[\s;&|(])(\S*\/)?git(\s+(-[cC]\s+\S+|--[\w-]+(=\S+)?))*\s+push(\s|$)/;
 // Any call of the CLI's `confirm` (`node "$K" confirm <code>`, `node …/kaizen.mjs confirm <code>`).
 const CONFIRM_CALL = /(kaizen\.mjs|\$\{?K\}?)["']?\s+confirm\b/;
-const TAMPER = /(reviews|review-evidence|review-launches|hooks-seen|waivers|push-offers|confirm-asks)\.json|review-hooks\.mjs/;
+const TAMPER = /(reviews|review-pending|hooks-seen|waivers|push-offers|confirm-asks)\.json|review-hooks\.mjs/;
 const tamper = input.tool_name === 'Bash'
   ? TAMPER.test(command) && /\.kaizen|review-hooks\.mjs/.test(command)
   : /\.kaizen[\\/]state[\\/]/.test(filePath) && TAMPER.test(filePath);
@@ -54,7 +54,7 @@ try {
   if (tamper) {
     logFriction(root, { gate: 'state', kind: 'refused', source: 'claude' });
     process.stderr.write(
-      '[kaizen] Review evidence (.kaizen/state/reviews.json, review-evidence.json, review-launches.json, hooks-seen.json, waivers.json, push-offers.json, confirm-asks.json) is only written ' +
+      '[kaizen] Review evidence (.kaizen/state/reviews.json, review-pending.json, hooks-seen.json, waivers.json, push-offers.json, confirm-asks.json) is only written ' +
         'by the CLI and the hooks. To read the state: `review status`. To waive the review: `review waive --reason`, ' +
         'confirmed by the user.\n',
     );
@@ -104,9 +104,9 @@ try {
     }
     logFriction(root, { gate: 'push', kind: 'skip_confirm', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
     askUser(
-      `[kaizen] ${res.branch}: ${res.reason}. You chose to push without a review — confirm? (No: Claude runs /kaizen:review.)`,
-      'Run /kaizen:review, then push',
-      '[kaizen] If the user declined this push, they want the review after all — run /kaizen:review on the ' +
+      `[kaizen] ${res.branch}: ${res.reason}. You chose to push without a review — confirm? (No: Claude runs /agent-skills:review.)`,
+      'Run /agent-skills:review, then push',
+      '[kaizen] If the user declined this push, they want the review after all — run /agent-skills:review on the ' +
         'branch now (P0/P1 fixes), then push again. If they approved, the push went out unreviewed.',
     );
   }

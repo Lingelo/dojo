@@ -1,10 +1,11 @@
-// PreToolUse hook: no git push of a branch without a recorded review.
+// No git push of a branch without a review: agent-skills' review records itself (review-hooks.mjs),
+// the PreToolUse hook (review-gate.mjs) and the git pre-push hook decide.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { REVIEW_GATE, REVIEW_HOOKS, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
+import { REVIEW_GATE, REVIEW_HOOKS, cleanup, cli, gitc, personaReview, tempRepo, writeFiles } from './helpers.mjs';
 
 function prePush(dir, command = 'git push -u origin feat/x') {
   return spawnSync(process.execPath, [REVIEW_GATE], {
@@ -17,7 +18,6 @@ function hook(mode, dir, payload) {
   return spawnSync(process.execPath, [REVIEW_HOOKS, `--${mode}`], { input: JSON.stringify({ cwd: dir, session_id: 'S1', ...payload }), encoding: 'utf8' });
 }
 
-const runReviewer = (dir, subagent_type, prompt = 'review') => hook('evidence', dir, { tool_name: 'Agent', tool_input: { subagent_type, prompt } });
 
 function preTool(dir, tool_name, tool_input) {
   return spawnSync(process.execPath, [REVIEW_GATE], { input: JSON.stringify({ tool_name, tool_input, cwd: dir }), encoding: 'utf8' });
@@ -54,7 +54,7 @@ test('without a recorded review: the push is refused with the steps to follow', 
 
 test('recorded review: push allowed, then refused beyond the unreviewed-lines ceiling', () => {
   const dir = featureRepo({ review: { max_unreviewed_lines: 3 } });
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  assert.equal(personaReview(dir).code, 0);
   assert.equal(prePush(dir).status, 0);
   writeFiles(dir, { 'app.js': 'a\nb\nc\nd\n' });
   gitc(dir, ['commit', '-qam', 'fix: small fix']);
@@ -70,40 +70,15 @@ test('recorded review: push allowed, then refused beyond the unreviewed-lines ce
 test('the review covers reviewed uncommitted changes, and a ⛔ verdict without a fix blocks', () => {
   const dir = featureRepo({ review: { max_unreviewed_lines: 0 } });
   writeFiles(dir, { 'app.js': 'a\nb\nc\nd\n' });
-  cli(dir, ['review', 'record', '--verdict', 'blocked']);
+  personaReview(dir, '**Verdict:** REQUEST CHANGES\n\n### Critical Issues\n- [app.js:4] d is wrong\n');
   gitc(dir, ['commit', '-qam', 'feat: d (reviewed before commit)']);
   const r = prePush(dir);
   assert.equal(r.status, 2);
   assert.match(r.stderr, /⛔/);
   writeFiles(dir, { 'app.js': 'a\nb\nc\nD\n' });
   gitc(dir, ['commit', '-qam', 'fix: review fix']);
-  cli(dir, ['review', 'record', '--verdict', 'ready']);
+  personaReview(dir);
   assert.equal(prePush(dir).status, 0);
-  cleanup(dir);
-});
-
-test('review evidence: beyond a light review, record requires reviewers that actually ran', () => {
-  const dir = bigBranch();
-  const refused = cli(dir, ['review', 'record', '--verdict', 'ready']);
-  assert.notEqual(refused.code, 0);
-  assert.match(refused.stderr, /no Kaizen reviewer launched/);
-  runReviewer(dir, 'kaizen:plan-coherence-reviewer');
-  runReviewer(dir, 'Explore');
-  assert.notEqual(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0, 'plan reviewer or other agent: not evidence');
-  runReviewer(dir, 'kaizen:correctness-reviewer');
-  runReviewer(dir, 'general-purpose', '<contract>…</contract>\n<review-context>\nReviewer: security\n</review-context>');
-  const rec = cli(dir, ['review', 'record', '--verdict', 'ready']).json;
-  assert.deepEqual(rec.reviewers, ['correctness-reviewer', 'security-reviewer']);
-  assert.equal(rec.depth, 'agents');
-  assert.equal(prePush(dir).status, 0);
-  writeFiles(dir, { 'app.js': `${readFileSync(join(dir, 'app.js'), 'utf8')}\nfix` });
-  gitc(dir, ['commit', '-qam', 'fix: review fix']);
-  const upd = cli(dir, ['review', 'record', '--verdict', 'ready']).json;
-  assert.equal(upd.depth, 'update', 'small fix after review: update without a new reviewer');
-  assert.deepEqual(upd.reviewers, ['correctness-reviewer', 'security-reviewer']);
-  writeFiles(dir, { 'app.js': Array.from({ length: 120 }, (_, i) => `n${i}`).join('\n') });
-  gitc(dir, ['commit', '-qam', 'feat: rewrite']);
-  assert.notEqual(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0, 'beyond the ceiling: evidence only serves one review');
   cleanup(dir);
 });
 
@@ -134,8 +109,8 @@ test('evidence is written neither by hand nor by calling the hooks', () => {
   const write = preTool(dir, 'Write', { file_path: join(dir, '.kaizen/state/reviews.json'), content: '{}' });
   assert.equal(write.status, 2);
   assert.match(write.stderr, /is only written by the CLI/);
-  assert.equal(preTool(dir, 'Edit', { file_path: join(dir, '.kaizen/state/review-evidence.json') }).status, 2);
-  assert.equal(preTool(dir, 'Bash', { command: 'echo [] > .kaizen/state/review-evidence.json' }).status, 2);
+  assert.equal(preTool(dir, 'Edit', { file_path: join(dir, '.kaizen/state/review-pending.json') }).status, 2);
+  assert.equal(preTool(dir, 'Bash', { command: 'echo null > .kaizen/state/review-pending.json' }).status, 2);
   assert.equal(preTool(dir, 'Bash', { command: `echo '{"prompt":"kaizen waive ABC123"}' | node /p/scripts/review-hooks.mjs --confirm` }).status, 2);
   assert.equal(preTool(dir, 'Write', { file_path: join(dir, 'src/reviews.json') }).status, 0, 'outside .kaizen/state');
   assert.equal(preTool(dir, 'Bash', { command: 'cat fixtures/reviews.json' }).status, 0);
@@ -144,19 +119,6 @@ test('evidence is written neither by hand nor by calling the hooks', () => {
   assert.equal(preTool(plain, 'Write', { file_path: join(plain, '.kaizen/state/reviews.json') }).status, 0, 'repo without Kaizen');
   assert.equal(existsSync(join(plain, '.kaizen')), false);
   cleanup(plain);
-});
-
-test('evidence hooks inactive outside a Kaizen repo and outside the Agent tool', () => {
-  const plain = tempRepo({ 'a.txt': '1' });
-  runReviewer(plain, 'kaizen:correctness-reviewer');
-  assert.equal(existsSync(join(plain, '.kaizen')), false);
-  cleanup(plain);
-  const dir = bigBranch();
-  hook('evidence', dir, { tool_name: 'Bash', tool_input: { subagent_type: 'kaizen:correctness-reviewer' } });
-  assert.equal(existsSync(join(dir, '.kaizen/state/review-evidence.json')), false);
-  runReviewer(dir, 'kaizen:testing-reviewer');
-  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/state/review-evidence.json'), 'utf8'))[0].reviewer, 'testing-reviewer');
-  cleanup(dir);
 });
 
 test('out of scope: other commands, repo without Kaizen, disabled, branch deletion', () => {
@@ -195,7 +157,7 @@ test('require_before_push "ask": the user judges the push, Claude Code asks them
   const out = JSON.parse(second.stdout).hookSpecificOutput;
   assert.equal(out.permissionDecision, 'ask');
   assert.match(out.permissionDecisionReason, /without a review — confirm/);
-  assert.match(out.additionalContext, /declined.*run \/kaizen:review/);
+  assert.match(out.additionalContext, /declined.*run \/agent-skills:review/);
   // the offer is used up: the next push asks again
   assert.equal(prePush(dir).status, 2);
   // a new commit voids a pending offer
@@ -208,7 +170,7 @@ test('require_before_push "ask": the user judges the push, Claude Code asks them
   assert.equal(check.code, 1);
   assert.equal(check.json.ask, true, 'skills see that the user decides');
   // a reviewed branch is not asked about
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  assert.equal(personaReview(dir).code, 0);
   const reviewed = prePush(dir);
   assert.equal(reviewed.status, 0);
   assert.equal(reviewed.stdout, '');
@@ -295,7 +257,7 @@ test('a push whose target is the default branch is guarded too, whatever branch 
   assert.equal(prePush(dir, 'git push origin HEAD:main').status, 2, 'HEAD:main without a review');
   assert.equal(prePush(dir, 'git push origin HEAD:refs/heads/main').status, 2, 'full ref');
   // after the review of that branch, the same push goes through
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  assert.equal(personaReview(dir).code, 0);
   assert.equal(prePush(dir, 'git push origin HEAD:main').status, 0);
   cleanup(dir);
   // pushing main itself from main stays the git plugin's business
@@ -308,9 +270,9 @@ test('a push whose target is the default branch is guarded too, whatever branch 
 
 test('files left untracked during the review are not counted as changed at push time', () => {
   const dir = featureRepo({ review: { max_unreviewed_lines: 5 } });
-  // a plan and a constitution written by brainstorm/plan, never committed: they are not part of the push
-  writeFiles(dir, { 'docs/plans/p.md': Array.from({ length: 60 }, (_, i) => `line ${i}`).join('\n'), 'CONSTITUTION.md': 'x\n'.repeat(40) });
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready']).code, 0);
+  // agent-skills' planning files, never committed: they are not part of the push
+  writeFiles(dir, { 'tasks/plan.md': Array.from({ length: 60 }, (_, i) => `line ${i}`).join('\n'), 'SPEC.md': 'x\n'.repeat(40) });
+  assert.equal(personaReview(dir).code, 0);
   assert.equal(prePush(dir).status, 0, 'untracked files read by the review do not block the push');
   // a real change after the review still counts
   writeFiles(dir, { 'app.js': 'a\nb\nc\n' + Array.from({ length: 10 }, (_, i) => `n${i}`).join('\n') + '\n' });
@@ -319,83 +281,67 @@ test('files left untracked during the review are not counted as changed at push 
   cleanup(dir);
 });
 
-// --- Launched reviewers must leave their output (R8, R9) ---------------------------------------------
+// --- agent-skills' review records itself ----------------------------------------------------------------
 
-const launch = (dir, name, run, extra = '') =>
-  hook('launch', dir, { tool_name: 'Agent', tool_input: { subagent_type: `kaizen:${name}-reviewer`, prompt: `<review-context>\nReviewer: ${name}\nRun: ${run}\n${extra}</review-context>` } });
+import { verdictOf } from '../scripts/review-state.mjs';
 
-const newRun = (dir) => cli(dir, ['run-dir', 'reviews']).stdout.trim();
-const ok = { reviewer: 'x', findings: [] };
+const reviews = (dir) => JSON.parse(readFileSync(join(dir, '.kaizen/state/reviews.json'), 'utf8'));
+const transcript = (dir, text) => {
+  const f = join(dir, '.transcript.jsonl');
+  writeFiles(dir, { '.transcript.jsonl': [{ type: 'user', message: { role: 'user', content: '/agent-skills:review' } }, { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } }].map((e) => JSON.stringify(e)).join('\n') + '\n' });
+  return f;
+};
 
-test('a launched reviewer without output blocks the record, named; the gap needs the user (AE6)', () => {
-  const dir = bigBranch();
-  const run = newRun(dir);
-  for (const n of ['correctness', 'testing', 'security', 'performance']) {
-    launch(dir, n, run);
-    if (n !== 'security') {
-      runReviewer(dir, `kaizen:${n}-reviewer`);
-      writeFiles(dir, { [`${run}/${n}.json`]: ok });
-    }
-  }
-  let r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]);
-  assert.equal(r.code, 2);
-  assert.match(r.stderr, /without a valid output in .*: security/);
-  const other = newRun(dir);
-  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', other]).stderr, /security/, 'another --run folder hides nothing');
-  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready']).stderr, /security/, 'nor does omitting --run');
-  r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run, '--allow-missing', 'security']);
-  assert.equal(r.code, 0);
-  assert.equal(r.json.pending, true, 'only a code: the agent cannot accept the gap');
-  assert.equal(prePush(dir).status, 2);
-  const c = hook('confirm', dir, { prompt: `kaizen waive ${r.json.code}` });
-  assert.match(c.stdout, /gap accepted by the user \(security without output\)/);
-  const rec = cli(dir, ['review', 'status']).json.review;
-  assert.deepEqual(rec.gaps, ['security']);
-  assert.equal(rec.verdict, 'ready');
+test('verdict: Critical findings block, REQUEST CHANGES asks for changes, otherwise ready', () => {
+  assert.equal(verdictOf('## Review Summary\n\n**Verdict:** APPROVE\n\n### Critical Issues\n- None\n\n### Nits\n- [a.js:1] name'), 'ready');
+  assert.equal(verdictOf('**Verdict:** APPROVE\n\n### Critical Issues\n\n### Required Changes\n- x'), 'ready');
+  assert.equal(verdictOf('### Critical Issues\n- [api.js:12] SQL injection on `name`'), 'blocked');
+  assert.equal(verdictOf('- **Critical:** the token is logged in clear'), 'blocked');
+  assert.equal(verdictOf('Critical: none'), 'ready');
+  assert.equal(verdictOf('**Verdict:** REQUEST CHANGES\n\n### Critical Issues\n- None found'), 'concerns');
+  assert.equal(verdictOf('### Verdict\n- [x] **Request changes** — missing tests'), 'concerns');
+  assert.equal(verdictOf(''), 'ready');
+});
+
+test('the code-reviewer persona (/agent-skills:ship) records its review at once; other agents do not', () => {
+  const dir = featureRepo();
+  hook('evidence', dir, { tool_name: 'Agent', tool_input: { subagent_type: 'general-purpose' }, tool_response: 'looks good' });
+  assert.equal(existsSync(join(dir, '.kaizen/state/reviews.json')), false);
+  personaReview(dir);
+  const r = reviews(dir)['feat/x'];
+  assert.deepEqual([r.verdict, r.depth, r.reviewers], ['ready', 'agent-skills', ['code-reviewer']]);
   assert.equal(prePush(dir).status, 0);
+  hook('evidence', dir, { tool_name: 'Agent', tool_input: { subagent_type: 'code-reviewer' }, tool_response: { content: [{ type: 'text', text: '### Critical Issues\n- [app.js:2] data loss' }] } });
+  assert.equal(reviews(dir)['feat/x'].verdict, 'blocked', 'the persona without the plugin prefix counts too');
+  assert.match(prePush(dir).stderr, /⛔/);
   cleanup(dir);
 });
 
-test('an output without the findings array does not count', () => {
-  const dir = bigBranch();
-  const run = newRun(dir);
-  launch(dir, 'correctness', run);
-  runReviewer(dir, 'kaizen:correctness-reviewer');
-  writeFiles(dir, { [`${run}/correctness.json`]: 'Rate limit reached, try later' });
-  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).stderr, /correctness/);
-  writeFiles(dir, { [`${run}/correctness.json`]: ok });
-  assert.equal(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).code, 0);
+test('the review skill (/agent-skills:review) leaves a mark; the Stop hook reads the verdict from the turn', () => {
+  const dir = featureRepo();
+  hook('evidence', dir, { tool_name: 'Skill', tool_input: { skill: 'agent-skills:code-review-and-quality' } });
+  assert.equal(existsSync(join(dir, '.kaizen/state/reviews.json')), false, 'nothing recorded before the review is written');
+  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/state/review-pending.json'), 'utf8')).source, 'code-review-and-quality');
+  hook('stop', dir, { session_id: 'OTHER', transcript_path: transcript(dir, '**Verdict:** APPROVE') });
+  assert.equal(existsSync(join(dir, '.kaizen/state/reviews.json')), false, 'another session does not take the mark');
+  hook('stop', dir, { transcript_path: transcript(dir, '## Review: feat/x\n\n**Verdict:** APPROVE\n\n### Critical Issues\n- None') });
+  assert.equal(reviews(dir)['feat/x'].verdict, 'ready');
+  assert.deepEqual(reviews(dir)['feat/x'].reviewers, ['code-review-and-quality']);
+  assert.equal(prePush(dir).status, 0);
+  hook('stop', dir, { transcript_path: transcript(dir, '### Critical Issues\n- x') });
+  assert.equal(reviews(dir)['feat/x'].verdict, 'ready', 'the mark is used once');
+  hook('evidence', dir, { tool_name: 'Skill', tool_input: { skill: 'agent-skills:spec-driven-development' } });
+  assert.equal(JSON.parse(readFileSync(join(dir, '.kaizen/state/review-pending.json'), 'utf8')), null, 'another skill leaves no mark');
   cleanup(dir);
 });
 
-test('a split review needs every slice output (AE9)', () => {
-  const dir = bigBranch();
-  const run = newRun(dir);
-  launch(dir, 'correctness', run, 'Slice: S1\n');
-  launch(dir, 'correctness', run, 'Slice: S2\n');
-  runReviewer(dir, 'kaizen:correctness-reviewer');
-  writeFiles(dir, { [`${run}/correctness-S1.json`]: ok });
-  assert.match(cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]).stderr, /: correctness-S2 —/);
-  writeFiles(dir, { [`${run}/correctness-S2.json`]: ok });
-  const r = cli(dir, ['review', 'record', '--verdict', 'ready', '--run', run]);
-  assert.equal(r.code, 0, r.stderr);
-  cleanup(dir);
-});
-
-test('launches of another branch, or outside a review run, do not block a record', () => {
-  const dir = bigBranch();
-  gitc(dir, ['checkout', '-qb', 'feat/other']);
-  launch(dir, 'security', newRun(dir));
-  gitc(dir, ['checkout', '-q', 'feat/big']);
-  hook('launch', dir, { tool_name: 'Agent', tool_input: { subagent_type: 'kaizen:testing-reviewer', prompt: 'ad hoc' } });
-  runReviewer(dir, 'kaizen:correctness-reviewer');
-  const r = cli(dir, ['review', 'record', '--verdict', 'ready']);
-  assert.equal(r.code, 0, r.stderr);
-  cleanup(dir);
-});
-
-test('the launch log is protected and only fed by the hook', () => {
-  const dir = bigBranch();
-  assert.equal(preTool(dir, 'Bash', { command: 'echo [] > .kaizen/state/review-launches.json' }).status, 2);
+test('review hooks inactive outside a Kaizen repo and for other tools', () => {
+  const plain = tempRepo({ 'a.txt': '1' });
+  personaReview(plain);
+  assert.equal(existsSync(join(plain, '.kaizen')), false);
+  cleanup(plain);
+  const dir = featureRepo();
+  hook('evidence', dir, { tool_name: 'Bash', tool_input: { subagent_type: 'agent-skills:code-reviewer' } });
+  assert.equal(existsSync(join(dir, '.kaizen/state/reviews.json')), false);
   cleanup(dir);
 });
