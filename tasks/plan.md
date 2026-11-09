@@ -65,6 +65,12 @@ Checkpoints after tasks 2, 5 and 8 (see `tasks/todo.md`).
   `frontend-ui-engineering`); Kaizen-only skills (`learn`, `metrics`, `watch-pr`, `help`/`setup`)
   rewritten in his anatomy; engine guards on his files (silenced checks from `CONSTRAINTS.md`, evidence
   ledger, scope from "Files likely touched"); hook adapters from the recorded fixtures.
+  **Learnings kept, read back by the engine**: agent-skills' skills do not read `docs/learnings/`, so
+  the read-back moves from Kaizen's skills to hooks — when `SPEC.md` or `tasks/plan.md` is written, the
+  matching learnings (`kaizen learnings search` on its terms) are added to the agent's context; when a
+  file is edited, the learnings whose new optional `files:` globs match it are added too; the
+  generated `AGENTS.md` section points other hosts to `docs/learnings/`. `/kaizen:learn` keeps writing
+  them (schema lightened) and harvests repeated refusals into rationalization learnings.
 - **5.4–5.5** — handoff, boundaries enforcement, `CONSTITUTION.md` → `CONSTRAINTS.md` in `kaizen
   upgrade`, kaizen-ops launch ladder.
 - **6.0** — deprecated skills and 20 agents removed, docs rewrite, new video.
