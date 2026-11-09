@@ -69,13 +69,13 @@ rows with command, exceptions with owner and expiry). Missing file or section �
 error.
 
 **Acceptance criteria:**
-- [ ] Reads fixtures shaped like his three templates, `SPEC.md` at the root or in `docs/`
-- [ ] A task is done when its acceptance boxes are all checked
-- [ ] CRLF files parse like LF files
-- [ ] Reads this repository's own `docs/SPEC.md` and `tasks/todo.md`
+- [x] Reads fixtures shaped like his three templates, `SPEC.md` at the root or in `docs/`
+- [x] A task is done when its acceptance boxes are all checked
+- [x] CRLF files parse like LF files
+- [x] Reads this repository's own `docs/SPEC.md` and `tasks/todo.md`
 
 **Verification:**
-- [ ] Tests pass: `node --test plugins/kaizen/tests/agentskills.test.mjs`
+- [x] Tests pass: `node --test plugins/kaizen/tests/agentskills.test.mjs`
 
 **Dependencies:** None
 
@@ -93,13 +93,13 @@ error.
 when both plugins are on. Never a warning when agent-skills is absent.
 
 **Acceptance criteria:**
-- [ ] Both enabled → both reported, files listed, info line with the guide
-- [ ] His files present, plugin not enabled → info with the line to add
-- [ ] Nothing about agent-skills → check `ok`, no noise
-- [ ] `CONSTRAINTS.md` present → reports whether his floor guard (`constraint-driven-development/references/floor-guard.md`) is wired in a git hook or the CI, with the reference to install it if not
+- [x] Both enabled → both reported, files listed, info line with the guide
+- [x] His files present, plugin not enabled → info with the line to add
+- [x] Nothing about agent-skills → check `ok`, no noise
+- [x] `CONSTRAINTS.md` present → reports whether his floor guard (`constraint-driven-development/references/floor-guard.md`) is wired in a git hook or the CI, with the reference to install it if not
 
 **Verification:**
-- [ ] Tests pass: `node --test plugins/kaizen/tests/doctor.test.mjs`
+- [x] Tests pass: `node --test plugins/kaizen/tests/doctor.test.mjs`
 
 **Dependencies:** Task 3
 

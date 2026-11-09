@@ -180,3 +180,65 @@ test('ops_plugin also fires on a production history without config: postmortems,
   assert.match(check(cli(tagged, ['doctor', '--json'], { env }), 'ops_plugin').evidence, /deployment or incident tags/);
   for (const d of [home, pm, tagged]) cleanup(d);
 });
+
+// --- agent-skills (Addy Osmani's plugin, the base Kaizen converges on) -----------------------------------
+
+const AS = (...lines) => lines.join('\n') + '\n';
+const settings = (plugins) => ({ extraKnownMarketplaces: { dojo: {} }, enabledPlugins: plugins });
+
+test('agent_skills: nothing about agent-skills → no check, no noise', () => {
+  const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
+  const dir = tempRepo({ '.kaizen/config.json': {}, 'app.js': 'a\n' });
+  assert.equal(check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills'), undefined);
+  cleanup(dir);
+  cleanup(home);
+});
+
+test('agent_skills: both plugins enabled → both reported, his files listed, the guide named (AE5)', () => {
+  const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
+  const dir = tempRepo({
+    '.kaizen/config.json': {},
+    '.claude/settings.json': settings({ 'kaizen@dojo': true, 'agent-skills@dojo': true }),
+    'SPEC.md': AS('# Spec: X', '', '## Objective', 'x'),
+    'tasks/todo.md': AS('# Tasks', '', '## Task 1: A', '', '**Acceptance criteria:**', '- [x] a', '', '## Task 2: B', '', '**Acceptance criteria:**', '- [ ] b'),
+  });
+  const c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
+  assert.equal(c.status, 'info');
+  assert.match(c.evidence, /agent-skills@dojo enabled/);
+  assert.match(c.evidence, /SPEC\.md/);
+  assert.match(c.evidence, /tasks\/todo\.md \(1\/2 tasks done\)/);
+  assert.match(c.fix, /docs\/guides\/agent-skills\.md/);
+  cleanup(dir);
+  cleanup(home);
+});
+
+test('agent_skills: his files present but the plugin not enabled → info with the line to add', () => {
+  const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
+  const dir = tempRepo({ '.kaizen/config.json': {}, 'docs/SPEC.md': AS('# Spec: X') });
+  const c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
+  assert.equal(c.status, 'info');
+  assert.match(c.evidence, /docs\/SPEC\.md/);
+  assert.match(c.evidence, /agent-skills@dojo is not enabled/);
+  assert.match(c.fix, /"agent-skills@dojo": true/);
+  cleanup(dir);
+  cleanup(home);
+});
+
+test('agent_skills: CONSTRAINTS.md without a wired floor guard → warn with the reference; wired in CI or a git hook → ok', () => {
+  const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
+  const env = { CLAUDE_CONFIG_DIR: home };
+  const dir = tempRepo({ '.kaizen/config.json': {}, 'CONSTRAINTS.md': AS('# Constraints', '', '## Floor', '- No new suppression comments') });
+  let c = check(cli(dir, ['doctor', '--json'], { env }), 'floor_guard');
+  assert.equal(c.status, 'warn');
+  assert.match(c.evidence, /CONSTRAINTS\.md has a floor but no floor guard runs/);
+  assert.match(c.fix, /constraint-driven-development\/references\/floor-guard\.md/);
+  writeFiles(dir, { '.github/workflows/ci.yml': 'jobs:\n  floor:\n    steps:\n      - run: node scripts/floor-guard.mjs --base origin/main\n' });
+  c = check(cli(dir, ['doctor', '--json'], { env }), 'floor_guard');
+  assert.equal(c.status, 'ok');
+  assert.match(c.evidence, /\.github\/workflows\/ci\.yml/);
+  const hooked = tempRepo({ '.kaizen/config.json': {}, 'CONSTRAINTS.md': AS('# Constraints'), '.githooks/pre-commit': '#!/bin/sh\nnode tools/floor-guard.mjs || exit 1\n' });
+  assert.equal(check(cli(hooked, ['doctor', '--json'], { env }), 'floor_guard').status, 'ok');
+  cleanup(dir);
+  cleanup(hooked);
+  cleanup(home);
+});

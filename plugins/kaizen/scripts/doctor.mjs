@@ -14,11 +14,14 @@ import { fileURLToPath } from 'node:url';
 import { docsRoot, git, loadConfig, verifyCommands } from './lib.mjs';
 import { checkPush, currentBranch } from './review-state.mjs';
 import { pending as pendingMigrations } from './upgrade.mjs';
+import { readAgentSkills } from './agentskills.mjs';
 
 export const MARKETPLACE = 'dojo';
 export const PLUGIN_ID = `kaizen@${MARKETPLACE}`;
 // Since Kaizen 4.0 the production commands (deploy, monitor, postmortem) live in a second plugin.
 export const OPS_ID = `kaizen-ops@${MARKETPLACE}`;
+// Addy Osmani's agent-skills, shipped in the same marketplace: the base Kaizen converges on (5.2+).
+export const AGENT_SKILLS_ID = `agent-skills@${MARKETPLACE}`;
 const DAY_MS = 24 * 3600 * 1000;
 
 function readJson(path) {
@@ -73,6 +76,34 @@ export function opsDeclared(root, env = process.env) {
     join(env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude'), 'settings.json'),
   ];
   return files.some((f) => readJson(f)?.enabledPlugins?.[OPS_ID] === true);
+}
+
+// Is a plugin enabled for this repository: project settings, local settings or the user's settings.
+export function pluginEnabled(root, id, env = process.env) {
+  const files = [
+    join(root, '.claude', 'settings.json'),
+    join(root, '.claude', 'settings.local.json'),
+    join(env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude'), 'settings.json'),
+  ];
+  return files.some((f) => readJson(f)?.enabledPlugins?.[id] === true);
+}
+
+// Where agent-skills' floor guard runs, if anywhere: a git hook (.githooks/, .husky/, .git/hooks/), a
+// pre-commit or lefthook config, package.json scripts or a CI workflow naming it.
+export function floorGuardWiring(root) {
+  const candidates = ['.pre-commit-config.yaml', 'lefthook.yml', 'package.json'];
+  for (const dir of ['.githooks', '.husky', join('.git', 'hooks'), join('.github', 'workflows')]) {
+    try {
+      for (const f of readdirSync(join(root, dir))) candidates.push(join(dir, f));
+    } catch {}
+  }
+  return candidates.filter((rel) => {
+    try {
+      return statSync(join(root, rel)).isFile() && /floor-guard/.test(readFileSync(join(root, rel), 'utf8'));
+    } catch {
+      return false;
+    }
+  }).map((rel) => rel.split('\\').join('/'));
 }
 
 export function heartbeat(root) {
@@ -145,6 +176,38 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
         ? `${OPS_ID} enabled: /kaizen-ops:deploy, /kaizen-ops:monitor, /kaizen-ops:postmortem`
         : `this repo ${why}, but the production commands moved to kaizen-ops in Kaizen 4.0 and ${OPS_ID} is not enabled`,
       on ? null : `"enabledPlugins": { "${OPS_ID}": true } in .claude/settings.json (node "$K" audit fix claude_settings), then a new session`,
+    );
+  }
+
+  // agent-skills: only spoken about when it is enabled or its files are here.
+  const as = readAgentSkills(root);
+  const asOn = pluginEnabled(root, AGENT_SKILLS_ID);
+  const files = [
+    as.spec?.path,
+    as.plan?.path,
+    as.tasks && `${as.tasks.path} (${as.tasks.list.filter((t) => t.done).length}/${as.tasks.list.length} tasks done)`,
+    as.constraints?.path,
+  ].filter(Boolean);
+  if (asOn || files.length) {
+    const seen = files.length ? `reads ${files.join(', ')}` : 'none of its files yet (SPEC.md, tasks/, CONSTRAINTS.md)';
+    add(
+      'agent_skills',
+      'agent-skills (Addy Osmani)',
+      'info',
+      asOn ? `${AGENT_SKILLS_ID} enabled; Kaizen ${seen}` : `Kaizen ${seen}, but ${AGENT_SKILLS_ID} is not enabled`,
+      asOn
+        ? 'while both plugins have overlapping commands (5.x), see docs/guides/agent-skills.md'
+        : `"enabledPlugins": { "${AGENT_SKILLS_ID}": true } in .claude/settings.json, then a new session`,
+    );
+  }
+  if (as.constraints) {
+    const wired = floorGuardWiring(root);
+    add(
+      'floor_guard',
+      'Floor guard (CONSTRAINTS.md)',
+      wired.length ? 'ok' : 'warn',
+      wired.length ? `runs from ${wired.join(', ')}` : 'CONSTRAINTS.md has a floor but no floor guard runs: skipped tests and silenced checks pass unnoticed',
+      wired.length ? null : 'install the reference of agent-skills/skills/constraint-driven-development/references/floor-guard.md in a pre-commit hook and the CI',
     );
   }
 

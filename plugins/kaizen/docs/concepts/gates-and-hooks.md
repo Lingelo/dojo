@@ -169,6 +169,12 @@ commit — whatever the local refspec, `HEAD` included) and `.githooks/pre-commi
 run a pinned CLI (`git config kaizen.cli`, `$KAIZEN_CLI`, or the dojo marketplace's plugin cache only)
 and refuse when it is missing. See [troubleshooting](../troubleshooting.md#the-git-hooks-refuse-kaizen-cli-not-found).
 
+With agent-skills (`agent-skills@dojo`, since 5.2), `kaizen doctor` also reports what Kaizen reads of its
+files (`SPEC.md` or `docs/SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `CONSTRAINTS.md` — the `agent_skills`
+check) and, when `CONSTRAINTS.md` exists, whether agent-skills' floor guard runs from a git hook, a
+pre-commit configuration, `package.json` or a CI workflow (`floor_guard`): it is the guard against skipped
+tests and silenced checks, installed in the repository rather than in Kaizen.
+
 ### Waiving the review — only you
 
 If you explicitly ask to skip the review:
