@@ -775,15 +775,18 @@ that yes. Done when Claude can predict the user's answers to its next three ques
 
 ## Proposed order
 
-Rewritten for convergence. Portability stays critical and moves at each step.
+Rewritten for convergence, then **accelerated on 2026-11-09** (Angélo LIMA: "go A, B et C"):
+this repository plans its own work in agent-skills' format from 5.2 on (`docs/SPEC.md`,
+`tasks/plan.md`, `tasks/todo.md`), Codex and Copilot CLI are documented rather than measured (no
+accounts available), and the overlapping Kaizen skills are deprecated in 5.3 instead of 5.5.
 
 | Release | Content | Breaking |
 |---|---|---|
-| 5.2 | `agent-skills` added to this marketplace as a synced copy (workflow and tests copied from `sync-kioku`, never edited here); spike: agent-skills + Kaizen 5.1 together on Claude Code, Codex and Copilot CLI — conflicts, double triggering, what the hooks see; the engine **reads** `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `CONSTRAINTS.md` alongside Kaizen's formats; reviews by his personas record themselves | no |
-| 5.3 | engine on his artifacts: silenced checks from the `CONSTRAINTS.md` floor (idea 2), evidence ledger + Prove-It on his tasks (ideas 3, 15), scope from "Files likely touched" (idea 4), `verify --prove` (idea 8), hygiene (idea 19); normalized hook contract and adapters Claude + Codex + Copilot CLI, `kaizen install --host` | no |
-| 5.4 | Kaizen-only skills rewritten in his anatomy and validated by his scripts and evals: `learn` (living rationalizations), `watch` (feedback with doubt classification, attention map), `metrics`, `/kaizen`; engine note at session start; handoff (idea 16); `SPEC.md` boundaries enforced (idea 11); adapters Cursor + Gemini; first upstream PRs | no |
-| 5.5 | Kaizen's overlapping skills marked deprecated, each answering with its agent-skills replacement; `kaizen upgrade` proposes `CONSTRAINTS.md` from `CONSTITUTION.md`; kaizen-ops 1.1 on the launch ladder (idea 18) | no (deprecations) |
-| 6.0 | overlapping skills and 20 agents removed; legacy formats read-only; optional cost module; packaging per host; full doc rewrite; new video | yes, with `upgrade` migrations |
+| 5.2 | `agent-skills` added to this marketplace as a synced copy refreshed by pull request; the engine **reads** `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `CONSTRAINTS.md` (`kaizen tasks`, `status`, `doctor`); reviews by his `code-reviewer` record themselves; spike measured on Claude Code, Codex and Copilot payloads built from their official docs. Planned in `docs/SPEC.md` + `tasks/` | no |
+| 5.3 | **overlapping Kaizen skills deprecated**, each answering with its agent-skills replacement; Kaizen-only skills (`learn`, `metrics`, `watch-pr`, `help`/`setup`) rewritten in his anatomy and validated by his scripts and routing evals; engine guards on his files: silenced checks from the `CONSTRAINTS.md` floor (idea 2), evidence ledger + Prove-It (ideas 3, 15), scope from "Files likely touched" (idea 4), `verify --prove` (idea 8), hygiene (idea 19); normalized hook contract and adapters Claude + Codex + Copilot from the 5.2 fixtures | no (deprecations) |
+| 5.4 | engine note at session start; handoff (idea 16); `SPEC.md` boundaries enforced (idea 11); attention map (idea 13); adapters Cursor + Gemini; first upstream PRs | no |
+| 5.5 | `kaizen upgrade` proposes `CONSTRAINTS.md` from `CONSTITUTION.md`; kaizen-ops 1.1 on the launch ladder (idea 18) | no |
+| 6.0 | deprecated skills and 20 agents removed; legacy formats read-only; optional cost module; packaging per host; full doc rewrite; new video | yes, with `upgrade` migrations |
 
 ## Documentation and video
 
