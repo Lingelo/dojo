@@ -1,7 +1,7 @@
 {
     "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
     "name": "dojo",
-    "description": "Claude Code plugins: Kaizen (AI-assisted SDLC) and Kaizen Ops (its production commands), Motion Studio (motion design as code), Slide Studio (presentation decks) and Kioku (a guarded knowledge vault)",
+    "description": "Claude Code plugins: Kaizen (AI-assisted SDLC) and Kaizen Ops (its production commands), Agent Skills (Addy Osmani's engineering workflows, the base Kaizen converges on), Motion Studio (motion design as code), Slide Studio (presentation decks) and Kioku (a guarded knowledge vault)",
     "owner": {
         "name": "Angelo Lima",
         "email": "angelomiguellima@gmail.com"
@@ -17,6 +17,12 @@
             "name": "kaizen-ops",
             "source": "./plugins/kaizen-ops",
             "description": "Kaizen's production commands for teams that deploy with Kaizen: watched deployments with typed approval and rollback, production signals and incidents, blameless postmortems. Requires Kaizen core (kaizen@dojo) ≥ 4.0.0, whose CLI and gates it uses",
+            "category": "development"
+        },
+        {
+            "name": "agent-skills",
+            "source": "./plugins/agent-skills",
+            "description": "Addy Osmani's agent-skills (MIT), copied unmodified from addyosmani/agent-skills: production-grade engineering workflows for AI coding agents covering spec, plan, build, verify, review and ship, with /spec, /plan, /build, /test, /review, /ship commands. The base Kaizen converges on; Kaizen's engine reads its SPEC.md, tasks/ and CONSTRAINTS.md",
             "category": "development"
         },
         {

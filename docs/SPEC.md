@@ -25,10 +25,10 @@ on 2026-11-09 ("on converge vers Osmani le plus possible en adaptant", option B,
 ## Commands
 
 ```bash
-node --test .github/scripts/sync-kioku.test.mjs          # sync script (kioku + agent-skills)
+node --test .github/scripts/sync-plugin.test.mjs          # sync script (kioku + agent-skills)
 node --test plugins/kaizen/tests/*.test.mjs              # Kaizen: unit, CLI, gates, contracts
 node --test plugins/kaizen-ops/tests/*.test.mjs          # kaizen-ops
-node .github/scripts/sync-kioku.mjs --plugin agent-skills --source addyosmani/agent-skills --ref main
+node .github/scripts/sync-plugin.mjs --plugin agent-skills --source addyosmani/agent-skills --ref main
 node plugins/kaizen/scripts/kaizen.mjs status            # what the engine sees
 node plugins/kaizen/scripts/kaizen.mjs tasks             # new in 5.2
 node plugins/kaizen/scripts/kaizen.mjs doctor
@@ -37,7 +37,7 @@ node plugins/kaizen/scripts/kaizen.mjs doctor
 ## Project Structure
 
 ```
-.github/scripts/sync-kioku.mjs       copy script, gains --plugin and --mode
+.github/scripts/sync-plugin.mjs       copy script (renamed from sync-kioku.mjs), gains --plugin
 .github/workflows/sync-agent-skills.yml   new: refresh by pull request
 plugins/agent-skills/                new: synced copy, never edited here
 plugins/kaizen/scripts/agentskills.mjs    new: reads his four files

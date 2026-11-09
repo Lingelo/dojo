@@ -2,26 +2,27 @@
 
 Spec: `docs/SPEC.md` · Plan: `tasks/plan.md`
 
-## Task 1: Sync script takes a plugin name and a mode
+## Task 1: Sync script takes a plugin name
 
-**Description:** `.github/scripts/sync-kioku.mjs` copies kioku (push, as today) or agent-skills (for a
-pull request), driven by `--plugin` and `--mode`; marker file `.<plugin>-source`; expected
+**Description:** `.github/scripts/sync-plugin.mjs` (renamed from `sync-kioku.mjs`) copies kioku or
+agent-skills, driven by `--plugin`; whether the copy is pushed or proposed as a PR is the workflow's
+choice; marker file `.<plugin>-source`; expected
 `plugin.json` name = the plugin; every safety check kept.
 
 **Acceptance criteria:**
-- [ ] Without the new flags, the kioku behavior and output are unchanged
-- [ ] `--plugin agent-skills` copies into `plugins/agent-skills/` with `.agent-skills-source`
-- [ ] A copy whose `plugin.json` name differs from `--plugin` is refused
-- [ ] An escaping symbolic link is refused; `.github/` is dropped
+- [x] Without the new flags, the kioku behavior and output are unchanged
+- [x] `--plugin agent-skills` copies into `plugins/agent-skills/` with `.agent-skills-source`
+- [x] A copy whose `plugin.json` name differs from `--plugin` is refused
+- [x] An escaping symbolic link is refused; `.github/` is dropped
 
 **Verification:**
-- [ ] Tests pass: `node --test .github/scripts/sync-kioku.test.mjs`
+- [x] Tests pass: `node --test .github/scripts/sync-plugin.test.mjs`
 
 **Dependencies:** None
 
 **Files likely touched:**
-- `.github/scripts/sync-kioku.mjs`
-- `.github/scripts/sync-kioku.test.mjs`
+- `.github/scripts/sync-plugin.mjs`
+- `.github/scripts/sync-plugin.test.mjs`
 
 **Estimated scope:** Small
 
@@ -32,14 +33,14 @@ pull request), driven by `--plugin` and `--mode`; marker file `.<plugin>-source`
 changes"); the first copy is produced by running the script; the marketplace lists `agent-skills`.
 
 **Acceptance criteria:**
-- [ ] `plugins/agent-skills/` matches upstream at the commit in `.agent-skills-source`
-- [ ] `.claude-plugin/marketplace.json` lists six plugins, `agent-skills` with his description and MIT
-- [ ] The workflow never pushes to `main`; permissions `contents: write`, `pull-requests: write`
-- [ ] `CLAUDE.md` and the root `README.md` describe the copy (never edited, refreshed by PR)
+- [x] `plugins/agent-skills/` matches upstream at the commit in `.agent-skills-source`
+- [x] `.claude-plugin/marketplace.json` lists six plugins, `agent-skills` with his description and MIT
+- [x] The workflow never pushes to `main`; permissions `contents: write`, `pull-requests: write`
+- [x] `CLAUDE.md` and the root `README.md` describe the copy (never edited, refreshed by PR)
 
 **Verification:**
-- [ ] Tests pass: `node --test .github/scripts/sync-kioku.test.mjs`
-- [ ] Marketplace JSON parses: `node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/marketplace.json','utf8'))"`
+- [x] Tests pass: `node --test .github/scripts/sync-plugin.test.mjs`
+- [x] Marketplace JSON parses: `node -e "JSON.parse(require('fs').readFileSync('.claude-plugin/marketplace.json','utf8'))"`
 - [ ] Manual check: after merge, one `workflow_dispatch` run opens a PR (linked in the release notes)
 
 **Dependencies:** Task 1

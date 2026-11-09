@@ -4,8 +4,8 @@ Spec: `docs/SPEC.md`. Tasks: `tasks/todo.md`. Format: agent-skills' `planning-an
 
 ## Design decisions
 
-1. **One sync script, two parameters.** `sync-kioku.mjs` gains `--plugin <name>` (default `kioku`) and
-   `--mode push|pr`. No generic framework: two uses do not justify an abstraction (his rule), and the
+1. **One sync script, two parameters.** `sync-kioku.mjs` becomes `sync-plugin.mjs` and gains `--plugin <name>`
+   (default `kioku`); push or pull request is the workflow's choice, so the script needs no mode. No generic framework: two uses do not justify an abstraction (his rule), and the
    safety checks (staged swap, escaping symbolic links, `plugin.json` name) stay in one place.
 2. **agent-skills arrives by pull request, kioku by push.** kioku is the maintainer's own code;
    agent-skills is third-party code whose hooks run on users' machines. The PR body lists changed
@@ -45,7 +45,7 @@ See `docs/SPEC.md` § Open Questions.
 
 ## Task list
 
-1. Sync script takes a plugin name and a mode
+1. Sync script takes a plugin name
 2. Workflow, first copy, marketplace entry
 3. Parser for his files
 4. `kaizen tasks` and an agent-skills-aware `status`

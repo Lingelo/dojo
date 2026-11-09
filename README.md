@@ -1,6 +1,6 @@
 # Dojo
 
-A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen), motion design as code (Motion Studio), presentation decks as HTML (Slide Studio) and a guarded knowledge vault (Kioku).
+A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen, converging on Addy Osmani's Agent Skills, also shipped here), motion design as code (Motion Studio), presentation decks as HTML (Slide Studio) and a guarded knowledge vault (Kioku).
 
 ## Available plugins
 
@@ -8,6 +8,7 @@ A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen), motion
 |---|---|---|
 | [**kaizen**](plugins/kaizen/README.md) | AI-assisted SDLC (adapted from Compound Engineering): engineering constitution enforced as checks, brainstorm → plan (traceability, threats, rollback, PR-sized slices) → doc-review → work (quality gate) → multi-agent review → ship → watch-pr, UI polish, learnings and ADRs read back every cycle, DORA metrics and the cost of each feature or fix, release; review enforced by a hook before any push, prototype/product/critical profiles, a four-command start (`setup` → `plan` → `work` → `ship`), `/kaizen:help` to find your way | 20 skills, 22 agents, hooks (incl. secret scan before commit), CLI, Playwright MCP |
 | [**kaizen-ops**](plugins/kaizen-ops/README.md) | Kaizen's production commands, for teams that deploy with Kaizen: watched deployment with typed approval and rollback (`/kaizen-ops:deploy`), production signals and incidents (`/kaizen-ops:monitor`), blameless postmortems (`/kaizen-ops:postmortem`). Requires Kaizen ≥ 4.0.0; its CLI and gates stay in Kaizen | 3 skills, CLI resolver |
+| [**agent-skills**](plugins/agent-skills/README.md) | [Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills) (MIT), copied unmodified: engineering workflows for AI coding agents from spec to ship (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`…), with rationalization tables and verification gates in every skill. The base Kaizen converges on (see [docs/SPEC.md](docs/SPEC.md)); proposed here by pull request at each upstream change, never edited in this repository | Skills, commands, reviewer personas |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design as code: HTML/CSS/SVG/Canvas → MP4/WebM/GIF frame by frame, synced sound, voice-over and subtitles (Playwright + ffmpeg) | Skill, scripts |
 | [**kioku**](plugins/kioku/README.md) | A guarded knowledge vault on the LLM Wiki pattern: you drop raw sources, Claude maintains a structured wiki. Silos (work, personal…) sealed from each other by a hook, bronze → silver → gold medallion, a gate (deterministic checks + independent reviewer) before any page enters the wiki; `/kioku:setup` creates the vault in an empty folder, `npm run <silo>` opens a session. Developed in [its own repository](https://github.com/Lingelo/kioku), copied here hourly; the vault is your own private repository | Skills, reviewer agent, guard and gate hooks, CLI, local dashboard |
 | [**slide-studio**](plugins/slide-studio/README.md) | Presentation decks as one HTML file: 19 layouts, 3 themes (`ink`, `paper`, `kaizen`) + brand tokens, presenter mode (steps, notes, overview), every slide audited in headless Chromium (overflow, collisions, contrast, density), export to PDF/PNG/contact sheet | Skill, scripts |
@@ -45,6 +46,7 @@ Or interactively:
 /plugin install motion-studio@dojo
 /plugin install kaizen@dojo
 /plugin install kaizen-ops@dojo      # only if you deploy with Kaizen
+/plugin install agent-skills@dojo    # Addy Osmani's workflows, read by Kaizen's engine since 5.2
 /plugin install slide-studio@dojo
 /plugin install kioku@dojo           # user scope: kioku vaults enable it themselves
 ```
@@ -147,11 +149,13 @@ Documentation, threat model and limits: [Lingelo/kioku](https://github.com/Linge
 dojo/
 ├── .claude-plugin/
 │   └── marketplace.json      # Marketplace registry
-├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows; slide-studio.yml: same for Slide Studio; sync-kioku.yml: copies kioku hourly)
-├── docs/                     # This repo's own brainstorms, plans and learnings
+├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows; slide-studio.yml: same for Slide Studio; sync-kioku.yml: copies kioku hourly; sync-agent-skills.yml: proposes agent-skills updates as pull requests)
+├── docs/                     # This repo's own ideation, plans and learnings; docs/SPEC.md: the current work, in agent-skills' format
+├── tasks/                    # plan.md and todo.md of the current work, in agent-skills' format
 ├── plugins/
 │   ├── kaizen/               # AI-assisted SDLC: skills, agents, hooks, zero-dependency CLI
 │   ├── kaizen-ops/           # Kaizen's production commands (deploy, monitor, postmortem); CLI and gates stay in kaizen
+│   ├── agent-skills/         # Addy Osmani's agent-skills: a copy of addyosmani/agent-skills, proposed by pull request by .github/workflows/sync-agent-skills.yml
 │   ├── motion-studio/        # Motion design videos from HTML (Playwright + ffmpeg)
 │   ├── kioku/                # Guarded knowledge vault: a copy of Lingelo/kioku, synced by .github/workflows/sync-kioku.yml
 │   └── slide-studio/         # Presentation decks as one HTML file, audited and exported (Playwright)
