@@ -14,7 +14,7 @@ on:
     types: [kioku-updated]
   pull_request:
     paths:
-      - '.github/scripts/sync-kioku*.mjs'
+      - '.github/scripts/sync-plugin*.mjs'
       - '.github/workflows/sync-kioku.yml'
 
 # One run at a time: two overlapping runs would race on the same push.
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test .github/scripts/sync-kioku.test.mjs
+      - run: node --test .github/scripts/sync-plugin.test.mjs
 
   sync:
     needs: test
@@ -49,7 +49,7 @@ jobs:
         with:
           node-version: '22'
       - name: Copy kioku main into plugins/kioku
-        run: node .github/scripts/sync-kioku.mjs --source Lingelo/kioku --ref main
+        run: node .github/scripts/sync-plugin.mjs --plugin kioku --source Lingelo/kioku --ref main
       - name: Commit and push if the copy changed
         run: |
           git add -A plugins/kioku .claude-plugin/marketplace.json
