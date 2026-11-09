@@ -257,9 +257,75 @@ single maintainer.
 | 5.3 | idea 2 (report, then block), idea 3 | no |
 | 5.4 | scope drift (idea 4), doubt at decision time | no |
 | 5.5 | idea 5, living rationalizations | no |
-| 6.0 | idea 6, idea 7 (T1 guarantees, portable core), concept cuts | yes, with `upgrade` migration |
+| 6.0 | idea 6, idea 7 (T1 guarantees, portable core), concept cuts, full doc rewrite, new video | yes, with `upgrade` migration |
+
+Every release carries its own documentation: see the next section.
 
 `docs/positioning.md` gains an agent-skills column with the first release of this series.
+
+## Documentation and video
+
+Requested by Angélo LIMA on 2026-11-09: "faudra tout documenter, et même changer la vidéo". The
+documentation is **part of each release, not a follow-up**: a release of this series ships only when
+its documentation is updated, held by the contract tests that already exist (the README lists every CLI command and hook,
+`docs/README.md` lists every guide, every relative link resolves, `tests/diagrams.test.mjs` holds
+each counted claim).
+
+### Per release
+
+| Release | Docs to write or change | Diagrams (`docs/media/source/diagrams.mjs`, then regenerate) |
+|---|---|---|
+| 5.2 | new concept page `concepts/intent.md` (anatomy, rationalizations, red flags, evidence, conduct rules); the 5 rewritten skill guides; a "writing a skill" section in `concepts/agents-and-models.md` | none |
+| 5.3 | `concepts/gates-and-hooks.md` (silenced-check guard, evidence ledger), `reference/cli.md` (`guard silenced`), `reference/state-and-files.md` (`evidence/<branch>.jsonl`), `configuration.md` (`guard.*`), `troubleshooting.md` (a false positive, how to lift it) | `quality-gate.svg`, `push-gate.svg`, `hooks.svg`; new `evidence-ledger.svg` |
+| 5.4 | `concepts/review.md` (scope drift finding, doubt at decision time), `concepts/pull-requests.md` ("Outside the plan", assumptions), `concepts/metrics.md` (scope-drift rate), `concepts/agents-and-models.md` (`doubt` role) | `review-pipeline.svg` |
+| 5.5 | `concepts/learnings.md` (rationalization learnings, `harvest`), `reference/cli.md` (`context`), the trimmed `conventions.md` described in `concepts/the-loop.md` | `learnings-loop.svg`; new `living-rationalizations.svg` |
+| 6.0 | **full rewrite**: README "Start here" (7 commands), `getting-started.md`, 7 lifecycle guides replacing the 20 per-skill guides (old pages kept as one-line redirects for one major), `docs/README.md` index, `positioning.md`, CHANGELOG with Breaking section, migration guide for `kaizen upgrade` (`lifecycle-commands`), each guarantee labeled T0/T1/T2 in `gates-and-hooks.md`; root `README.md` and `CLAUDE.md` of this repository | `kaizen-loop.svg`, `help-routing.svg`, `autopilot.svg`, `artifacts-map.svg`; new `guarantee-levels.svg` |
+
+A contract test to add in 5.2, so nothing is forgotten later: each Breaking or new CLI command in the
+CHANGELOG names the doc page that explains it (same idea as `tests/upgrade.test.mjs` for migrations).
+
+### The presentation video
+
+Today: `media/kaizen/kaizen-presentation.mp4` (80 s, origami crane climbing Mount Fuji, one switchback
+per step), source `media/kaizen/source/kaizen-presentation.html` + `timeline.js` + `narration.json`,
+rendered by the `motion-studio` plugin with local voice-over (Kokoro), SRT/VTT subtitles and the poster
+`kaizen-presentation.jpg`. Linked from the root README, Kaizen's README, `docs/README.md`,
+`getting-started.md` and motion-studio's README.
+
+**When:** one re-render at **6.0**, when the story changes (lifecycle commands, intent + guarantee, maybe
+"beyond Claude Code"). The 5.x releases do not change what the video says; re-rendering for each would
+cost time without changing the message.
+
+**What changes in the story:** today's narration describes the gates (constitution → plan → gate →
+review → PR → merge → learnings). The new one tells the double discipline: the agent *wants* to do the
+right thing (rationalizations, doubt), *cannot* do the wrong one (gates, muted tests caught, evidence),
+and *learns* (even its own excuses). Keep the metaphor: Fuji, one switchback per lifecycle phase, the
+summit is `learn`, and the crane starts again from a higher base camp.
+
+Draft `narration.json` (same length, about 80 s, English like the rest of the repo):
+
+| id | Line |
+|---|---|
+| `hook` | AI writes code faster than ever. |
+| `amp` | According to DORA, it speeds up delivery, but also increases instability. |
+| `kaizen` | Kaizen gives Claude Code the habits of a senior engineer, and the guarantees to keep them. |
+| `define` | Define: your principles become a constitution, each with a check. |
+| `plan` | Plan: requirements, tests and rollback, traced and reviewed before any code. |
+| `build` | Build: one tested unit at a time. A muted test never counts as a green one. |
+| `doubt` | For every shortcut, a written rebuttal. For every risky decision, a second opinion. |
+| `review` | Review: specialized agents inspect the change. Without their review, nothing is pushed. |
+| `ship` | Ship: the pull request only claims what was really run. |
+| `merge` | Merging and going to production stay in your hands. |
+| `learn` | Learn: lessons, and even the agent's excuses, are read back by the next cycle. |
+| `end` | Every unit of work makes the next one easier. Kaizen. |
+
+Scenes to add in `timeline.js`: a struck-through `it.skip` turning the gate red (build), a ledger
+stamping each run with a hanko (ship), an excuse card burned by its rebuttal (doubt). The closing "For Claude Code." depends on the decision
+on idea 7 (`For Claude Code, and beyond.` only if T0/T1 ship in 6.0).
+
+Deliverables of the re-render: MP4, poster JPG, SRT and VTT regenerated from `narration.json` (never
+hand-edited), the README alt text and duration updated, and a check by `rendering-reviewer` on
+before/after captures, as for any rendering change.
 
 ## Sources
 
