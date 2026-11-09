@@ -11,9 +11,92 @@ Deep revision of Kaizen in the light of Addy Osmani's
 [agent-skills](https://github.com/addyosmani/agent-skills). Requested by Angélo LIMA in session on
 2026-11-09 ("on peut même revoir en profondeur", then "en vrai on peut aller en profondeur"), with
 two later requirements: document everything and remake the video, and **using Kaizen on other
-tools is critical** (idea 7, which frames the whole series).
+tools is critical** (idea 7), and **more Osmani than Compound or Spec Kit, because his approach is
+lighter** (next section, which frames everything).
 Generated inline in one session, not through `/kaizen:ideate`'s parallel agents, and the bases quoted
 from the repo were checked by hand, not by a cold verifier.
+
+## Direction: Osmani first, lighter than Compound and Spec Kit
+
+Decided by Angélo LIMA on 2026-11-09: "plus de lui que de Compound et Spec Kit, je trouve l'approche
+moins lourde". This section **frames every idea below**; where an idea disagrees with it, this section
+wins.
+
+### What "heavy" means, measured on 5.1.0
+
+What the user pays for, independently of what the code guarantees:
+
+| Weight | Kaizen 5.1.0 | Where it comes from |
+|---|---|---|
+| Commands to know | 20 (+3 in kaizen-ops) | Compound's loop + Kaizen's additions |
+| Agents launched by the loop | 22 (5 research, 6 plan reviewers, 11 code reviewers), 1,025 lines | Compound's personas |
+| Plan format | `kaizen-plan/v1`: 10 marked sections, R/AE/KTD/U IDs, contract of 196 lines, example of 151 | Compound's plan + Spec Kit's traceability |
+| Governance | constitution with articles, checks, NON-NEGOTIABLE, draft status, approvers, amendments | Spec Kit |
+| Shared rules read by each skill | `conventions.md`, 267 lines, read by 18 of 20 skills | Kaizen |
+| Configuration | about 50 documented keys | Kaizen |
+| Documentation | 4,692 lines | all of the above |
+| Concepts | profiles, risk raise, approvals `ask`/`code`, waivers, push offers, cost estimate, ledger, dashboard, friction, models per role, packs, upgrade migrations | Kaizen |
+
+agent-skills is lighter in exactly these places: 9 commands, 4 personas, a spec and a task list in
+plain Markdown, a `CONSTRAINTS.md` instead of a constitution, short skills that say when **not** to
+use them. What it lacks is what Kaizen does well **without asking the user anything**: gates in code,
+evidence, memory across cycles, production, several hosts.
+
+### The rule
+
+**Osmani's shape for everything the user sees; Kaizen's engine only where it is invisible when
+you comply.** A gate that never speaks to someone who does the right thing costs nothing; a question,
+a document section, an ID to maintain, an agent to wait for or a concept to learn costs every time.
+Each surviving idea below passes this test, or it is cut or moved to an option.
+
+Targets for 6.0 (to confirm):
+
+| Weight | 5.1.0 | 6.0 target |
+|---|---|---|
+| Commands | 20 | 9, Osmani's lifecycle |
+| Agents in a default cycle | up to 22 | 1 reviewer + specialists only on a detected risk surface; about 7 agent files in total |
+| Plan | 10 sections, 4 ID kinds | spec + tasks, 1 ID kind (tasks), optional risk/rollout section |
+| Governance | constitution + amendments + approvers | `CONSTRAINTS.md` (floor, numbers with their command, ratchets, dated exceptions) |
+| Shared rules loaded | 267 lines | ≤ 60 lines |
+| Config keys | ~50 | ≤ 15 documented by default, the rest advanced |
+| Docs | 4,692 lines | half, one guide per command |
+
+### What stays, what changes, what goes
+
+| Kaizen 5.1.0 | 6.0 | Why |
+|---|---|---|
+| `ideate`, `brainstorm` | `/kaizen:spec` (Osmani's interview → idea refine → spec; one agent, no 5-agent fan-out) | lighter; idea 20 |
+| `constitution` | `/kaizen:constraints` (Osmani's `CONSTRAINTS.md`) — `CONSTITUTION.md` still read | Spec Kit's governance is the heaviest part; ideas 8 and 11 fit the lighter format |
+| `plan`, `doc-review`, `decide` | `/kaizen:plan` (tasks with acceptance criteria, slices, an ADR when a decision deserves one); plan review = **one** doubt cycle (idea 9) instead of 6 reviewers | 6 plan reviewers → 1 fresh-context check |
+| `work`, `autopilot`, `polish` | `/kaizen:build` (`auto` = Osmani's `/build auto`; `polish` as a mode) | |
+| `debug` | `/kaizen:debug` (Prove-It, idea 15) | stays separate, as in Osmani |
+| — | `/kaizen:test` | Osmani's command; runs the evidence part alone |
+| `review`, `address-feedback` | `/kaizen:review` (five axes, one reviewer, specialists by risk; `feedback` mode) | 11 reviewers by default → 1 + triggered ones |
+| — | `/kaizen:simplify` | Osmani's `code-simplify`; Kaizen's `work` already simplifies, made visible |
+| `ship`, `watch-pr`, `release` | `/kaizen:ship` (`watch`, `release` modes) | |
+| `learn`, `prune-learnings`, `metrics` | `/kaizen:learn` (`prune`, `metrics` modes) | the compound loop is Kaizen's best idea from Every: kept, schema lighter |
+| `help`, `setup` | `/kaizen` router (Osmani's `using-agent-skills` + setup) | |
+| kaizen-ops | unchanged surface, Osmani's launch ladder (idea 18) | already optional |
+| 22 agents | `reviewer` (five axes), `security`, `test-engineer`, `performance`, `rendering`, `data-migration`, `docs-researcher` | specialists launched by `risk.mjs`, not by default |
+| Quality gate, secret gate, push gate, silenced checks, evidence ledger | **kept**, invisible when green | the engine |
+| Profiles `prototype/product/critical` | replaced by each skill's "when to skip" and the risk triggers | one concept less; the gates never depended on them |
+| Approvals `ask`/`code`, waivers, push offers | one mechanism: an approval code (works on every host, idea 7) | two modes → one |
+| Cost estimate, `confirm_above_cost`, cost dashboard, per-item ledger | optional module, off by default | useful to the maintainer, weight for everyone else |
+| Packs | kept, optional | |
+| `upgrade` migrations | kept, they are what make this change bearable | |
+
+Attribution changes with the weight: the README's "Strongly inspired by" puts agent-skills (MIT) first,
+Compound Engineering for the learning loop and Spec Kit for the constraints idea after it; any text
+reused from agent-skills keeps its MIT notice in `LICENSE`.
+
+### Open questions before the plan
+
+- [NEEDS CLARIFICATION: drop the constitution's approvers and amendment history, or keep them as an
+  option for teams that use them? — default: keep reading them, stop writing them]
+- [NEEDS CLARIFICATION: keep R/AE/KTD IDs in plans, or only task IDs? — default: task IDs only; the
+  checks that need traceability (scope, evidence) work on tasks]
+- [NEEDS CLARIFICATION: is the cost module (estimate, dashboard, ledger) used outside this repo? —
+  default: move it to an option, off]
 
 ## Anchoring
 
@@ -167,7 +250,11 @@ Assumptions made during `work` go to the PR description.
 **Why it matters:** every cycle pays for those 267 lines today, and so does every session for the
 9,711 description characters. This was the reason for the kaizen-ops split (4.0) — finish that work.
 
-### 6. Seven lifecycle commands and a router (6.0, breaking)
+### 6. Lifecycle commands and a router (6.0, breaking)
+
+> **Superseded in its details** by the Direction section: 9 commands on Osmani's lifecycle (`spec`,
+> `constraints`, `plan`, `build`, `test`, `debug`, `review`, `simplify`, `ship`, `learn`) plus the `/kaizen`
+> router. The table below is the first draft, kept for the record.
 
 *Axis: surface and context · basis: external + reasoned · effort L · risk high*
 
@@ -609,7 +696,7 @@ each counted claim).
 | 5.3 | new guide `docs/hosts.md` (one section per host: install, levels enforced, known gaps) and `concepts/guarantee-levels.md`; `concepts/gates-and-hooks.md` (silenced-check guard, evidence ledger, hook contract and adapters), `reference/cli.md` (`guard silenced`), `reference/state-and-files.md` (`evidence/<branch>.jsonl`), `configuration.md` (`guard.*`), `troubleshooting.md` (a false positive, how to lift it) | `quality-gate.svg`, `push-gate.svg`, `hooks.svg`; new `evidence-ledger.svg` |
 | 5.4 | `concepts/review.md` (scope drift finding, doubt at decision time), `concepts/pull-requests.md` ("Outside the plan", assumptions), `concepts/metrics.md` (scope-drift rate), `concepts/agents-and-models.md` (`doubt` role) | `review-pipeline.svg` |
 | 5.5 | `concepts/learnings.md` (rationalization learnings, `harvest`), `reference/cli.md` (`context`), the trimmed `conventions.md` described in `concepts/the-loop.md` | `learnings-loop.svg`; new `living-rationalizations.svg` |
-| 6.0 | **full rewrite**: README "Start here" (7 commands), `getting-started.md`, 7 lifecycle guides replacing the 20 per-skill guides (old pages kept as one-line redirects for one major), `docs/README.md` index, `positioning.md`, CHANGELOG with Breaking section, migration guide for `kaizen upgrade` (`lifecycle-commands`), each guarantee labeled T0/T1/T2 in `gates-and-hooks.md`; root `README.md` and `CLAUDE.md` of this repository | `kaizen-loop.svg`, `help-routing.svg`, `autopilot.svg`, `artifacts-map.svg`; new `guarantee-levels.svg` |
+| 6.0 | **full rewrite**: README "Start here" (7 commands), `getting-started.md`, one guide per 6.0 command replacing the 20 per-skill guides (old pages kept as one-line redirects for one major), `docs/README.md` index, `positioning.md`, CHANGELOG with Breaking section, migration guide for `kaizen upgrade` (`lifecycle-commands`), each guarantee labeled T0/T1/T2 in `gates-and-hooks.md`; root `README.md` and `CLAUDE.md` of this repository | `kaizen-loop.svg`, `help-routing.svg`, `autopilot.svg`, `artifacts-map.svg`; new `guarantee-levels.svg` |
 
 Second-pass ideas add, in the release that ships them: `concepts/doubt.md` (protocol and
 classification, idea 9), `evals/README` section and `CONTRIBUTING` rule on routing evals (idea 10),
@@ -647,14 +734,14 @@ right thing (rationalizations, doubt), *cannot* do the wrong one (gates, muted t
 and *learns* (even its own excuses). Keep the metaphor: Fuji, one switchback per lifecycle phase, the
 summit is `learn`, and the crane starts again from a higher base camp.
 
-Draft `narration.json` (about 85 s, English like the rest of the repo):
+Draft `narration.json` (about 85 s, to cut further: lighter is the point, English like the rest of the repo):
 
 | id | Line |
 |---|---|
 | `hook` | AI writes code faster than ever. |
 | `amp` | According to DORA, it speeds up delivery, but also increases instability. |
 | `kaizen` | Kaizen gives your coding agent the habits of a senior engineer, and the guarantees to keep them. |
-| `define` | Define: your principles become a constitution, each with a check. |
+| `spec` | Spec: Kaizen interviews you until the goal is clear, and your constraints get a command that checks them. |
 | `plan` | Plan: requirements, tests and rollback, traced and reviewed before any code. |
 | `build` | Build: one tested unit at a time. A muted test never counts as a green one. |
 | `doubt` | For every shortcut, a written rebuttal. For every risky decision, a second opinion. |
