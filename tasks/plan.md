@@ -19,8 +19,11 @@ Spec: `docs/SPEC.md`. Tasks: `tasks/todo.md`. Format: agent-skills' `planning-an
    convergence removes.
 5. **Inert by default.** Without his files or his plugin, every Kaizen output is unchanged (tests
    snapshot today's `status`).
-6. **Dogfooding.** This work is planned in his format; once task 3 lands, `kaizen status` reads this
-   very `tasks/todo.md`.
+6. **Dogfooding.** This work is planned in his format; once task 3 lands, the parser reads this very
+   `tasks/todo.md` (checked by its tests and by `doctor`).
+7. **No new CLI command.** Decided 2026-11-09: Osmani needs no `kaizen tasks`; the parser exists for
+   the gates (5.3) and `doctor`, nothing else. Where he already ships a guard — the floor guard of
+   `constraint-driven-development` — Kaizen checks it is installed instead of writing its own.
 
 ## Risks
 
@@ -48,13 +51,12 @@ See `docs/SPEC.md` § Open Questions.
 1. Sync script takes a plugin name
 2. Workflow, first copy, marketplace entry
 3. Parser for his files
-4. `kaizen tasks` and an agent-skills-aware `status`
-5. `doctor` check `agent_skills`
-6. His reviewers recognized, his review recorded by itself
-7. Claude Code spike and host fixtures
-8. Guide, hosts page, release 5.2.0
+4. `doctor` check `agent_skills`
+5. His reviewers recognized, his review recorded by itself
+6. Claude Code spike and host fixtures
+7. Guide, hosts page, release 5.2.0
 
-Checkpoints after tasks 2, 5 and 8 (see `tasks/todo.md`).
+Checkpoints after tasks 2, 4 and 7 (see `tasks/todo.md`).
 
 ## Next releases (from the ideation, accelerated on 2026-11-09)
 
@@ -71,6 +73,19 @@ Checkpoints after tasks 2, 5 and 8 (see `tasks/todo.md`).
   file is edited, the learnings whose new optional `files:` globs match it are added too; the
   generated `AGENTS.md` section points other hosts to `docs/learnings/`. `/kaizen:learn` keeps writing
   them (schema lightened) and harvests repeated refusals into rationalization learnings.
+- **Kaizen's own scripts, triaged** (decided 2026-11-09: measurement kept, production removed, PR
+  follow-up kept). From ~7,500 lines of CLI to about half:
+
+  | Group | Scripts | Decision |
+  |---|---|---|
+  | Engine | `quality-gate`, `run-bounded`, `secret-gate`, `secrets`, `review-gate`, `review-state`, `review-hooks`, `githooks` | kept |
+  | Measurement | `metrics`, `dashboard`, `ledger`, `ledger-hook`, `cycle-agents` | kept; DORA reads merges and release tags instead of deploy tags |
+  | PR follow-up | `pr` (watch-pr, address-feedback) | kept, trimmed for `/kaizen:watch` |
+  | Replaced by agent-skills | `plancheck`, `planamend`, `constitution`, `risk`, `perf`, `devserver`, `estimate`, `models`, `approvals`, `audit` | deprecated in 5.3, removed in 6.0 (his plan format, `CONSTRAINTS.md`, floor guard, `/webperf`, constraints intake) |
+  | Production | `deploy`, `monitor`, `deploydetect`, the deploy part of `review-gate` and `release`, the whole `kaizen-ops` plugin | deprecated in 5.3, removed in 6.0 |
+  | Base | `lib`, `kaizen.mjs`, `doctor`, `upgrade`, `release` (notes, SemVer) | trimmed to what the rest uses |
+
 - **5.4–5.5** — handoff, boundaries enforcement, `CONSTITUTION.md` → `CONSTRAINTS.md` in `kaizen
-  upgrade`, kaizen-ops launch ladder.
-- **6.0** — deprecated skills and 20 agents removed, docs rewrite, new video.
+  upgrade`.
+- **6.0** — deprecated skills, 20 agents, deprecated scripts and `kaizen-ops` removed; docs rewrite;
+  new video.

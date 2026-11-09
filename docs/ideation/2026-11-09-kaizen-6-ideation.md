@@ -148,9 +148,9 @@ engine only needs to **read his artifacts** and **watch his personas run**:
 | **Engine** (hooks + zero-dependency CLI) | quality gate, secret gate, silenced checks, push gate, evidence ledger, scope, hygiene, protected bar, approval codes; host adapters (idea 7) | agent-skills asks; Kaizen holds |
 | `/kaizen:learn` | learnings written and read back, living rationalizations (harvested from refusals), prune | his self-improving-agents idea has memory in `AGENTS.md` only; Compound's loop is the best of Every, kept light |
 | `/kaizen:watch` | PR followed until ready: CI, review comments (feedback handled with the doubt classification), conflicts | his `/ship` is a launch checklist, not PR babysitting |
-| `/kaizen:metrics` | DORA from real deploy tags, scope-drift and friction rates | not in agent-skills |
+| `/kaizen:metrics` | kept with its cost module (decided 2026-11-09): DORA from merges and release tags (no more deploy tags), cost per feature, scope-drift and friction rates | not in agent-skills |
 | `/kaizen` | the router of Kaizen-only commands and `setup` / `doctor` / `install --host` | his `using-agent-skills` routes his skills; this one routes the engine |
-| kaizen-ops | deploy, monitor, postmortem — aligned on his `shipping-and-launch` ladder (idea 18) | his skill describes; kaizen-ops runs and records |
+| ~~kaizen-ops~~ | **removed** (decided 2026-11-09: "la production on vire"): deprecated in 5.3, gone in 6.0; his `shipping-and-launch` covers launch as guidance | — |
 | Extra personas | `rendering-reviewer`, `data-migration-reviewer` (launched on risk surfaces only) | no equivalent in his 4 personas |
 
 ### What Kaizen removes in 6.0, replaced by agent-skills
@@ -179,7 +179,7 @@ Resulting surface for a user: agent-skills' 9 commands (`/spec`, `/plan`, `/buil
 | Idea | Status under convergence |
 |---|---|
 | 1 Process anatomy | **done by adopting agent-skills**; applies only to the 4 Kaizen-only skills |
-| 2 Silenced checks | **kept** — his `CONSTRAINTS.md` floor, enforced by the engine |
+| 2 Silenced checks | **his floor guard**, installed in the repository; Kaizen only checks it is wired |
 | 3 Evidence ledger | **kept** — reads his tasks' Verification |
 | 4 Scope drift | **kept** — reads "Files likely touched" |
 | 5 Context budget | **kept** for the engine note and Kaizen-only skills; his skills already disclose progressively |
@@ -195,7 +195,7 @@ Resulting surface for a user: agent-skills' 9 commands (`/spec`, `/plan`, `/buil
 | 15 Prove-It, checked | **kept** — the engine side of his TDD skill |
 | 16 Handoff | **kept** — engine, works across hosts |
 | 17 Trust levels | **done by adopting** (his `context-engineering`) + the engine wrapping PR comments in `/kaizen:watch` |
-| 18 Rollout ladder | **kept** in kaizen-ops, aligned on his `shipping-and-launch` |
+| 18 Rollout ladder | **dropped** with production (2026-11-09) |
 | 19 Hygiene | **kept** — the engine side of his review and simplification rules |
 | 20 Interview | **done by adopting** `interview-me` |
 
@@ -293,6 +293,10 @@ to the skill contract test, warning only, so the 15 other skills can follow.
 **Drawbacks:** about 40 lines more per skill — offset by idea 5.
 
 ### 2. Silenced-check guard: a green gate must not be a muted one
+
+> **Superseded on 2026-11-09**: agent-skills already ships this guard (the floor guard of
+> `constraint-driven-development`, installed in the user's repository). Kaizen checks it is wired
+> (`doctor`) instead of writing its own.
 
 *Axis: guarantees · basis: direct + external · effort M · risk medium (false positives)*
 
@@ -785,8 +789,17 @@ accounts available), and the overlapping Kaizen skills are deprecated in 5.3 ins
 | 5.2 | `agent-skills` added to this marketplace as a synced copy refreshed by pull request; the engine **reads** `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `CONSTRAINTS.md` (`kaizen tasks`, `status`, `doctor`); reviews by his `code-reviewer` record themselves; spike measured on Claude Code, Codex and Copilot payloads built from their official docs. Planned in `docs/SPEC.md` + `tasks/` | no |
 | 5.3 | **overlapping Kaizen skills deprecated**, each answering with its agent-skills replacement; Kaizen-only skills (`learn`, `metrics`, `watch-pr`, `help`/`setup`) rewritten in his anatomy and validated by his scripts and routing evals; engine guards on his files: silenced checks from the `CONSTRAINTS.md` floor (idea 2), evidence ledger + Prove-It (ideas 3, 15), scope from "Files likely touched" (idea 4), `verify --prove` (idea 8), hygiene (idea 19); normalized hook contract and adapters Claude + Codex + Copilot from the 5.2 fixtures | no (deprecations) |
 | 5.4 | engine note at session start; handoff (idea 16); `SPEC.md` boundaries enforced (idea 11); attention map (idea 13); adapters Cursor + Gemini; first upstream PRs | no |
-| 5.5 | `kaizen upgrade` proposes `CONSTRAINTS.md` from `CONSTITUTION.md`; kaizen-ops 1.1 on the launch ladder (idea 18) | no |
-| 6.0 | deprecated skills and 20 agents removed; legacy formats read-only; optional cost module; packaging per host; full doc rewrite; new video | yes, with `upgrade` migrations |
+| 5.5 | `kaizen upgrade` proposes `CONSTRAINTS.md` from `CONSTITUTION.md` | no |
+| 6.0 | deprecated skills, 20 agents, deprecated scripts and kaizen-ops removed; legacy formats read-only; packaging per host; full doc rewrite; new video | yes, with `upgrade` migrations |
+
+### Decisions of 2026-11-09 on Kaizen's own scripts
+
+"On a besoin de tous ces scripts CLI ? Osmani a pas tout ça." Osmani puts guarantees **in the user's
+repository** (`CONSTRAINTS.md`, standard tools, his floor guard wired in pre-commit and CI) and ships
+almost no runtime CLI; Kaizen ships 7,504 lines of CLI with its own state. Decided: no new command
+(`kaizen tasks` dropped from 5.2), his floor guard replaces idea 2's own guard, **measurement kept**,
+**production removed** (kaizen-ops, `deploy`, `monitor`, `deploydetect`: deprecated in 5.3, removed in
+6.0), **PR follow-up kept**. Script triage: `tasks/plan.md`, "Next releases".
 
 ## Documentation and video
 

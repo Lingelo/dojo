@@ -86,34 +86,7 @@ error.
 
 **Estimated scope:** Medium
 
-## Task 4: `kaizen tasks` and an agent-skills-aware `status`
-
-**Description:** `kaizen tasks [--json]` lists his tasks; `kaizen status` adds an `agent_skills` block
-and, when unchecked tasks remain and no Kaizen plan is in progress, names `/agent-skills:build` (spec
-without tasks → `/agent-skills:plan`); `/kaizen:help` reads that block.
-
-**Acceptance criteria:**
-- [ ] Tasks 1–2 done of 5 → `2/5 done, next: Task 3 — <title>` and `/agent-skills:build`
-- [ ] Without his files, `status` output is unchanged
-- [ ] A Kaizen plan in progress keeps priority; his tasks are still shown
-- [ ] The README and `docs/reference/cli.md` list `tasks`
-
-**Verification:**
-- [ ] Tests pass: `node --test plugins/kaizen/tests/cli.test.mjs plugins/kaizen/tests/contracts.test.mjs`
-- [ ] Manual check: `node plugins/kaizen/scripts/kaizen.mjs tasks` on this repository
-
-**Dependencies:** Task 3
-
-**Files likely touched:**
-- `plugins/kaizen/scripts/kaizen.mjs`
-- `plugins/kaizen/tests/cli.test.mjs`
-- `plugins/kaizen/skills/help/SKILL.md`
-- `plugins/kaizen/README.md`
-- `plugins/kaizen/docs/reference/cli.md`
-
-**Estimated scope:** Medium
-
-## Task 5: `doctor` check `agent_skills`
+## Task 4: `doctor` check `agent_skills`
 
 **Description:** `doctor` reads `enabledPlugins` in `.claude/settings.json` for `agent-skills@dojo`
 (like the `ops_plugin` check), reports his files found, and adds an info line pointing to the guide
@@ -123,6 +96,7 @@ when both plugins are on. Never a warning when agent-skills is absent.
 - [ ] Both enabled → both reported, files listed, info line with the guide
 - [ ] His files present, plugin not enabled → info with the line to add
 - [ ] Nothing about agent-skills → check `ok`, no noise
+- [ ] `CONSTRAINTS.md` present → reports whether his floor guard (`constraint-driven-development/references/floor-guard.md`) is wired in a git hook or the CI, with the reference to install it if not
 
 **Verification:**
 - [ ] Tests pass: `node --test plugins/kaizen/tests/doctor.test.mjs`
@@ -135,13 +109,13 @@ when both plugins are on. Never a warning when agent-skills is absent.
 
 **Estimated scope:** Small
 
-## Checkpoint: After Tasks 3-5
+## Checkpoint: After Tasks 3-4
 
 - [ ] All tests pass on this machine
-- [ ] `kaizen status` and `kaizen tasks` read this repository's `tasks/todo.md` correctly
+- [ ] `kaizen doctor` reads this repository's `docs/SPEC.md` and `tasks/todo.md` correctly
 - [ ] Human review before continuing
 
-## Task 6: His reviewers recognized, his review recorded by itself
+## Task 5: His reviewers recognized, his review recorded by itself
 
 **Description:** `reviewerOf` returns `agent-skills:<persona>` for `code-reviewer`,
 `security-auditor`, `test-engineer`, `web-performance-auditor` (with or without the prefix);
@@ -168,7 +142,7 @@ when both plugins are on. Never a warning when agent-skills is absent.
 
 **Estimated scope:** Medium
 
-## Task 7: Claude Code spike and host fixtures
+## Task 6: Claude Code spike and host fixtures
 
 **Description:** in a scratch repository, run Kaizen + agent-skills with `claude -p` and a temporary
 hook saving every payload: a short session (spec → plan → one task → review → push). Record which
@@ -180,12 +154,12 @@ payload fixtures from their official hook docs, marked "documented, not measured
 - [ ] Measured Claude Code payloads committed under `plugins/kaizen/tests/fixtures/hosts/claude/`
 - [ ] Documented Codex and Copilot payloads under `fixtures/hosts/codex/` and `fixtures/hosts/copilot/`, each citing its doc URL
 - [ ] A smoke test parses every fixture (event name, tool name)
-- [ ] The persona naming found is reflected in Task 6's code and tests
+- [ ] The persona naming found is reflected in Task 5's code and tests
 
 **Verification:**
 - [ ] Tests pass: `node --test plugins/kaizen/tests/*.test.mjs`
 
-**Dependencies:** Tasks 2, 6
+**Dependencies:** Tasks 2, 5
 
 **Files likely touched:**
 - `plugins/kaizen/tests/fixtures/hosts/`
@@ -193,10 +167,11 @@ payload fixtures from their official hook docs, marked "documented, not measured
 
 **Estimated scope:** Medium
 
-## Task 8: Guide, hosts page, release 5.2.0
+## Task 7: Guide, hosts page, release 5.2.0
 
 **Description:** `docs/guides/agent-skills.md` (why, enabling both, which command to use while both
-exist, what the engine does with each of his files, what 5.3 changes); `docs/hosts.md` (Task 7's
+exist, what the engine does with each of his files, what 5.3 changes, and that
+production (`kaizen-ops`, `deploy`, `monitor`) is deprecated in 5.3 and removed in 6.0); `docs/hosts.md` (Task 6's
 findings, dated, measured vs documented); positioning gains an agent-skills column; CHANGELOG 5.2.0;
 version 5.2.0; `CLAUDE.md` updated.
 
@@ -208,7 +183,7 @@ version 5.2.0; `CLAUDE.md` updated.
 **Verification:**
 - [ ] Tests pass: `node --test plugins/kaizen/tests/*.test.mjs plugins/kaizen-ops/tests/*.test.mjs`
 
-**Dependencies:** Tasks 4, 5, 6, 7
+**Dependencies:** Tasks 4, 5, 6
 
 **Files likely touched:**
 - `plugins/kaizen/docs/guides/agent-skills.md`
@@ -222,7 +197,7 @@ version 5.2.0; `CLAUDE.md` updated.
 
 **Estimated scope:** Medium
 
-## Checkpoint: After Tasks 6-8
+## Checkpoint: After Tasks 5-7
 
 - [ ] All tests pass on macOS, Linux and Windows (CI)
 - [ ] The success criteria of `docs/SPEC.md` are met

@@ -29,8 +29,7 @@ node --test .github/scripts/sync-plugin.test.mjs          # sync script (kioku +
 node --test plugins/kaizen/tests/*.test.mjs              # Kaizen: unit, CLI, gates, contracts
 node --test plugins/kaizen-ops/tests/*.test.mjs          # kaizen-ops
 node .github/scripts/sync-plugin.mjs --plugin agent-skills --source addyosmani/agent-skills --ref main
-node plugins/kaizen/scripts/kaizen.mjs status            # what the engine sees
-node plugins/kaizen/scripts/kaizen.mjs tasks             # new in 5.2
+node plugins/kaizen/scripts/kaizen.mjs doctor           # what the engine sees of agent-skills
 node plugins/kaizen/scripts/kaizen.mjs doctor
 ```
 
@@ -43,7 +42,6 @@ plugins/agent-skills/                new: synced copy, never edited here
 plugins/kaizen/scripts/agentskills.mjs    new: reads his four files
 plugins/kaizen/scripts/review-state.mjs   his reviewers recognized, his review recorded
 plugins/kaizen/scripts/review-hooks.mjs   records it from the PostToolUse hook
-plugins/kaizen/scripts/kaizen.mjs    `tasks`, `status` aware of his files
 plugins/kaizen/scripts/doctor.mjs    `agent_skills` check
 plugins/kaizen/docs/guides/agent-skills.md, plugins/kaizen/docs/hosts.md   new docs
 docs/SPEC.md, tasks/plan.md, tasks/todo.md   this work, in his format
@@ -81,7 +79,8 @@ export function reviewerOf(toolInput = {}) {
   files are absent or his plugin is disabled; write everything in English.
 - **Ask first:** changing a Kaizen skill's behavior; touching kioku's sync behavior beyond adding
   parameters; adding a dependency; anything that changes the push gate for repos without agent-skills.
-- **Never:** edit files under `plugins/agent-skills/` or `plugins/kioku/`; push the agent-skills sync
+- **Never:** add a CLI command Osmani's workflow does not need (decided 2026-11-09: the engine shrinks,
+  it does not grow); edit files under `plugins/agent-skills/` or `plugins/kioku/`; push the agent-skills sync
   directly to `main`; remove or rewrite Kaizen skills in 5.2 (deprecation is 5.3).
 
 ## Success Criteria
@@ -90,10 +89,10 @@ export function reviewerOf(toolInput = {}) {
    at the recorded commit.
 2. A newer upstream commit arrives as a pull request whose body lists changed hooks and scripts under
    "Executable changes"; `main` is untouched until merge. kioku's sync is unchanged.
-3. With `tasks/todo.md` having tasks 1–2 done of 5, `kaizen status` shows `2/5 done, next: Task 3` and
-   names `/agent-skills:build`; `kaizen tasks [--json]` lists the tasks with files and verification.
-4. `kaizen doctor` reports whether `agent-skills@dojo` is enabled and which of his files exist, with
-   an info line when both plugins are on.
+3. Kaizen reads his four files (spec, plan, tasks with their files and verification, constraints)
+   without any new command: the parser feeds `doctor` now and the gates in 5.3.
+4. `kaizen doctor` reports whether `agent-skills@dojo` is enabled, which of his files exist, whether
+   his floor guard is wired when `CONSTRAINTS.md` exists, and an info line when both plugins are on.
 5. After `agent-skills:code-reviewer` reviews a 120-line branch with no Critical finding, `git push`
    is allowed without any Kaizen command; with a `Critical:` finding, pushing the same tree is refused
    until the code changes and a new review is clean.
