@@ -12,7 +12,8 @@ Deep revision of Kaizen in the light of Addy Osmani's
 2026-11-09 ("on peut même revoir en profondeur", then "en vrai on peut aller en profondeur"), with
 two later requirements: document everything and remake the video, and **using Kaizen on other
 tools is critical** (idea 7), and **more Osmani than Compound or Spec Kit, because his approach is
-lighter** (next section, which frames everything).
+lighter**, then **converge on Osmani as far as possible, adapting** (the Direction and
+Convergence sections, which frame everything).
 Generated inline in one session, not through `/kaizen:ideate`'s parallel agents, and the bases quoted
 from the repo were checked by hand, not by a cold verifier.
 
@@ -63,6 +64,9 @@ Targets for 6.0 (to confirm):
 
 ### What stays, what changes, what goes
 
+> **Superseded** by the Convergence section below: Kaizen no longer rewrites these commands in
+> Osmani's shape, it adopts his. Kept for the record.
+
 | Kaizen 5.1.0 | 6.0 | Why |
 |---|---|---|
 | `ideate`, `brainstorm` | `/kaizen:spec` (Osmani's interview → idea refine → spec; one agent, no 5-agent fan-out) | lighter; idea 20 |
@@ -97,6 +101,115 @@ reused from agent-skills keeps its MIT notice in `LICENSE`.
   checks that need traceability (scope, evidence) work on tasks]
 - [NEEDS CLARIFICATION: is the cost module (estimate, dashboard, ledger) used outside this repo? —
   default: move it to an option, off]
+
+## Convergence: agent-skills as the base, Kaizen as its engine
+
+Decided by Angélo LIMA on 2026-11-09: "on converge vers Osmani le plus possible, en adaptant". This
+section **supersedes** the command and agent tables of the Direction section and changes the status of
+several ideas (see "What happens to each idea" below).
+
+### The key decision: how to converge
+
+| Option | What it is | For | Against |
+|---|---|---|---|
+| **A. Fork and adapt** | copy agent-skills' text into Kaizen's skills, rewrite freely | full control over the text | diverges from day one; every upstream improvement re-merged by hand; one maintainer |
+| **B. Base + engine** *(recommended)* | agent-skills shipped **unmodified** as its own plugin of this marketplace, synced from upstream like `kioku`; Kaizen becomes the **engine** around it: gates, evidence, memory, PR lifecycle, production, ports of the hooks | maximum convergence; upstream improvements arrive by themselves; **his host adapters (Codex, Gemini, Copilot, OpenCode) come for free**, which is half of idea 7; Kaizen's code is what Kaizen does best | Kaizen cannot change his wording; dependence on one upstream's direction |
+| C. Recommend his plugin, no copy | users install `addyosmani/agent-skills` from his marketplace | zero work | this repo saw marketplace auto-update fail for an external source (kioku, 2026-11-03), so updates would not reach users |
+
+**Why B works without touching his text:** almost everything Kaizen enforces already goes through
+**hooks**, not through skill text — the agent does not have to cooperate for a gate to hold. The
+engine only needs to **read his artifacts** and **watch his personas run**:
+
+| His artifact or action | What Kaizen's engine does with it |
+|---|---|
+| `SPEC.md` / `docs/SPEC.md` (objective, commands, boundaries Always / Ask first / Never, success criteria) | `Never` rows with a path or command pattern enforced by the PreToolUse adapters and the git hooks (idea 11); success criteria tracked as evidence targets |
+| `tasks/plan.md`, `tasks/todo.md` (tasks with acceptance criteria, verification, **files likely touched**, checkpoints) | scope drift from "Files likely touched" (idea 4); each task's Verification commands recorded in the evidence ledger (idea 3), red before green for bug fixes (idea 15); checkpoints shown in `kaizen status` |
+| `CONSTRAINTS.md` (floor, numbers with their command, ratchets, dated exceptions) | the floor and the numbered checks run by the quality gate and the push gate; the silenced-check guard (idea 2) **is** his floor made deterministic; changes to the file in a feature branch need the user's approval (idea 8); expired exceptions reported by `doctor` |
+| His `code-reviewer`, `security-auditor`, `test-engineer`, `web-performance-auditor` personas | the Agent hook already logs reviewer launches: a review by his personas on the pushed tree **records itself**, so the push gate needs no extra command |
+| Git commits, pushes, PRs | unchanged gates: secrets, red checks, review before push, silenced checks, hygiene (idea 19) |
+
+**Adaptation without forking**, in this order of preference:
+1. **The engine** (hooks, CLI) — invisible, works whatever the text says.
+2. **A short engine note** injected at session start by Kaizen's SessionStart hook (≤ 30 lines,
+   per host through the adapters): what Kaizen adds around his skills (ledger, learnings to read,
+   where approvals come from). The context costs this once instead of in every skill.
+3. **Kaizen-only skills** for what agent-skills does not cover (below), written in **his anatomy**
+   (When to use / Process / Rationalizations / Red flags / Verification) and checked by his own
+   validation scripts and routing evals.
+4. **Upstream pull requests** for anything generic (for instance a deterministic silenced-check
+   script, Prove-It evidence, the trust levels) — convergence goes both ways.
+5. **A fork of one skill** only as a last resort, listed in a file of exceptions that a contract test
+   holds to fewer than three.
+
+### What Kaizen keeps, in Osmani's shape
+
+| Kaizen 6 | What it is | Why agent-skills does not cover it |
+|---|---|---|
+| **Engine** (hooks + zero-dependency CLI) | quality gate, secret gate, silenced checks, push gate, evidence ledger, scope, hygiene, protected bar, approval codes; host adapters (idea 7) | agent-skills asks; Kaizen holds |
+| `/kaizen:learn` | learnings written and read back, living rationalizations (harvested from refusals), prune | his self-improving-agents idea has memory in `AGENTS.md` only; Compound's loop is the best of Every, kept light |
+| `/kaizen:watch` | PR followed until ready: CI, review comments (feedback handled with the doubt classification), conflicts | his `/ship` is a launch checklist, not PR babysitting |
+| `/kaizen:metrics` | DORA from real deploy tags, scope-drift and friction rates | not in agent-skills |
+| `/kaizen` | the router of Kaizen-only commands and `setup` / `doctor` / `install --host` | his `using-agent-skills` routes his skills; this one routes the engine |
+| kaizen-ops | deploy, monitor, postmortem — aligned on his `shipping-and-launch` ladder (idea 18) | his skill describes; kaizen-ops runs and records |
+| Extra personas | `rendering-reviewer`, `data-migration-reviewer` (launched on risk surfaces only) | no equivalent in his 4 personas |
+
+### What Kaizen removes in 6.0, replaced by agent-skills
+
+| Kaizen 5.1.0 | Replaced by |
+|---|---|
+| `ideate`, `brainstorm` | `idea-refine`, `interview-me`, `/spec` (`spec-driven-development`) |
+| `constitution` | `/constraints` (`constraint-driven-development`); `kaizen upgrade` proposes a `CONSTRAINTS.md` from an existing `CONSTITUTION.md`, which stays readable |
+| `plan`, `doc-review`, `decide` | `/plan` (`planning-and-task-breakdown`), `doubt-driven-development`, `documentation-and-adrs`; `docs/plans/*-plan.md` in progress stay readable by the engine until finished |
+| `work`, `autopilot` | `/build` and `/build auto` (`incremental-implementation`, `test-driven-development`) |
+| `debug` | `debugging-and-error-recovery` |
+| `review`, `address-feedback` | `/review` (`code-review-and-quality`) + the engine recording it; feedback handled in `/kaizen:watch` |
+| `polish` | `frontend-ui-engineering`, `browser-testing-with-devtools` |
+| `ship`, `release` | `/ship` (`shipping-and-launch`, `git-workflow-and-versioning`); release notes and SemVer stay in the CLI |
+| `prune-learnings`, `metrics`, `help`, `setup`, `watch-pr` | modes of `/kaizen:learn`, `/kaizen:metrics`, `/kaizen`, `/kaizen:watch` |
+| 20 of 22 agents | his 4 personas; `docs-researcher` → `source-driven-development` |
+| profiles, the two approval modes, `kaizen-plan/v1` writing, constitution approvers and amendments | gone or read-only (legacy); approvals = one code mechanism |
+| cost estimate, dashboard, per-item ledger | optional module, off |
+
+Resulting surface for a user: agent-skills' 9 commands (`/spec`, `/plan`, `/build`, `/test`,
+`/constraints`, `/review`, `/webperf`, `/code-simplify`, `/ship`) + 4 Kaizen commands (`learn`,
+`watch`, `metrics`, `/kaizen`) — and gates that only speak when something is wrong.
+
+### What happens to each idea
+
+| Idea | Status under convergence |
+|---|---|
+| 1 Process anatomy | **done by adopting agent-skills**; applies only to the 4 Kaizen-only skills |
+| 2 Silenced checks | **kept** — his `CONSTRAINTS.md` floor, enforced by the engine |
+| 3 Evidence ledger | **kept** — reads his tasks' Verification |
+| 4 Scope drift | **kept** — reads "Files likely touched" |
+| 5 Context budget | **kept** for the engine note and Kaizen-only skills; his skills already disclose progressively |
+| 6 Lifecycle commands | **replaced** by his 9 commands |
+| 7 Portability | **kept, and halved**: his skills already have host adapters; Kaizen ports the engine (hook adapters) |
+| 8 Verify the verifier | **kept** — `verify --prove` on his `CONSTRAINTS.md` commands (he asks for exactly this check) |
+| 9 Doubt protocol | **done by adopting** `doubt-driven-development` |
+| 10 Routing evals | **done by adopting** his evals; Kaizen-only skills add their cases to his format |
+| 11 Boundaries | **kept as enforcement** of his `SPEC.md` boundaries |
+| 12 Fresh context per unit | **upstream PR** to `/build auto` first; engine side: handoff (idea 16) |
+| 13 Attention map | **kept** — in the PR description written by `/kaizen:watch` or a `/ship` engine step |
+| 14 Conduct block | **done by adopting** `using-agent-skills` |
+| 15 Prove-It, checked | **kept** — the engine side of his TDD skill |
+| 16 Handoff | **kept** — engine, works across hosts |
+| 17 Trust levels | **done by adopting** (his `context-engineering`) + the engine wrapping PR comments in `/kaizen:watch` |
+| 18 Rollout ladder | **kept** in kaizen-ops, aligned on his `shipping-and-launch` |
+| 19 Hygiene | **kept** — the engine side of his review and simplification rules |
+| 20 Interview | **done by adopting** `interview-me` |
+
+### Risks of converging
+
+- **Upstream changes break the engine** (an artifact renamed, a persona renamed): the sync pull request
+  runs Kaizen's tests against the new copy, like `sync-kioku.test.mjs`; the engine reads his
+  artifacts through one parser with fixtures from the pinned copy.
+- **Two vocabularies** for a while (his `tasks/`, Kaizen's `docs/plans/`): 6.0 writes only his; the
+  legacy formats are read until `kaizen upgrade` reports nothing left.
+- **His direction is not ours**: MIT, so a fork stays possible; the exceptions file (adaptation
+  rule 5) measures how far we are from that.
+- **Licence and credit**: his MIT notice kept in the copied plugin; Kaizen's README states it is an
+  engine for agent-skills.
 
 ## Anchoring
 
@@ -640,7 +753,7 @@ that yes. Done when Claude can predict the user's answers to its next three ques
 
 | Idea | Reason |
 |---|---|
-| Adopt agent-skills as a dependency and drop Kaizen's skills | replaces the topic; loses the plan contract, gates and learnings |
+| ~~Adopt agent-skills as a dependency and drop Kaizen's skills~~ | rejected in the first pass, **reversed on 2026-11-09** by the convergence decision: adopted as the base, without losing the gates and learnings, which become the engine |
 | Personas instead of 22 role agents | already covered, and more precise (11 code reviewers sharing a contract) |
 | Port agent-skills' checklists (security, perf, a11y) as is | duplicate of stronger reviewers and packs; take only the missing rows |
 | A `deprecation` skill | too expensive for the value now; a `type: deprecate` plan with expand → migrate → contract units covers it |
@@ -662,23 +775,15 @@ that yes. Done when Claude can predict the user's answers to its next three ques
 
 ## Proposed order
 
-Portability (idea 7) is critical, so it leads: each release moves it forward, and each other idea
-lands already portable.
+Rewritten for convergence. Portability stays critical and moves at each step.
 
-| Release | Portability | Other ideas | Breaking |
-|---|---|---|---|
-| 5.2 | spike on Codex and Copilot CLI; host-neutral skill text (resolver instead of `${CLAUDE_PLUGIN_ROOT}`, question tool wording) + contract test; routing evals (idea 10) | idea 1 on the same files (5 skills), conduct block of idea 14 with trust levels (idea 17), interview opening (idea 20) | no |
-| 5.3 | normalized hook contract, adapters Claude + Codex + Copilot CLI with recorded fixtures, `kaizen install --host`, `doctor` per host | idea 2 (with unfinished work) at T1 **and** T2, idea 3 with Prove-It (idea 15), idea 8 (canary, protected bar), idea 19 | no |
-| 5.4 | agents generated per host, reviewers in sequence where there are no subagents, `approvals: "code"` default off Claude Code, evals per host, **handoff between hosts** (idea 16) | scope drift (idea 4), doubt protocol (idea 9), attention map (idea 13) | no |
-| 5.5 | adapters Cursor + Gemini CLI, `kaizen verify-pr` CI step (T1 floor complete), `AGENTS.md` with boundaries (idea 11) | idea 5, idea 12 (fresh context per unit), living rationalizations, ratchets and dated exceptions | no |
-| 6.0 | packaging per host on Addy's layout (Claude format, Codex manifest, Agent Plugins 1.0, Gemini wrappers) with command parity in CI, "for coding agents" everywhere | idea 6 (with `define interview` and `define constraints`), concept cuts, full doc rewrite, new video | yes, with `upgrade` migration |
-
-In parallel, **kaizen-ops 1.1**: the rollout ladder (idea 18), with its deterministic part in core's
-`plan check` and `monitor` (a core minor release).
-
-Every release carries its own documentation: see the next section.
-
-`docs/positioning.md` gains an agent-skills column with the first release of this series.
+| Release | Content | Breaking |
+|---|---|---|
+| 5.2 | `agent-skills` added to this marketplace as a synced copy (workflow and tests copied from `sync-kioku`, never edited here); spike: agent-skills + Kaizen 5.1 together on Claude Code, Codex and Copilot CLI — conflicts, double triggering, what the hooks see; the engine **reads** `SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, `CONSTRAINTS.md` alongside Kaizen's formats; reviews by his personas record themselves | no |
+| 5.3 | engine on his artifacts: silenced checks from the `CONSTRAINTS.md` floor (idea 2), evidence ledger + Prove-It on his tasks (ideas 3, 15), scope from "Files likely touched" (idea 4), `verify --prove` (idea 8), hygiene (idea 19); normalized hook contract and adapters Claude + Codex + Copilot CLI, `kaizen install --host` | no |
+| 5.4 | Kaizen-only skills rewritten in his anatomy and validated by his scripts and evals: `learn` (living rationalizations), `watch` (feedback with doubt classification, attention map), `metrics`, `/kaizen`; engine note at session start; handoff (idea 16); `SPEC.md` boundaries enforced (idea 11); adapters Cursor + Gemini; first upstream PRs | no |
+| 5.5 | Kaizen's overlapping skills marked deprecated, each answering with its agent-skills replacement; `kaizen upgrade` proposes `CONSTRAINTS.md` from `CONSTITUTION.md`; kaizen-ops 1.1 on the launch ladder (idea 18) | no (deprecations) |
+| 6.0 | overlapping skills and 20 agents removed; legacy formats read-only; optional cost module; packaging per host; full doc rewrite; new video | yes, with `upgrade` migrations |
 
 ## Documentation and video
 
@@ -696,7 +801,7 @@ each counted claim).
 | 5.3 | new guide `docs/hosts.md` (one section per host: install, levels enforced, known gaps) and `concepts/guarantee-levels.md`; `concepts/gates-and-hooks.md` (silenced-check guard, evidence ledger, hook contract and adapters), `reference/cli.md` (`guard silenced`), `reference/state-and-files.md` (`evidence/<branch>.jsonl`), `configuration.md` (`guard.*`), `troubleshooting.md` (a false positive, how to lift it) | `quality-gate.svg`, `push-gate.svg`, `hooks.svg`; new `evidence-ledger.svg` |
 | 5.4 | `concepts/review.md` (scope drift finding, doubt at decision time), `concepts/pull-requests.md` ("Outside the plan", assumptions), `concepts/metrics.md` (scope-drift rate), `concepts/agents-and-models.md` (`doubt` role) | `review-pipeline.svg` |
 | 5.5 | `concepts/learnings.md` (rationalization learnings, `harvest`), `reference/cli.md` (`context`), the trimmed `conventions.md` described in `concepts/the-loop.md` | `learnings-loop.svg`; new `living-rationalizations.svg` |
-| 6.0 | **full rewrite**: README "Start here" (7 commands), `getting-started.md`, one guide per 6.0 command replacing the 20 per-skill guides (old pages kept as one-line redirects for one major), `docs/README.md` index, `positioning.md`, CHANGELOG with Breaking section, migration guide for `kaizen upgrade` (`lifecycle-commands`), each guarantee labeled T0/T1/T2 in `gates-and-hooks.md`; root `README.md` and `CLAUDE.md` of this repository | `kaizen-loop.svg`, `help-routing.svg`, `autopilot.svg`, `artifacts-map.svg`; new `guarantee-levels.svg` |
+| 6.0 | **full rewrite**: README "Start here" (his 9 commands + Kaizen's 4, what the engine adds to each), `getting-started.md`, one guide per 6.0 command replacing the 20 per-skill guides (old pages kept as one-line redirects for one major), `docs/README.md` index, `positioning.md`, CHANGELOG with Breaking section, migration guide for `kaizen upgrade` (`lifecycle-commands`), each guarantee labeled T0/T1/T2 in `gates-and-hooks.md`; root `README.md` and `CLAUDE.md` of this repository | `kaizen-loop.svg`, `help-routing.svg`, `autopilot.svg`, `artifacts-map.svg`; new `guarantee-levels.svg` |
 
 Second-pass ideas add, in the release that ships them: `concepts/doubt.md` (protocol and
 classification, idea 9), `evals/README` section and `CONTRIBUTING` rule on routing evals (idea 10),
@@ -741,7 +846,7 @@ Draft `narration.json` (about 85 s, to cut further: lighter is the point, Englis
 | `hook` | AI writes code faster than ever. |
 | `amp` | According to DORA, it speeds up delivery, but also increases instability. |
 | `kaizen` | Kaizen gives your coding agent the habits of a senior engineer, and the guarantees to keep them. |
-| `spec` | Spec: Kaizen interviews you until the goal is clear, and your constraints get a command that checks them. |
+| `base` | Agent Skills give your agent a senior engineer's workflow. Kaizen makes it hold. |
 | `plan` | Plan: requirements, tests and rollback, traced and reviewed before any code. |
 | `build` | Build: one tested unit at a time. A muted test never counts as a green one. |
 | `doubt` | For every shortcut, a written rebuttal. For every risky decision, a second opinion. |
