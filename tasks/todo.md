@@ -221,7 +221,7 @@ and the root README updated, the presentation video remade.
 - [x] Every page indexed in `docs/README.md`, every relative link and anchor resolves (contract)
 - [x] CHANGELOG 6.0.0 lists every removal and its replacement; `plugin.json` at 6.0.0
 - [x] `docs/migrating-to-6.md` maps every 5.x command, CLI command and configuration key
-- [ ] Presentation video remade (MP4, poster, SRT/VTT) for Kaizen around agent-skills
+- [ ] Presentation video remade (MP4, poster, SRT/VTT) for Kaizen around agent-skills — sources done; render on a machine with a GPU (`media/kaizen/source/README.md`)
 
 **Verification:**
 - [x] Tests pass: `node --test plugins/kaizen/tests/*.test.mjs`
