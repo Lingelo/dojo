@@ -85,7 +85,7 @@ and you type `kaizen waive <code>` yourself. [The review before push](../concept
 |---|---|---|
 | `review.require_before_push` | `"ask"` | `"ask"`: an unreviewed push is stopped once, Claude asks you, you can push without a review by confirming; `true`: refused until reviewed or waived; `false`: no check |
 | `review.max_unreviewed_lines` | `80` | lines changed since the last review beyond which the push needs a new one |
-| `review.cost_weights` | `{}` | relative weight of a million tokens per model family for `kaizen cost`, metrics and the dashboard; defaults `haiku` 1, `sonnet` 3, `opus` 5 |
+| `review.cost_weights` | `{}` | relative weight of a million tokens per model family for `kaizen cost` and metrics; defaults `haiku` 1, `sonnet` 3, `opus` 5 |
 
 ### `secrets`
 

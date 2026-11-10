@@ -23,19 +23,16 @@ Not for writing a spec, a plan or code: that is `/kaizen:spec`, `/kaizen:plan`, 
    runs after every turn that edits code; a slow suite goes to `gate.targeted`.
 4. **Declares both plugins** in the versioned `.claude/settings.json` (`kaizen@dojo`,
    `agent-skills@dojo`, the dojo marketplace) — asks first. Every clone and cloud session then gets them.
-5. **Offers the git hooks** (`install git-hooks`): no unreviewed push and no committed secret, even
-   outside Claude Code.
-6. **Makes the learnings findable** for other tools: with your approval, a line in `CLAUDE.md` or
+5. **Makes the learnings findable** for other tools: with your approval, a line in `CLAUDE.md` or
    `AGENTS.md`.
-7. **Lists pending migrations** (`kaizen upgrade`) and offers to apply the automatable ones.
-8. **Names the next command**, in the [decision order](../concepts/the-loop.md#knowing-where-you-are).
+6. **Lists pending migrations** (`kaizen upgrade`) and offers to apply the automatable ones.
+7. **Names the next command**, in the [decision order](../concepts/the-loop.md#knowing-where-you-are).
 
 ## What you get
 
 ```
 ✔ config        .kaizen/config.json
 ✔ agent_skills  agent-skills@dojo enabled
-⚠ git_hooks     not installed — node "$K" install git-hooks
 ✔ verify        test: npm test · lint: npm run lint
 Next: /kaizen:spec <what to build>
 ```
@@ -45,7 +42,7 @@ Every ⚠ is a guard rail that is off, with its fix: [Doctor](../concepts/gates.
 ## Files written
 
 `.kaizen/config.json` ([Configuration](../reference/configuration.md)), `docs/learnings/`, and with your
-approval `.claude/settings.json`, `.githooks/`, one line in `CLAUDE.md`/`AGENTS.md`. Commit them: the
+approval `.claude/settings.json`, one line in `CLAUDE.md`/`AGENTS.md`. Commit them: the
 team shares them.
 
 ## Optional next step

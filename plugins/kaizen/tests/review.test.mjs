@@ -1,5 +1,5 @@
 // No git push of a branch without a review: agent-skills' review records itself (review-hooks.mjs),
-// the PreToolUse hook (review-gate.mjs) and the git pre-push hook decide.
+// the PreToolUse hook (review-gate.mjs) decides.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
@@ -174,25 +174,12 @@ test('require_before_push "ask": the user judges the push, Claude Code asks them
   const reviewed = prePush(dir);
   assert.equal(reviewed.status, 0);
   assert.equal(reviewed.stdout, '');
-  // from the user's terminal, the git hook cannot ask: it reminds and lets the push through
+  // more code after the review: asked again, the second push reaches the prompt, once
   writeFiles(dir, { 'app.js': `${'x\n'.repeat(120)}` });
   gitc(dir, ['commit', '-qam', 'feat: more']);
-  const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: dir, encoding: 'utf8' }).stdout.trim();
-  const githook = (claude) => cli(dir, ['githook', 'pre-push'], { input: `refs/heads/feat/x ${sha} refs/heads/feat/x ${'0'.repeat(40)}\n`, env: { CLAUDECODE: claude ? '1' : '' } });
-  const g = githook(false);
-  assert.equal(g.code, 0, g.stderr);
-  assert.match(g.stderr, /without a review: .*lines changed since the review/);
-  const friction = readFileSync(join(dir, '.kaizen', 'state', 'friction.jsonl'), 'utf8');
-  assert.match(friction, /"kind":"asked"/);
-  assert.doesNotMatch(friction, /"gate":"push","kind":"refused"/, 'no push refused from a terminal in "ask" mode');
-  // from Claude Code, a push the review hook did not put to the user (e.g. through a script) is refused
-  assert.equal(githook(true).code, 1);
-  assert.match(githook(true).stderr, /the user was not asked about this push/);
-  // the push the hook did put to the user goes through, once
   assert.equal(prePush(dir).status, 2, 'question first');
   assert.equal(JSON.parse(prePush(dir).stdout).hookSpecificOutput.permissionDecision, 'ask');
-  assert.equal(githook(true).code, 0, 'the prompted push');
-  assert.equal(githook(true).code, 1, 'single use');
+  assert.equal(prePush(dir).status, 2, 'single use');
   // other spellings of git push are seen by the review hook too
   for (const c of ['/usr/bin/git push', 'git --no-pager push origin feat/x', 'git -C . push']) {
     const r = prePush(dir, c);

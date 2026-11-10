@@ -453,12 +453,11 @@ written.push(
 // 7. What Kaizen writes
 // ---------------------------------------------------------------------------------------------------
 written.push(
-  diagram('artifacts-map', 1100, 560, 'What Kaizen writes in your repo, and who reads it', 'Kaizen keeps few files: the learnings and its configuration are versioned; its state stays on your machine.', (d) => {
+  diagram('artifacts-map', 1100, 496, 'What Kaizen writes in your repo, and who reads it', 'Kaizen keeps few files: the learnings and its configuration are versioned; its state stays on your machine.', (d) => {
     const rows = [
       ['/kaizen:learn', 'docs/learnings/<folder>/<slug>.md', 'post-edit hook → Claude, at spec, plan, edit'],
       ['/kaizen:setup · init', '.kaizen/config.json', 'every hook and the CLI'],
       ['/kaizen:setup', '.claude/settings.json', 'Claude Code: both plugins for every clone'],
-      ['/kaizen:setup (optional)', '.githooks/pre-push, pre-commit', 'git, without Claude Code'],
       ['hooks · CLI', '.kaizen/state/ (git-ignored)', 'gates · watch · metrics · cost'],
       ['agent-skills', 'SPEC.md · tasks/ · CONSTRAINTS.md', 'Kaizen reads them (doctor, status, learnings)'],
     ];
@@ -467,14 +466,14 @@ written.push(
     d.text(678, 88, 'READ BY', 'regionlabel');
     rows.forEach(([w, f, r], i) => {
       const y = 100 + i * 64;
-      d.box(`w${i}`, 36, y, 230, 48, i === 5 ? 'agent' : 'skill', w);
-      d.box(`f${i}`, 296, y, 350, 48, i === 4 ? 'state' : 'artifact', f, null, { mono: true, round: i === 4 ? 10 : 8, cls: 't12' });
+      d.box(`w${i}`, 36, y, 230, 48, i === 4 ? 'agent' : 'skill', w);
+      d.box(`f${i}`, 296, y, 350, 48, i === 3 ? 'state' : 'artifact', f, null, { mono: true, round: i === 3 ? 10 : 8, cls: 't12' });
       d.box(`r${i}`, 678, y, 386, 48, 'plain', r, null, { cls: 't12' });
       d.arrow([`w${i}.r`, `f${i}.l`], { tone: 'accent' });
       d.arrow([`f${i}.r`, `r${i}.l`], { tone: 'blue' });
     });
-    d.text(36, 500, 'Default root docs/ (docs_root). No file carries a mutable "status": progress is read from git and from agent-skills’ task checkboxes.', 'small');
-    d.legend(36, 540, LEGEND.filter(([k]) => k !== 'gate' && k !== 'outside').concat([['state', 'local state']]));
+    d.text(36, 436, 'Default root docs/ (docs_root). No file carries a mutable "status": progress is read from git and from agent-skills’ task checkboxes.', 'small');
+    d.legend(36, 476, LEGEND.filter(([k]) => k !== 'gate' && k !== 'outside').concat([['state', 'local state']]));
   }),
 );
 

@@ -38,19 +38,6 @@ That is the push gate: in a Kaizen repository, a branch does not leave without a
 | You want the push refused until a review | `"review": { "require_before_push": true }` |
 | You do not want this rule | `"review": { "require_before_push": false }` |
 
-## The git hooks refuse: "Kaizen CLI not found"
-
-The hooks of `install git-hooks` look for the CLI in `git config kaizen.cli`, then `$KAIZEN_CLI`, then
-the newest `kaizen` of the `dojo` marketplace in the Claude Code plugin cache. Each candidate must be
-Kaizen (its `.claude-plugin/plugin.json` names `kaizen`); a pointer to something else is refused with its
-path. They refuse rather than let a push through unchecked.
-
-- Enable the plugin in Claude Code (`/plugin`), or point to a checkout:
-  `git config kaizen.cli /path/to/dojo/plugins/kaizen/scripts/kaizen.mjs`.
-- `kaizen doctor` says "`.githooks/` present but core.hooksPath unset": `git config core.hooksPath .githooks`.
-- "CLI lookup of an older Kaizen": `node $K install git-hooks` refreshes that one line; commit `.githooks/`.
-- To remove them: delete `.githooks/` and `git config --unset core.hooksPath`.
-
 ## `git commit` is refused: "possible secret(s)"
 
 The secret scan found a key or token in the lines about to be committed (`file:line — type`).
@@ -107,8 +94,7 @@ After a marketplace update: `/plugin marketplace update dojo`.
 ## Kaizen in other tools
 
 Kaizen's guarantees are Claude Code hooks. In another agent (Codex, Copilot, Cursor…), agent-skills'
-skills work as written, the git hooks (`install git-hooks`) still stop unreviewed pushes and committed
-secrets, and the learnings are plain Markdown any agent can read when `AGENTS.md` points to them. The
+skills work as written and the learnings are plain Markdown any agent can read when `AGENTS.md` points to them. The
 quality gate, the automatic review record and the learnings read-back need Claude Code.
 
 ## Reporting a problem

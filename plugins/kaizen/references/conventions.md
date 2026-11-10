@@ -26,7 +26,7 @@ node "$K" doctor --in-skill        # are the guard rails on? relay every ⚠ wit
 node "$K" verify [--only test]     # the checks the quality gate runs
 node "$K" learnings search <words…> | validate | list [--retire] | stats
 node "$K" review status | check | waive --reason "…"
-node "$K" metrics [--since 90d] | metrics dashboard | cost [item]
+node "$K" metrics [--since 90d] | cost [item]
 node "$K" pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch|overlap
 ```
 

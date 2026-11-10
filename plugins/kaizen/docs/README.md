@@ -35,7 +35,7 @@ commands (`/kaizen:spec`, `/kaizen:plan`, `/kaizen:build`…) are agent-skills',
 ## How it works
 
 - [Kaizen around agent-skills](concepts/the-loop.md) — who does what, the commands, the loop
-- [Gates and hooks](concepts/gates.md) — quality gate, review before push, secrets, git hooks, doctor
+- [Gates and hooks](concepts/gates.md) — quality gate, review before push, secrets, doctor
 - [Learnings](concepts/learnings.md) — the format, the durability test, how they come back
 - [Metrics](concepts/metrics.md) — every number and how it is computed
 

@@ -82,18 +82,6 @@ agent-skills' **floor guard** (from `/kaizen:constraints`) is the complement for
 gets lowered — skipped or deleted tests, silenced checkers, stubs, thresholds edited down. It lives in
 your repository (pre-commit and CI); `kaizen doctor` reports whether it is wired.
 
-## Without the plugin: git hooks
-
-Hooks only exist when Claude Code loads the plugin. `node $K install git-hooks` writes
-`.githooks/pre-push` (the same review decision, for every branch a push updates, at the pushed commit)
-and `.githooks/pre-commit` (staged secrets), and sets `core.hooksPath`. They run a pinned CLI
-(`git config kaizen.cli`, `$KAIZEN_CLI`, or the dojo marketplace's plugin cache only — each must be
-Kaizen by its `plugin.json`) and refuse when it is missing. From your own terminal in `"ask"` mode, the
-pre-push only reminds; from Claude Code, it lets through only the push you were asked about.
-
-An existing hook is never overwritten: the output gives the line to chain into it. Each clone wires
-them once: `git config core.hooksPath .githooks`.
-
 ## Doctor
 
 `node $K doctor` (run first by `/kaizen:setup`) says whether the guard rails are actually on:
@@ -106,7 +94,6 @@ them once: `git config core.hooksPath .githooks`.
 | `agent_skills` | `agent-skills@dojo` is not enabled: the workflow commands are missing and no review can record itself |
 | `floor_guard` | `CONSTRAINTS.md` exists but its floor guard runs from no hook nor CI |
 | `hooks` | in a skill, no Kaizen hook has fired in this repo: every gate is off in this session |
-| `git_hooks` | present but not wired, not executable, not Kaizen's, or with an older CLI lookup |
 | `verify` | no verification command: the quality gate has nothing to run |
 | `review`, `pushed` | the branch, or what was already pushed, has no recorded review |
 

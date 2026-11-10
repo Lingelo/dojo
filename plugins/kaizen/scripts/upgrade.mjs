@@ -7,15 +7,12 @@
 // the team added). The others carry their manual steps.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { docsRoot, loadConfig } from './lib.mjs';
-import { PLUGIN_ID, gitHooksState } from './doctor.mjs';
-import { declarePlugin, refreshHookLookups } from './githooks.mjs';
+import { loadConfig } from './lib.mjs';
+import { PLUGIN_ID, declarePlugin } from './doctor.mjs';
 
 export const KAIZEN_VERSION = JSON.parse(readFileSync(fileURLToPath(new URL('../.claude-plugin/plugin.json', import.meta.url)), 'utf8')).version;
-// The docs folder as the team writes it in a command: relative, forward slashes.
-const docs = (root, config) => relative(root, docsRoot(root, config)).split('\\').join('/');
 
 const readJson = (path) => {
   try {
@@ -31,12 +28,6 @@ function readFileSafe(path) {
   } catch {
     return '';
   }
-}
-
-// `kaizen@<marketplace>` keys other than the dojo one, enabled in the versioned settings.
-function oldMarketplaceIds(root) {
-  const plugins = readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins || {};
-  return Object.keys(plugins).filter((id) => /^kaizen@/.test(id) && id !== PLUGIN_ID && plugins[id] === true);
 }
 
 // declarePlugin refuses when everything is already declared: for a migration that is "nothing to do".
@@ -92,34 +83,6 @@ export const NO_MIGRATION = {
 
 export const MIGRATIONS = [
   {
-    id: 'learnings-folder',
-    since: '2.0.0',
-    title: 'learnings live in <docs>/learnings/, not <docs>/solutions/',
-    applies(root, config) {
-      const d = docs(root, config);
-      if (!existsSync(join(root, d, 'solutions')) || existsSync(join(root, d, 'learnings'))) return null;
-      return `${d}/solutions/ exists and ${d}/learnings/ does not: no agent reads the old folder`;
-    },
-    files: (root, config) => [`${docs(root, config)}/solutions/`],
-    // A folder rename moves the team's history: they run it, and review the diff.
-    manual: (root, config) => [`git mv ${docs(root, config)}/solutions ${docs(root, config)}/learnings`],
-  },
-  {
-    id: 'marketplace-dojo',
-    since: '3.1.0',
-    // Plain text: doctor imports this module, which must not read doctor's exports while it loads.
-    title: 'the marketplace is "dojo": plugins are enabled as kaizen@dojo',
-    applies(root) {
-      const old = oldMarketplaceIds(root);
-      const plugins = readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins || {};
-      if (!old.length || plugins[PLUGIN_ID] === true) return null;
-      return `.claude/settings.json enables ${old.join(', ')} but not ${PLUGIN_ID}: clones load no Kaizen`;
-    },
-    files: () => ['.claude/settings.json'],
-    apply: declare,
-    manual: (root) => oldMarketplaceIds(root).map((id) => `remove "${id}" (and its marketplace) from .claude/settings.json once ${PLUGIN_ID} works`),
-  },
-  {
     id: 'production-removed',
     since: '6.0.0',
     title: 'Kaizen no longer deploys nor monitors: kaizen-ops and the deploy/monitor configuration are gone',
@@ -152,17 +115,6 @@ export const MIGRATIONS = [
     },
     manual: (root) => surfaceLeftovers(root).map((l) => l.step),
   },
-  {
-    id: 'hook-lookup',
-    since: '4.1.2',
-    title: 'git hooks accept only Kaizen core behind git config kaizen.cli or $KAIZEN_CLI',
-    applies(root) {
-      const { outdated } = gitHooksState(root);
-      return outdated.length ? `.githooks/${outdated.join(', ')}: CLI lookup of an older Kaizen (runs any file a pointer names)` : null;
-    },
-    files: (root) => gitHooksState(root).outdated.map((h) => `.githooks/${h}`),
-    apply: refreshHookLookups,
-  },
 ];
 
 const initialized = (root) => existsSync(join(root, '.kaizen', 'config.json'));
@@ -192,7 +144,7 @@ export function applyAll(root, migrations = MIGRATIONS) {
       const written = m.apply(root, config);
       if (written.length) applied.push({ id: m.id, written });
     }
-    // What is left to the team, read after the automatic part (e.g. the old marketplace key to remove).
+    // What is left to the team, read after the automatic part.
     const steps = m.manual ? m.manual(root, loadConfig(root)) : [];
     if (steps.length) manual.push({ id: m.id, steps });
   }

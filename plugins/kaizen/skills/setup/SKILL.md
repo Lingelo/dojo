@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Sets Kaizen up in a repository next to agent-skills, and says where the repository stands — initializes .kaizen/config.json and docs/learnings/, validates the verification commands the quality gate will run, declares kaizen@dojo and agent-skills@dojo for every clone, offers the git hooks, runs kaizen doctor and kaizen upgrade, then names the next command. Use when the user says "install/configure Kaizen", "set up Kaizen", "where are we", "what next", "is Kaizen working", "check Kaizen", /kaizen:setup. Not for writing a spec or a plan (/kaizen:spec, /kaizen:plan).
+description: Sets Kaizen up in a repository next to agent-skills, and says where the repository stands — initializes .kaizen/config.json and docs/learnings/, validates the verification commands the quality gate will run, declares kaizen@dojo and agent-skills@dojo for every clone, runs kaizen doctor and kaizen upgrade, then names the next command. Use when the user says "install/configure Kaizen", "set up Kaizen", "where are we", "what next", "is Kaizen working", "check Kaizen", /kaizen:setup. Not for writing a spec or a plan (/kaizen:spec, /kaizen:plan).
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, AskUserQuestion
 argument-hint: "[check]"
 ---
@@ -33,13 +33,11 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
    quality gate runs after every turn that edits code: slow ones go to `gate.targeted` with `{files}`.
 4. **Both plugins for every clone.** `node "$K" install settings` declares `kaizen@dojo` and
    `agent-skills@dojo` in the versioned `.claude/settings.json` (ask first: a versioned file).
-5. **Git hooks** (optional, ask): `node "$K" install git-hooks` — pre-push refuses an unreviewed
-   branch and pre-commit a staged secret, even when Claude Code is not running. Relay its notes.
-6. **Learnings findable.** With approval, add to `CLAUDE.md` (or `AGENTS.md` if that is what the repo
+5. **Learnings findable.** With approval, add to `CLAUDE.md` (or `AGENTS.md` if that is what the repo
    uses): `Read docs/learnings/ before planning; /kaizen:learn after a non-obvious fix.`
-7. **Migrations.** `node "$K" upgrade`: show each pending one; offer `--apply` for the automatable ones
+6. **Migrations.** `node "$K" upgrade`: show each pending one; offer `--apply` for the automatable ones
    (versioned files: ask, then name the files to commit); relay the manual steps.
-8. **Next.** One line per item of `status`'s `next`, the first one recommended. A repository without a
+7. **Next.** One line per item of `status`'s `next`, the first one recommended. A repository without a
    spec → `/kaizen:spec <what to build>`; without `CONSTRAINTS.md` → mention
    `/kaizen:constraints` once, as optional.
 

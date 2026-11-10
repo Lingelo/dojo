@@ -14,7 +14,7 @@ Conventions:
 - Flags are `--name value` or boolean `--name`. Paths are printed POSIX-style on every OS.
 - Output: human-readable text, or JSON for commands that return data (most accept `--json`).
 - **Exit codes**: `0` success · `1` a check is red (verify, secrets scan, learnings validate,
-  review check, doctor `--strict`, a refusing git hook) · `2` usage error or exception (message on
+  review check, doctor `--strict`) · `2` usage error or exception (message on
   stderr, `kaizen: …`).
 
 ## Orientation
@@ -42,9 +42,6 @@ touches and, when it cannot be automated, the steps to run by hand.
 
 | Migration | Since | Applies when | `--apply` |
 |---|---|---|---|
-| `learnings-folder` | 2.0.0 | `<docs>/solutions/` exists, `<docs>/learnings/` does not | by hand: `git mv` |
-| `marketplace-dojo` | 3.1.0 | `.claude/settings.json` enables `kaizen@<other>` but not `kaizen@dojo` | adds `kaizen@dojo`; the old key is left to the team |
-| `hook-lookup` | 4.1.2 | a Kaizen git hook has an older CLI lookup line | refreshes that line, keeps the rest |
 | `production-removed` | 6.0.0 | `deploy` or `monitor` in `.kaizen/config.json` / `config.local.json`, or `kaizen-ops@dojo` in `.claude/settings.json` | by hand: remove them, move the commands to your own tools |
 | `agent-skills-base` | 6.0.0 | `.claude/settings.json` declares `kaizen@dojo` but not `agent-skills@dojo`, or keys and files of Kaizen 5.x remain (`profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `CONSTITUTION.md`, `kaizen-packs/`) | declares `agent-skills@dojo`; the rest by hand ([Migrating to 6.0](../migrating-to-6.md)) |
 
@@ -77,20 +74,10 @@ Stack and verification commands, as JSON: `test`, `lint`, `typecheck` (and `audi
 
 ## Setup
 
-### `install git-hooks` · `install settings`
+### `install settings`
 
-`git-hooks`: writes `.githooks/pre-push` and `.githooks/pre-commit` from `templates/githooks/` and sets
-`core.hooksPath`; never overwrites an existing hook (prints the line to chain instead); refreshes only
-the CLI lookup line of an older Kaizen hook. [Git hooks](../concepts/gates.md#without-the-plugin-git-hooks).
-
-`settings`: declares the dojo marketplace, `kaizen@dojo` and `agent-skills@dojo` in the versioned
+Declares the dojo marketplace, `kaizen@dojo` and `agent-skills@dojo` in the versioned
 `.claude/settings.json`, keeping everything else.
-
-### `githook pre-push | pre-commit`
-
-Run by the git hooks of `install git-hooks`, with git's arguments and standard input. `pre-push`: the
-review decision for every branch the push updates, at the pushed commit; `pre-commit`: staged secrets.
-Exit 1 refuses.
 
 ## Checks
 
@@ -124,8 +111,8 @@ redacted preview, never the value. Exit 1 if anything is found. The same scan ru
 
 `status`: the recorded review (tree, verdict, source — `code-review-and-quality` or `code-reviewer`),
 a pending waiver, and the push decision. `check`: the push decision alone, exit 1 when a push would be
-stopped; `--branch`/`--sha` check a given commit of a branch instead of `HEAD` (what the pre-push hook
-passes). The review records itself: there is no command to record one by hand.
+stopped; `--branch`/`--sha` check a given commit of a branch instead of `HEAD` (to check a commit
+before pushing it). The review records itself: there is no command to record one by hand.
 [The review before push](../concepts/gates.md#the-review-before-push).
 
 ### `review waive --reason "…"`
@@ -161,12 +148,6 @@ those with `retire_when` (what `/kaizen:learn prune` checks). `stats`: counts by
 
 JSON with `window`, `changes`, `throughput`, `instability`, `batch_size`, `kaizen_loop`, `friction`,
 `work_items`. Every computation: [Metrics](../concepts/metrics.md).
-
-### `metrics dashboard [--out <file>]`
-
-Writes one self-contained HTML page (no dependency, no network), by default
-`.kaizen/state/cost-dashboard.html`: cost per work item, stops, waivers and guard rails, in the relative
-units of `review.cost_weights`. Prints `{ file, items, friction_events }`.
 
 ### `cost [<item> | current] [--since 90d] [--json]`
 
@@ -214,6 +195,6 @@ refused):
 | `run-bounded.mjs <ms> <command>` | internal: runs a command and kills its whole process tree on timeout |
 
 The other scripts are modules the CLI loads: `lib.mjs`, `review-state.mjs`, `approvals.mjs`,
-`learnings.mjs`, `agentskills.mjs`, `secrets.mjs`, `doctor.mjs`, `upgrade.mjs`, `githooks.mjs`,
-`metrics.mjs`, `ledger.mjs`, `dashboard.mjs`, `pr.mjs`, and `aliases.mjs`, which generates `commands/`
+`learnings.mjs`, `agentskills.mjs`, `secrets.mjs`, `doctor.mjs`, `upgrade.mjs`,
+`metrics.mjs`, `ledger.mjs`, `pr.mjs`, and `aliases.mjs`, which generates `commands/`
 from agent-skills' commands (`--check` fails when they differ).

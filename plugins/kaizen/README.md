@@ -101,7 +101,7 @@ repo stands and what to run next.
 |---|---|
 | `/kaizen:setup [check]` | installs Kaizen in a repo, checks the guard rails, says where the repo stands and what to run next |
 | `/kaizen:learn [harvest \| prune]` | one durable learning per problem in `docs/learnings/`, every lesson of a branch, or the corpus pruned |
-| `/kaizen:metrics [90d \| dashboard \| cost <item>]` | DORA approximated from git and GitHub, learnings reuse, friction, cost per feature or fix |
+| `/kaizen:metrics [90d \| cost <item>]` | DORA approximated from git and GitHub, learnings reuse, friction, cost per feature or fix |
 | `/kaizen:watch [PR] [4h]` | follows a PR until it looks ready: feedback first, CI repaired, branch updated only when behind; never merges |
 
 ## What guarantees quality
@@ -113,8 +113,7 @@ repo stands and what to run next.
 | **Skipping the review is yours** | Claude asks, the review first; you confirm in Claude Code's own prompt | `review.require_before_push`: `"ask"` (default), `true` (refused), `false` |
 | **No secret committed** | `secret-gate.mjs`, a PreToolUse hook | every `git commit` Claude runs, in every repo; `--no-verify` refused |
 | **Learnings read back** | `post-edit.mjs`, a PostToolUse hook | `SPEC.md` or `tasks/` written; a file a learning names in `files:` edited |
-| **Without Claude Code** | `.githooks/pre-push` and `pre-commit` (`node $K install git-hooks`) | the same review and secret checks at the git level |
-| **Guard rails visible** | `kaizen doctor` | plugin and agent-skills declared, hooks firing, git hooks wired, branch reviewed, floor guard wired |
+| **Guard rails visible** | `kaizen doctor` | plugin and agent-skills declared, hooks firing, branch reviewed, floor guard wired |
 
 agent-skills' own guard against a weakened bar — its **floor guard** (skipped tests, silenced checks,
 stubs, lowered thresholds) — is installed in your repository by `/kaizen:constraints`; `kaizen doctor`
@@ -126,7 +125,6 @@ reports whether it runs.
 .kaizen/config.json        configuration (config.local.json = personal override, ignored by git)
 .kaizen/state/             local state: gate, reviews, PR tracking, ledger, friction — ignored by git
 docs/learnings/            learnings, one per file (validated frontmatter)
-.githooks/                 optional: pre-push and pre-commit (install git-hooks)
 SPEC.md, tasks/, CONSTRAINTS.md   agent-skills' files, read by Kaizen
 ```
 
@@ -158,14 +156,13 @@ node $K detect                                 # stack and verification commands
 node $K verify [--only test,lint] [--json]     # the checks (exit 1 if red)
 node $K doctor [--in-skill] [--json] [--strict]   # are the guard rails on?
 node $K upgrade [--apply] [--json]             # what this repo still has to change after a Kaizen update
-node $K install git-hooks | settings           # git hooks / both plugins declared for every clone
-node $K githook pre-push|pre-commit            # run by the git hooks
+node $K install settings                       # both plugins declared for every clone
 node $K gate status | off                      # this session's quality gate
 node $K review status | check | waive --reason "…"   # review state; waiver = your approval
 node $K confirm <code>                         # approvals "ask": after you confirmed in Claude Code's prompt
 node $K secrets scan [--staged | --base <ref>] # possible secrets in the changes
 node $K learnings search <words…> | validate | list [--retire] | stats
-node $K metrics [--since 90d] [--no-github] | metrics dashboard [--out f]
+node $K metrics [--since 90d] [--no-github]
 node $K cost [item | current] [--since 90d]    # what each feature or fix cost
 node $K pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch|overlap …
 ```
@@ -193,7 +190,6 @@ command: [CLI reference](docs/reference/cli.md).
 |---|---|
 | `CLAUDE_PLUGIN_ROOT` | the plugin's folder, set by Claude Code |
 | `CLAUDE_CONFIG_DIR` | where `doctor` looks for your user settings (default `~/.claude`) |
-| `KAIZEN_CLI` | the CLI the git hooks run, when not found in `git config kaizen.cli` or the plugin cache |
 | `KAIZEN_GH` | binary to use instead of `gh` (tests) |
 
 ## Quality of the plugin itself

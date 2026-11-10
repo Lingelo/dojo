@@ -11,9 +11,7 @@
 //   node kaizen.mjs verify [--only test,lint] [--json]     runs the checks (exit 1 if red)
 //   node kaizen.mjs doctor [--in-skill] [--json] [--strict]   are the guard rails on? exit 1 with --strict
 //   node kaizen.mjs upgrade [--apply] [--json]   what this repo still has to change after a Kaizen update
-//   node kaizen.mjs install git-hooks | settings git hooks (review and secrets without the plugin) /
-//                                                 kaizen@dojo and agent-skills@dojo declared for every clone
-//   node kaizen.mjs githook pre-push|pre-commit   run by the git hooks of `install git-hooks` (exit 1 refuses)
+//   node kaizen.mjs install settings             kaizen@dojo and agent-skills@dojo declared for every clone
 //   node kaizen.mjs gate status | off             quality gate of this session (on by itself when code is edited)
 //   node kaizen.mjs review status | check [--branch b --sha s] | waive --reason "…"
 //                                                 reviewed state per branch, required before git push; the review
@@ -22,19 +20,16 @@
 //   node kaizen.mjs secrets scan [--staged | --base <ref>] [--json]   possible secrets in the changes (exit 1 if any)
 //   node kaizen.mjs learnings search <words…> [--limit 8] [--json] | validate [files…] | list [--retire] | stats
 //   node kaizen.mjs metrics [--since 90d] [--no-github]   approximated DORA metrics, learnings reuse, friction, cost
-//   node kaizen.mjs metrics dashboard [--out file]   self-contained HTML cost dashboard
 //   node kaizen.mjs cost [item | current] [--since 90d] [--json]   what each feature or fix cost, end to end
 //   node kaizen.mjs pr snapshot|watch|mark|threads|reply|resolve|comment|update-branch|overlap …   PR follow-up (pr.mjs)
 
 import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
-import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, join, relative, resolve, sep } from 'node:path';
 import * as prmod from './pr.mjs';
 import { readAgentSkills } from './agentskills.mjs';
-import { computeMetrics, parseSince, readFriction, workItems } from './metrics.mjs';
-import { frictionRows, ledgerRows, renderDashboard } from './dashboard.mjs';
+import { computeMetrics, parseSince, workItems } from './metrics.mjs';
 import { DEFAULT_WEIGHTS, itemCosts, readLedger, workItem } from './ledger.mjs';
-import { doctor, formatDoctor } from './doctor.mjs';
-import { declarePlugin, installGitHooks, preCommit, prePush } from './githooks.mjs';
+import { declarePlugin, doctor, formatDoctor } from './doctor.mjs';
 import { isEmpty, loadLearnings, searchLearnings, termsOf, validateLearning } from './learnings.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { checkPush, currentBranch, requestWaiver, reviewStatus } from './review-state.mjs';
@@ -287,17 +282,9 @@ try {
     }
     case 'install': {
       const root = requireRepo();
-      if (sub === 'git-hooks') out(installGitHooks(root));
-      else if (sub === 'settings') out(declarePlugin(root));
-      else die('usage: install git-hooks | settings');
+      if (sub === 'settings') out(declarePlugin(root));
+      else die('usage: install settings');
       break;
-    }
-    case 'githook': {
-      // Run by .githooks/* (install git-hooks): exit 1 refuses the push or the commit.
-      const root = requireRepo();
-      const r = sub === 'pre-push' ? prePush(root, readFileSync(0, 'utf8'), process.argv[1]) : sub === 'pre-commit' ? preCommit(root) : die('usage: githook pre-push|pre-commit');
-      if (r.message) process.stderr.write(r.message);
-      process.exit(r.code);
     }
     case 'gate': {
       const root = requireRepo();
@@ -382,16 +369,6 @@ try {
     }
     case 'metrics': {
       const root = requireRepo();
-      if (sub === 'dashboard') {
-        const weights = { ...DEFAULT_WEIGHTS, ...(loadConfig(root).review?.cost_weights || {}) };
-        const file = typeof flags.out === 'string' ? resolve(root, flags.out) : join(ensureStateDir(root), 'cost-dashboard.html');
-        mkdirSync(dirname(file), { recursive: true });
-        const friction = frictionRows(readFriction(root));
-        const items = ledgerRows(readLedger(root));
-        writeFileSync(file, renderDashboard({ repo: basename(root), weights, friction, items }));
-        out({ file, friction_events: friction.length, ledger_rows: items.length });
-        break;
-      }
       out(computeMetrics(root, { since: flags.since || '90d', useGitHub: !flags['no-github'] }));
       break;
     }

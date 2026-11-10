@@ -52,7 +52,7 @@ recorded, waiver confirmed). Logging never changes a decision.
 
 | Indicator | Meaning |
 |---|---|
-| `push.refused`, `push.by_reason`, `push.by_source` | pushes stopped, why, and by the plugin hook or the git hook |
+| `push.refused`, `push.by_reason`, `push.by_source` | pushes stopped, why, and by which source |
 | `push.asked`, `push.pushed_without_review`, `push.unreviewed_from_terminal` | `"ask"` mode: pushes Claude asked you about, the ones you chose to push without a review, unreviewed pushes from your own terminal |
 | `push.unblocked_median_minutes`, `push.still_blocked` | first refusal on a branch → next review or waiver on it; branches never unblocked in the window |
 | `reviews_recorded` | reviews Kaizen recorded |
@@ -77,8 +77,7 @@ Each line of `.kaizen/state/ledger.jsonl` keeps the tokens per model family (`op
 priced in the relative units of `review.cost_weights` (default haiku 1, sonnet 3, opus 5).
 `metrics` reports the median cost per kind (feature, fix, refactor… from the branch prefix) and the most
 expensive items; `node $K cost <item>` gives one item, end to end — spec, plan, build, review, PR
-follow-up. `node $K metrics dashboard` writes a self-contained HTML page
-(`.kaizen/state/cost-dashboard.html`): cost per work item, stops, waivers, guard rails.
+follow-up.
 
 The ledger is **local to the machine**: two developers each see their own share.
 

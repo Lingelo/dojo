@@ -173,8 +173,8 @@ export function recordHeartbeat(root, { session = null, source = null } = {}) {
 
 // --- Decision at push time ---------------------------------------------------------------------------
 
-// Decides whether a branch state may be pushed: the current branch at HEAD by default, or the
-// `branch` and commit `sha` a git pre-push hook received. Always { allowed, reason, ... }.
+// Decides whether a branch state may be pushed: the current branch at HEAD by default, or a given
+// `branch` and commit `sha` (`review check --branch --sha`). Always { allowed, reason, ... }.
 export function checkPush(root, config = loadConfig(root), opts = {}) {
   const res = decidePush(root, config, opts);
   // `ask`: an unreviewed push is the user's call (Claude Code prompt), not a refusal to act on alone.
@@ -211,30 +211,19 @@ function decidePush(root, config, { branch = null, sha = null } = {}) {
 
 // `ask` mode, in two steps: the first unreviewed push of a commit is stopped so Claude asks the user a
 // question whose first choice is the review; only a second push of that same commit, within 30 min,
-// reaches Claude Code's permission prompt — where the user confirms the push without a review. That
-// second push is kept as `prompted` so the git pre-push hook lets exactly that push through.
-const PROMPT_MAX_AGE_MS = 10 * 60 * 1000;
+// reaches Claude Code's permission prompt — where the user confirms the push without a review. The
+// offer is single use: a third push is stopped again.
 export function pushOffer(root, branch, { take = false } = {}) {
   const head = git(root, ['rev-parse', 'HEAD'], { allowFail: true });
   const offers = readJson(root, 'push-offers.json', {});
   const o = offers[branch];
-  const pending = Boolean(o && !o.prompted && o.head === head && Date.now() - Date.parse(o.at) < WAIVER_MAX_AGE_MS);
+  const pending = Boolean(o && o.head === head && Date.now() - Date.parse(o.at) < WAIVER_MAX_AGE_MS);
   if (take) {
-    offers[branch] = pending ? { ...o, prompted: new Date().toISOString() } : { head, at: new Date().toISOString() };
+    if (pending) delete offers[branch];
+    else offers[branch] = { head, at: new Date().toISOString() };
     writeJson(root, 'push-offers.json', offers);
   }
   return pending;
-}
-
-// git pre-push, for a push run from Claude Code: did the review hook just put this very push (branch and
-// commit) to the user in Claude Code's prompt? Single use.
-export function takePromptedPush(root, branch, sha) {
-  const offers = readJson(root, 'push-offers.json', {});
-  const o = offers[branch];
-  if (!o?.prompted || o.head !== sha || Date.now() - Date.parse(o.prompted) >= PROMPT_MAX_AGE_MS) return false;
-  delete offers[branch];
-  writeJson(root, 'push-offers.json', offers);
-  return true;
 }
 
 export function askQuestion(res) {
@@ -247,7 +236,7 @@ export function askQuestion(res) {
   );
 }
 
-// The refusal both push gates print (Claude Code hook and git pre-push hook).
+// The refusal the push gate prints.
 export function pushRefusal(res, K) {
   return (
     `[kaizen] Push refused on ${res.branch}: ${res.reason}.\n` +

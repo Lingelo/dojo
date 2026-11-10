@@ -34,7 +34,6 @@ Claude:
   what the quality gate runs** after any turn that edits code;
 - offers to declare both plugins in the versioned `.claude/settings.json`, so every clone and cloud
   session gets them;
-- offers the git hooks (no unreviewed push, no secret committed, even outside Claude Code);
 - runs `kaizen doctor` and says what to run next.
 
 Every ⚠ of the doctor is a guard rail that is off: [Gates and hooks](concepts/gates.md#doctor).

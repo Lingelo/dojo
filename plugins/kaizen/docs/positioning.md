@@ -41,7 +41,7 @@ measurement.
 | Learning loop | no | yes, its core | no | yes, read back automatically |
 | PR follow-up | no | `ce-babysit-pr` | no | `/kaizen:watch` |
 | Measurement | no | no | no | DORA approximated, friction, cost |
-| Agents | many | 14 environments | many | agent-skills everywhere; Kaizen's gates in Claude Code, git hooks anywhere |
+| Agents | many | 14 environments | many | agent-skills everywhere; Kaizen's gates in Claude Code |
 
 ## Limits
 
@@ -50,8 +50,7 @@ measurement.
   watching production belong to your tools.
 - **Guard rails against forgetfulness, not against a malicious agent.** An intermediate script is
   enough to bypass a hook.
-- **Gates in Claude Code only.** Other agents get agent-skills' skills, the git hooks and the learnings
-  as Markdown; the quality gate, the review record and the read-back need Claude Code's hooks.
+- **Gates in Claude Code only.** Other agents get agent-skills' skills and the learnings as Markdown; the quality gate, the review record and the read-back need Claude Code's hooks.
 - **Two sources.** agent-skills is maintained upstream; dojo syncs it by pull request, reviewed before
   it reaches users.
 

@@ -4,7 +4,6 @@
 /kaizen:metrics                 # last 90 days
 /kaizen:metrics 30d             # another window (30d, 12w, 6m)
 /kaizen:metrics 12w compare     # against the previous window of the same length
-/kaizen:metrics dashboard       # the HTML cost dashboard
 /kaizen:metrics cost SHOP-412   # what one feature or fix cost, end to end
 ```
 
@@ -35,12 +34,6 @@ Cost: feature median 2.1 M tokens (sonnet-weighted), most expensive SHOP-412
 
 Claude never quotes a number the CLI did not produce, says when the window has fewer than 10 changes,
 and changes no code.
-
-## The dashboard
-
-`node $K metrics dashboard [--out file]` writes one self-contained HTML page — by default
-`.kaizen/state/cost-dashboard.html`, not versioned — with the cost per work item, the stops, the waivers
-and the guard rails. Open it in a browser; no server, no network.
 
 ## Cost of one item
 

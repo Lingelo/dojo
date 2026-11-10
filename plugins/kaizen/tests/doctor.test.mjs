@@ -98,33 +98,6 @@ test('settings enabling the plugin without its marketplace are reported', () => 
   cleanup(dir);
 });
 
-const PRE_PUSH = readFileSync(join(PLUGIN, 'templates', 'githooks', 'pre-push'), 'utf8');
-
-test('git hooks present but not wired (fresh clone): the wiring command', () => {
-  const dir = featureRepo({ '.githooks/pre-push': PRE_PUSH });
-  gitc(dir, ['update-index', '--chmod=+x', '.githooks/pre-push'], ['commit', '-qm', 'chore: hook mode']);
-  let r = cli(dir, ['doctor', '--json']);
-  assert.equal(check(r, 'git_hooks').status, 'warn');
-  assert.equal(check(r, 'git_hooks').fix, 'git config core.hooksPath .githooks');
-  gitc(dir, ['config', 'core.hooksPath', '.githooks']);
-  r = cli(dir, ['doctor', '--json']);
-  assert.equal(check(r, 'git_hooks').status, 'ok');
-  cleanup(dir);
-});
-
-test('git hooks that git ignores are not reported as wired: not executable, or not Kaizen\'s', () => {
-  const dir = featureRepo({ '.githooks/pre-push': PRE_PUSH });
-  gitc(dir, ['config', 'core.hooksPath', '.githooks']);
-  let r = cli(dir, ['doctor', '--json']);
-  assert.equal(check(r, 'git_hooks').status, 'warn', 'committed as 100644');
-  assert.match(check(r, 'git_hooks').fix, /update-index --chmod=\+x \.githooks\/pre-push/);
-  writeFiles(dir, { '.githooks/pre-push': '#!/bin/sh\nnpm run lint\n' });
-  gitc(dir, ['add', '.githooks/pre-push'], ['update-index', '--chmod=+x', '.githooks/pre-push'], ['commit', '-qm', 'chore: own hook']);
-  r = cli(dir, ['doctor', '--json']);
-  assert.match(check(r, 'git_hooks').evidence, /not Kaizen's/);
-  cleanup(dir);
-});
-
 test('a pushed commit inside the history of the recorded review is not reported', () => {
   const dir = featureRepo();
   const bare = mkdtempSync(join(tmpdir(), 'kaizen-bare-'));

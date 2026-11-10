@@ -1,8 +1,8 @@
 ---
 name: metrics
-description: Reads the delivery numbers honestly — DORA metrics approximated from git and GitHub (frequency, lead time, rework rate, change failure rate), batch size, whether learnings are read back and applied, how often the gates stopped the work, and what each feature or fix cost in tokens (kaizen cost, HTML dashboard) — then proposes one to three actions. Use when the user asks "are we improving", "DORA", "how much did this feature cost", "is Kaizen worth it", "metrics", "cost dashboard", /kaizen:metrics [90d | dashboard | cost <item>].
+description: Reads the delivery numbers honestly — DORA metrics approximated from git and GitHub (frequency, lead time, rework rate, change failure rate), batch size, whether learnings are read back and applied, how often the gates stopped the work, and what each feature or fix cost in tokens (kaizen cost) — then proposes one to three actions. Use when the user asks "are we improving", "DORA", "how much did this feature cost", "is Kaizen worth it", "metrics", /kaizen:metrics [90d | cost <item>].
 allowed-tools: Bash(node:*), Bash(git:*), Bash(gh:*), Read, AskUserQuestion
-argument-hint: "[window e.g. 90d] [dashboard] [cost <item>]"
+argument-hint: "[window e.g. 90d] [cost <item>]"
 ---
 
 # Metrics — are we improving, and at what cost?
@@ -19,7 +19,6 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
 
 - A periodic look (monthly, end of a quarter) at delivery, quality and the learning loop.
 - "What did this feature cost?" — `node "$K" cost <item>` (Jira key, `plan:<topic>`, `branch:<name>`).
-- A shareable view: `node "$K" metrics dashboard` writes `.kaizen/state/cost-dashboard.html`.
 
 ## Process
 

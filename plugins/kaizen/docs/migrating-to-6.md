@@ -29,8 +29,9 @@ Why: [Positioning](positioning.md#why-agent-skills).
    `/kaizen:spec`, which writes `SPEC.md`, then `/kaizen:plan` (`tasks/plan.md`, `tasks/todo.md`).
 7. **Your learnings**: unchanged, same format. New: an optional `files:` field (globs) brings a learning
    back when a matching file is edited.
-8. **Your git hooks**: `node $K install git-hooks` refreshes their CLI lookup if needed. Commit
-   `.githooks/`.
+8. **Your git hooks**, if `kaizen install git-hooks` set them up: they are gone in 6.0. Delete
+   `.githooks/pre-push` and `.githooks/pre-commit` (keep any line your team added), then
+   `git config --unset core.hooksPath` if nothing else is left in `.githooks/`.
 9. `node $K doctor` must show no ⚠ you did not choose to keep.
 
 ## Commands
@@ -68,7 +69,9 @@ The agent-skills commands also answer to their own prefix: `/agent-skills:spec` 
 | `review record`, `review estimate`, `run-dir` | the review records itself from agent-skills' output |
 | `plan new / latest / list / check / amend / reviewed` | agent-skills' `SPEC.md` and `tasks/` |
 | `constitution`, `packs`, `pack new`, `adr`, `profile`, `models`, `perf`, `size`, `release notes`, `dev` | — (see the table above) |
-| `audit`, `audit fix git_hooks`, `audit fix claude_settings` | `doctor`; `install git-hooks`; `install settings` |
+| `audit`, `audit fix claude_settings` | `doctor`; `install settings` |
+| `install git-hooks`, `githook`, `audit fix git_hooks` | — (Kaizen's gates are Claude Code hooks) |
+| `metrics dashboard` | `metrics`, `cost` |
 | `deploy`, `monitor`, `postmortem new` | your tools |
 
 ## Behavior
