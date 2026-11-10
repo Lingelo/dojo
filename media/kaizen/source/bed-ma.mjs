@@ -102,7 +102,7 @@ for (let t = start; t < duration - 0.05; t += beat) beats.push(+t.toFixed(4));
 
 // phrases stop a bar before the cadence so it rings alone
 for (let b = 0, t0 = start; t0 < end - bar; b++, t0 = start + b * bar) {
-  // ma: during the constitution, the title and the end, let it breathe
+  // ma: during the constraints, the title and the end, let it breathe
   const dense = t0 > denseFrom && t0 < denseTo;
   const phrase = PHRASES[b % PHRASES.length];
   phrase.forEach(([pos, deg], k) => {

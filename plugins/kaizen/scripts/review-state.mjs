@@ -197,7 +197,7 @@ function decidePush(root, config, { branch = null, sha = null } = {}) {
   const max = Number(config.review.max_unreviewed_lines ?? 80);
   const rec = readJson(root, 'reviews.json', {})[branch];
   if (!rec) return { allowed: false, branch, reason: 'no review recorded for this branch', branch_lines: lines };
-  // Only what is pushed counts: a file the review read while untracked (a plan, a constitution) and HEAD never
+  // Only what is pushed counts: a file the review read while untracked (a plan, a spec) and HEAD never
   // contained shows up as a full deletion between the reviewed tree and HEAD — it is not part of the push.
   const since = changedLines(root, rec.tree, ref, config.pr.ignore, { onlyIn: ref });
   if (since === null) return { allowed: false, branch, reason: 'the reviewed tree cannot be found (history rewritten?)', review: rec };

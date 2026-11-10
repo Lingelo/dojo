@@ -109,7 +109,7 @@ export function expandHome(p) {
 }
 
 // ---------------------------------------------------------------------------
-// YAML frontmatter — a subset sufficient for learnings and packs:
+// YAML frontmatter — a subset sufficient for learnings and skills:
 // scalars, quoted strings, inline lists [a, b] and dash lists.
 // ---------------------------------------------------------------------------
 

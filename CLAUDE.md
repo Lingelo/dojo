@@ -60,4 +60,5 @@ plugins/<name>/
 - **Git commits**: conventional format `<type>(<JIRA>): <description>` — Jira extracted from branch name
 - **Cross-platform**: scripts run on macOS, Linux and Windows (Kaizen CI covers all three)
 - **No build step**: everything is interpreted at runtime by Claude Code
+- **Learnings**: this repository's own lessons live in `docs/learnings/` (Kaizen format, `node plugins/kaizen/scripts/kaizen.mjs learnings validate`)
 - **Language**: everything in the repo is written in English (READMEs, skills, agents, script and hook messages, docs). Skills and agents tell Claude to talk to the user in the user's language; Kaizen deliverables follow `language` in `.kaizen/config.json`. Exception: French-compat parsing/fixtures in Kaizen
