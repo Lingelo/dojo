@@ -13,7 +13,7 @@
 //   node kaizen.mjs upgrade [--apply] [--json]   what this repo still has to change after a Kaizen update
 //   node kaizen.mjs install settings             kaizen@dojo and agent-skills@dojo declared for every clone
 //   node kaizen.mjs gate status | off             quality gate of this session (on by itself when code is edited)
-//   node kaizen.mjs review status | check [--branch b --sha s] | waive --reason "…"
+//   node kaizen.mjs review status | check | waive --reason "…"
 //                                                 reviewed state per branch, required before git push; the review
 //                                                 is agent-skills' and records itself; waive waits for the user
 //   node kaizen.mjs confirm <code>               approvals "ask": after the user confirmed in Claude Code's prompt
@@ -314,11 +314,10 @@ try {
       if (sub === 'waive') out(requestWaiver(root, { reason: typeof flags.reason === 'string' ? flags.reason : null }));
       else if (sub === 'status') out(reviewStatus(root));
       else if (sub === 'check') {
-        const str = (v) => (typeof v === 'string' ? v : null);
-        const res = checkPush(root, undefined, { branch: str(flags.branch), sha: str(flags.sha) });
+        const res = checkPush(root);
         out(res);
         process.exit(res.allowed ? 0 : 1);
-      } else die('usage: review status | review check [--branch b --sha s] | review waive --reason "…"');
+      } else die('usage: review status | review check | review waive --reason "…"');
       break;
     }
     case 'secrets': {

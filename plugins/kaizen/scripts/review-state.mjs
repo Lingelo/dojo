@@ -173,19 +173,18 @@ export function recordHeartbeat(root, { session = null, source = null } = {}) {
 
 // --- Decision at push time ---------------------------------------------------------------------------
 
-// Decides whether a branch state may be pushed: the current branch at HEAD by default, or a given
-// `branch` and commit `sha` (`review check --branch --sha`). Always { allowed, reason, ... }.
-export function checkPush(root, config = loadConfig(root), opts = {}) {
-  const res = decidePush(root, config, opts);
+// Decides whether the current branch may be pushed at HEAD. Always { allowed, reason, ... }.
+export function checkPush(root, config = loadConfig(root)) {
+  const res = decidePush(root, config);
   // `ask`: an unreviewed push is the user's call (Claude Code prompt), not a refusal to act on alone.
   if (!res.allowed && config.review.require_before_push === 'ask') res.ask = true;
   return res;
 }
 
-function decidePush(root, config, { branch = null, sha = null } = {}) {
+function decidePush(root, config) {
   if (config.review.require_before_push === false) return { allowed: true, reason: 'review.require_before_push disabled' };
-  branch = branch || currentBranch(root);
-  const ref = sha || 'HEAD';
+  const branch = currentBranch(root);
+  const ref = 'HEAD';
   if (!branch) return { allowed: true, reason: 'detached HEAD' };
   if (branch === defaultBranch(root)) return { allowed: true, reason: 'default branch (guarded by the git plugin)' };
   if (!baseOf(root, ref)) return { allowed: true, reason: 'base not found' };

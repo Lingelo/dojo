@@ -6,7 +6,7 @@
 
 *80-second presentation with voice-over: [watch the video (MP4)](../../media/kaizen/kaizen-presentation.mp4)
 · [subtitles](../../media/kaizen/kaizen-presentation.srt). Reproducible source:
-[media/kaizen/source/](../../media/kaizen/source/kaizen-presentation.html), rendered with the `motion-studio` plugin.*
+[media/kaizen/source/](../../media/kaizen/source/README.md), rendered with the `motion-studio` plugin.*
 
 Since 6.0, Kaizen is **the engine around [agent-skills](https://github.com/addyosmani/agent-skills)**,
 Addy Osmani's engineering workflows for coding agents, shipped next to it in the dojo marketplace.

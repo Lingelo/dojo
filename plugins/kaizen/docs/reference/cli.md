@@ -107,12 +107,11 @@ redacted preview, never the value. Exit 1 if anything is found. The same scan ru
 
 ## Review
 
-### `review status` · `review check [--branch <name> --sha <sha>]`
+### `review status` · `review check`
 
 `status`: the recorded review (tree, verdict, source — `code-review-and-quality` or `code-reviewer`),
 a pending waiver, and the push decision. `check`: the push decision alone, exit 1 when a push would be
-stopped; `--branch`/`--sha` check a given commit of a branch instead of `HEAD` (to check a commit
-before pushing it). The review records itself: there is no command to record one by hand.
+stopped. The review records itself: there is no command to record one by hand.
 [The review before push](../concepts/gates.md#the-review-before-push).
 
 ### `review waive --reason "…"`
