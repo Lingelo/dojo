@@ -7,18 +7,18 @@
   Presentation video of the Kaizen plugin (79.6 s, 1920×1080, 30 fps), rendered with the motion-studio plugin.
 
   Metaphor: a fujizuka, the small replica of Mount Fuji that shrines build for a pilgrimage of a few minutes.
-  The trail zigzags up its face, one leg per step of the cycle (brainstorm → plan → work → review → ship), each
+  The trail zigzags up its face, one leg per step of the cycle (spec → plan → build → review → ship), each
   station marked by a Jizō; a stone stair climbs the steep cone to the shrine on the summit (learn): every step
   takes you higher (continuous improvement). A vermilion origami crane, the unit of work, flies up the trail
   (the "thousand cranes": many small steps that add up); the four mossy stones of the dry garden at the foot
-  are the articles of the constitution; the quality gate is a torii closed by a bar while tests are red; the
+  are the project's quality bar (CONSTRAINTS.md); the quality gate is a torii closed by a bar while tests are red; the
   cherry tree in the courtyard of the shrine flowers a little more with each learning captured, and its petals
   fall and stay on the mountain (what is learned accumulates). The ensō opens and closes the loop.
 
   Japanese-inspired art direction: washi paper, sumi ink, shu vermilion, a lot of empty space (ma). A painted
   sumi-e panorama around the scene (backdrop.js): red sun, ink clouds, a flight of black cranes, the real Fuji far away.
   Japanese text: the 改善 (kaizen) seal on the title and at the end, and one kanji per step on the trail
-  (想 imagine · 計 plan · 作 make · 検 examine · 出 ship · 積 accumulate). Steps numbered 01 to 06.
+  (想 imagine: spec · 計 plan · 作 make: build · 検 examine: review · 出 ship · 積 accumulate: learn). Steps numbered 01 to 06.
   Light: a low sun from the left across the face, an overcast HDRI; after a spring shower the trail is wet (darker,
   glossy flagstones, puddles in the joints). --quality high adds screen-space reflections (wet trail, lacquer,
   copper and gold) and ambient occlusion; the pond by the garden is a planar mirror at every quality.
@@ -143,53 +143,53 @@
 <!-- 9.1–12.6 · title -->
 <div class="ov" id="title">
   <div class="k mincho">Kaizen</div>
-  <div class="b m" style="margin-top:20px">continuous improvement · for Claude Code</div>
+  <div class="b m" style="margin-top:20px">the engine around agent-skills · for Claude Code</div>
   <div class="hanko" id="hk1">改善</div>
 </div>
 
-<!-- 13.0–17.8 · constitution -->
+<!-- 13.0–17.8 · quality bar (CONSTRAINTS.md) -->
 <div class="ov" id="o-const">
-  <div class="kicker">The foundation</div>
+  <div class="kicker">The quality bar · /kaizen:constraints</div>
   <div class="rule"></div>
-  <div class="mono" style="font-size:38px">CONSTITUTION.md</div>
+  <div class="mono" style="font-size:38px">CONSTRAINTS.md</div>
   <div class="panel" style="margin-top:26px">
     <span class="ex">example</span>
-    <div class="rowx" id="ar1"><span>I. Evidence first</span><span class="ctl">check ✓</span></div>
-    <div class="rowx" id="ar2"><span>II. Small batches</span><span class="ctl">check ✓</span></div>
-    <div class="rowx" id="ar3"><span>III. Secure by default</span><span class="ctl">check ✓</span></div>
-    <div class="rowx" id="ar4"><span>IV. Agent autonomy</span><span class="ctl">check ✓</span></div>
+    <div class="rowx" id="ar1"><span>Floor · no skipped test</span><span class="ctl">guarded ✓</span></div>
+    <div class="rowx" id="ar2"><span>Tests · lint · types</span><span class="ctl">enforced ✓</span></div>
+    <div class="rowx" id="ar3"><span>No secret committed</span><span class="ctl">enforced ✓</span></div>
+    <div class="rowx" id="ar4"><span>Coverage · bundle size</span><span class="ctl">measured ✓</span></div>
   </div>
 </div>
 
-<!-- 18.0–22.1 · what / how (plate, brainstorm station) -->
+<!-- 18.0–22.1 · what / how (plate, spec station) -->
 <div class="ov" id="o-qc">
   <div class="num">01</div>
   <div class="kicker">Before the code</div>
   <div class="rule"></div>
-  <div id="qc1"><div class="mono m" style="font-size:25px">/kaizen:brainstorm</div><div class="h mincho">what</div></div>
+  <div id="qc1"><div class="mono m" style="font-size:25px">/kaizen:spec</div><div class="h mincho">what</div></div>
   <div id="qc2" style="margin-top:30px"><div class="mono m" style="font-size:25px">/kaizen:plan</div><div class="h mincho">how</div></div>
 </div>
 
-<!-- 22.2–28.2 · traceability (plate, plan station) -->
+<!-- 22.2–28.2 · tasks and learnings (plate, plan station) -->
 <div class="ov" id="o-trace">
   <div class="num">02</div>
-  <div class="kicker">The plan</div>
+  <div class="kicker">The plan · tasks/todo.md</div>
   <div class="rule"></div>
   <svg width="600" height="290" viewBox="0 0 640 300">
     <g font-size="26" fill="#1d1c1a" font-family="DejaVu Sans Mono">
-      <text x="0" y="50">R1</text><text x="0" y="150">R2</text><text x="0" y="250">R3</text>
-      <text x="560" y="100">U1</text><text x="560" y="200">U2</text>
+      <text x="0" y="50">AC1</text><text x="0" y="150">AC2</text><text x="0" y="250">AC3</text>
+      <text x="560" y="100">T1</text><text x="560" y="200">T2</text>
     </g>
     <g id="tlinks" stroke="#1d1c1a" stroke-width="2" fill="none"></g>
   </svg>
-  <div class="b" style="margin-top:6px"><span id="pchk" style="color:var(--koke)">plan check ✓</span></div>
-  <div class="b m" id="drv" style="font-size:25px;margin-top:8px">reviewed by 2 to 6 agents (doc-review)</div>
+  <div class="b" style="margin-top:6px"><span id="pchk" style="color:var(--koke)">each task: its test, its verification ✓</span></div>
+  <div class="b m" id="drv" style="font-size:25px;margin-top:8px">past lessons brought back by themselves</div>
 </div>
 
 <!-- 28.4–33.1 · quality gate (plate, work station) -->
 <div class="ov" id="o-gate">
   <div class="num">03</div>
-  <div class="kicker">Stop hook · quality gate</div>
+  <div class="kicker">Quality gate · on when code changes</div>
   <div class="rule"></div>
   <pre class="mono" id="term" style="font-size:25px;line-height:1.6"></pre>
   <div class="b" id="gmsg" style="margin-top:16px"></div>
@@ -198,25 +198,25 @@
 <!-- 33.2–38.4 · review (plate, review station) -->
 <div class="ov" id="o-rev">
   <div class="num">04</div>
-  <div class="kicker">Review · reviewers chosen from the diff</div>
+  <div class="kicker">Review · recorded by itself</div>
   <div class="rule"></div>
   <span class="ex">example</span>
   <div class="mono" style="font-size:23px;line-height:1.6;color:var(--usu)">execSync(`grep "${customer}" …`)</div>
-  <div class="b" style="margin-top:18px"><span style="color:var(--shu);font-weight:700">P0</span> · command injection (CWE-78)</div>
-  <div style="margin-top:30px"><span class="seal" id="seal">VERIFIED</span></div>
+  <div class="b" style="margin-top:18px"><span style="color:var(--shu);font-weight:700">Critical</span> · command injection (CWE-78)</div>
+  <div style="margin-top:30px"><span class="seal" id="seal">RECORDED</span></div>
   <div class="b m" style="margin-top:22px">no recorded review, nothing is pushed</div>
 </div>
 
 <!-- 38.6–47.3 · PR (plate, ship station) -->
 <div class="ov" id="o-pr">
   <div class="num">05</div>
-  <div class="kicker">Ship · watch-pr</div>
+  <div class="kicker">Ship · watch</div>
   <div class="rule"></div>
   <span class="ex">example</span>
   <div class="b" style="font-weight:700">feat(SHOP-412): orders CSV export</div>
-  <div class="mono m" style="font-size:21px;margin-top:20px">size: <span id="lns">0</span> / 400 lines</div>
+  <div class="mono m" style="font-size:21px;margin-top:20px">batch: <span id="lns">0</span> / 400 lines</div>
   <div class="bar"><i id="sz"></i><b style="left:100%"></b></div>
-  <div class="b" id="pk1" style="margin-top:22px">✓ description and reviewer guide</div>
+  <div class="b" id="pk1" style="margin-top:22px">✓ launch checklist: go</div>
   <div class="b" id="pk2">✓ review feedback handled</div>
   <div class="b" id="pk3">✓ CI green</div>
   <div class="b" id="prd" style="margin-top:18px;color:var(--koke)">looks ready to merge</div>
@@ -227,8 +227,8 @@
 <div class="ov" id="o-loop">
   <div class="kicker"><span class="mincho" style="color:var(--shu);font-weight:700;letter-spacing:0;margin-right:14px">06</span>Learn</div>
   <div class="rule"></div>
-  <div class="mono" style="font-size:30px">docs/learnings/</div>
-  <div class="b m" style="margin-top:16px">durable lessons, read back by the next cycle</div>
+  <div class="mono" style="font-size:30px">/kaizen:learn · docs/learnings/</div>
+  <div class="b m" style="margin-top:16px">durable lessons, back in the next spec, plan or edit</div>
 </div>
 
 <!-- 56.8–61 · end -->
@@ -236,8 +236,9 @@
   <div class="k mincho">Kaizen</div>
   <div class="hanko" id="hk2">改善</div>
   <div class="t">Every unit of work makes the next one easier.</div>
-  <div class="i mono">/plugin install kaizen@dojo</div>
-  <div class="i mono" style="margin-top:14px">/kaizen:help — where to start</div>
+  <div class="i mono">/plugin install agent-skills@dojo</div>
+  <div class="i mono" style="margin-top:14px">/plugin install kaizen@dojo</div>
+  <div class="i mono" style="margin-top:14px">/kaizen:setup — where to start</div>
 </div>
 
 <svg id="cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#1d1c1a" stroke="#f6f1e6" stroke-width="1.2"/></svg>
@@ -482,7 +483,7 @@ for (const [x, z, ry] of [[0, G / 2, 0], [0, -G / 2, 0], [G / 2, 0, Math.PI / 2]
   m.rotation.y = ry;
   scene.add(m);
 }
-// the four stones: the articles of the constitution, photographed mossy rocks (rock_moss_set scans, CC0)
+// the four stones: the quality bar of CONSTRAINTS.md, photographed mossy rocks (rock_moss_set scans, CC0)
 function scanRock(gltf, name) {
   let mesh = null;
   gltf.scene.getObjectByName(name).traverse((o) => { if (!mesh && o.isMesh) mesh = o; });
@@ -505,7 +506,7 @@ const rocks = ROCKS.map(([x, z, size], i) => {
 });
 
 // stations of the cycle: the middle of each leg (fuji.js), the summit for the sixth
-const NAMES = ['brainstorm', 'plan', 'work', 'review', 'ship', 'learn'];
+const NAMES = ['spec', 'plan', 'build', 'review', 'ship', 'learn'];
 const NUMS = ['01', '02', '03', '04', '05', '06'];
 const KANJI = ['想', '計', '作', '検', '出', '積']; // imagine · plan · make · examine · ship · accumulate
 $('#labels').innerHTML = NAMES.map((n, i) => `<div class="lbl" id="lb${i}"><i>${KANJI[i]}</i><b>${NUMS[i]}</b>${n}</div>`).join('');
@@ -763,7 +764,7 @@ const POSES = [
   // title: the camera pulls back: the mountain appears under the sun
   // title: the camera pulls back: the mountain appears under the sun (longer blend: lifts over the bank of the first leg)
   [9.0, (t) => orbit(-1.95 + (t - 9) * 0.04, 40, 12, new THREE.Vector3(0, 6.5, -2)), 2.4],
-  // constitution: the four stones of the garden at the foot of the mountain
+  // quality bar: the four stones of the garden at the foot of the mountain
   [13.0, (t) => [new THREE.Vector3(7.4 - (t - 13) * 0.2, 3.2, GC.z - 6.4), new THREE.Vector3(-0.2, 0.2, GC.z + 0.4)]],
   [18.0, railPose, 1.6], // quick arrival: the first card must not be seen from behind
   // learn: the shrine and its tree, which flowers again with each learning
@@ -872,7 +873,7 @@ function cues() {
   sfx('chime?note=57&dur=5', 9.4, 0.42); sfx('kick?dur=.8', 9.4, 0.25);
   // seals: the stamp hits the paper
   for (const at of [10.5, 58.2]) { sfx('kick?dur=.25', at + 0.2, 0.3); sfx('click?pitch=.45', at + 0.2, 0.35); }
-  // constitution stones
+  // quality-bar stones
   [14.2, 14.8, 15.4, 16.0].forEach((at, i) => sfx(`click?pitch=${0.42 + i * 0.05}`, at, 0.32));
   sfx('click?pitch=.7', 18.1, 0.2); sfx('whoosh?dur=.9', 21.7, 0.16); sfx('click?pitch=.8', 19.7, 0.2);
   [23.0, 23.5, 24.0, 24.5].forEach((at, i) => sfx(`click?pitch=${0.8 + i * 0.06}`, at, 0.14));
@@ -923,7 +924,7 @@ function sceneAt(t) { // t = story time
     stream.instanceColor.needsUpdate = true;
   }
 
-  // --- the stones stay set in the gravel; each one glows briefly as its article is named (constitution)
+  // --- the stones stay set in the gravel; each one glows briefly as its line is named (CONSTRAINTS.md)
   rocks.forEach((m, i) => {
     const at = 14.2 + i * 0.6, glow = sstep(prog(t, at, 0.3)) * (1 - sstep(prog(t, at + 0.5, 1.2)));
     m.material.emissive.setRGB(0.09 * glow, 0.03 * glow, 0.01 * glow); // a warm breath, not a colour: the moss must stay green
@@ -993,7 +994,7 @@ function sceneAt(t) { // t = story time
     el.style.left = `${(p.x * 0.5 + 0.5) * W}px`;
     el.style.top = `${(-p.y * 0.5 + 0.5) * H}px`;
     const near = Math.abs(craneS(t) - ST[i]) < 0.35 && t > 17.8 && t < 56.4;
-    el.style.opacity = (p.z < 1 ? 1 : 0) * (near ? 1 : 0.75) * (1 - sstep(prog(t, 56.4, 0.8))) * sstep(prog(t, 17.6, 0.6)); // with the crane: not over the garden of the constitution
+    el.style.opacity = (p.z < 1 ? 1 : 0) * (near ? 1 : 0.75) * (1 - sstep(prog(t, 56.4, 0.8))) * sstep(prog(t, 17.6, 0.6)); // with the crane: not over the garden of the quality bar
     el.style.color = near ? '#c4401f' : '#1d1c1a';
   });
 
@@ -1038,8 +1039,8 @@ function sceneAt(t) { // t = story time
   $('#term').innerHTML = base.slice(0, shown)
     .replace(/✗[^\n]*|2 failing/g, (m) => `<span style="color:#c4401f">${m}</span>`)
     .replace(/✓[^\n]*|0 failing/g, (m) => `<span style="color:#5d7436">${m}</span>`);
-  $('#gmsg').innerHTML = green ? '<span style="color:#5d7436">green: the step may finish</span>'
-    : t > 29.4 ? '<span style="color:#c4401f">blocked: the step cannot finish</span>' : '';
+  $('#gmsg').innerHTML = green ? '<span style="color:#5d7436">green: the turn may end</span>'
+    : t > 29.4 ? '<span style="color:#c4401f">blocked: the turn cannot end</span>' : '';
   const sk = eback(prog(t, 37.6, 0.35));
   $('#seal').style.opacity = prog(t, 37.6, 0.1);
   $('#seal').style.transform = `rotate(-6deg) scale(${1.6 - 0.6 * sk})`;
