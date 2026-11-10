@@ -6,6 +6,24 @@
 
 These indicators measure a **delivery system**, never people.
 
+## The output
+
+```
+window       since, days, from, default_branch
+changes      changes on the default branch in the window
+throughput   deployment_frequency_per_week, lead_time_hours_median, rework_rate (+ each *_method)
+instability  change_failure_rate, time_to_restore_hours_median (+ each *_method)
+batch_size   lines_median, lines_p90, over_limit_share, max_lines, source
+kaizen_loop  learnings_total, learnings_new, plans_touched, learnings_cited_by_plans,
+             learnings_applied_in_commits, learning_reuse_rate, learning_reuse_method,
+             learnings_never_cited, learnings_never_cited_sample
+friction     events, push, reviews_recorded, quality, secrets, other_refusals, method   (null: no event)
+work_items   items, by_kind, top, unattributed_share, method                           (null: no ledger)
+```
+
+A section with nothing to read is `null`, an indicator that cannot be computed is `null` with its
+`*_method` saying why — never `0`.
+
 ## Window
 
 `--since` takes `30d`, `12w` or `6m` (a month counts 30 days); default `90d`. Changes are read on the
@@ -26,8 +44,9 @@ Each comes with its `*_method`.
 
 ## Batch size
 
-Median and 90th percentile of lines changed (additions + deletions) per change — from GitHub PRs when
-available, otherwise from the git diffstat — and the share above `pr.max_lines` (`over_limit_share`).
+Median and 90th percentile of lines changed (additions + deletions) per change (`lines_median`,
+`lines_p90`) — from GitHub PRs when available, otherwise from the git diffstat (`source`) — and the share
+above `pr.max_lines` (`over_limit_share`, the limit itself in `max_lines`).
 DORA 2025 calls small batches the first lever; this is where AI-sized PRs show.
 
 ## Kaizen loop (`kaizen_loop`)
@@ -39,7 +58,7 @@ DORA 2025 calls small batches the first lever; this is where AI-sized PRs show.
 | `learnings_cited_by_plans` | distinct `learnings/….md` paths those plans cite — **read** |
 | `learnings_applied_in_commits` | distinct paths cited by commit messages on the default branch in the window — **applied** |
 | `learning_reuse_rate` | (read ∪ applied) / total learnings |
-| `learnings_never_cited` (+ a sample of 10) | learnings older than the window cited by no plan nor commit message (last 5,000): candidates for `/kaizen:learn prune` |
+| `learnings_never_cited` (+ `learnings_never_cited_sample`, 10 paths) | learnings older than the window cited by no plan nor commit message (last 5,000): candidates for `/kaizen:learn prune` |
 
 A learning written but never cited means the loop does not close:
 [Troubleshooting](../troubleshooting.md#the-learnings-are-not-reused).
@@ -59,6 +78,8 @@ recorded, push confirmed by you). Logging never changes a decision.
 | `reviews_recorded` | reviews Kaizen recorded |
 | `quality.blocked`, `quality.released`, `quality.by_check` | turns the quality gate stopped, gates released after `max_blocks`, the checks that block most |
 | `secrets.refused`, `secrets.no_verify` | commits refused for a secret, `--no-verify` attempts |
+| `other_refusals` | direct writes to Kaizen's review state refused (`state`) |
+| `events` | every event of the window, all gates together |
 
 The question it answers: **are the gates catching real problems, or taxing the work?**
 
@@ -75,8 +96,9 @@ match wins:
 
 Each line of `.kaizen/state/ledger.jsonl` keeps the tokens per model family (`opus`, `sonnet`, `haiku`),
 priced in the relative units of `review.cost_weights` (default haiku 1, sonnet 3, opus 5).
-`metrics` reports the median cost per kind (feature, fix, refactor… from the branch prefix) and the most
-expensive items; `node $K cost <item>` gives one item, end to end — spec, plan, build, review, PR
+`metrics` reports, in `work_items`: the number of `items`, the median cost per kind in `by_kind`
+(feature, fix, refactor… from the branch prefix), the five most expensive in `top` (item, kind, title,
+cost, tokens, sessions) and the share of tokens nobody could attribute (`unattributed_share`); `node $K cost <item>` gives one item, end to end — spec, plan, build, review, PR
 follow-up.
 
 The ledger is **local to the machine**: two developers each see their own share.

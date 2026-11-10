@@ -1,4 +1,4 @@
-// Kaizen — deterministic snapshot of a GitHub PR and tracking state (watch-pr, address-feedback).
+// Kaizen — deterministic snapshot of a GitHub PR and tracking state (/kaizen:watch).
 //
 // The agent keeps judgment and edits; this module does what prose does badly: a complete, paginated
 // read of review threads, comments, reviews and head-commit checks, the state of what was already
@@ -8,7 +8,7 @@
 //   snapshot [--pr N] [--repo o/r] [--start] [--budget-seconds S] [--settle-seconds S]
 //   watch    [--pr N] [--repo o/r] [--interval 150] [--settle-seconds 300]
 //   mark     --thread ID | --comment ID | --check NAME  --disposition dispatched|needs-human|open [--note …]
-//   threads  [--pr N] [--repo o/r] [--all]          full review threads (for address-feedback)
+//   threads  [--pr N] [--repo o/r] [--all]          full review threads (feedback to answer)
 //   reply    --thread ID --body-file F               replies in a thread (kaizen marker added)
 //   resolve  --thread ID                             marks a thread as resolved
 //   comment  --body-file F                           top-level comment (marker added)
@@ -395,7 +395,7 @@ export function updateBranch(stateRoot, opts) {
 }
 
 // ---------------------------------------------------------------------------
-// Overlap with the base — does the PR still belong? (watch-pr, "Still relevant?")
+// Overlap with the base — does the PR still belong? (/kaizen:watch, "Still relevant?")
 // ---------------------------------------------------------------------------
 
 // `git diff --name-status -M -z` → [{ status: 'A'|'M'|'D'|'R'|…, path, from }]. NUL-separated, so

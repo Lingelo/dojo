@@ -160,6 +160,21 @@ repository. Used by [`/kaizen:watch`](../guides/watch.md).
 | `pr update-branch` | updates the branch through the GitHub API **only if** GitHub says `BEHIND`, with the expected head SHA |
 | `pr overlap --base <ref>` | local git only: PR files the base modified, moved or deleted since the merge base (`touched`), folders the base removed under a path the PR adds (`removed_dirs`), PR patches already in the base (`absorbed`), commits `behind`; `assess: true` when any is set |
 
+`snapshot`'s `verdict`, first match wins — `pr watch` wakes Claude on every verdict from `terminal` to
+`looks-ready`, and on the three `blocked-*`/`needs-human` ones only when the verdict changed:
+
+| Verdict | Meaning |
+|---|---|
+| `terminal` | merged or closed |
+| `budget` | the watch budget (`--budget-seconds`) is spent |
+| `actionable` | an unhandled thread, comment or failing check on the head commit |
+| `behind` · `conflict` | GitHub says the branch is behind the base, or conflicts with it |
+| `looks-ready` | mergeable and clean, checks green, nothing pending, quiet for `--settle-seconds` |
+| `blocked-failing` | checks finished, the failing ones all handled (dispatched or left to you) |
+| `blocked-external` | the only checks pending wait for an approval (a fork's CI) |
+| `needs-human` | checks finished, an item marked `needs-human` |
+| `waiting` | checks still running |
+
 `KAIZEN_GH` replaces `gh` (a binary or a Node script, used by the tests).
 
 ## Hook scripts

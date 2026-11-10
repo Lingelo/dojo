@@ -28,6 +28,10 @@ The quality gate turns itself on when code is edited; agent-skills' `/review` is
 learnings come back when `SPEC.md`/`tasks/` are written or a covered file is edited. The boundary
 "remove or rewrite Kaizen's development skills in 6.0" below is lifted by this decision.
 
+Then ("nettoie bien tous les candidats"): the git hooks, the HTML cost dashboard, the migrations before
+5.0, review waivers and `approvals` are removed too. One way remains to push without a review: Claude
+asks, the review first, and only the user confirms in Claude Code's prompt. 8 hook registrations.
+
 ## Tech Stack
 
 - Node ≥ 18, zero npm dependency (Kaizen's CLI and hooks).
