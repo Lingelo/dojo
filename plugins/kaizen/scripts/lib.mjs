@@ -3,7 +3,7 @@
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { homedir, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -102,10 +102,6 @@ export function docsRoot(root, config = loadConfig(root)) {
     throw new Error(`invalid docs_root: "${value}" (must stay inside the repo, not the root itself and not .git)`);
   }
   return abs;
-}
-
-export function expandHome(p) {
-  return p.startsWith('~/') || p === '~' ? join(homedir(), p.slice(1)) : p;
 }
 
 // ---------------------------------------------------------------------------
@@ -468,29 +464,6 @@ export function globToRegex(glob) {
     else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
   }
   return new RegExp(`(^|/)${re}$`);
-}
-
-export function diffSize(root, { base, ignore = [] } = {}) {
-  const from = diffBase(root, base);
-  if (!from) throw new Error('base not found: pass --base <ref>');
-  const out = git(root, ['diff', '--numstat', from]);
-  const res = ignore.map(globToRegex);
-  const files = [];
-  let added = 0;
-  let removed = 0;
-  let ignored = 0;
-  for (const line of out ? out.split('\n') : []) {
-    const [a, d, ...rest] = line.split('\t');
-    const file = rest.join('\t');
-    if (a === '-' || res.some((r) => r.test(file))) {
-      ignored++;
-      continue;
-    }
-    added += Number(a);
-    removed += Number(d);
-    files.push({ file, added: Number(a), removed: Number(d) });
-  }
-  return { base: from, files: files.length, added, removed, total: added + removed, ignored, largest: files.sort((x, y) => y.added + y.removed - (x.added + x.removed)).slice(0, 5) };
 }
 
 // Git tree of the current state (committed + uncommitted, .gitignore honored), without touching the

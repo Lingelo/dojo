@@ -21,8 +21,6 @@ import { changedLines, defaultBranch, diffBase, git, loadConfig, logFriction, re
 export const VERDICTS = ['ready', 'concerns', 'blocked'];
 const PENDING_MAX_AGE_MS = 6 * 3600 * 1000;
 const WAIVER_MAX_AGE_MS = 30 * 60 * 1000;
-// State files only the CLI and the hooks write (the PreToolUse hook refuses direct writes).
-export const PROTECTED_STATE = ['reviews.json', 'review-pending.json', 'waivers.json', 'hooks-seen.json', 'push-offers.json', 'confirm-asks.json'];
 
 const readJson = readState;
 const writeJson = writeState;

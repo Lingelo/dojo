@@ -61,34 +61,15 @@ See `docs/SPEC.md` § Open Questions.
 
 Checkpoints after tasks 2, 4 and 7 (see `tasks/todo.md`).
 
-## Next releases (from the ideation, accelerated on 2026-11-09)
+## After 6.0
 
-- **6.1** — Kaizen's overlapping skills deprecated, each answering with its agent-skills replacement
-  (`ideate`, `brainstorm` → `/spec`, `idea-refine`, `interview-me`; `constitution` → `/constraints`;
-  `plan`, `doc-review`, `decide` → `/plan`, `doubt-driven-development`, `documentation-and-adrs`; `work`,
-  `autopilot` → `/build`; `debug` → `debugging-and-error-recovery`; `review` → `/review`; `polish` →
-  `frontend-ui-engineering`); Kaizen-only skills (`learn`, `metrics`, `watch-pr`, `help`/`setup`)
-  rewritten in his anatomy; engine guards on his files (silenced checks from `CONSTRAINTS.md`, evidence
-  ledger, scope from "Files likely touched"); hook adapters from the recorded fixtures.
-  **Learnings kept, read back by the engine**: agent-skills' skills do not read `docs/learnings/`, so
-  the read-back moves from Kaizen's skills to hooks — when `SPEC.md` or `tasks/plan.md` is written, the
-  matching learnings (`kaizen learnings search` on its terms) are added to the agent's context; when a
-  file is edited, the learnings whose new optional `files:` globs match it are added too; the
-  generated `AGENTS.md` section points other hosts to `docs/learnings/`. `/kaizen:learn` keeps writing
-  them (schema lightened) and harvests repeated refusals into rationalization learnings.
-- **Kaizen's own scripts, triaged** (decided 2026-11-09: measurement kept, production removed, PR
-  follow-up kept). From ~7,500 lines of CLI to about half:
+What the ideation spread over 6.1 to 7.0 (overlapping skills, the 22 agents, the scripts replaced by
+agent-skills, production, the docs rewrite, the new video) was done in 6.0 — the list of what went is
+in `plugins/kaizen/CHANGELOG.md` and `plugins/kaizen/docs/migrating-to-6.md`. Still open, each its own
+spec when it starts:
 
-  | Group | Scripts | Decision |
-  |---|---|---|
-  | Engine | `quality-gate`, `run-bounded`, `secret-gate`, `secrets`, `review-gate`, `review-state`, `review-hooks`, `githooks` | kept |
-  | Measurement | `metrics`, `dashboard`, `ledger`, `ledger-hook`, `cycle-agents` | kept; DORA reads merges and release tags instead of deploy tags |
-  | PR follow-up | `pr` (watch-pr, address-feedback) | kept, trimmed for `/kaizen:watch` |
-  | Replaced by agent-skills | `plancheck`, `planamend`, `constitution`, `risk`, `perf`, `devserver`, `estimate`, `models`, `approvals`, `audit` | deprecated in 6.1, removed in 7.0 (his plan format, `CONSTRAINTS.md`, floor guard, `/webperf`, constraints intake) |
-  | Production | `deploy`, `monitor`, `deploydetect`, the deploy part of `review-gate`, the whole `kaizen-ops` plugin | **removed in 6.0** (task 4b) |
-  | Base | `lib`, `kaizen.mjs`, `doctor`, `upgrade`, `release` (notes, SemVer) | trimmed to what the rest uses |
-
-- **6.2–6.3** — handoff, boundaries enforcement, `CONSTITUTION.md` → `CONSTRAINTS.md` in `kaizen
-  upgrade`.
-- **7.0** — deprecated skills, 20 agents and deprecated scripts removed; docs rewrite;
-  new video.
+- **Handoff** between sessions, from agent-skills' `tasks/` files.
+- **Boundaries enforcement**: the "Always / Ask first / Never" of `SPEC.md` checked by a hook, not only
+  read.
+- **Other hosts**: the read-back of learnings for agents that are not Claude Code (an `AGENTS.md`
+  section pointing to `docs/learnings/`).
