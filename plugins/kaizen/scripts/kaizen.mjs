@@ -33,7 +33,7 @@ import { isEmpty, loadLearnings, searchLearnings, termsOf, validateLearning } fr
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { checkPush, currentBranch, reviewStatus } from './review-state.mjs';
 import { applyAll, formatUpgrade, pending as pendingMigrations } from './upgrade.mjs';
-import { DEFAULT_CONFIG, defaultBranch, detectStack, diffBase, docsRoot, git, loadConfig, readState, repoRoot, runVerify, verifyCommands, walkMarkdown } from './lib.mjs';
+import { DEFAULT_CONFIG, changedFiles, defaultBranch, detectStack, diffBase, docsRoot, git, loadConfig, readState, repoRoot, runVerify, verifyCommands, walkMarkdown } from './lib.mjs';
 
 const argv = process.argv.slice(2);
 const flags = {};
@@ -197,16 +197,21 @@ function repoStatus(root) {
   const gate = readState(root, 'gate.json', null);
   const review = initialized && branch ? reviewStatus(root) : null;
 
-  // Next step: the first situation that applies.
+  // Code changed on the branch: agent-skills' planning files (the spec, tasks/) are not code to review.
+  const planning = (f) => /^(docs\/)?SPEC\.md$|^tasks\//.test(f);
+  const code = branch && branch !== def ? changedFiles(root, base).filter((f) => !planning(f)).length : 0;
+
+  // Next step: the first situation that applies — the cycle's order: spec, plan, build, review, ship.
   const next = [];
   const say = (command, why) => next.push({ command, why });
   if (!initialized) say('/kaizen:setup', 'Kaizen is not initialized in this repo');
   if (gate?.active && gate.blocks) say('make the checks green', `the quality gate stopped the last turn${gate.blocks > 1 ? ` ${gate.blocks} times` : ''} (\`node $K verify\`; \`gate off\` only if the failure is outside the task)`);
-  else if (branch && branch !== def && (ahead || dirty)) {
+  else if (tasks && tasks.done < tasks.total) say('/kaizen:build', `${tasks.done}/${tasks.total} tasks done in ${tasks.path}, next: ${tasks.next}`);
+  else if (as.spec && !as.tasks) say('/kaizen:plan', `${as.spec.path} has no task list yet`);
+  else if (code) {
     if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): push, open the PR, then /kaizen:watch`);
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
-  } else if (tasks && tasks.done < tasks.total) say('/kaizen:build', `${tasks.done}/${tasks.total} tasks done in ${tasks.path}, next: ${tasks.next}`);
-  else if (as.spec && !as.tasks) say('/kaizen:plan', `${as.spec.path} has no task list yet`);
+  }
   if (initialized && !next.length) say('/kaizen:spec <what to build>', 'the next feature: spec, plan, build, review, ship (a bug → /kaizen:test with its reproduction)');
   return {
     repo: basename(root),

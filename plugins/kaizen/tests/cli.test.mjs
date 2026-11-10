@@ -120,13 +120,15 @@ test('status: setup, then agent-skills\' commands, review and ship in order', ()
   gitc(dir, ['add', '-A'], ['commit', '-qm', 'docs: spec']);
   gitc(dir, ['checkout', '-qb', 'feat/x']);
   writeFiles(dir, { 'a.js': '2\n' });
+  assert.deepEqual(next(), ['/kaizen:build'], 'a task left: build before review');
+  writeFiles(dir, { 'tasks/todo.md': '# Tasks\n\n## Task 1: A\n\n**Acceptance criteria:**\n- [x] a\n\n## Task 2: B\n\n**Acceptance criteria:**\n- [x] b\n' });
   assert.deepEqual(next(), ['/kaizen:review'], 'uncommitted, unreviewed changes');
   gitc(dir, ['commit', '-qam', 'feat: x']);
   personaReview(dir);
   const reviewed = cli(dir, ['status', '--json']).json;
   assert.deepEqual(reviewed.next.map((n) => n.command), ['/kaizen:ship']);
   assert.equal(reviewed.review.push_allowed, true);
-  assert.match(cli(dir, ['status']).stdout, /agent-skills: SPEC\.md · tasks\/todo\.md 1\/2/);
+  assert.match(cli(dir, ['status']).stdout, /agent-skills: SPEC\.md · tasks\/todo\.md 2\/2/);
   cleanup(dir);
 });
 
