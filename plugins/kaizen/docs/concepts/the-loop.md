@@ -68,7 +68,7 @@ match wins:
 2. The quality gate stopped the last turn → make the checks green.
 3. Tasks left in `tasks/todo.md` → `/kaizen:build`; a spec without tasks → `/kaizen:plan`.
 4. Code changed on a branch (the spec and `tasks/` do not count): not reviewed → `/kaizen:review`;
-   reviewed and committed → `/kaizen:ship`, then `/kaizen:watch`.
+   reviewed and committed → `/kaizen:ship`; reviewed and pushed → `/kaizen:watch`.
 5. Otherwise → `/kaizen:spec <what to build>`.
 
 ## Where everything lives

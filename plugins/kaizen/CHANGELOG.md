@@ -79,7 +79,7 @@ roadmap: `docs/ideation/2026-11-09-kaizen-6-ideation.md` of the dojo repository.
 ### Changed
 - **`status` follows the cycle's order**: tasks left → `/kaizen:build`, a spec without tasks →
   `/kaizen:plan`, then review and ship. Writing the spec or `tasks/` on a branch no longer sends you to
-  `/kaizen:review` before the code exists. The whole cycle is covered by `tests/flow.test.mjs`.
+  `/kaizen:review` before the code exists. A reviewed branch already pushed names `/kaizen:watch`. The whole cycle is covered by `tests/flow.test.mjs`.
 - `/kaizen:watch` replaces `address-feedback` and `watch-pr` (`checkpoint` runs one cycle).
 - `/kaizen:learn prune` replaces `prune-learnings`; `/kaizen:setup` also answers "where are we".
 - `install settings` and `doctor` declare and check both `kaizen@dojo` and `agent-skills@dojo`.

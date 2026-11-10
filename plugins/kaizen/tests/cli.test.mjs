@@ -129,6 +129,12 @@ test('status: setup, then agent-skills\' commands, review and ship in order', ()
   assert.deepEqual(reviewed.next.map((n) => n.command), ['/kaizen:ship']);
   assert.equal(reviewed.review.push_allowed, true);
   assert.match(cli(dir, ['status']).stdout, /agent-skills: SPEC\.md · tasks\/todo\.md 2\/2/);
+  // pushed as reviewed: the PR and its follow-up are next
+  const origin = tempRepo({}, { commit: false });
+  gitc(origin, ['config', 'receive.denyCurrentBranch', 'ignore']);
+  gitc(dir, ['remote', 'add', 'origin', origin], ['push', '-q', '-u', 'origin', 'feat/x']);
+  assert.deepEqual(next(), ['/kaizen:watch']);
+  cleanup(origin);
   cleanup(dir);
 });
 

@@ -209,7 +209,10 @@ function repoStatus(root) {
   else if (tasks && tasks.done < tasks.total) say('/kaizen:build', `${tasks.done}/${tasks.total} tasks done in ${tasks.path}, next: ${tasks.next}`);
   else if (as.spec && !as.tasks) say('/kaizen:plan', `${as.spec.path} has no task list yet`);
   else if (code) {
-    if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): push, open the PR, then /kaizen:watch`);
+    // Already pushed as reviewed (the upstream is HEAD): what is left is the PR and its follow-up.
+    const pushed = !dirty && git(root, ['rev-parse', '@{u}'], { allowFail: true }) === git(root, ['rev-parse', 'HEAD'], { allowFail: true });
+    if (review?.review && review.push.allowed && ahead && pushed) say('/kaizen:watch', `branch ${branch} reviewed and pushed: open the PR if it is not (gh pr create), then follow it until it looks ready`);
+    else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): push, open the PR, then /kaizen:watch`);
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   }
   if (initialized && !next.length) say('/kaizen:spec <what to build>', 'the next feature: spec, plan, build, review, ship (a bug → /kaizen:test with its reproduction)');
