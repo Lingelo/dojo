@@ -109,23 +109,10 @@ redacted preview, never the value. Exit 1 if anything is found. The same scan ru
 
 ### `review status` · `review check`
 
-`status`: the recorded review (tree, verdict, source — `code-review-and-quality` or `code-reviewer`),
-a pending waiver, and the push decision. `check`: the push decision alone, exit 1 when a push would be
+`status`: the recorded review (tree, verdict, source — `code-review-and-quality` or `code-reviewer`)
+and the push decision. `check`: the push decision alone, exit 1 when a push would be
 stopped. The review records itself: there is no command to record one by hand.
 [The review before push](../concepts/gates.md#the-review-before-push).
-
-### `review waive --reason "…"`
-
-Creates a pending waiver for the branch and prints `{ code, expires_in_minutes: 30, instruction }`. Only
-you confirm it: `confirm <code>` through Claude Code's prompt, or your own message `kaizen waive <code>`
-with `approvals: "code"`.
-
-### `confirm <code>`
-
-With `approvals: "ask"` (default): confirms a pending waiver — only after the hook turned this very call
-into Claude Code's permission prompt and you accepted it (10 minutes, single use). Refused otherwise, and
-always with `approvals: "code"`. The hook lets it run only with the code written out (no variable,
-nothing chained after it), so the prompt shows exactly what you confirm.
 
 ## Learnings
 
@@ -184,16 +171,15 @@ refused):
 |---|---|
 | `review-hooks.mjs --heartbeat` | SessionStart: records that Kaizen's hooks fire (`doctor`'s `hooks` check) |
 | `secret-gate.mjs` | PreToolUse on Bash: no `git commit` adding a secret |
-| `review-gate.mjs` | PreToolUse: no unreviewed `git push`; `confirm` turned into Claude Code's prompt; no direct write to the review state |
+| `review-gate.mjs` | PreToolUse: no unreviewed `git push` without your confirmation in Claude Code's prompt; no direct write to the review state |
 | `post-edit.mjs` | PostToolUse on Write, Edit, MultiEdit, NotebookEdit: quality gate on, learnings brought back |
 | `review-hooks.mjs --evidence` | PostToolUse on Agent, Task, Skill: agent-skills' review recorded (persona) or marked (skill) |
 | `quality-gate.mjs` | Stop: verification while the gate is on |
 | `review-hooks.mjs --stop` | Stop: reads the review agent-skills' skill wrote this turn, and records it |
 | `ledger-hook.mjs` | Stop: the turn's tokens charged to the work item |
-| `review-hooks.mjs --confirm` | UserPromptSubmit: `kaizen waive <code>` typed by you (`approvals: "code"`) |
 | `run-bounded.mjs <ms> <command>` | internal: runs a command and kills its whole process tree on timeout |
 
-The other scripts are modules the CLI loads: `lib.mjs`, `review-state.mjs`, `approvals.mjs`,
+The other scripts are modules the CLI loads: `lib.mjs`, `review-state.mjs`,
 `learnings.mjs`, `agentskills.mjs`, `secrets.mjs`, `doctor.mjs`, `upgrade.mjs`,
 `metrics.mjs`, `ledger.mjs`, `pr.mjs`, and `aliases.mjs`, which generates `commands/`
 from agent-skills' commands (`--check` fails when they differ).

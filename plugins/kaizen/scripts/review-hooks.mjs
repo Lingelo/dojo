@@ -8,8 +8,6 @@
 //               the verdict is read from it and the reviewed tree recorded.
 //   --heartbeat (SessionStart): records that Claude Code runs Kaizen's hooks in this repo
 //               (`.kaizen/state/hooks-seen.json`), read by `kaizen doctor`.
-//   --confirm   (UserPromptSubmit, `approvals: "code"`): a user message containing `kaizen waive <code>`
-//               confirms the review waiver requested by `review waive`.
 // Always exit 0: these hooks observe, they block nothing. Inactive outside a Kaizen repo.
 
 import { readFileSync } from 'node:fs';
@@ -19,11 +17,9 @@ try {
   input = JSON.parse(readFileSync(0, 'utf8') || '{}');
 } catch {}
 
-const mode = ['confirm', 'heartbeat', 'stop'].find((m) => process.argv.includes(`--${m}`)) || 'evidence';
-const WAIVE = /\bkaizen\s+waive\s+([A-F0-9]{6})\b/i;
+const mode = ['heartbeat', 'stop'].find((m) => process.argv.includes(`--${m}`)) || 'evidence';
 
-// Cheap filters before any import: these hooks see every message and every tool call.
-if (mode === 'confirm' && !WAIVE.test(String(input.prompt || ''))) process.exit(0);
+// Cheap filter before any import: this hook sees every tool call.
 if (mode === 'evidence' && !/^(Agent|Task|Skill)$/.test(String(input.tool_name || ''))) process.exit(0);
 
 // Text of a tool response or of the transcript's last assistant message.
@@ -59,16 +55,6 @@ try {
   } else if (mode === 'stop') {
     const p = state.takePendingReview(root, session);
     if (p && input.transcript_path) state.recordReview(root, { verdict: state.verdictOf(lastAssistantText(input.transcript_path)), source: p.source, session });
-  } else {
-    const [, code] = WAIVE.exec(String(input.prompt));
-    const entry = state.confirmWaiver(root, code, { session });
-    // On UserPromptSubmit, standard output is added to Claude's context.
-    process.stdout.write(
-      entry
-        ? `[kaizen] Review waiver confirmed by the user for ${entry.branch} (reason: ${entry.reason}). ` +
-            'The push is allowed; the PR must say so in a "Review waived" section.\n'
-        : `[kaizen] Waiver code ${code} unknown or expired (30 min): run \`review waive --reason\` again if the user still wants it.\n`,
-    );
   }
 } catch (err) {
   process.stderr.write(`[kaizen] review-hooks: ${err.message}\n`);

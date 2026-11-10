@@ -34,8 +34,7 @@ That is the push gate: in a Kaizen repository, a branch does not leave without a
 | "the last review found Critical issues" | fix them, then `/kaizen:review` again |
 | "the reviewed tree cannot be found (history rewritten?)" | the branch was rebased or amended after the review: review again |
 | `/kaizen:review` ran but nothing was recorded | the review must be agent-skills' (`/kaizen:review`, `/agent-skills:review`, or the `code-reviewer` persona); check `node $K review status`, and that `kaizen doctor` shows `hooks` and `agent_skills` ✔ |
-| You want to push without a review (hotfix, throwaway branch) | choose "Push without a review" when Claude asks, then confirm in Claude Code's prompt (with `approvals: "code"`: type `kaizen waive <code>`) |
-| You want the push refused until a review | `"review": { "require_before_push": true }` |
+| You want to push without a review (hotfix, throwaway branch) | choose "Push without a review" when Claude asks, then confirm in Claude Code's prompt |
 | You do not want this rule | `"review": { "require_before_push": false }` |
 
 ## `git commit` is refused: "possible secret(s)"

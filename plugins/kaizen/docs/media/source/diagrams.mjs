@@ -419,7 +419,7 @@ written.push(
 // 6. Hooks in a session
 // ---------------------------------------------------------------------------------------------------
 written.push(
-  diagram('hooks', 1100, 580, 'Kaizen’s hooks in a Claude Code session', 'Nine hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.', (d) => {
+  diagram('hooks', 1100, 580, 'Kaizen’s hooks in a Claude Code session', 'Eight hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.', (d) => {
     const lane = (y, label) => {
       d.text(36, y + 4, label, 'regionlabel');
       d.arrow([[150, y], [1064, y]], { none: true });
@@ -429,8 +429,6 @@ written.push(
     lane(430, 'END OF TURN');
     d.box('ss', 170, 76, 230, 56, 'gate', 'SessionStart', 'review-hooks.mjs --heartbeat:\nhooks-seen.json, read by doctor');
     d.box('msg', 440, 84, 270, 40, 'outside', 'you send a message');
-    d.box('ups', 740, 76, 324, 56, 'gate', 'UserPromptSubmit', 'review-hooks.mjs --confirm:\ntyped codes (approvals: "code")');
-    d.arrow(['msg.r', 'ups.l'], {});
     d.box('tool', 170, 234, 230, 40, 'plain', 'Claude calls a tool');
     d.box('pre1', 440, 152, 270, 82, 'gate', 'PreToolUse (Bash)', 'secret-gate.mjs: commit carrying\na secret, --no-verify → 2');
     d.box('pre2', 440, 254, 270, 82, 'gate', 'PreToolUse (Bash, Write, Edit)', 'review-gate.mjs: push without\nreview, state writes → 2');
@@ -445,7 +443,7 @@ written.push(
     d.box('stop1', 170, 392, 270, 76, 'gate', 'Stop', 'quality-gate.mjs: verify while the\ngate is on · blocks ≤ 3 times');
     d.box('stop2', 460, 392, 280, 76, 'gate', 'Stop', 'review-hooks.mjs --stop: the turn\nthat ran a review → review recorded');
     d.box('stop3', 760, 392, 304, 76, 'gate', 'Stop', 'ledger-hook.mjs: charges the turn’s\ntokens to the work item · never blocks');
-    d.text(36, 506, 'Exit 0 = allow, exit 2 = block with the message on stderr (sent back to Claude). SessionStart, UserPromptSubmit, PostToolUse and the ledger only observe.\nAll registrations live in hooks/hooks.json and use ${CLAUDE_PLUGIN_ROOT}; timeouts: SessionStart 10 s, PreToolUse 30 s, PostToolUse 15 s,\nStop 900 s (gate), 15 s (review), 30 s (ledger), UserPromptSubmit 30 s.', 'small');
+    d.text(36, 506, 'Exit 0 = allow, exit 2 = block with the message on stderr (sent back to Claude). SessionStart, PostToolUse and the ledger only observe.\nAll registrations live in hooks/hooks.json and use ${CLAUDE_PLUGIN_ROOT}; timeouts: SessionStart 10 s, PreToolUse 30 s, PostToolUse 15 s,\nStop 900 s (gate), 15 s (review), 30 s (ledger).', 'small');
   }),
 );
 

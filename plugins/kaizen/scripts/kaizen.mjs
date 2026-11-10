@@ -13,10 +13,9 @@
 //   node kaizen.mjs upgrade [--apply] [--json]   what this repo still has to change after a Kaizen update
 //   node kaizen.mjs install settings             kaizen@dojo and agent-skills@dojo declared for every clone
 //   node kaizen.mjs gate status | off             quality gate of this session (on by itself when code is edited)
-//   node kaizen.mjs review status | check | waive --reason "…"
+//   node kaizen.mjs review status | check
 //                                                 reviewed state per branch, required before git push; the review
-//                                                 is agent-skills' and records itself; waive waits for the user
-//   node kaizen.mjs confirm <code>               approvals "ask": after the user confirmed in Claude Code's prompt
+//                                                 is agent-skills' and records itself
 //   node kaizen.mjs secrets scan [--staged | --base <ref>] [--json]   possible secrets in the changes (exit 1 if any)
 //   node kaizen.mjs learnings search <words…> [--limit 8] [--json] | validate [files…] | list [--retire] | stats
 //   node kaizen.mjs metrics [--since 90d] [--no-github]   approximated DORA metrics, learnings reuse, friction, cost
@@ -32,8 +31,7 @@ import { DEFAULT_WEIGHTS, itemCosts, readLedger, workItem } from './ledger.mjs';
 import { declarePlugin, doctor, formatDoctor } from './doctor.mjs';
 import { isEmpty, loadLearnings, searchLearnings, termsOf, validateLearning } from './learnings.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
-import { checkPush, currentBranch, requestWaiver, reviewStatus } from './review-state.mjs';
-import { approvalMode } from './approvals.mjs';
+import { checkPush, currentBranch, reviewStatus } from './review-state.mjs';
 import { applyAll, formatUpgrade, pending as pendingMigrations } from './upgrade.mjs';
 import { DEFAULT_CONFIG, defaultBranch, detectStack, diffBase, docsRoot, git, loadConfig, readState, repoRoot, runVerify, verifyCommands, walkMarkdown } from './lib.mjs';
 
@@ -205,8 +203,7 @@ function repoStatus(root) {
   if (!initialized) say('/kaizen:setup', 'Kaizen is not initialized in this repo');
   if (gate?.active && gate.blocks) say('make the checks green', `the quality gate stopped the last turn${gate.blocks > 1 ? ` ${gate.blocks} times` : ''} (\`node $K verify\`; \`gate off\` only if the failure is outside the task)`);
   else if (branch && branch !== def && (ahead || dirty)) {
-    if (review?.pending_waiver) say(approvalMode(config) === 'code' ? 'kaizen waive <code>' : 'answer Claude\'s question', 'a review waiver awaits your confirmation');
-    else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): push, open the PR, then /kaizen:watch`);
+    if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): push, open the PR, then /kaizen:watch`);
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   } else if (tasks && tasks.done < tasks.total) say('/kaizen:build', `${tasks.done}/${tasks.total} tasks done in ${tasks.path}, next: ${tasks.next}`);
   else if (as.spec && !as.tasks) say('/kaizen:plan', `${as.spec.path} has no task list yet`);
@@ -221,7 +218,7 @@ function repoStatus(root) {
     agent_skills: { spec: as.spec?.path || null, plan: as.plan?.path || null, tasks, constraints: as.constraints?.path || null },
     learnings,
     gate: { active: Boolean(gate?.active), blocks: gate?.blocks || 0, since: gate?.since || null },
-    review: review ? { verdict: review.review?.verdict || null, depth: review.review?.depth || null, push_allowed: review.push.allowed, reason: review.push.reason, pending_waiver: Boolean(review.pending_waiver) } : null,
+    review: review ? { verdict: review.review?.verdict || null, depth: review.review?.depth || null, push_allowed: review.push.allowed, reason: review.push.reason } : null,
     next,
   };
 }
@@ -299,25 +296,14 @@ try {
     case 'learnings':
       cmdLearnings(requireRepo(), sub);
       break;
-    case 'confirm': {
-      // approvals: "ask" — after Claude Code's prompt (review hook), never on Claude's word alone.
-      const { confirmAsked } = await import('./approvals.mjs');
-      try {
-        out(await confirmAsked(requireRepo(), sub || '', { session: process.env.CLAUDE_SESSION_ID || null }));
-      } catch (err) {
-        die(err.message);
-      }
-      break;
-    }
     case 'review': {
       const root = requireRepo();
-      if (sub === 'waive') out(requestWaiver(root, { reason: typeof flags.reason === 'string' ? flags.reason : null }));
-      else if (sub === 'status') out(reviewStatus(root));
+      if (sub === 'status') out(reviewStatus(root));
       else if (sub === 'check') {
         const res = checkPush(root);
         out(res);
         process.exit(res.allowed ? 0 : 1);
-      } else die('usage: review status | review check | review waive --reason "…"');
+      } else die('usage: review status | review check');
       break;
     }
     case 'secrets': {

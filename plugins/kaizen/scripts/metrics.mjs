@@ -228,21 +228,23 @@ export function friction(root, from) {
   const count = (pred) => events.filter(pred).length;
   const tally = (list, key) => list.reduce((o, e) => ((o[e[key] ?? 'other'] = (o[e[key] ?? 'other'] || 0) + 1), o), {});
 
-  // Time blocked on push: from the first refusal on a branch to what lifted it (review recorded or
-  // waiver confirmed on that branch). A refusal never lifted in the window counts as still blocked.
-  const blockedMinutes = [];
+  // Time stopped on push: from the first stop on a branch (Claude asked the user; `refused` in older
+  // logs) to the next review recorded on it. A stop never lifted in the window counts as still waiting.
+  const stops = (e) => e.gate === 'push' && (e.kind === 'asked' || e.kind === 'refused');
+  const waitedMinutes = [];
   const open = new Map();
   for (const e of events.filter((x) => x.gate === 'push')) {
-    if (e.kind === 'refused' && !open.has(e.branch)) open.set(e.branch, Date.parse(e.at));
-    if ((e.kind === 'review_recorded' || e.kind === 'waiver_confirmed') && open.has(e.branch)) {
-      blockedMinutes.push((Date.parse(e.at) - open.get(e.branch)) / 60000);
+    if (stops(e) && !open.has(e.branch)) open.set(e.branch, Date.parse(e.at));
+    if (e.kind === 'review_recorded' && open.has(e.branch)) {
+      waitedMinutes.push((Date.parse(e.at) - open.get(e.branch)) / 60000);
       open.delete(e.branch);
     }
+    // Pushed without a review: the user's choice ends the wait too.
+    if (e.kind === 'skip_confirm') open.delete(e.branch);
   }
-  const pushRefused = events.filter((e) => e.gate === 'push' && e.kind === 'refused');
+  const stopped = events.filter(stops);
   const recorded = count((e) => e.kind === 'review_recorded');
-  const confirmed = count((e) => e.kind === 'waiver_confirmed' && !e.gap);
-  // "ask" mode: the user chose "Push without a review" and Claude Code's prompt asked them to confirm it.
+  // The user chose "Push without a review" and Claude Code's prompt asked them to confirm it.
   const skipped = count((e) => e.gate === 'push' && e.kind === 'skip_confirm');
   const quality = events.filter((e) => e.gate === 'quality');
   const checks = {};
@@ -250,32 +252,21 @@ export function friction(root, from) {
   return {
     events: events.length,
     push: {
-      refused: pushRefused.length,
-      // review.require_before_push: "ask" — pushes Claude asked the user to judge, the ones they chose to
-      // push without a review, and unreviewed pushes from their own terminal (the git hook only reminds).
-      asked: count((e) => e.gate === 'push' && e.kind === 'asked' && e.source !== 'git'),
+      stopped: stopped.length,
       pushed_without_review: skipped,
-      unreviewed_from_terminal: count((e) => e.gate === 'push' && e.kind === 'asked' && e.source === 'git'),
-      by_reason: tally(pushRefused, 'reason'),
-      by_source: tally(pushRefused, 'source'),
-      unblocked_median_minutes: round(median(blockedMinutes), 0),
-      still_blocked: open.size,
+      by_reason: tally(stopped, 'reason'),
+      unblocked_median_minutes: round(median(waitedMinutes), 0),
+      still_waiting: open.size,
+      // Share of pushes that went out without a review (a declined prompt included) rather than after
+      // one: a rising share means the review is felt as a tax.
+      skip_share: recorded + skipped ? round(skipped / (recorded + skipped), 2) : null,
     },
     reviews_recorded: recorded,
-    waivers: {
-      requested: count((e) => e.kind === 'waiver_requested'),
-      confirmed,
-      gaps_accepted: count((e) => e.kind === 'waiver_confirmed' && e.gap),
-      // Share of pushes cleared by a waiver (or, in "ask" mode, by choosing to push without a review)
-      // rather than a review: a rising share means the review is felt as a tax.
-      share: recorded + confirmed + skipped ? round((confirmed + skipped) / (recorded + confirmed + skipped), 2) : null,
-    },
     quality: { blocked: count((e) => e.gate === 'quality' && e.kind === 'blocked'), released: count((e) => e.gate === 'quality' && e.kind === 'released'), by_check: checks },
     secrets: { refused: count((e) => e.gate === 'secrets' && e.kind === 'refused'), no_verify: count((e) => e.gate === 'secrets' && e.kind === 'no_verify') },
-    other_refusals: tally(events.filter((e) => ['deploy', 'state', 'tag'].includes(e.gate)), 'gate'),
+    other_refusals: tally(events.filter((e) => e.gate === 'state'), 'gate'),
     method:
-      'stops logged by the Kaizen hooks and git hooks on this machine (.kaizen/state/friction.jsonl); time blocked = first push ' +
-      'refusal on a branch → next review recorded or waiver confirmed on it; waiver share = (waivers + pushes without a review ' +
-      'chosen in "ask" mode, a declined prompt included) / (reviews + both)',
+      'stops logged by the Kaizen hooks on this machine (.kaizen/state/friction.jsonl); time stopped = first push stop on a ' +
+      'branch → next review recorded on it; skip share = pushes without a review (a declined prompt included) / (reviews + those)',
   };
 }

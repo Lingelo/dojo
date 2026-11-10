@@ -41,7 +41,7 @@ with each agent-skills update); `/agent-skills:<name>` works too.
 
 ## What runs without being asked
 
-Nine hook registrations ([Gates and hooks](gates.md)):
+Eight hook registrations ([Gates and hooks](gates.md)):
 
 - editing a code file turns the **quality gate** on: no end of turn on red checks;
 - agent-skills' **review records itself**, and an unreviewed branch is not pushed without your say;
@@ -66,7 +66,7 @@ match wins:
 
 1. Kaizen not initialized → `/kaizen:setup`.
 2. The quality gate stopped the last turn → make the checks green.
-3. A branch with changes: waiver pending → confirm it; not reviewed → `/kaizen:review`; reviewed and
+3. A branch with changes: not reviewed → `/kaizen:review`; reviewed and
    clean → `/kaizen:ship`, then `/kaizen:watch`.
 4. Tasks left in `tasks/todo.md` → `/kaizen:build`; a spec without tasks → `/kaizen:plan`.
 5. Otherwise → `/kaizen:spec <what to build>`.

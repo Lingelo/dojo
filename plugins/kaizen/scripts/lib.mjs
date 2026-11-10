@@ -36,11 +36,8 @@ export const DEFAULT_CONFIG = {
   verify: {},
   // Quality gate (Stop hook): on as soon as a session edits code, off when the checks are green.
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
-  // How the user approves a review waiver: a question (safe option first) confirmed in Claude Code's
-  // prompt, or a code they type — scripts/approvals.mjs.
-  approvals: 'ask',
   // cost_weights: relative weight of a million tokens per model family, for `kaizen cost` and metrics.
-  review: { require_before_push: 'ask', max_unreviewed_lines: 80, cost_weights: {} },
+  review: { require_before_push: true, max_unreviewed_lines: 80, cost_weights: {} },
   // Secret scan before every commit Claude makes (secret-gate hook); ignore = path globs.
   secrets: { scan: true, ignore: [] },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
@@ -428,7 +425,7 @@ export function diffBase(root, explicit) {
   return null;
 }
 
-// Friction log: each time a guard rail stops the work, and what lifts it (review recorded, waiver).
+// Friction log: each time a guard rail stops the work, and what lifts it (review recorded, push confirmed by the user).
 // `metrics` → friction reads it. Never throws: logging must never change what a gate decides.
 export const FRICTION = join('.kaizen', 'state', 'friction.jsonl');
 

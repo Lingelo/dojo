@@ -59,7 +59,7 @@ function productionLeftovers(root) {
 }
 // What Kaizen 6.0 no longer reads, because agent-skills covers it: config keys of removed features,
 // the constitution (→ agent-skills' CONSTRAINTS.md), Kaizen Packs.
-const REMOVED_KEYS = ['profile', 'models', 'risk', 'perf', 'packs', 'tracker'];
+const REMOVED_KEYS = ['profile', 'models', 'risk', 'perf', 'packs', 'tracker', 'approvals'];
 function surfaceLeftovers(root) {
   const found = [];
   for (const f of CONFIG_FILES) {
@@ -78,7 +78,7 @@ const AS_ID = 'agent-skills@dojo';
 // Releases with a Breaking or Deprecated section that ask nothing of a repository, with the reason
 // (tests/upgrade.test.mjs requires one or the other from 4.3.0 on).
 export const NO_MIGRATION = {
-  '5.0.0': 'new defaults ("ask") apply as-is; a team keeping typed codes sets require_before_push: true and approvals: "code"',
+  '5.0.0': 'new defaults apply as-is',
 };
 
 export const MIGRATIONS = [

@@ -1,7 +1,7 @@
 # Gates and hooks
 
 Kaizen's guarantees are **hooks**: Claude Code runs them on its own, whatever the agent intends. None of
-them needs a command; each can be waived only where it says so.
+them needs a command; only you can let something through, where it says so.
 
 ![Kaizen's hooks in a Claude Code session](../media/diagrams/hooks.svg)
 
@@ -61,15 +61,13 @@ decides, first match wins:
 | more than `review.max_unreviewed_lines` (80) changed since the review | stopped |
 | otherwise | allowed |
 
-**Skipping the review is yours.** With `require_before_push: "ask"` (default), the first push of a commit
-is stopped and Claude asks you, the review as the first option. If you choose to push without it,
-Claude pushes again and **Claude Code's own permission prompt** asks you to confirm — Claude cannot
-answer it. With `true`, the push is refused and only `review waive --reason "…"` lifts it, confirmed by
-you (a question then the prompt, or with `approvals: "code"` the code `kaizen waive <code>` you type).
-In bypass-permissions mode nothing can ask you: the skip is refused.
+**Skipping the review is yours.** The first push of a commit is stopped and Claude asks you, the review
+as the first option. If you choose to push without it, Claude pushes again and **Claude Code's own
+permission prompt** asks you to confirm — Claude cannot answer it. The offer holds for that commit, for
+30 minutes, once. In bypass-permissions mode nothing can ask you: the skip is refused.
 
-Direct writes to Kaizen's state (`reviews.json`, `review-pending.json`, `waivers.json`, `push-offers.json`,
-`confirm-asks.json`, `hooks-seen.json`) and manual calls of `review-hooks.mjs` are refused.
+Direct writes to Kaizen's state (`reviews.json`, `review-pending.json`, `push-offers.json`,
+`hooks-seen.json`) and manual calls of `review-hooks.mjs` are refused.
 
 ## No secret committed
 

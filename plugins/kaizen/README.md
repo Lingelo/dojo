@@ -110,7 +110,7 @@ repo stands and what to run next.
 |---|---|---|
 | **No end of turn on red checks** | `quality-gate.mjs`, a Stop hook | on by itself once the session edits a code file; off when green; 3 blocks at most, then Claude must say what is still red |
 | **No unreviewed push** | `review-gate.mjs`, a PreToolUse hook; `review-hooks.mjs` records agent-skills' review | the review skill (`/kaizen:review`) or the `code-reviewer` persona (`/kaizen:ship`); verdict read from what it wrote: a Critical finding blocks the same tree |
-| **Skipping the review is yours** | Claude asks, the review first; you confirm in Claude Code's own prompt | `review.require_before_push`: `"ask"` (default), `true` (refused), `false` |
+| **Skipping the review is yours** | Claude asks, the review first; you confirm in Claude Code's own prompt | `review.require_before_push`: `true` (default), `false` |
 | **No secret committed** | `secret-gate.mjs`, a PreToolUse hook | every `git commit` Claude runs, in every repo; `--no-verify` refused |
 | **Learnings read back** | `post-edit.mjs`, a PostToolUse hook | `SPEC.md` or `tasks/` written; a file a learning names in `files:` edited |
 | **Guard rails visible** | `kaizen doctor` | plugin and agent-skills declared, hooks firing, branch reviewed, floor guard wired |
@@ -134,7 +134,7 @@ SPEC.md, tasks/, CONSTRAINTS.md   agent-skills' files, read by Kaizen
   "language": "auto",
   "verify": { "test": "pnpm vitest run", "lint": "pnpm eslint ." },
   "gate": { "max_blocks": 3, "targeted": { "lint": "pnpm eslint {files}" } },
-  "review": { "require_before_push": "ask", "max_unreviewed_lines": 80 },
+  "review": { "require_before_push": true, "max_unreviewed_lines": 80 },
   "pr": { "max_lines": 400 }
 }
 ```
@@ -158,8 +158,7 @@ node $K doctor [--in-skill] [--json] [--strict]   # are the guard rails on?
 node $K upgrade [--apply] [--json]             # what this repo still has to change after a Kaizen update
 node $K install settings                       # both plugins declared for every clone
 node $K gate status | off                      # this session's quality gate
-node $K review status | check | waive --reason "…"   # review state; waiver = your approval
-node $K confirm <code>                         # approvals "ask": after you confirmed in Claude Code's prompt
+node $K review status | check                 # review state, push decision
 node $K secrets scan [--staged | --base <ref>] # possible secrets in the changes
 node $K learnings search <words…> | validate | list [--retire] | stats
 node $K metrics [--since 90d] [--no-github]
@@ -176,13 +175,12 @@ command: [CLI reference](docs/reference/cli.md).
 |---|---|---|
 | `SessionStart` | `scripts/review-hooks.mjs --heartbeat` | records that Kaizen's hooks run here, for `kaizen doctor` |
 | `PreToolUse` (Bash) | `scripts/secret-gate.mjs` | refuses a `git commit` adding a key or token, and `--no-verify`; active in every git repo |
-| `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | refuses `git push` of an unreviewed branch and direct writes to Kaizen's review state; with `approvals: "ask"`, turns `confirm <code>` into Claude Code's prompt |
+| `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | refuses `git push` of an unreviewed branch and direct writes to Kaizen's review state; a push without a review goes through Claude Code's prompt |
 | `PostToolUse` (Write, Edit…) | `scripts/post-edit.mjs` | turns the quality gate on when code is edited; reads learnings back |
 | `PostToolUse` (Agent, Task, Skill) | `scripts/review-hooks.mjs --evidence` | records agent-skills' review (persona at once, skill at the end of the turn) |
 | `Stop` | `scripts/quality-gate.mjs` | blocks the end of the turn while the checks are red |
 | `Stop` | `scripts/review-hooks.mjs --stop` | reads the verdict of the review the turn ran |
 | `Stop` | `scripts/ledger-hook.mjs` | charges the turn's tokens to the work item, for `kaizen cost`; never blocks |
-| `UserPromptSubmit` | `scripts/review-hooks.mjs --confirm` | with `approvals: "code"`: a waiver confirmed by `kaizen waive <code>` typed by you |
 
 ### Environment variables
 

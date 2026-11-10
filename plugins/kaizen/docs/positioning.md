@@ -35,7 +35,7 @@ measurement.
 
 | Criterion | Spec Kit | Compound Engineering | agent-skills alone | agent-skills + Kaizen |
 | --- | --- | --- | --- | --- |
-| Shape | toolkit, extensions, workflows | plugin, ~36 skills | plugin, skills + commands + personas | the same + 4 skills and 9 hook registrations |
+| Shape | toolkit, extensions, workflows | plugin, ~36 skills | plugin, skills + commands + personas | the same + 4 skills and 8 hook registrations |
 | Discipline | instructions, opt-in quality-gate extensions | instructions | instructions with anti-rationalization | instructions **and** hooks that block |
 | Review | convergence step | multi-agent | five axes, personas | the same, recorded, required before push |
 | Learning loop | no | yes, its core | no | yes, read back automatically |

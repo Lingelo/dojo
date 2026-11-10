@@ -36,20 +36,17 @@ progress, the reviews recorded (the next push asks for one) and the cost history
 | File | Written by | Content | Lifetime |
 |---|---|---|---|
 | `gate.json` | `post-edit.mjs`, Stop hook | active, session, since, blocks, files edited, last failure | until green, `gate off`, `max_blocks` or `gate.max_age_hours` |
-| `reviews.json` | review hooks, waiver confirmation | per branch: head, tree, verdict, source, depth, session, at (waiver: reason, confirmed_by) | replaced per branch |
+| `reviews.json` | review hooks | per branch: head, tree, verdict, source, depth, session, at | replaced per branch |
 | `review-pending.json` | PostToolUse on Skill | agent-skills' review skill was loaded this turn: read by the Stop hook | until that Stop |
-| `waivers.json` | `review waive` | code, reason, branch, head, tree, at | 30 min |
-| `push-offers.json` | review hook (`require_before_push: "ask"`) | per branch: the commit you were asked about | 30 min, used by the next push of that commit |
-| `confirm-asks.json` | review hook, before `confirm <code>` | Claude Code's prompt was shown for that code | 10 min, single use |
+| `push-offers.json` | review hook | per branch: the commit you were asked about | 30 min, used by the next push of that commit |
 | `hooks-seen.json` | SessionStart hook | the last time Kaizen's hooks fired here (`doctor`) | replaced |
 | `learnings-seen.json` | `post-edit.mjs` | learnings already brought back: per planning file content, per session | kept |
-| `friction.jsonl` | every gate that stops the work, and what lifts it | at, gate, kind (`refused`, `asked`, `skip_confirm`, `blocked`, `released`, `no_verify`, `review_recorded`, `waiver_requested`, `waiver_confirmed`), reason, branch, checks, source | kept |
+| `friction.jsonl` | every gate that stops the work, and what lifts it | at, gate, kind (`refused`, `asked`, `skip_confirm`, `blocked`, `released`, `no_verify`, `review_recorded`), reason, branch, checks, source | kept |
 | `ledger.jsonl` | Stop hook `ledger-hook.mjs` | at, session, item, kind, title, branch, source, usage per model, subagents | kept |
 | `ledger-cursor.json` | Stop hook `ledger-hook.mjs` | byte offset and last message ids per transcript already charged | kept |
 | `pr/<owner>-<repo>-<n>.json` | `pr snapshot`, `pr mark` | threads, comments, checks handled, started_at, budget, last head | delete to start over |
 
-Writes to `reviews.json`, `review-pending.json`, `waivers.json`, `push-offers.json`, `confirm-asks.json`
-and `hooks-seen.json`, and direct calls of `review-hooks.mjs`, are refused by the PreToolUse hook: only
+Writes to `reviews.json`, `review-pending.json`, `push-offers.json` and `hooks-seen.json`, and direct calls of `review-hooks.mjs`, are refused by the PreToolUse hook: only
 the hooks write them.
 
 ## Outside the repository

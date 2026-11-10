@@ -16,7 +16,7 @@ Why: [Positioning](positioning.md#why-agent-skills).
    below.
 3. **Clean the configuration**: remove from `.kaizen/config.json` (and `config.local.json`) the keys no
    longer read — `profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `deploy`, `monitor`,
-   `review.confirm_above_cost`. Remove `kaizen-ops@dojo` from `.claude/settings.json`.
+   `approvals`, `review.confirm_above_cost`. Remove `kaizen-ops@dojo` from `.claude/settings.json`.
 4. **Your constitution**: agent-skills' equivalent is `CONSTRAINTS.md` — a floor (what never goes
    below), enforced checks with their numbers, measured metrics, exceptions — with a floor guard against
    skipped tests and silenced checks. Run `/kaizen:constraints` and bring over the articles that are
@@ -72,6 +72,7 @@ The agent-skills commands also answer to their own prefix: `/agent-skills:spec` 
 | `audit`, `audit fix claude_settings` | `doctor`; `install settings` |
 | `install git-hooks`, `githook`, `audit fix git_hooks` | — (Kaizen's gates are Claude Code hooks) |
 | `metrics dashboard` | `metrics`, `cost` |
+| `review waive`, `confirm <code>`, `kaizen waive <code>` | push again when Claude asks: Claude Code's prompt asks you to confirm |
 | `deploy`, `monitor`, `postmortem new` | your tools |
 
 ## Behavior
@@ -84,5 +85,6 @@ The agent-skills commands also answer to their own prefix: `/agent-skills:spec` 
 | Learnings searched by the skills | learnings brought back by a hook when `SPEC.md`/`tasks/` are written or a `files:` match is edited |
 | Cycle cost (`cycles.jsonl`, `cycle_cost`) | cost per work item (`ledger.jsonl`, `kaizen cost`, `work_items`) |
 | Deployment-based DORA | DORA approximated from the default branch and GitHub |
+| `require_before_push: true` refused the push until `review waive`, confirmed by a typed code or a prompt | one flow for everyone: stopped once, Claude asks, the review first; you push without it only by confirming Claude Code's prompt |
 
 Every change, with its details: [Changelog](../CHANGELOG.md).

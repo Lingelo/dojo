@@ -93,5 +93,5 @@ human, verbatim.
 ## Verification
 
 - [ ] Every attention item is marked (dispatched or needs-human) and every settled thread resolved.
-- [ ] Every push came with green checks and a recorded review (or the user's waiver).
+- [ ] Every push came with green checks and a recorded review (or the user's own confirmation to push without one).
 - [ ] The final status line matches the last snapshot's verdict.

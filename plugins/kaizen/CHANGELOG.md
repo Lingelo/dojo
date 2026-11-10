@@ -30,6 +30,12 @@ roadmap: `docs/ideation/2026-11-09-kaizen-6-ideation.md` of the dojo repository.
   `size`, `release`, `dev`, `run-dir`, `audit`, `review record`, `review estimate`, `gate on`,
   `metrics dashboard` (the HTML cost dashboard: `metrics` and `cost` give the same numbers).
   `audit fix claude_settings` becomes `install settings`.
+- **Review waivers and `approvals` removed** (`review waive`, `confirm`, the UserPromptSubmit hook,
+  `waivers.json`, `confirm-asks.json`, `approvals: "code"`). One flow remains: an unreviewed push is
+  stopped once, Claude asks you, the review first; pushing again reaches Claude Code's own permission
+  prompt, which only you answer. `review.require_before_push` is `true` (default; `"ask"` means the
+  same) or `false`; `approvals` is no longer read. Metrics: `push.stopped`, `push.skip_share` and
+  `push.still_waiting` replace `push.refused`, `waivers.*` and `push.still_blocked`.
 - **Git hooks removed** (`install git-hooks`, `githook`, `audit fix git_hooks`, `templates/githooks/`,
   the doctor's `git_hooks` check, `$KAIZEN_CLI`): Kaizen's gates are Claude Code hooks. A repository that
   installed them deletes `.githooks/pre-push` and `pre-commit` ([Migrating to 6.0](docs/migrating-to-6.md)).

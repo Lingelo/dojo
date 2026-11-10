@@ -48,15 +48,15 @@ A learning written but never cited means the loop does not close:
 
 Every time a guard rail stops the work — push stopped, quality gate block, secret refused, state write
 refused — the hook appends an event to `.kaizen/state/friction.jsonl`, and so does what lifts it (review
-recorded, waiver confirmed). Logging never changes a decision.
+recorded, push confirmed by you). Logging never changes a decision.
 
 | Indicator | Meaning |
 |---|---|
-| `push.refused`, `push.by_reason`, `push.by_source` | pushes stopped, why, and by which source |
-| `push.asked`, `push.pushed_without_review`, `push.unreviewed_from_terminal` | `"ask"` mode: pushes Claude asked you about, the ones you chose to push without a review, unreviewed pushes from your own terminal |
-| `push.unblocked_median_minutes`, `push.still_blocked` | first refusal on a branch → next review or waiver on it; branches never unblocked in the window |
+| `push.stopped`, `push.by_reason` | pushes stopped for a review (Claude asked you), and why |
+| `push.pushed_without_review` | the ones you chose to push without a review, in Claude Code's prompt |
+| `push.unblocked_median_minutes`, `push.still_waiting` | first stop on a branch → next review on it; branches still waiting in the window |
+| `push.skip_share` | pushes without a review / (reviews + those): a rising share means the review is felt as a tax |
 | `reviews_recorded` | reviews Kaizen recorded |
-| `waivers.share` | (waivers + pushes without a review) / (reviews + both): a rising share means the review is felt as a tax |
 | `quality.blocked`, `quality.released`, `quality.by_check` | turns the quality gate stopped, gates released after `max_blocks`, the checks that block most |
 | `secrets.refused`, `secrets.no_verify` | commits refused for a secret, `--no-verify` attempts |
 

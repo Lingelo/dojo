@@ -29,8 +29,7 @@ agent-skills has no configuration of its own: its quality bar is `CONSTRAINTS.md
     "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "budget_seconds": 840, "max_age_hours": 24,
     "targeted": { "test": "pnpm vitest related --run {files}", "lint": "pnpm eslint {files}" }
   },
-  "approvals": "ask",
-  "review": { "require_before_push": "ask", "max_unreviewed_lines": 80, "cost_weights": { "opus": 5 } },
+  "review": { "require_before_push": true, "max_unreviewed_lines": 80, "cost_weights": { "opus": 5 } },
   "secrets": { "scan": true, "ignore": ["test/fixtures/**"] },
   "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] }
 }
@@ -73,17 +72,11 @@ The quality gate (Stop hook). It turns itself on when a session edits a code fil
 | `gate.max_age_hours` | `24` | a gate older than this expires |
 | `gate.targeted` | `{}` | per check, a command run on the files the branch touches only, `{files}` replaced by them — for slow suites |
 
-### `approvals`
-
-Default: `"ask"`. How you approve a review waiver: `"ask"` — Claude asks, the review as the first
-option, then Claude Code's own permission prompt asks you to confirm; `"code"` — Claude gives you a code
-and you type `kaizen waive <code>` yourself. [The review before push](../concepts/gates.md#the-review-before-push).
-
 ### `review`
 
 | Key | Default | Role |
 |---|---|---|
-| `review.require_before_push` | `"ask"` | `"ask"`: an unreviewed push is stopped once, Claude asks you, you can push without a review by confirming; `true`: refused until reviewed or waived; `false`: no check |
+| `review.require_before_push` | `true` | `true`: an unreviewed push is stopped once, Claude asks you, and you can push without a review by confirming in Claude Code's prompt (`"ask"`, the 5.x spelling, means the same); `false`: no check |
 | `review.max_unreviewed_lines` | `80` | lines changed since the last review beyond which the push needs a new one |
 | `review.cost_weights` | `{}` | relative weight of a million tokens per model family for `kaizen cost` and metrics; defaults `haiku` 1, `sonnet` 3, `opus` 5 |
 
@@ -103,6 +96,6 @@ and you type `kaizen waive <code>` yourself. [The review before push](../concept
 
 ## Removed in 6.0
 
-`profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `deploy`, `monitor` and `review.confirm_above_cost`
+`profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `deploy`, `monitor`, `approvals` and `review.confirm_above_cost`
 are no longer read. `kaizen upgrade` lists the ones left in a repository:
 [Migrating to 6.0](../migrating-to-6.md).

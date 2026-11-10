@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="580" viewBox="0 0 1100 580" role="img" aria-labelledby="t d">
 <title id="t">Kaizen’s hooks in a Claude Code session</title>
-<desc id="d">Nine hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</desc>
+<desc id="d">Eight hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</desc>
 <style>
   .bg { fill: #fbfaf7; stroke: #e4e0d8; }
   text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
@@ -64,7 +64,7 @@
 <defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
 <rect class="bg" x="0.5" y="0.5" width="1099" height="579" rx="14"/>
 <text class="title" x="28" y="38">Kaizen’s hooks in a Claude Code session</text>
-<text class="desc" x="28" y="58">Nine hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</text>
+<text class="desc" x="28" y="58">Eight hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</text>
 <text class="regionlabel" x="36" y="108" text-anchor="start">YOU</text>
 <path class="line" d="M150,104 L1064,104"/>
 <text class="regionlabel" x="36" y="258" text-anchor="start">CLAUDE</text>
@@ -77,11 +77,6 @@
 <text class="sub" x="285" y="123" text-anchor="middle">hooks-seen.json, read by doctor</text>
 <rect class="outside" x="440" y="84" width="270" height="40" rx="8" stroke-width="1.5"/>
 <text class="label" x="575" y="108" text-anchor="middle">you send a message</text>
-<rect class="gate" x="740" y="76" width="324" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="902" y="94" text-anchor="middle">UserPromptSubmit</text>
-<text class="sub" x="902" y="109" text-anchor="middle">review-hooks.mjs --confirm:</text>
-<text class="sub" x="902" y="123" text-anchor="middle">typed codes (approvals: "code")</text>
-<path class="line" d="M710,104 L740,104" marker-end="url(#h-default)"/>
 <rect class="plain" x="170" y="234" width="230" height="40" rx="8" stroke-width="1.5"/>
 <text class="label" x="285" y="258" text-anchor="middle">Claude calls a tool</text>
 <rect class="gate" x="440" y="152" width="270" height="82" rx="8" stroke-width="1.5"/>
@@ -118,7 +113,7 @@
 <text class="label" x="912" y="420" text-anchor="middle">Stop</text>
 <text class="sub" x="912" y="435" text-anchor="middle">ledger-hook.mjs: charges the turn’s</text>
 <text class="sub" x="912" y="449" text-anchor="middle">tokens to the work item · never blocks</text>
-<text class="small" x="36" y="506" text-anchor="start">Exit 0 = allow, exit 2 = block with the message on stderr (sent back to Claude). SessionStart, UserPromptSubmit, PostToolUse and the ledger only observe.</text>
+<text class="small" x="36" y="506" text-anchor="start">Exit 0 = allow, exit 2 = block with the message on stderr (sent back to Claude). SessionStart, PostToolUse and the ledger only observe.</text>
 <text class="small" x="36" y="521" text-anchor="start">All registrations live in hooks/hooks.json and use ${CLAUDE_PLUGIN_ROOT}; timeouts: SessionStart 10 s, PreToolUse 30 s, PostToolUse 15 s,</text>
-<text class="small" x="36" y="536" text-anchor="start">Stop 900 s (gate), 15 s (review), 30 s (ledger), UserPromptSubmit 30 s.</text>
+<text class="small" x="36" y="536" text-anchor="start">Stop 900 s (gate), 15 s (review), 30 s (ledger).</text>
 </svg>

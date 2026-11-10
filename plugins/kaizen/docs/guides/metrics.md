@@ -25,7 +25,7 @@ Delivery (90d, approximated from main + GitHub)
   7.9 changes/week · lead time 6 h (PR opened → merged) · rework 12 % · change failure 4 %
   batch size: median 180 lines, p90 900, 31 % above pr.max_lines (400)
 Learnings: 24, reuse 38 % (6 read by a plan, 4 applied in commits), 9 never cited
-Friction: 14 pushes stopped (12 no review), unblocked in 18 min median, waiver share 7 %
+Friction: 14 pushes stopped (12 no review), unblocked in 18 min median, 7 % pushed without a review
 Cost: feature median 2.1 M tokens (sonnet-weighted), most expensive SHOP-412
 
 → p90 of 900 lines: split with /kaizen:plan into smaller tasks

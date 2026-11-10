@@ -7,20 +7,17 @@
 // reviewed. At push time, that tree is compared to HEAD: beyond `review.max_unreviewed_lines` lines
 // changed since, the push waits for a new review.
 //
-// Human waiver: `review waive` only creates a pending request, with a code. Only the user confirms it: in
-// Claude Code's permission prompt (`confirm`, approvals.mjs), or with `approvals: "code"` a message
-// containing `kaizen waive <code>` (UserPromptSubmit hook).
+// Skipping the review is the user's call: the push is stopped once so Claude asks them, the review
+// first; pushing again reaches Claude Code's own permission prompt, which Claude cannot answer.
 //
 // Accepted limit: these gates stop forgetfulness and drift, not an agent set on bypassing them (the
 // PreToolUse hook does refuse direct writes to these state files).
 
-import { randomBytes } from 'node:crypto';
-import { approvalInstruction } from './approvals.mjs';
 import { changedLines, defaultBranch, diffBase, git, loadConfig, logFriction, readState, worktreeTree, writeState } from './lib.mjs';
 
 export const VERDICTS = ['ready', 'concerns', 'blocked'];
 const PENDING_MAX_AGE_MS = 6 * 3600 * 1000;
-const WAIVER_MAX_AGE_MS = 30 * 60 * 1000;
+const OFFER_MAX_AGE_MS = 30 * 60 * 1000;
 
 const readJson = readState;
 const writeJson = writeState;
@@ -113,58 +110,6 @@ export function recordReview(root, { verdict, source, session = null }) {
   return entry;
 }
 
-// --- Waiver: requested by the agent, confirmed by the user ----------------------------------------
-
-export function requestWaiver(root, { reason }) {
-  const branch = currentBranch(root);
-  if (!branch) throw new Error('detached HEAD: a waiver applies to a branch');
-  if (!reason) throw new Error('review waive requires --reason "<the user\'s request>"');
-  const code = randomBytes(4).toString('hex').slice(0, 6).toUpperCase();
-  const now = Date.now();
-  const pending = readJson(root, 'waivers.json', []).filter((w) => now - Date.parse(w.at) < WAIVER_MAX_AGE_MS && w.branch !== branch);
-  pending.push({ code, reason, ...snapshot(root, branch), at: new Date(now).toISOString() });
-  writeJson(root, 'waivers.json', pending);
-  logFriction(root, { gate: 'push', kind: 'waiver_requested', branch });
-  return {
-    pending: true,
-    branch,
-    code,
-    expires_in_minutes: WAIVER_MAX_AGE_MS / 60000,
-    instruction: approvalInstruction(root, 'waiver', code, 'push without a review'),
-  };
-}
-
-// Called by the UserPromptSubmit hook (a user message), or by `confirm` after Claude Code's prompt (approvals.mjs).
-// A waiver still waiting for the user, by its code; null if unknown or expired.
-export function pendingWaiver(root, code, list = readJson(root, 'waivers.json', [])) {
-  const now = Date.now();
-  return list.find((x) => x.code === String(code).toUpperCase() && now - Date.parse(x.at) < WAIVER_MAX_AGE_MS) || null;
-}
-
-export function confirmWaiver(root, code, { session = null, by = 'user (message)' } = {}) {
-  const now = Date.now();
-  const pending = readJson(root, 'waivers.json', []);
-  const w = pendingWaiver(root, code, pending);
-  if (!w) return null;
-  const state = readJson(root, 'reviews.json', {});
-  const entry = {
-    branch: w.branch,
-    head: w.head,
-    tree: w.tree,
-    verdict: 'waived',
-    reason: w.reason,
-    reviewers: [],
-    confirmed_by: by,
-    session,
-    at: new Date(now).toISOString(),
-  };
-  state[w.branch] = entry;
-  writeJson(root, 'reviews.json', state);
-  writeJson(root, 'waivers.json', pending.filter((x) => x !== w));
-  logFriction(root, { gate: 'push', kind: 'waiver_confirmed', branch: w.branch });
-  return entry;
-}
-
 // --- Heartbeat: proof that Claude Code runs Kaizen's hooks here -----------------------------------
 
 export function recordHeartbeat(root, { session = null, source = null } = {}) {
@@ -176,8 +121,8 @@ export function recordHeartbeat(root, { session = null, source = null } = {}) {
 // Decides whether the current branch may be pushed at HEAD. Always { allowed, reason, ... }.
 export function checkPush(root, config = loadConfig(root)) {
   const res = decidePush(root, config);
-  // `ask`: an unreviewed push is the user's call (Claude Code prompt), not a refusal to act on alone.
-  if (!res.allowed && config.review.require_before_push === 'ask') res.ask = true;
+  // An unreviewed push is the user's call (Claude Code prompt), not a refusal to act on alone.
+  if (!res.allowed) res.ask = true;
   return res;
 }
 
@@ -204,11 +149,10 @@ function decidePush(root, config) {
   if (since > max) {
     return { allowed: false, branch, reason: `${since} lines changed since the review (ceiling ${max})`, review: rec, unreviewed_lines: since };
   }
-  const reason = rec.verdict === 'waived' ? `review waived by the user: ${rec.reason}` : `review ${rec.verdict} (${(rec.reviewers || []).join(', ') || rec.depth})`;
-  return { allowed: true, branch, reason, review: rec, unreviewed_lines: since };
+  return { allowed: true, branch, reason: `review ${rec.verdict} (${(rec.reviewers || []).join(', ') || rec.depth})`, review: rec, unreviewed_lines: since };
 }
 
-// `ask` mode, in two steps: the first unreviewed push of a commit is stopped so Claude asks the user a
+// In two steps: the first unreviewed push of a commit is stopped so Claude asks the user a
 // question whose first choice is the review; only a second push of that same commit, within 30 min,
 // reaches Claude Code's permission prompt — where the user confirms the push without a review. The
 // offer is single use: a third push is stopped again.
@@ -216,7 +160,7 @@ export function pushOffer(root, branch, { take = false } = {}) {
   const head = git(root, ['rev-parse', 'HEAD'], { allowFail: true });
   const offers = readJson(root, 'push-offers.json', {});
   const o = offers[branch];
-  const pending = Boolean(o && o.head === head && Date.now() - Date.parse(o.at) < WAIVER_MAX_AGE_MS);
+  const pending = Boolean(o && o.head === head && Date.now() - Date.parse(o.at) < OFFER_MAX_AGE_MS);
   if (take) {
     if (pending) delete offers[branch];
     else offers[branch] = { head, at: new Date().toISOString() };
@@ -227,7 +171,7 @@ export function pushOffer(root, branch, { take = false } = {}) {
 
 export function askQuestion(res) {
   return (
-    `[kaizen] ${res.branch}: ${res.reason}. review.require_before_push is "ask": the user decides.\n` +
+    `[kaizen] ${res.branch}: ${res.reason}. Pushing without a review is the user's call.\n` +
     'Ask them now with AskUserQuestion (in their language), the review as the FIRST option:\n' +
     '  1. "Run the review (Recommended)" — /kaizen:review on the branch, fix the Critical and Required findings, then push;\n' +
     '  2. "Push without a review" — rerun the same push: Claude Code will ask them to confirm it.\n' +
@@ -235,25 +179,11 @@ export function askQuestion(res) {
   );
 }
 
-// The refusal the push gate prints.
-export function pushRefusal(res, K) {
-  return (
-    `[kaizen] Push refused on ${res.branch}: ${res.reason}.\n` +
-    'A review is required before any push of a branch.\n' +
-    '- Run /kaizen:review: Kaizen records the reviewed state by itself. Fix the Critical and Required findings, then push.\n' +
-    `- If the user explicitly asked to skip it: \`node "${K}" review waive --reason "<their request>"\`, ` +
-    'then ask them to type the displayed confirmation message themselves (kaizen waive <code>); you cannot confirm it for them.\n' +
-    'Do not bypass this gate any other way, and do not disable it without an explicit request.\n'
-  );
-}
-
 export function reviewStatus(root) {
   const branch = currentBranch(root);
-  const pending = readJson(root, 'waivers.json', []).filter((w) => w.branch === branch && Date.now() - Date.parse(w.at) < WAIVER_MAX_AGE_MS);
   return {
     branch,
     review: branch ? readJson(root, 'reviews.json', {})[branch] || null : null,
-    pending_waiver: pending.length ? { reason: pending[0].reason, at: pending[0].at } : null,
     push: checkPush(root),
   };
 }

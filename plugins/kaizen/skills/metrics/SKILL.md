@@ -35,7 +35,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
    | Time to restore | not measured: Kaizen records no incident |
    | Batch size | median lines and share above `pr.max_lines` — DORA's first lever |
    | Learnings | cited by a plan (read) or a commit (applied); never cited → `/kaizen:learn prune` |
-   | Friction | refusals by gate, time blocked on push, share of pushes waived |
+   | Friction | stops by gate, time stopped on push, share of pushes without a review |
    | Work items | cost per feature or fix, median per kind, share `unattributed` |
 
    State the visible limits: shallow clone, squash merges without GitHub, fewer than 10 changes.
@@ -48,7 +48,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
 |---|---|
 | "The method doesn't matter, the trend does." | An approximation read as a measurement leads to the wrong action. Quote the method. |
 | "Ten changes are enough to see a trend." | Below that, say it is not significant. |
-| "Waivers are fine, we were in a hurry." | A rising waiver share is the gate being routed around: name it. |
+| "Skipping the review was fine, we were in a hurry." | A rising skip share is the gate being routed around: name it. |
 
 ## Red Flags
 
