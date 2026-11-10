@@ -24,9 +24,20 @@ const docs = walk(PLUGIN).map((f) => ({ file: relative(PLUGIN, f).split('\\').jo
 const HISTORY = [/(^|\/)CHANGELOG\.md$/, /^docs\/migrating-to-6\.md$/];
 const isHistory = (file) => HISTORY.some((re) => re.test(file));
 
+const commands = readdirSync(join(PLUGIN, 'commands')).map((f) => f.replace(/\.md$/, ''));
+
 test('four skills, nothing agent-skills already does', () => {
   assert.deepEqual([...skills].sort(), ['learn', 'metrics', 'setup', 'watch']);
   assert.ok(!existsSync(join(PLUGIN, 'agents')), 'agent-skills\' personas review; Kaizen ships no agent');
+});
+
+test('agent-skills\' commands under Kaizen\'s prefix: exact copies, one per command, never shadowing a skill', async () => {
+  const { expected } = await import('../scripts/aliases.mjs');
+  const want = expected();
+  assert.deepEqual([...commands].sort(), Object.keys(want).map((f) => f.replace(/\.md$/, '')).sort(), 'run node plugins/kaizen/scripts/aliases.mjs');
+  for (const [f, text] of Object.entries(want)) assert.equal(readFileSync(join(PLUGIN, 'commands', f), 'utf8'), text, `commands/${f} differs from agent-skills' — run node plugins/kaizen/scripts/aliases.mjs`);
+  for (const c of ['spec', 'plan', 'build', 'test', 'review', 'ship']) assert.ok(commands.includes(c), `/kaizen:${c}`);
+  assert.deepEqual(commands.filter((c) => skills.includes(c)), []);
 });
 
 test('every skill: complete frontmatter, and agent-skills\' anatomy (when, process, rationalizations, red flags, verification)', () => {
@@ -52,7 +63,7 @@ test('every file cited through ${CLAUDE_PLUGIN_ROOT} exists', () => {
   assert.deepEqual(missing, []);
 });
 
-test('every /kaizen:<name> names a Kaizen skill, every agent-skills:<name> one of its commands or skills', () => {
+test('every /kaizen:<name> names a Kaizen skill or command, every agent-skills:<name> one of its commands or skills', () => {
   const asCommands = readdirSync(join(AGENT_SKILLS, '.claude', 'commands')).map((f) => f.replace(/\.md$/, ''));
   const asSkills = readdirSync(join(AGENT_SKILLS, 'skills'));
   const bad = [];
@@ -60,14 +71,14 @@ test('every /kaizen:<name> names a Kaizen skill, every agent-skills:<name> one o
   for (const f of readdirSync(join(PLUGIN, 'scripts'))) sources.push({ file: `scripts/${f}`, text: readFileSync(join(PLUGIN, 'scripts', f), 'utf8') });
   for (const { file, text } of sources) {
     if (isHistory(file)) continue;
-    for (const m of text.matchAll(/(?<![\w-])\/kaizen:([a-z][a-z-]*)/g)) if (!skills.includes(m[1])) bad.push(`${file} → /kaizen:${m[1]}`);
+    for (const m of text.matchAll(/(?<![\w-])\/kaizen:([a-z][a-z-]*)/g)) if (!skills.includes(m[1]) && !commands.includes(m[1])) bad.push(`${file} → /kaizen:${m[1]}`);
     for (const m of text.matchAll(/(?<![\w./-])agent-skills:([a-z][a-z-]*)/g)) if (!asCommands.includes(m[1]) && !asSkills.includes(m[1])) bad.push(`${file} → agent-skills:${m[1]}`);
   }
   assert.deepEqual(bad, []);
 });
 
 test('nothing sends anyone to a removed command, outside history', () => {
-  const removed = /\/kaizen-ops:|\/kaizen:(deploy|monitor|postmortem|plan|work|review|ship|brainstorm|ideate|constitution|doc-review|decide|debug|polish|autopilot|release|help|prune-learnings|address-feedback|watch-pr)\b|node "?\$K"? (plan|constitution|audit|packs?|profile|models|perf|size|adr|release|dev|run-dir|deploy|monitor)\b/;
+  const removed = /\/kaizen-ops:|\/kaizen:(deploy|monitor|postmortem|work|brainstorm|ideate|constitution|doc-review|decide|debug|polish|autopilot|release|help|prune-learnings|address-feedback|watch-pr)\b|node "?\$K"? (plan|constitution|audit|packs?|profile|models|perf|size|adr|release|dev|run-dir|deploy|monitor)\b/;
   const files = [...docs.map((d) => d.file), ...readdirSync(join(PLUGIN, 'scripts')).map((f) => `scripts/${f}`), 'hooks/hooks.json'];
   const bad = files.filter((f) => !isHistory(f) && removed.test(readFileSync(join(PLUGIN, f), 'utf8')));
   assert.deepEqual(bad, []);
@@ -105,7 +116,7 @@ test('the plugin is registered in the marketplace, next to agent-skills, and doc
   for (const k of ['name', 'version', 'description', 'author']) assert.ok(manifest[k], k);
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   const readme = readFileSync(join(PLUGIN, 'README.md'), 'utf8');
-  for (const s of skills) assert.ok(readme.includes(`/kaizen:${s}`), `README: /kaizen:${s} not documented`);
+  for (const s of [...skills, ...commands]) assert.ok(readme.includes(`/kaizen:${s}`), `README: /kaizen:${s} not documented`);
 });
 
 test('the README reference lists every CLI command and every hook', () => {

@@ -2,69 +2,68 @@
 
 Everything Kaizen reads and writes, where it lives, who writes it, and whether it is shared.
 
-![What Kaizen writes in your repo, which skill writes each file and who reads it](../media/diagrams/artifacts-map.svg)
+![What Kaizen writes in your repo, and who reads it](../media/diagrams/artifacts-map.svg)
 
-## Versioned deliverables (shared with the team)
-
-Under `docs_root` (`docs/` by default; `.kaizen/docs` or `engineering/` if `docs/` is a published site):
-
-| Path | Written by | Format |
-|---|---|---|
-| `plans/YYYY-MM-DD-HHMM-<type>-<topic>-plan.md` | brainstorm, plan | [plan](../concepts/plans.md) |
-| `learnings/<category>/<slug>.md` | learn, prune-learnings | [learning](../concepts/learnings.md#format) |
-| `adr/NNNN-<title>.md` | decide | ADR ([template](../../templates/adr.md)): context, options (including *do nothing*), decision, consequences, review signal |
-| `ideation/…` | ideate | ranked ideas with their grounding |
-| `metrics/YYYY-MM-DD.md` | metrics (on request) | trend reports |
-
-At the repo root:
+## Versioned (shared with the team)
 
 | Path | Written by | Notes |
 |---|---|---|
-| `CONSTITUTION.md` | constitution | [format](../concepts/constitution.md#format-kaizen-constitutionv1) |
-| `kaizen-packs/<pack>/<rule>.md` | setup (`pack:<name>`), learn (with approval) | [packs](../packs.md); subfolders are storage |
-| `.kaizen/config.json` | setup, `init`, `pack new` | [configuration](../configuration.md) |
-| `.kaizen/config.local.json` | you | personal overrides, git-ignored (except `docs_root`) |
-| `CLAUDE.md` (a short Kaizen section) | setup, with approval | makes learnings findable by any agent |
-| `.github/workflows/ci.yml`, `kaizen-patrol.yml`, `kaizen-alert.yml`, `pull_request_template.md`, `dependabot.yml`, `CODEOWNERS`, `.gitignore` lines | `audit fix` | never overwritten |
+| `<docs>/learnings/<folder>/<slug>.md` | `/kaizen:learn` | one lesson per file, [format](../concepts/learnings.md#the-format); `docs_root` is `docs/` by default |
+| `<docs>/metrics/YYYY-MM-DD.md` | `/kaizen:metrics`, on request | trend reports |
+| `.kaizen/config.json` | `/kaizen:setup`, `init`, you | [configuration](configuration.md) |
+| `.claude/settings.json` (three keys) | `install settings`, with approval | the dojo marketplace, `kaizen@dojo`, `agent-skills@dojo` |
+| `.githooks/pre-push`, `.githooks/pre-commit` | `install git-hooks`, with approval | [git hooks](../concepts/gates.md#without-the-plugin-git-hooks); each clone runs `git config core.hooksPath .githooks` |
+| one line in `CLAUDE.md` or `AGENTS.md` | `/kaizen:setup`, with approval | makes the learnings findable by any agent |
 
-No deliverable carries mutable state: progress is read from git (commits citing units, review state,
-tags), never from a "status" field.
+**Read, never written, by Kaizen** — agent-skills' files: `SPEC.md` (or `docs/SPEC.md`), `tasks/plan.md`,
+`tasks/todo.md`, `CONSTRAINTS.md` (`scripts/agentskills.mjs`, tolerant of any shape). `status` reads the
+tasks left, `post-edit.mjs` brings learnings back when they are written, `metrics` counts the learnings
+they cite, `doctor` checks `CONSTRAINTS.md`'s floor guard. Plans of Kaizen 5.x in `<docs>/plans/` are
+still read by `metrics` and `cost`.
+
+No file carries a mutable "status": progress is read from git and from the task checkboxes.
+
+## Personal
+
+| Path | Notes |
+|---|---|
+| `.kaizen/config.local.json` | your overrides, git-ignored by `init` (`docs_root` is not read from it) |
 
 ## Local state (`.kaizen/state/`, git-ignored)
 
-The folder carries its own `.gitignore` (`*`). Deleting it is harmless: the only effect is forgetting
-the work in progress.
+The folder carries its own `.gitignore` (`*`). Deleting it is harmless: Kaizen forgets the work in
+progress, the reviews recorded (the next push asks for one) and the cost history.
 
 | File | Written by | Content | Lifetime |
 |---|---|---|---|
-| `gate.json` | `gate on`, Stop hook, `--claim` | active, plan, since, session, blocks, blocks_total, last_failure, usage, subagents | until `gate off` or 24 h |
-| `cycles.jsonl` | `gate off` | plan, since, ended, minutes, gate_blocks, usage (per model), subagents (per role and model) | kept |
-| `ledger.jsonl` | Stop hook `ledger-hook.mjs`, every turn with new tokens | at, session, item (Jira key, `plan:<topic>`, `branch:<name>` or `unattributed`), kind, title, branch, source, usage (per model), subagents | kept |
-| `ledger-cursor.json` | Stop hook `ledger-hook.mjs` | byte offset and last message ids per transcript already charged | kept |
-| `friction.jsonl` | every gate that stops the work (push, quality, secrets, state — Claude Code and git hooks), `review record`, waivers | at, gate, kind (`refused`, `blocked`, `released`, `no_verify`, `review_recorded`, `waiver_requested`, `waiver_confirmed`), reason, branch, checks, source | kept |
-| `agent-runs.jsonl` | Agent hook during a cycle | at, session, type, role, model, agent_id, prompt start | cleared by `gate off` |
-| `reviews.json` | `review record`, waiver confirmation | per branch: head, tree, verdict, depth, reviewers, models, run, at (waiver: reason, confirmed_by) | replaced per branch |
-| `review-evidence.json` | Agent hook | reviewer, model, session, at | 12 h |
+| `gate.json` | `post-edit.mjs`, Stop hook | active, session, since, blocks, files edited, last failure | until green, `gate off`, `max_blocks` or `gate.max_age_hours` |
+| `reviews.json` | review hooks, waiver confirmation | per branch: head, tree, verdict, source, depth, session, at (waiver: reason, confirmed_by) | replaced per branch |
+| `review-pending.json` | PostToolUse on Skill | agent-skills' review skill was loaded this turn: read by the Stop hook | until that Stop |
 | `waivers.json` | `review waive` | code, reason, branch, head, tree, at | 30 min |
-| `push-offers.json` | review hook (`require_before_push: "ask"`) | per branch: head, at — the commit the user was asked about | 30 min, used by the next push of that commit |
-| `confirm-asks.json` | review hook, before `confirm <code>` | code → at: Claude Code's prompt was shown for it | 10 min, single use |
-| `pr/<owner>-<repo>-<n>.json` | `pr snapshot`, `pr mark` | threads, comments, checks handled, started_at, budget, last_head | delete to start over |
-| `reviews/<YYYYMMDD-HHMMSS>/` | `run-dir reviews`, review | raw reviewer returns, `diff.patch` | kept |
+| `push-offers.json` | review hook (`require_before_push: "ask"`) | per branch: the commit you were asked about | 30 min, used by the next push of that commit |
+| `confirm-asks.json` | review hook, before `confirm <code>` | Claude Code's prompt was shown for that code | 10 min, single use |
+| `hooks-seen.json` | SessionStart hook | the last time Kaizen's hooks fired here (`doctor`) | replaced |
+| `learnings-seen.json` | `post-edit.mjs` | learnings already brought back: per planning file content, per session | kept |
+| `friction.jsonl` | every gate that stops the work, and what lifts it | at, gate, kind (`refused`, `asked`, `skip_confirm`, `blocked`, `released`, `no_verify`, `review_recorded`, `waiver_requested`, `waiver_confirmed`), reason, branch, checks, source | kept |
+| `ledger.jsonl` | Stop hook `ledger-hook.mjs` | at, session, item, kind, title, branch, source, usage per model, subagents | kept |
+| `ledger-cursor.json` | Stop hook `ledger-hook.mjs` | byte offset and last message ids per transcript already charged | kept |
+| `cost-dashboard.html` | `metrics dashboard` | the HTML dashboard | replaced |
+| `pr/<owner>-<repo>-<n>.json` | `pr snapshot`, `pr mark` | threads, comments, checks handled, started_at, budget, last head | delete to start over |
 
-Writes to `reviews.json`, `review-evidence.json`, `waivers.json`, `push-offers.json` and `confirm-asks.json`
-are refused by the PreToolUse hook unless they come from the CLI or the hooks.
+Writes to `reviews.json`, `review-pending.json`, `waivers.json`, `push-offers.json`, `confirm-asks.json`
+and `hooks-seen.json`, and direct calls of `review-hooks.mjs`, are refused by the PreToolUse hook: only
+the hooks write them.
 
-## Outside the repo
+## Outside the repository
 
 | Path | Content |
 |---|---|
-| `${CLAUDE_PLUGIN_DATA}/packs/<hash>/` (otherwise `~/.cache/kaizen/packs/`) | shallow clones of git-sourced packs (`packs --refresh` updates) |
-| Claude Code transcripts (`~/.claude/projects/…`) | read by the Stop hook to measure the tokens of a cycle (main session and `subagents/agent-*.jsonl`) |
+| Claude Code transcripts (`~/.claude/projects/…`) | read by the Stop hooks: the review agent-skills' skill wrote, and the tokens of each turn (main session and `subagents/agent-*.jsonl`) |
 
 ## Environment variables
 
 | Variable | Read by | Role |
 |---|---|---|
-| `CLAUDE_PLUGIN_ROOT` | skills, hooks | the plugin’s folder (set by Claude Code) |
-| `CLAUDE_PLUGIN_DATA` | `packs` | cache folder for git packs (set by Claude Code) |
-| `KAIZEN_GH` | `pr`, `metrics`, `audit` | replacement for `gh` (tests) |
+| `CLAUDE_PLUGIN_ROOT` | skills, hooks | the plugin's folder (set by Claude Code) |
+| `KAIZEN_CLI` | git hooks | path of the Kaizen CLI to run (else `git config kaizen.cli`, else the dojo plugin cache) |
+| `KAIZEN_GH` | `pr`, `metrics` | replacement for `gh` (tests) |

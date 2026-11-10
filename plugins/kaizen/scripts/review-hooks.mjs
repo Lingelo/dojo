@@ -3,7 +3,7 @@
 //
 //   --evidence  (PostToolUse, Agent/Task/Skill): agent-skills' review. Its code-reviewer persona (`/ship`)
 //               returns its review: recorded at once, verdict read from its text. Its review skill
-//               (`/agent-skills:review`) only loads instructions: a mark is left for --stop.
+//               (`/kaizen:review`) only loads instructions: a mark is left for --stop.
 //   --stop      (Stop): the turn that loaded the review skill has ended — its last message is the review;
 //               the verdict is read from it and the reviewed tree recorded.
 //   --heartbeat (SessionStart): records that Claude Code runs Kaizen's hooks in this repo

@@ -1,147 +1,70 @@
-# Kaizen — SDLC assessment and positioning
+# Kaizen — positioning
 
-*As of November 9, 2026, version 6.0.0 (Spec Kit 1.2.5, Compound Engineering 3.33.2). Since 6.0 Kaizen
-converges on Addy Osmani's [agent-skills](https://github.com/addyosmani/agent-skills), shipped next to it
-in the dojo marketplace.*
+*As of November 10, 2026, Kaizen 6.0.0 with agent-skills 0.6.15.*
 
-Kaizen is a complete SDLC tooled for an AI agent. It covers the idea, the plan, the code, the review,
-the delivery up to the merge-ready PR and the learning, with guardrails enforced by code. It is not a
-team method.
+Since 6.0 Kaizen is not a method of its own. The method is Addy Osmani's
+[agent-skills](https://github.com/addyosmani/agent-skills) — spec, plan, build, test, review, ship,
+written as processes with exit criteria — shipped unmodified next to Kaizen in the dojo marketplace.
+Kaizen is the engine around it: what agent-skills **asks** the agent to do, Kaizen's hooks **check**.
 
-## Cycle coverage
+## Why agent-skills
 
-Every phase is covered. But only four are guarded by code; the others still partly rely on the
-instruction given to the agent.
+Kaizen 2.x to 5.x combined Every's [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)
+loop with GitHub [Spec Kit](https://github.com/github/spec-kit)'s constitution: 20 skills, 22 agents,
+profiles, packs, a plan format with traceability IDs. Complete, and heavy to learn. agent-skills covers
+the same development loop with less ceremony: plain Markdown files (`SPEC.md`, `tasks/`), one skill per
+concern, an anti-rationalization table in each, and it already runs in many agents. Kaizen 6.0 dropped
+what duplicated it and kept only what agent-skills does not do: enforcement, memory, PR follow-up and
+measurement.
 
-| Phase | What Kaizen does | Guaranteed by code |
+## What each does
+
+| Concern | agent-skills | Kaizen |
 | --- | --- | --- |
-| Framing, requirements | constitution, `brainstorm` (R requirements, AE acceptance examples), `decide` (ADR) | partly: `plan check`, amendment approval |
-| Design | `plan` (threats, rollout, PR slices), `doc-review` | partly: `plan check` (traceability, rollback, thresholds) |
-| Implementation | `work`, `debug`, `polish` | yes: a hook blocks the end of the work on red tests |
-| Verification | `review`, CI driven by `watch-pr` | yes: push refused without a review that really happened |
-| Delivery | `ship`, `release` | yes: PR size measured, SemVer checked |
-| Deployment, operations | none since 6.0: the team's own tools (plans still describe rollout and rollback) | — |
-| Improvement | `learn`, `metrics` (approximated DORA, cost) | partly: local measurement |
-
-## How it is tested
-
-Every script, hook and gate is covered by the test suite (`node --test plugins/kaizen/tests/*.test.mjs`:
-unit, CLI, gates, PR flow against a fake `gh`, documentation contracts), run in CI on Linux, macOS and
-Windows. 24 end-to-end evaluations drive the skills through a real `claude -p` session
-(`node plugins/kaizen/evals/run.mjs`), from setup to the ready PR.
-
-## Limits
-
-Four precise limits, to know before adopting it.
-
-- **Not a team method.** No ceremonies, no estimation, no portfolio planning, no cross-team
-  coordination.
-- **No deployment, no observability.** Since 6.0 Kaizen stops at the merge-ready PR: deploying,
-  watching production and incidents belong to the team's own tools.
-- **Guardrails against forgetfulness, not against a malicious agent.** An intermediate script is enough
-  to bypass them.
-- **Claude Code only.** The guarantees rest on Claude Code's hooks; another agent gets the skills'
-  instructions, not the gates.
-
-## Compared with classic SDLCs
-
-Kaizen replaces none of them: it tools their practices inside the code repository. It is closest to
-DevOps informed by DORA, applied to an AI agent's work.
-
-| Reference | What Kaizen takes from it | What stays outside Kaizen |
-| --- | --- | --- |
-| Agile / Scrum | small increments, acceptance criteria, retrospective through learnings | sprints, backlog, roles, ceremonies |
-| DevOps / DORA | small batches, CI, review, the 4 metrics approximated from git and GitHub | CI/CD platform, deployment, continuous observability, on-call |
-| Secure SDLC (NIST SSDF, Microsoft SDL) | STRIDE threats in the plan, security reviewers, dependency audit, secrets | in-depth threat modeling, penetration testing, compliance evidence |
-| Lean / Kaizen | continuous improvement, ceremony proportional to stakes (profiles), measured cost | flow management at organization scale |
+| Spec, plan, tasks | `/spec`, `/plan`, `SPEC.md`, `tasks/` | reads them; brings the matching learnings back when they are written |
+| Implementation, tests | `/build`, `/test`, TDD, Prove-It | quality gate: no end of turn on red checks |
+| Review | `/review` (five axes), `code-reviewer` persona | records it by itself; no unreviewed push without your say |
+| Quality bar | `/constraints`, `CONSTRAINTS.md`, floor guard | `doctor` checks the floor guard is wired |
+| Secrets | `security-and-hardening` skill | no commit carrying a secret |
+| Launch | `/ship` go/no-go | — |
+| PR after it is opened | — | `/kaizen:watch`: feedback, CI, branch, to "looks ready" |
+| Memory between cycles | — | `/kaizen:learn`, read back by hooks |
+| Measurement | — | `/kaizen:metrics`: DORA approximated, learnings reuse, friction, cost per feature |
 
 ## Compared with AI-assisted SDLCs
 
-Kaizen is the one with guarantees enforced by code. In return, it only runs on Claude Code (portability
-is on its roadmap). Spec Kit and Compound Engineering both moved a lot in September and October 2026: see
-[their recent evolution](#recent-evolution-of-the-two-sources).
+| Criterion | Spec Kit | Compound Engineering | agent-skills alone | agent-skills + Kaizen |
+| --- | --- | --- | --- | --- |
+| Shape | toolkit, extensions, workflows | plugin, ~36 skills | plugin, skills + commands + personas | the same + 4 skills and 9 hook registrations |
+| Discipline | instructions, opt-in quality-gate extensions | instructions | instructions with anti-rationalization | instructions **and** hooks that block |
+| Review | convergence step | multi-agent | five axes, personas | the same, recorded, required before push |
+| Learning loop | no | yes, its core | no | yes, read back automatically |
+| PR follow-up | no | `ce-babysit-pr` | no | `/kaizen:watch` |
+| Measurement | no | no | no | DORA approximated, friction, cost |
+| Agents | many | 14 environments | many | agent-skills everywhere; Kaizen's gates in Claude Code, git hooks anywhere |
 
-| Criterion | [Spec Kit](https://github.com/github/spec-kit) (GitHub) | Kiro (AWS) | BMAD | [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin) (Every) | Kaizen |
-| --- | --- | --- | --- | --- | --- |
-| Shape | toolkit + ecosystem: extensions, presets, bundles, workflows, catalogs | IDE (VS Code fork) | role-based method | plugin, 36 skills | plugin, 20 skills |
-| Strength | spec → plan → tasks → implement → converge, constitution, very wide adoption | specs, project rules, IDE hooks | personas (analyst, PM, architect, QA), detailed stories | learning loop, adoption, portability, cross-model opinions | guarantees enforced by code, up to the merge-ready PR |
-| Code review | through the convergence step | no (hooks) | QA agent | multi-agent | multi-agent, enforced and proven |
-| Governance | constitution; governance presets and Quality Gates extensions (instructions, opt-in) | project rules | no | no | constitution with checks and approvers, gates in hooks |
-| Deployment, monitoring | no | no | no | no (PR and CI watching only) | no (removed in 6.0) |
-| Learning loop | no | project rules (manual) | no | yes, its core | yes, taken from Compound |
-| Supported agents | Copilot by default, many integrations | Kiro only | several | 14 environments | Claude Code only |
+## Limits
 
-## Positioning
+- **Not a team method.** No ceremonies, estimation, portfolio planning or cross-team coordination.
+- **No deployment, no observability.** Kaizen stops at the merge-ready PR; merging, deploying and
+  watching production belong to your tools.
+- **Guard rails against forgetfulness, not against a malicious agent.** An intermediate script is
+  enough to bypass a hook.
+- **Gates in Claude Code only.** Other agents get agent-skills' skills, the git hooks and the learnings
+  as Markdown; the quality gate, the review record and the read-back need Claude Code's hooks.
+- **Two sources.** agent-skills is maintained upstream; dojo syncs it by pull request, reviewed before
+  it reaches users.
 
-![Only Kaizen covers the cycle up to production with guardrails in code: Spec Kit, Kiro and BMAD bottom left, Compound Engineering bottom right, Kaizen top right](media/positioning.png)
+## How it is tested
 
-*Qualitative positions, taken from the tables above* (source: [media/source/positioning.html](media/source/positioning.html)).
-Compound Engineering covers the whole development loop, but through instructions. Kaizen adds
-production and blocking guardrails, at the cost of portability.
-
-## Compound Engineering: its strengths
-
-Kaizen is derived from it under the MIT license: the loop, the artifact contracts, the learnings
-schema, the reviewers and the packs come from Compound Engineering. On five points, Compound
-Engineering does better.
-
-1. **Wider adoption.** Used daily at Every, about 25,800 stars and 1,500 commits, a community and
-   feedback from many teams. Kaizen is younger and has a much smaller user base.
-2. **Portable.** 14 agent environments: Claude Code, Codex, Cursor, Copilot, Cline, OpenCode… Kaizen
-   depends on Claude Code's hooks.
-3. **Simpler to adopt.** A short loop (`/ce-brainstorm` → `/ce-plan` → `/ce-work` → `/ce-simplify-code`
-   → `/ce-code-review` → `/ce-compound`), little configuration, nothing blocking.
-4. **Wider catalog** around the loop: explanation, taking a position, design, collaboration, git,
-   long-running optimization (`ce-optimize`), and other models' opinions (Codex, Gemini) on a review
-   or a plan.
-5. **Maintained by several people**, with an international community.
-
-What Kaizen adds, and what it costs:
-
-| Kaizen's contribution | Cost |
-| --- | --- |
-| Guarantees enforced by code: green tests before the end of the work, push only after a proven review | more friction; Claude Code only |
-| Governance: constitution with checks and approvers, maturity audit, model per agent role, measured cost | more concepts to learn (the `prototype` profile lightens it on low-stakes repos) |
-| — | a single maintainer |
-
-## Recent evolution of the two sources
-
-**Spec Kit (1.0.4 → 1.2.5, September–October 2026)** became a platform more than a command set:
-extensions, presets and bundles distributed through catalogs (community and private), a workflow
-engine (composable steps, a built-in GitHub step), first-party `bugfix` and `assess` bundles, an
-experimental MCP server exposing artifacts and workflows, and ever more agent integrations.
-Governance now comes as opt-in packages (Security Governance, Architecture Governance, Quality Gates,
-ThreatSpec…): that is Kaizen's ground (constitution, packs), but as instructions and extensions,
-where Kaizen enforces through hooks.
-
-**Compound Engineering (3.27 → 3.33, September–October 2026)** deepened the loop: cross-model peers
-(Codex, Gemini through Antigravity) in code and doc review, `ce-simplify-code`, `ce-optimize`,
-`ce-babysit-pr` judging whether an old PR still belongs, reviews flagging unrequested surface and
-needless dependencies, learnings naming their retirement condition, a live mode for `ce-polish`.
-
-Kaizen 5.1.0 took three of these back, adapted to its gates: a `retire_when` that names a check runnable
-without changing the repo, acted on by `prune-learnings` (never removing the workaround itself); the
-intent check run both ways by `correctness` on every review, small diffs included; `pr overlap`, so
-`watch-pr` judges Update, Rework or Close when the base touched the PR's paths. Cross-model review is
-left out for now: it would break the "Claude Code only" choice and the review evidence the push gate
-relies on, and deserves an ADR first.
-
-## Recommendation
-
-Compound Engineering is the best learning loop for an agent, widely adopted and portable. Kaizen is a
-more complete and better controlled SDLC, but younger and tied to Claude Code.
-
-- **Choose Compound Engineering** for a multi-tool team, or one that wants to start light.
-- **Choose Kaizen** for a team on Claude Code that wants quality guarantees up to production.
-- **Pick the profile by stakes, not by team experience:** `prototype` for a prototype or internal tool,
-  `product` for a product in production, `critical` for regulated or critical domains. Then measure the
-  effect with `/kaizen:metrics` (real DORA, cycle cost, learnings applied).
+Every script, hook and gate is covered by `node --test plugins/kaizen/tests/*.test.mjs` (unit, CLI,
+gates, PR flow against a fake `gh`, documentation and diagram contracts), run in CI on Linux, macOS and
+Windows. End-to-end evaluations drive the skills through a real `claude -p` session
+(`node plugins/kaizen/evals/run.mjs`).
 
 ## Sources
 
-- [Compound Engineering — EveryInc](https://github.com/EveryInc/compound-engineering-plugin) and its [releases](https://github.com/EveryInc/compound-engineering-plugin/releases)
-- [GitHub Spec Kit](https://github.com/github/spec-kit) and its [releases](https://github.com/github/spec-kit/releases)
-- [Kiro — hooks documentation](https://kiro.dev/docs/hooks/)
-- [InfoQ — Kiro, a spec-driven agentic IDE](https://www.infoq.com/news/2025/08/aws-kiro-spec-driven-agent/)
-- [Comparative guide to Kiro, Spec Kit, BMAD](https://medium.com/@visrow/comprehensive-guide-to-spec-driven-development-kiro-github-spec-kit-and-bmad-method-5d28ff61b9b1)
-- [BMAD Method — guide](https://www.augmentcode.com/guides/bmad-method-ai-development)
+- [agent-skills — Addy Osmani](https://github.com/addyosmani/agent-skills) (MIT)
+- [Compound Engineering — Every](https://github.com/EveryInc/compound-engineering-plugin) (MIT; Kaizen's learnings schema and PR follow-up derive from it)
+- [GitHub Spec Kit](https://github.com/github/spec-kit)
+- [DORA — State of AI-assisted Software Development 2025](https://dora.dev/research/2025/dora-report/)

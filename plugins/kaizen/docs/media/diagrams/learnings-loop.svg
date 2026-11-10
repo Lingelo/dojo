@@ -120,13 +120,13 @@
 <text class="edge" x="670" y="475" text-anchor="middle">never cited</text>
 <path class="line blue dashed" d="M485,420 L485,288" marker-end="url(#h-blue)"/>
 <rect class="agent" x="36" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="60" y="540">agent-skills (/agent-skills:…)</text>
-<rect class="skill" x="268" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="292" y="540">Kaizen (/kaizen:…)</text>
-<rect class="gate" x="425.6" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="449.6" y="540">Kaizen hook or check</text>
-<rect class="artifact" x="595.6" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="619.6" y="540">file in your repo</text>
-<rect class="state" x="747" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="771" y="540">signal</text>
+<text class="small" x="60" y="540">agent-skills command (/kaizen:spec…)</text>
+<rect class="skill" x="305.20000000000005" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="329.20000000000005" y="540">Kaizen skill (setup, learn, metrics, watch)</text>
+<rect class="gate" x="617.8000000000001" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="641.8000000000001" y="540">Kaizen hook or check</text>
+<rect class="artifact" x="787.8000000000001" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="811.8000000000001" y="540">file in your repo</text>
+<rect class="state" x="939.2" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="963.2" y="540">signal</text>
 </svg>

@@ -41,7 +41,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
 
    State the visible limits: shallow clone, squash merges without GitHub, fewer than 10 changes.
 3. **Act.** One to three actions, each tied to a number ("batch size p90 = 900 lines → split with
-   `/agent-skills:plan` slices"). Nothing else.
+   `/kaizen:plan` slices"). Nothing else.
 
 ## Common Rationalizations
 

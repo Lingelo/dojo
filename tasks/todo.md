@@ -141,22 +141,21 @@ diagrams. `kaizen upgrade` lists a repository's leftovers (`production-removed`,
 - [ ] `kaizen doctor` reads this repository's `docs/SPEC.md` and `tasks/todo.md` correctly
 - [ ] Human review before continuing
 
-## Task 5: His reviewers recognized, his review recorded by itself
+## Task 5: His review recorded by itself
 
-**Description:** `reviewerOf` returns `agent-skills:<persona>` for `code-reviewer`,
-`security-auditor`, `test-engineer`, `web-performance-auditor` (with or without the prefix);
-`addLaunch` ignores them; the `--evidence` hook calls a new `recordAgentSkillsReview` for
-`code-reviewer`, writing the review for the branch on the current tree, depth `agent-skills`, verdict
-`blocked` if a line starts with `Critical:` (bold or list marker allowed), else `ready`.
+**Description:** `reviewSourceOf` recognizes agent-skills' `code-reviewer` persona (Agent result,
+recorded at once) and its `code-review-and-quality` skill (Skill call marked in `review-pending.json`,
+the review read from the transcript by the Stop hook). `verdictOf`: a non-empty Critical section or a
+`Critical:` finding → `blocked`, `REQUEST CHANGES` → `concerns`, else `ready`; depth `agent-skills`.
 
 **Acceptance criteria:**
-- [ ] 120-line branch, clean persona review → push allowed, no Kaizen command run
-- [ ] `Critical:` finding → pushing the same tree refused; allowed after a change and a clean review
-- [ ] Kaizen's reviewers and `missingOutputs` behave as before
-- [ ] Not a Kaizen repository → nothing written
+- [x] 120-line branch, clean review → push allowed, no Kaizen command run
+- [x] Critical finding → pushing the same tree refused; allowed after a change and a clean review
+- [x] "Critical: None found" is not a finding
+- [x] Not a Kaizen repository → nothing written
 
 **Verification:**
-- [ ] Tests pass: `node --test plugins/kaizen/tests/review.test.mjs`
+- [x] Tests pass: `node --test plugins/kaizen/tests/review.test.mjs`
 
 **Dependencies:** None
 
@@ -164,9 +163,28 @@ diagrams. `kaizen upgrade` lists a repository's leftovers (`production-removed`,
 - `plugins/kaizen/scripts/review-state.mjs`
 - `plugins/kaizen/scripts/review-hooks.mjs`
 - `plugins/kaizen/tests/review.test.mjs`
-- `plugins/kaizen/docs/concepts/review.md`
 
 **Estimated scope:** Medium
+
+## Task 5b: Reduce to the maximum (decided 2026-11-10)
+
+**Description:** see `docs/SPEC.md`, "Amended 2026-11-10". Remove every skill, agent, script, reference,
+template, configuration key and doc that agent-skills covers; keep `setup`, `learn`, `metrics`, `watch`
+rewritten in agent-skills' anatomy; quality gate on by itself; learnings read back by a hook; aliases.
+
+**Acceptance criteria:**
+- [x] 4 skills, no `agents/`, `commands/` equal to `aliases.mjs`'s output (contract)
+- [x] Nothing outside the CHANGELOG and `docs/migrating-to-6.md` names a removed command (contract)
+- [x] Every configuration key documented, every CLI command and hook listed in the README (contracts)
+- [x] `kaizen upgrade` reports 5.x leftovers (`agent-skills-base`)
+- [x] Evals adapted (`setup-route`, `learn-prune-stale`, both plugins loaded)
+
+**Verification:**
+- [x] Tests pass: `node --test plugins/kaizen/tests/*.test.mjs`
+
+**Dependencies:** Tasks 3, 4, 5
+
+**Estimated scope:** Large (done as several commits)
 
 ## Task 6: Claude Code spike and host fixtures
 
@@ -193,35 +211,29 @@ payload fixtures from their official hook docs, marked "documented, not measured
 
 **Estimated scope:** Medium
 
-## Task 7: Guide, hosts page, release 6.0.0
+## Task 7: Documentation, video, release 6.0.0
 
-**Description:** `docs/guides/agent-skills.md` (why, enabling both, which command to use while both
-exist, what the engine does with each of his files, what 6.1 changes, and that
-production (`kaizen-ops`, `deploy`, `monitor`, `postmortem`) is removed in 6.0); `docs/hosts.md` (Task 6's
-findings, dated, measured vs documented); positioning gains an agent-skills column; CHANGELOG 6.0.0;
-version 6.0.0; `CLAUDE.md` updated.
+**Description:** the whole user documentation rewritten for 6.0 (getting started, guides, concepts,
+reference, migration, troubleshooting, positioning), diagrams redrawn, CHANGELOG 6.0.0, `CLAUDE.md`
+and the root README updated, the presentation video remade.
 
 **Acceptance criteria:**
-- [ ] Both pages indexed in `docs/README.md`, every relative link resolves
-- [x] CHANGELOG 6.0.0 (Breaking: production removed; Added: agent-skills files, doctor checks); `plugin.json` at 6.0.0
-- [ ] The guide names 6.1's deprecations so users are not surprised
+- [x] Every page indexed in `docs/README.md`, every relative link and anchor resolves (contract)
+- [x] CHANGELOG 6.0.0 lists every removal and its replacement; `plugin.json` at 6.0.0
+- [x] `docs/migrating-to-6.md` maps every 5.x command, CLI command and configuration key
+- [ ] Presentation video remade (MP4, poster, SRT/VTT) for Kaizen around agent-skills
 
 **Verification:**
-- [ ] Tests pass: `node --test plugins/kaizen/tests/*.test.mjs plugins/kaizen-ops/tests/*.test.mjs`
+- [x] Tests pass: `node --test plugins/kaizen/tests/*.test.mjs`
 
-**Dependencies:** Tasks 4, 5, 6
+**Dependencies:** Tasks 5, 5b
 
 **Files likely touched:**
-- `plugins/kaizen/docs/guides/agent-skills.md`
-- `plugins/kaizen/docs/hosts.md`
-- `plugins/kaizen/docs/README.md`
-- `plugins/kaizen/docs/positioning.md`
-- `plugins/kaizen/README.md`
-- `plugins/kaizen/CHANGELOG.md`
-- `plugins/kaizen/.claude-plugin/plugin.json`
-- `CLAUDE.md`
+- `plugins/kaizen/docs/`, `plugins/kaizen/README.md`, `plugins/kaizen/CHANGELOG.md`
+- `media/kaizen/`
+- `CLAUDE.md`, `README.md`
 
-**Estimated scope:** Medium
+**Estimated scope:** Large
 
 ## Checkpoint: After Tasks 5-7
 

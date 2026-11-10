@@ -113,7 +113,7 @@
 <rect class="gate" x="460" y="392" width="280" height="76" rx="8" stroke-width="1.5"/>
 <text class="label" x="600" y="420" text-anchor="middle">Stop</text>
 <text class="sub" x="600" y="435" text-anchor="middle">review-hooks.mjs --stop: the turn</text>
-<text class="sub" x="600" y="449" text-anchor="middle">that ran /review → review recorded</text>
+<text class="sub" x="600" y="449" text-anchor="middle">that ran a review → review recorded</text>
 <rect class="gate" x="760" y="392" width="304" height="76" rx="8" stroke-width="1.5"/>
 <text class="label" x="912" y="420" text-anchor="middle">Stop</text>
 <text class="sub" x="912" y="435" text-anchor="middle">ledger-hook.mjs: charges the turn’s</text>

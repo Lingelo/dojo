@@ -14,6 +14,7 @@ on:
     paths:
       - '.github/scripts/sync-plugin*.mjs'
       - '.github/workflows/sync-agent-skills.yml'
+      - 'plugins/kaizen/scripts/aliases.mjs'
 
 concurrency:
   group: sync-agent-skills
@@ -51,9 +52,11 @@ jobs:
           node-version: '22'
       - name: Copy agent-skills main into plugins/agent-skills
         run: node .github/scripts/sync-plugin.mjs --plugin agent-skills --source addyosmani/agent-skills --ref main
+      - name: Regenerate Kaizen's /kaizen:<command> aliases of his commands
+        run: node plugins/kaizen/scripts/aliases.mjs
       - name: Propose the copy as a pull request if it changed
         run: |
-          git add -A plugins/agent-skills .claude-plugin/marketplace.json
+          git add -A plugins/agent-skills plugins/kaizen/commands .claude-plugin/marketplace.json
           if git diff --cached --quiet; then
             echo "plugins/agent-skills already up to date"
             exit 0

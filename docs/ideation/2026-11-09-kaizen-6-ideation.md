@@ -17,6 +17,9 @@ Convergence sections, which frame everything).
 Generated inline in one session, not through `/kaizen:ideate`'s parallel agents, and the bases quoted
 from the repo were checked by hand, not by a cold verifier.
 
+
+> **Amended 2026-11-10 — reduced to the maximum.** The steps spread over 6.0 to 6.3 below were done in 6.0: Kaizen keeps 4 skills (`setup`, `learn`, `metrics`, `watch`), no agent, and runs agent-skills' commands as `/kaizen:<name>`. See `docs/SPEC.md` ("Amended 2026-11-10") and `tasks/todo.md` (Task 5b).
+
 ## Direction: Osmani first, lighter than Compound and Spec Kit
 
 Decided by Angélo LIMA on 2026-11-09: "plus de lui que de Compound et Spec Kit, je trouve l'approche

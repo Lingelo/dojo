@@ -196,8 +196,8 @@ ${parts.join('\n')}
 const written = [];
 // `agent` boxes draw agent-skills' commands: the workflow Kaizen guards.
 const LEGEND = [
-  ['agent', 'agent-skills (/agent-skills:…)'],
-  ['skill', 'Kaizen (/kaizen:…)'],
+  ['agent', 'agent-skills command (/kaizen:spec\u2026)'],
+  ['skill', 'Kaizen skill (setup, learn, metrics, watch)'],
   ['gate', 'Kaizen hook or check'],
   ['artifact', 'file in your repo'],
   ['outside', 'you'],
@@ -210,14 +210,14 @@ written.push(
   diagram('kaizen-loop', 1100, 660, 'Kaizen around agent-skills', 'agent-skills does the work; Kaizen’s hooks make it hold, keep what was learned, follow the PR and measure.', (d) => {
     const xs = (i) => 36 + i * 150;
     const steps = [
-      ['spec', '/spec', 'what, for whom'],
-      ['plan', '/plan', 'tasks, files'],
-      ['build', '/build', 'one task, test first'],
-      ['test', '/test', 'proof'],
-      ['review', '/review', 'five axes'],
-      ['ship', '/ship', 'push, PR'],
+      ['spec', '/kaizen:spec', 'what, for whom'],
+      ['plan', '/kaizen:plan', 'tasks, files'],
+      ['build', '/kaizen:build', 'one task, test first'],
+      ['test', '/kaizen:test', 'proof'],
+      ['review', '/kaizen:review', 'five axes'],
+      ['ship', '/kaizen:ship', 'push, PR'],
     ];
-    d.region(28, 76, 1044, 120, 'agent-skills — the workflow');
+    d.region(28, 76, 1044, 120, 'agent-skills\u2019 workflow, under Kaizen\u2019s prefix');
     steps.forEach(([id, l, s], i) => d.box(id, xs(i) + 6, 112, 128, 60, 'agent', l, s));
     for (let i = 0; i < steps.length - 1; i++) d.arrow([`${steps[i][0]}.r`, `${steps[i + 1][0]}.l`], { tone: 'accent' });
     d.box('watch', 948, 112, 116, 60, 'skill', '/kaizen:watch', 'PR to ready');
@@ -293,8 +293,8 @@ written.push(
 written.push(
   diagram('push-gate', 1100, 640, 'The review required before git push', 'agent-skills reviews; Kaizen records the tree it reviewed and the verdict it wrote. A PreToolUse hook stops an unreviewed push, or you choose to skip it.', (d) => {
     d.region(28, 76, 330, 520, 'The review records itself');
-    d.box('rv', 44, 106, 140, 60, 'agent', '/review', 'skill, in the\nconversation');
-    d.box('sh', 202, 106, 140, 60, 'agent', '/ship', 'code-reviewer\npersona');
+    d.box('rv', 44, 106, 140, 60, 'agent', '/kaizen:review', 'skill, in the\nconversation');
+    d.box('sh', 202, 106, 140, 60, 'agent', '/kaizen:ship', 'code-reviewer\npersona');
     d.box('mark', 44, 196, 140, 64, 'gate', 'PostToolUse Skill', 'leaves a mark\nreview-pending.json');
     d.box('stopr', 44, 290, 140, 64, 'gate', 'Stop --stop', 'reads the turn’s\nlast message');
     d.box('agent', 202, 196, 140, 64, 'gate', 'PostToolUse Agent', 'reads the\npersona’s return');
@@ -329,7 +329,7 @@ written.push(
     d.box('w2', 776, 256, 280, 46, 'state', 'push-offers.json (this commit)', null, { round: 10 });
     d.box('w3', 776, 326, 280, 52, 'outside', 'you choose 2: Claude pushes again', 'Claude cannot choose for you');
     d.box('w4', 776, 402, 280, 56, 'gate', 'Claude Code permission prompt', 'only you can answer it');
-    d.box('w5', 776, 482, 280, 62, 'state', 'pushed without a review', 'logged in friction.jsonl\n(declined → /agent-skills:review)', { round: 10 });
+    d.box('w5', 776, 482, 280, 62, 'state', 'pushed without a review', 'logged in friction.jsonl\n(declined → /kaizen:review)', { round: 10 });
     d.arrow(['ask.b', 'w1.t'], {});
     d.arrow(['w1.b', 'w2.t'], {});
     d.arrow(['w2.b', 'w3.t'], {});
@@ -443,7 +443,7 @@ written.push(
     d.arrow(['pre2.r', 'post2.l'], { tone: 'ok' });
     d.text(740, 144, 'allowed → the tool runs, then:', 'edge');
     d.box('stop1', 170, 392, 270, 76, 'gate', 'Stop', 'quality-gate.mjs: verify while the\ngate is on · blocks ≤ 3 times');
-    d.box('stop2', 460, 392, 280, 76, 'gate', 'Stop', 'review-hooks.mjs --stop: the turn\nthat ran /review → review recorded');
+    d.box('stop2', 460, 392, 280, 76, 'gate', 'Stop', 'review-hooks.mjs --stop: the turn\nthat ran a review → review recorded');
     d.box('stop3', 760, 392, 304, 76, 'gate', 'Stop', 'ledger-hook.mjs: charges the turn’s\ntokens to the work item · never blocks');
     d.text(36, 506, 'Exit 0 = allow, exit 2 = block with the message on stderr (sent back to Claude). SessionStart, UserPromptSubmit, PostToolUse and the ledger only observe.\nAll registrations live in hooks/hooks.json and use ${CLAUDE_PLUGIN_ROOT}; timeouts: SessionStart 10 s, PreToolUse 30 s, PostToolUse 15 s,\nStop 900 s (gate), 15 s (review), 30 s (ledger), UserPromptSubmit 30 s.', 'small');
   }),

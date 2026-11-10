@@ -9,7 +9,7 @@ argument-hint: "[PR number or URL | empty = current branch] [duration, e.g. 4h] 
 
 ## Overview
 
-agent-skills opens the PR (`/agent-skills:ship`); this skill takes it from there to a **true, reported**
+agent-skills opens the PR (`/kaizen:ship`); this skill takes it from there to a **true, reported**
 state: merged or closed, looks ready, blocked (with the reason), or budget exhausted. "Ready" is never
 "merged": merging stays with the human. Everything a cycle looks at comes from the snapshot
 (`node "$K" pr snapshot`), never from an impression or a comment.
@@ -21,7 +21,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
 - A PR is open and needs its feedback handled, its CI repaired, its branch kept up to date.
 - Only review comments to answer: run one cycle (`checkpoint`).
 
-**Not for:** opening the PR (`/agent-skills:ship`), merging, approving a fork's CI run.
+**Not for:** opening the PR (`/kaizen:ship`), merging, approving a fork's CI run.
 
 ## Process
 
@@ -40,7 +40,7 @@ on its head branch, clean. Budget: the requested duration, else 8 h
      **fix** · **already done** (quote where) · **disagree** (reason) · **needs the human** (a product
      or design choice — leave the thread open, ask once);
    - a fix: smallest change, checks green (the quality gate holds the turn until they are), commit, and
-     a review when the push gate asks for one (`/agent-skills:review`); **push before replying**;
+     a review when the push gate asks for one (`/kaizen:review`); **push before replying**;
    - reply quoting the comment: `node "$K" pr reply --thread <id> --body-file <f>` (or
      `pr comment`), then `pr resolve --thread <id>` for what is settled;
    - mark it: `node "$K" pr mark --thread <id> --disposition dispatched` (or `needs-human`).
@@ -48,7 +48,7 @@ on its head branch, clean. Budget: the requested duration, else 8 h
 4. **Head commit CI.** For each `attention.checks`: infrastructure failure (runner lost, network,
    external timeout unrelated to the diff) → `gh run rerun <id> --failed`, **once** per check and commit;
    real failure → `gh run view <id> --log-failed` (trimmed), find the cause with
-   `/agent-skills:test` or the `debugging-and-error-recovery` skill, fix, push. Mark each check
+   `/kaizen:test` or the `debugging-and-error-recovery` skill, fix, push. Mark each check
    (`pr mark --check <name> --disposition dispatched`). "Flaky" is not a cause: a second identical
    failure is real.
 5. **Branch up to date** — only when the snapshot says so: `behind` → `node "$K" pr update-branch`;

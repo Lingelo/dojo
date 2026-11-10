@@ -116,7 +116,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     'Kaizen configured',
     existsSync(join(root, '.kaizen', 'config.json')) ? 'ok' : 'warn',
     existsSync(join(root, '.kaizen', 'config.json')) ? '.kaizen/config.json' : 'no .kaizen/config.json: the gates stay inactive in this repo',
-    '/kaizen',
+    '/kaizen:setup',
   );
 
   // What a Kaizen update still asks of this repo, detected from its state (kaizen upgrade).
@@ -150,7 +150,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
       'agent_skills',
       'agent-skills (the workflow Kaizen guards)',
       asOn ? 'ok' : 'warn',
-      asOn ? `${AGENT_SKILLS_ID} enabled; Kaizen ${seen}` : `${AGENT_SKILLS_ID} is not enabled: /agent-skills:spec, plan, build, review, ship are missing, and no review can record itself`,
+      asOn ? `${AGENT_SKILLS_ID} enabled; Kaizen ${seen}` : `${AGENT_SKILLS_ID} is not enabled: /kaizen:spec, plan, build, review, ship are missing, and no review can record itself`,
       asOn ? null : 'node "$K" install settings (declares it next to kaizen@dojo), then a new session',
     );
   }
@@ -190,7 +190,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
   const branch = currentBranch(root);
   if (branch) {
     const push = checkPush(root, config);
-    add('review', `Review of ${branch}`, push.allowed ? 'ok' : 'warn', `${push.reason}${push.branch_lines ? ` (${push.branch_lines} lines on the branch)` : ''}`, push.allowed ? null : '/agent-skills:review');
+    add('review', `Review of ${branch}`, push.allowed ? 'ok' : 'warn', `${push.reason}${push.branch_lines ? ` (${push.branch_lines} lines on the branch)` : ''}`, push.allowed ? null : '/kaizen:review');
     // What already left the machine: the upstream commit, checked like a push of it.
     const upstream = git(root, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'], { allowFail: true });
     const sha = upstream && git(root, ['rev-parse', '@{u}'], { allowFail: true });
@@ -198,7 +198,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     const covered = sha && push.review?.head && git(root, ['merge-base', '--is-ancestor', sha, push.review.head], { allowFail: true }) !== null;
     if (sha && !covered) {
       const pushed = checkPush(root, config, { branch, sha });
-      if (!pushed.allowed) add('pushed', `Pushed state of ${branch}`, 'warn', `${upstream} (${sha.slice(0, 7)}) was pushed without a recorded review: ${pushed.reason}`, '/agent-skills:review, then push again');
+      if (!pushed.allowed) add('pushed', `Pushed state of ${branch}`, 'warn', `${upstream} (${sha.slice(0, 7)}) was pushed without a recorded review: ${pushed.reason}`, '/kaizen:review, then push again');
     }
   }
 

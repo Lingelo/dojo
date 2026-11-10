@@ -2,35 +2,71 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
-## [6.0.0] - 2026-11-09
+## [6.0.0] - 2026-11-10
 
-Kaizen converges on Addy Osmani's [agent-skills](https://github.com/addyosmani/agent-skills): his skills
-become the base, Kaizen the engine that makes them hold (decision and roadmap:
-`docs/ideation/2026-11-09-kaizen-6-ideation.md` and `docs/SPEC.md` of the dojo repository). This
-release removes production from Kaizen and starts reading agent-skills' files.
+Kaizen converges on Addy Osmani's [agent-skills](https://github.com/addyosmani/agent-skills), shipped
+unmodified next to it in the dojo marketplace: agent-skills does the work (spec, plan, build, test,
+review, ship), Kaizen keeps only what it does not do — the gates, the memory between cycles, the PR
+follow-up and the measurement. From 20 skills and 22 agents to **4 skills and no agent**. Decision and
+roadmap: `docs/ideation/2026-11-09-kaizen-6-ideation.md` of the dojo repository. Step by step:
+[Migrating to 6.0](docs/migrating-to-6.md).
 
 ### Breaking
-- **Production removed.** Kaizen no longer deploys nor watches production: the kaizen-ops plugin
-  (`/kaizen-ops:deploy`, `/kaizen-ops:monitor`, `/kaizen-ops:postmortem`) and the core CLI commands
-  `deploy`, `monitor` and `postmortem new` are gone, with platform detection (`deploydetect`), deployment
-  approvals, the protected-environment and deployment-tag refusals of the review hook, the `kaizen deploy
-  <code>` confirmation, the `deploy` and `monitor` configuration keys, the audit's Delivery and
-  Operations areas and its `monitor_patrol` / `monitor_alert` scaffolds, the `ops_plugin` doctor check and
-  the production evals. Plans keep their rollout section, for whoever deploys with the team's own tools.
-  `kaizen upgrade` reports the leftovers (`production-removed`: `deploy` / `monitor` keys,
-  `kaizen-ops@dojo`), to remove by hand.
-- **DORA metrics are approximations only**: deployment frequency and lead time from merges and GitHub,
-  change failure rate from fixes and reverts; time to restore is no longer measured.
+- **Skills removed** — agent-skills does their work: `help` (→ `/kaizen:setup`), `constitution`
+  (→ `/kaizen:constraints`, `CONSTRAINTS.md`), `ideate`, `brainstorm` (→ `/kaizen:spec`), `decide`,
+  `plan` and `doc-review` (→ `/kaizen:plan`), `work` and `autopilot` (→ `/kaizen:build`), `debug`
+  (→ `/kaizen:test`), `polish`, `review` and `ship` (→ agent-skills' own), `address-feedback` and
+  `watch-pr` (→ `/kaizen:watch`), `release`, `prune-learnings` (→ `/kaizen:learn prune`).
+- **The 22 agents removed** (research, plan reviewers, code reviewers): agent-skills' skills and
+  personas (`code-reviewer`, `security-auditor`, `test-engineer`, `web-performance-auditor`) review.
+- **Production removed.** The kaizen-ops plugin (`/kaizen-ops:deploy`, `monitor`, `postmortem`) and the
+  CLI's `deploy`, `monitor`, `postmortem new`, platform detection, deployment approvals and the
+  protected-environment and deployment-tag refusals are gone. Kaizen stops at the merge-ready PR.
+- **Concepts removed**: constitution and its amendments, packs, profiles and risk escalation, the model
+  policy per agent role, the Kaizen plan format (`kaizen-plan/v1`, R/AE/U IDs, `plan check`, `amend`,
+  `reviewed`), ADR and release commands, performance budgets, the dev server probe, the SDLC maturity
+  audit, review cost estimates, the cycle cost and the Playwright MCP server.
+- **CLI commands removed**: `plan`, `constitution`, `packs`, `pack`, `adr`, `profile`, `models`, `perf`,
+  `size`, `release`, `dev`, `run-dir`, `audit`, `review record`, `review estimate`, `gate on`.
+  `audit fix git_hooks` and `audit fix claude_settings` become `install git-hooks` and `install settings`.
+- **Configuration keys no longer read**: `profile`, `models`, `risk`, `perf`, `packs`, `tracker`,
+  `deploy`, `monitor`, `review.confirm_above_cost`.
+- **DORA metrics are approximations only** (merges, GitHub, fixes and reverts); time to restore is not
+  measured. The `cycle_cost` section is gone: cost is per work item (`work_items`, `kaizen cost`).
 
 ### Added
-- **agent-skills' files read by the engine** (`scripts/agentskills.mjs`): `SPEC.md` or `docs/SPEC.md`
-  (sections, boundaries Always / Ask first / Never), `tasks/plan.md`, `tasks/todo.md` (tasks with their
-  acceptance criteria, verification commands, dependencies and files likely touched) and
-  `CONSTRAINTS.md` (floor, enforced rows with their command, measured metrics, exceptions) — read-only,
-  tolerant to missing sections and CRLF.
-- **`kaizen doctor`**: `agent_skills` (is `agent-skills@dojo` enabled, which of its files Kaizen reads)
-  and `floor_guard` (when `CONSTRAINTS.md` exists: does agent-skills' floor guard run from a git hook, a
-  pre-commit configuration, `package.json` or a CI workflow).
+- **agent-skills' commands under Kaizen's prefix**: `/kaizen:spec`, `plan`, `build`, `test`, `review`,
+  `ship`, `constraints`, `code-simplify`, `webperf` — exact copies generated from agent-skills'
+  `.claude/commands/` by `scripts/aliases.mjs`, regenerated by the dojo sync workflow with every
+  agent-skills update (a contract test fails when they drift).
+- **The quality gate turns itself on** (`post-edit.mjs`, PostToolUse on file edits) as soon as a session
+  edits a code file, for that session only, and off when the checks are green. Nothing to start or stop.
+- **agent-skills' review records itself.** `/kaizen:review` (its `code-review-and-quality` skill, run
+  inline) is marked by the PostToolUse hook on Skill and read from the transcript by a Stop hook;
+  `/kaizen:ship`'s `code-reviewer` persona is read from the Agent result. The verdict comes from what the
+  review wrote: a non-empty Critical section → `blocked`, `REQUEST CHANGES` → `concerns`, else `ready`.
+  The push gate is unchanged.
+- **Learnings come back by themselves**: writing `SPEC.md`, `docs/SPEC.md`, `tasks/plan.md` or
+  `tasks/todo.md` adds the matching learnings to Claude's context (once per version of the file);
+  editing a file a learning names in its new optional `files:` field adds that learning (once per
+  session).
+- **agent-skills' files read by the engine** (`scripts/agentskills.mjs`): `SPEC.md`, `tasks/plan.md`,
+  `tasks/todo.md`, `CONSTRAINTS.md` — read-only, tolerant. `status` names the next command from them;
+  `metrics` counts the learnings they cite.
+- **`kaizen doctor`**: `agent_skills` (is `agent-skills@dojo` enabled) and `floor_guard` (when
+  `CONSTRAINTS.md` exists, does its floor guard run from a git hook or CI).
+- **`kaizen upgrade`**: `agent-skills-base` (declares `agent-skills@dojo`; lists the 5.x keys and files
+  to remove by hand) and `production-removed`.
+- **The four skills follow agent-skills' anatomy**: Overview, When to Use, Process, Common
+  Rationalizations, Red Flags, Verification.
+- Documentation rewritten: getting started, one guide per skill, concepts (the loop, gates and hooks,
+  learnings, metrics), reference (CLI, configuration, state and files), migration guide; diagrams
+  redrawn.
+
+### Changed
+- `/kaizen:watch` replaces `address-feedback` and `watch-pr` (`checkpoint` runs one cycle).
+- `/kaizen:learn prune` replaces `prune-learnings`; `/kaizen:setup` also answers "where are we".
+- `install settings` and `doctor` declare and check both `kaizen@dojo` and `agent-skills@dojo`.
 
 ## [5.1.0] - 2026-10-29
 

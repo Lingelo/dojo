@@ -243,7 +243,7 @@ export function askQuestion(res) {
   return (
     `[kaizen] ${res.branch}: ${res.reason}. review.require_before_push is "ask": the user decides.\n` +
     'Ask them now with AskUserQuestion (in their language), the review as the FIRST option:\n' +
-    '  1. "Run the review (Recommended)" — /agent-skills:review on the branch, fix the Critical and Required findings, then push;\n' +
+    '  1. "Run the review (Recommended)" — /kaizen:review on the branch, fix the Critical and Required findings, then push;\n' +
     '  2. "Push without a review" — rerun the same push: Claude Code will ask them to confirm it.\n' +
     'Do not pick for them. Non-interactive or autonomous flow: nobody to ask, run the review.\n'
   );
@@ -254,7 +254,7 @@ export function pushRefusal(res, K) {
   return (
     `[kaizen] Push refused on ${res.branch}: ${res.reason}.\n` +
     'A review is required before any push of a branch.\n' +
-    '- Run /agent-skills:review: Kaizen records the reviewed state by itself. Fix the Critical and Required findings, then push.\n' +
+    '- Run /kaizen:review: Kaizen records the reviewed state by itself. Fix the Critical and Required findings, then push.\n' +
     `- If the user explicitly asked to skip it: \`node "${K}" review waive --reason "<their request>"\`, ` +
     'then ask them to type the displayed confirmation message themselves (kaizen waive <code>); you cannot confirm it for them.\n' +
     'Do not bypass this gate any other way, and do not disable it without an explicit request.\n'

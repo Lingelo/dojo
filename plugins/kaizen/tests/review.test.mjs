@@ -157,7 +157,7 @@ test('require_before_push "ask": the user judges the push, Claude Code asks them
   const out = JSON.parse(second.stdout).hookSpecificOutput;
   assert.equal(out.permissionDecision, 'ask');
   assert.match(out.permissionDecisionReason, /without a review — confirm/);
-  assert.match(out.additionalContext, /declined.*run \/agent-skills:review/);
+  assert.match(out.additionalContext, /declined.*run \/kaizen:review/);
   // the offer is used up: the next push asks again
   assert.equal(prePush(dir).status, 2);
   // a new commit voids a pending offer
@@ -288,7 +288,7 @@ import { verdictOf } from '../scripts/review-state.mjs';
 const reviews = (dir) => JSON.parse(readFileSync(join(dir, '.kaizen/state/reviews.json'), 'utf8'));
 const transcript = (dir, text) => {
   const f = join(dir, '.transcript.jsonl');
-  writeFiles(dir, { '.transcript.jsonl': [{ type: 'user', message: { role: 'user', content: '/agent-skills:review' } }, { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } }].map((e) => JSON.stringify(e)).join('\n') + '\n' });
+  writeFiles(dir, { '.transcript.jsonl': [{ type: 'user', message: { role: 'user', content: '/kaizen:review' } }, { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text }] } }].map((e) => JSON.stringify(e)).join('\n') + '\n' });
   return f;
 };
 
@@ -303,7 +303,7 @@ test('verdict: Critical findings block, REQUEST CHANGES asks for changes, otherw
   assert.equal(verdictOf(''), 'ready');
 });
 
-test('the code-reviewer persona (/agent-skills:ship) records its review at once; other agents do not', () => {
+test('the code-reviewer persona (/kaizen:ship) records its review at once; other agents do not', () => {
   const dir = featureRepo();
   hook('evidence', dir, { tool_name: 'Agent', tool_input: { subagent_type: 'general-purpose' }, tool_response: 'looks good' });
   assert.equal(existsSync(join(dir, '.kaizen/state/reviews.json')), false);
@@ -317,7 +317,7 @@ test('the code-reviewer persona (/agent-skills:ship) records its review at once;
   cleanup(dir);
 });
 
-test('the review skill (/agent-skills:review) leaves a mark; the Stop hook reads the verdict from the turn', () => {
+test('the review skill (/kaizen:review) leaves a mark; the Stop hook reads the verdict from the turn', () => {
   const dir = featureRepo();
   hook('evidence', dir, { tool_name: 'Skill', tool_input: { skill: 'agent-skills:code-review-and-quality' } });
   assert.equal(existsSync(join(dir, '.kaizen/state/reviews.json')), false, 'nothing recorded before the review is written');

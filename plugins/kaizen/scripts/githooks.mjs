@@ -130,7 +130,7 @@ export function prePush(root, stdin, K, { env = process.env } = {}) {
           return {
             code: 1,
             message: `[kaizen] Push of ${branch} refused: ${res.reason}, and the user was not asked about this push. ` +
-              'Run a plain `git push …` so Claude Code asks them (review first), or run /agent-skills:review.\n',
+              'Run a plain `git push …` so Claude Code asks them (review first), or run /kaizen:review.\n',
           };
         }
         // From the user's own terminal: their call; a git hook cannot ask them, so it only reminds.

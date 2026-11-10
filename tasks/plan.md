@@ -1,5 +1,7 @@
 # Plan: Kaizen 6.0, agent-skills as the base
 
+> **Amended 2026-11-10 — reduced to the maximum.** The steps spread over 6.0 to 6.3 below were done in 6.0: Kaizen keeps 4 skills (`setup`, `learn`, `metrics`, `watch`), no agent, and runs agent-skills' commands as `/kaizen:<name>`. See `docs/SPEC.md` ("Amended 2026-11-10") and `tasks/todo.md` (Task 5b).
+
 Spec: `docs/SPEC.md`. Tasks: `tasks/todo.md`. Format: agent-skills' `planning-and-task-breakdown`.
 
 ## Design decisions

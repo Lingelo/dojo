@@ -29,7 +29,7 @@ test('no heartbeat and unreviewed commits: hooks not verified, the branch and it
   assert.match(check(r, 'hooks').evidence, /not verified/);
   assert.equal(check(r, 'review').status, 'warn');
   assert.match(check(r, 'review').evidence, /no review recorded/);
-  assert.equal(check(r, 'review').fix, '/agent-skills:review');
+  assert.equal(check(r, 'review').fix, '/kaizen:review');
   assert.match(check(r, 'plugin_declared').fix, /install settings/);
   cleanup(dir);
 });

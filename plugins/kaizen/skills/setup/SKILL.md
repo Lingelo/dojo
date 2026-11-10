@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Sets Kaizen up in a repository next to agent-skills, and says where the repository stands — initializes .kaizen/config.json and docs/learnings/, validates the verification commands the quality gate will run, declares kaizen@dojo and agent-skills@dojo for every clone, offers the git hooks, runs kaizen doctor and kaizen upgrade, then names the next command. Use when the user says "install/configure Kaizen", "set up Kaizen", "where are we", "what next", "is Kaizen working", "check Kaizen", /kaizen:setup. Not for writing a spec or a plan (/agent-skills:spec, /agent-skills:plan).
+description: Sets Kaizen up in a repository next to agent-skills, and says where the repository stands — initializes .kaizen/config.json and docs/learnings/, validates the verification commands the quality gate will run, declares kaizen@dojo and agent-skills@dojo for every clone, offers the git hooks, runs kaizen doctor and kaizen upgrade, then names the next command. Use when the user says "install/configure Kaizen", "set up Kaizen", "where are we", "what next", "is Kaizen working", "check Kaizen", /kaizen:setup. Not for writing a spec or a plan (/kaizen:spec, /kaizen:plan).
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, AskUserQuestion
 argument-hint: "[check]"
 ---
@@ -20,7 +20,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
 - "Where are we? What do I run now?"
 - After a Kaizen update (`kaizen upgrade` lists what the repository still has to change).
 
-**Not for:** writing the spec, the plan or the code — that is agent-skills (`/agent-skills:spec`…).
+**Not for:** writing the spec, the plan or the code — that is agent-skills (`/kaizen:spec`…).
 
 ## Process
 
@@ -40,8 +40,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
 7. **Migrations.** `node "$K" upgrade`: show each pending one; offer `--apply` for the automatable ones
    (versioned files: ask, then name the files to commit); relay the manual steps.
 8. **Next.** One line per item of `status`'s `next`, the first one recommended. A repository without a
-   spec → `/agent-skills:spec <what to build>`; without `CONSTRAINTS.md` → mention
-   `/agent-skills:constraints` once, as optional.
+   spec → `/kaizen:spec <what to build>`; without `CONSTRAINTS.md` → mention
+   `/kaizen:constraints` once, as optional.
 
 ## Common Rationalizations
 

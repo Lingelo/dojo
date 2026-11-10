@@ -79,7 +79,7 @@ test('agent-skills-base: a constitution and Kaizen Packs are turned into CONSTRA
   assert.equal(m.auto, true, 'nothing to declare: apply does nothing');
   assert.equal(m.manual.length, 3);
   assert.match(m.manual.join('\n'), /remove "packs" from \.kaizen\/config\.json/);
-  assert.match(m.manual.join('\n'), /\/agent-skills:constraints/);
+  assert.match(m.manual.join('\n'), /\/kaizen:constraints/);
   assert.match(m.manual.join('\n'), /kaizen-packs\//);
   writeFileSync(join(dir, 'CONSTRAINTS.md'), '# Constraints\n');
   assert.equal(run(dir, ['upgrade', '--json']).json.pending[0].manual.length, 2, 'CONSTRAINTS.md present: the constitution is done');

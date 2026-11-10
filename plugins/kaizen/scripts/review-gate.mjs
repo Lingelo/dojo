@@ -2,7 +2,7 @@
 // Kaizen — PreToolUse hook (Bash): no `git push` of a branch without a recorded review.
 //
 // The "mandatory" review of work/autopilot/ship no longer relies on the prompt alone: this hook
-// refuses the push until agent-skills' review (`/agent-skills:review` or `/agent-skills:ship`) has recorded the pushed state, or the user
+// refuses the push until agent-skills' review (`/kaizen:review` or `/kaizen:ship`) has recorded the pushed state, or the user
 // has waived it themselves (`review waive`, confirmed by their message).
 // It also refuses direct writes to the review state files and manual calls to the evidence hooks:
 // these states are only written by the CLI and the hooks.
@@ -104,9 +104,9 @@ try {
     }
     logFriction(root, { gate: 'push', kind: 'skip_confirm', reason: pushReasonKey(res), branch: res.branch, source: 'claude' });
     askUser(
-      `[kaizen] ${res.branch}: ${res.reason}. You chose to push without a review — confirm? (No: Claude runs /agent-skills:review.)`,
-      'Run /agent-skills:review, then push',
-      '[kaizen] If the user declined this push, they want the review after all — run /agent-skills:review on the ' +
+      `[kaizen] ${res.branch}: ${res.reason}. You chose to push without a review — confirm? (No: Claude runs /kaizen:review.)`,
+      'Run /kaizen:review, then push',
+      '[kaizen] If the user declined this push, they want the review after all — run /kaizen:review on the ' +
         'branch now (P0/P1 fixes), then push again. If they approved, the push went out unreviewed.',
     );
   }

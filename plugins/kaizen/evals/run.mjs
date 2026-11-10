@@ -3,7 +3,7 @@
 // Claude Code session (`claude -p --plugin-dir`), then checks the result.
 //
 //   node evals/run.mjs                 every scenario
-//   node evals/run.mjs review-injection plan-valid
+//   node evals/run.mjs setup-route push-guard
 //   KAIZEN_EVAL_KEEP=1                 keeps the temporary repos for inspection
 //
 // Costly (real model calls): run before a release, not in CI by default.
@@ -17,6 +17,8 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PLUGIN = join(HERE, '..');
 const CLI = join(PLUGIN, 'scripts', 'kaizen.mjs');
+// Kaizen runs on agent-skills: both plugins are loaded, as a user installs them.
+const AGENT_SKILLS = join(PLUGIN, '..', 'agent-skills');
 
 function sh(cwd, cmd, args) {
   return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -58,7 +60,7 @@ function makeRepo(files, steps) {
 
 function runClaude(dir, prompt, timeoutMs) {
   return new Promise((resolve) => {
-    const args = ['--plugin-dir', PLUGIN, '-p', prompt, '--allowedTools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Agent', 'Skill', 'TaskCreate', 'TaskUpdate'];
+    const args = ['--plugin-dir', PLUGIN, '--plugin-dir', AGENT_SKILLS, '-p', prompt, '--allowedTools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Agent', 'Skill', 'TaskCreate', 'TaskUpdate'];
     // Isolated session: otherwise, a claude -p launched from a Claude Code session inherits its id and
     // writes into its task list.
     const env = { ...process.env };

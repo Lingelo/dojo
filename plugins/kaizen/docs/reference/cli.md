@@ -1,131 +1,111 @@
 # CLI reference (`scripts/kaizen.mjs`)
 
-Every deterministic operation of Kaizen goes through one zero-dependency Node script (Node ≥ 18). Skills
-call it instead of reimplementing anything by hand; you can call it too:
+Every deterministic operation of Kaizen goes through one zero-dependency Node script (Node ≥ 18). The
+skills and hooks call it; you can call it too:
 
 ```bash
 K=plugins/kaizen/scripts/kaizen.mjs        # or the installed plugin's path
-node $K help                               # one-line summary of every command
+node $K                                    # one-line summary of every command
 ```
 
 Conventions:
 
-- It must run inside a git repository (`git rev-parse --show-toplevel`); otherwise it stops with
-  `kaizen: no git repository here`.
+- It must run inside a git repository; otherwise it stops with `kaizen: no git repository here`.
 - Flags are `--name value` or boolean `--name`. Paths are printed POSIX-style on every OS.
 - Output: human-readable text, or JSON for commands that return data (most accept `--json`).
-- **Exit codes**: `0` success · `1` a check is red (verify, size, secrets scan, plan check,
-  constitution check, learnings validate, review check, dev probe unreachable,
-  `plan latest` without a plan) · `2` usage error or exception (message on stderr, `kaizen: …`).
+- **Exit codes**: `0` success · `1` a check is red (verify, secrets scan, learnings validate,
+  review check, doctor `--strict`, a refusing git hook) · `2` usage error or exception (message on
+  stderr, `kaizen: …`).
 
 ## Orientation
 
 ### `status [--json]`
 
-Where the repo stands in the loop and what to run next — the backend of
-[`/kaizen:help`](../guides/help.md). Reports branch, commits ahead of the base, uncommitted files,
-initialization and profile, constitution (version, validity), number of plans and the latest one with
-its stage and `plan check` errors, number of learnings, gate state, review state and push decision, and the
-ordered `next` list ([decision order](../concepts/the-loop.md#knowing-where-you-are)).
+Where the repository stands and what to run next — the backend of [`/kaizen:setup`](../guides/setup.md).
+Reports branch, commits ahead of the base, uncommitted files, initialization, agent-skills' files
+(`SPEC.md`, `tasks/plan.md`, tasks done and left in `tasks/todo.md`, `CONSTRAINTS.md`), number of
+learnings, gate state, review state and push decision, and the ordered `next` list
+([decision order](../concepts/the-loop.md#knowing-where-you-are)).
 
 ### `doctor [--in-skill] [--json] [--strict]`
 
-Are the guard rails on? Checks, each with the command that fixes it: `.kaizen/config.json` present;
-the versioned `.claude/settings.json` declares the `dojo` marketplace and enables `kaizen@dojo` (else a
-fresh clone or a cloud session runs without Kaizen); Claude Code hooks firing (heartbeat written by the
-SessionStart hook — absent means "not verified" from a terminal, "off" with `--in-skill`, which the
-entry skills pass); git hooks in `.githooks/` wired through `core.hooksPath`; verification commands
-detected; Kaizen migrations pending after an update (`upgrade`, below); the branch's review state, and
-whether its upstream was pushed without a review. Exit 0, or 1 with `--strict` when anything needs
-attention.
+Are the guard rails on? One line per check with the command that fixes it:
+[Doctor](../concepts/gates.md#doctor). `--in-skill` (passed by `/kaizen:setup`) reports missing hooks as
+"off" rather than "not verified". Exit 0, or 1 with `--strict` when anything needs attention.
 
 ### `upgrade [--apply] [--json]`
 
 The migrations this repository still needs after a Kaizen update, detected from its state (files,
 settings, hooks, folders), never from a remembered version: a fresh clone and a repository fixed by hand
 get the same answer. Each line gives the version that introduced it, why it applies, the files it
-touches, and — when it cannot be automated — the steps to run by hand.
+touches and, when it cannot be automated, the steps to run by hand.
 
 | Migration | Since | Applies when | `--apply` |
 |---|---|---|---|
 | `learnings-folder` | 2.0.0 | `<docs>/solutions/` exists, `<docs>/learnings/` does not | by hand: `git mv` |
 | `marketplace-dojo` | 3.1.0 | `.claude/settings.json` enables `kaizen@<other>` but not `kaizen@dojo` | adds `kaizen@dojo`; the old key is left to the team |
-| `profile-names` | 3.4.0 | `"profile": "lean"`, `"standard"` or `"full"` in `.kaizen/config.json` or `config.local.json` | rewrites that value only |
-| `production-removed` | 6.0.0 | `deploy` or `monitor` in `.kaizen/config.json` / `config.local.json`, or `kaizen-ops@dojo` in `.claude/settings.json` | by hand: remove them (move the commands to your own tools) |
 | `hook-lookup` | 4.1.2 | a Kaizen git hook has an older CLI lookup line | refreshes that line, keeps the rest |
+| `production-removed` | 6.0.0 | `deploy` or `monitor` in `.kaizen/config.json` / `config.local.json`, or `kaizen-ops@dojo` in `.claude/settings.json` | by hand: remove them, move the commands to your own tools |
+| `agent-skills-base` | 6.0.0 | `.claude/settings.json` declares `kaizen@dojo` but not `agent-skills@dojo`, or keys and files of Kaizen 5.x remain (`profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `CONSTITUTION.md`, `kaizen-packs/`) | declares `agent-skills@dojo`; the rest by hand ([Migrating to 6.0](../migrating-to-6.md)) |
 
 `--apply` runs the automatable ones that still apply, writes only what each owns (formatting and team
-lines kept), and ends with the files to commit; run twice, it changes nothing. Nothing pending outside
-a Kaizen repo (no `.kaizen/config.json`). `kaizen doctor` reports the pending ones (check `upgrade`),
-so `help`, `work` and `setup` relay them.
+lines kept) and ends with the files to commit; run twice, it changes nothing. Nothing is pending outside
+a Kaizen repository. `kaizen doctor` reports the pending ones (check `upgrade`).
 
 A release that breaks or deprecates something declares its migration here, or why it needs none
-(`NO_MIGRATION` in `scripts/upgrade.mjs`): a contract test fails otherwise, from 4.3.0 on.
+(`NO_MIGRATION` in `scripts/upgrade.mjs`): a contract test fails otherwise.
 
 ### `root`
 
-JSON of the deliverable paths: `repo`, `docs_root`, `plans`, `learnings`, `ideation`, `debug`,
-`config_file` (or null), `concepts` (`CONCEPTS.md` if present).
+The deliverable paths as JSON: `repo`, `docs_root`, `learnings`, `config_file`.
 
 ### `config`
 
-The effective configuration (defaults + `config.json` + `config.local.json`), as JSON. A mistyped
-profile falls back to `product` with a `profile_warning`.
+The effective configuration (defaults, then `.kaizen/config.json`, then `.kaizen/config.local.json`) as
+JSON. Every key: [Configuration](configuration.md).
 
-### `init [--docs-root d] [--language l] [--tracker t] [--profile prototype|product|critical]`
+### `init [--docs-root d] [--language l]`
 
-Creates `.kaizen/config.json` (never rewrites an existing one), `.kaizen/state/` with its own
-`.gitignore`, `<docs_root>/plans`, `learnings`, `ideation` (each with a `.gitkeep`), and adds
-`.kaizen/config.local.json` to `.gitignore`. Prints what was created, the paths and the detected stack.
+Creates `.kaizen/config.json` (with the detected verification commands) and `<docs>/learnings/`, and adds
+`.kaizen/state/` and `.kaizen/config.local.json` to `.gitignore`. Leaves an existing configuration as is.
 
 ### `detect`
 
-Stack and verification commands as JSON: `stacks` (e.g. `node (pnpm)`, `python`), `commands`
-(`test`, `lint`, `typecheck`, `audit` — configuration wins, detection fills the gaps), `configured`
-(keys coming from the config).
+Stack and verification commands, as JSON: `test`, `lint`, `typecheck` (and `audit`), read from
+`package.json` scripts, `Makefile`, `pyproject.toml`, `Cargo.toml`, `go.mod`, Gradle, Maven and others.
+`verify` in the configuration takes precedence.
 
-### `audit [--json] [--no-github]` · `audit fix <id> [--owner @x] [--ref sha]`
+## Setup
 
-SDLC maturity in three areas with a score each, and the to-do list by priority. `audit fix` writes a
-scaffold without ever overwriting a file. See [Audit](audit.md).
+### `install git-hooks` · `install settings`
 
-### `profile [--json] [--plan <path> | --files a,b | --base <ref>]`
+`git-hooks`: writes `.githooks/pre-push` and `.githooks/pre-commit` from `templates/githooks/` and sets
+`core.hooksPath`; never overwrites an existing hook (prints the line to chain instead); refreshes only
+the CLI lookup line of an older Kaizen hook. [Git hooks](../concepts/gates.md#without-the-plugin-git-hooks).
 
-The profile for this cycle: the repo's `profile`, raised one step (`prototype` → `product` →
-`critical`) when the change touches a risk surface. The files come from the branch's diff against its
-base (default), from a plan's units (`--plan`, their **Files:**) or from a list (`--files`). `--json`:
-`profile` (the repo's), `effective`, `escalated`, `source` (`branch`, `plan`, `files`), `files` (count),
-`surfaces` (`{surface: [files]}`), `reason`. See
-[configuration](../configuration.md#risk--the-profile-raised-by-the-change).
+`settings`: declares the dojo marketplace, `kaizen@dojo` and `agent-skills@dojo` in the versioned
+`.claude/settings.json`, keeping everything else.
 
-### `models [--json] [--agent <name>] [--profile <p>]`
+### `githook pre-push | pre-commit`
 
-The model of each role and agent for the current profile and configuration, with the source of each
-value and warnings for invalid entries. `--agent kaizen:security-reviewer` prints just that model.
-`--profile` resolves them for another profile — the skills pass the cycle's `effective` one.
-See [Agents and models](../concepts/agents-and-models.md#the-model-policy).
+Run by the git hooks of `install git-hooks`, with git's arguments and standard input. `pre-push`: the
+review decision for every branch the push updates, at the pushed commit; `pre-commit`: staged secrets.
+Exit 1 refuses.
 
 ## Checks
 
-### `perf [--json]`
-
-Runs `perf.command` (see [configuration](../configuration.md#perf--the-performance-budget)), reads its
-`name=value` lines and holds each metric to its threshold. `--json`:
-`{ status: pass|fail|blind, metrics: { name: { value, threshold, ok } }, detail, seconds }`. Exit 0 pass,
-1 over budget, 2 blind (crash, timeout, a metric not printed, or no `perf.command`).
-
 ### `verify [--only test,lint,…|audit] [--json]`
 
-Runs the verification commands (`detect`) sequentially, each bounded by `gate.timeout_seconds` (its
-whole process tree killed on timeout). The dependency audit only runs with `--only audit`. Prints
-`✔/✘ name command (seconds)` and the last 40 lines of each failure; `--json` returns
+Runs the verification commands sequentially, each bounded by `gate.timeout_seconds` (its whole process
+tree killed on timeout). The dependency audit runs only with `--only audit`. Prints `✔/✘ name command
+(seconds)` and the last 40 lines of each failure; `--json` returns
 `[{ name, command, ok, exit, seconds, output }]`. Exit 1 if any is red.
 
-### `size [--base <ref>] [--max <n>] [--json]`
+### `gate status` · `gate off`
 
-Lines changed by the branch against its merge base with the default branch (uncommitted included),
-excluding `pr.ignore` globs and binary files, compared to `pr.max_lines` (or `--max`). Over the limit,
-lists the 5 largest files. Exit 1 above the limit.
+The [quality gate](../concepts/gates.md#the-quality-gate) of this repository. It turns itself **on** when
+a session edits code and **off** when the checks are green; `status` prints its state (`{ active: false }`
+when off); `off` lifts it by hand — when the failure is outside the task, said to the user.
 
 ### `secrets scan [--staged | --base <ref>] [--json]`
 
@@ -135,132 +115,71 @@ messaging, private keys, JWTs, database URLs with a password, generic `api_key =
 files); `--staged`: the index only; `--base <ref>`: the branch's commits since its merge base with
 `<ref>` (for CI, e.g. `--base origin/main`). Placeholders (`example`, `changeme`, `${VAR}`…), lockfiles,
 minified and vendored files and the `secrets.ignore` globs are skipped. Prints `file:line — type` with a
-redacted preview, never the value; `--json` returns `{ findings: [{ file, line, type, preview }] }`.
-Exit 1 if anything is found. The same scan runs in the [secret gate](../concepts/gates-and-hooks.md#the-secret-scan-before-git-commit-pretooluse).
-
-### `gate on [--plan <path>]` · `gate off` · `gate status`
-
-The [Stop-hook quality gate](../concepts/gates-and-hooks.md#the-quality-gate-stop-hook). `on` writes
-`gate.json`; `off` removes it, appends the finished cycle to `cycles.jsonl` and prints it; `status`
-prints the state (`{ active: false }` when off).
-
-## Plans
-
-### `plan new --type <type> --topic <slug> [--ext md|html]`
-
-Reserves `<docs_root>/plans/YYYY-MM-DD-HHMM-<type>-<topic>-plan.md` atomically (`-plan-2`, `-plan-3`…
-if taken) and prints the path. Type and topic are slugified (accents removed, 60 characters max).
-
-### `plan latest` · `plan list`
-
-`latest`: the most recently modified plan (exit 1 if none). `list`: JSON of every plan with `path`,
-`title`, `stage` (`requirements` | `implementation-ready`) and `updated`.
-
-### `plan amend <path> --add-req "…" [--covered-by U<n>]… --by "…" --reason "…"` · `plan amend <path> --replace-req R<n> "…" --by "…" --reason "…"`
-
-Changes a plan's scope without a hand edit. IDs are append-only: `--add-req` writes the next free
-requirement at the end of the requirements and appends it to each `--covered-by` unit's **Covers:**;
-`--replace-req` rewrites the text and keeps the ID. The amendment is recorded in the frontmatter
-(`amended:` — `"<date> | <by> | <R id> | <reason>"`). The result is checked like `plan check`: an
-amendment that adds an error (an uncovered requirement, an unknown unit) writes nothing.
-
-### `plan reviewed <path>`
-
-Writes `reviewed: "<date> <hash>"` (SHA-256 prefix of the body). Run by `/kaizen:doc-review`.
-
-### `plan check <path> [--json]`
-
-The structural check of a plan — every error and warning is listed in
-[Plans](../concepts/plans.md#everything-plan-check-verifies). JSON:
-`{ stage, requirements, acceptance_examples, units, slices, errors, warnings }`. Exit 1 on errors.
-
-## Principles and knowledge
-
-### `constitution [check] [--json]`
-
-Without `check`: the articles (id, title, NON-NEGOTIABLE, check) and the version/ratification dates;
-`--json` returns `{ exists, meta, articles, amendments }` (`{ exists: false }` without a file). With
-`check`: validation, exit 1 on errors ([rules](../concepts/constitution.md#validation-constitution-check)).
-
-### `learnings search <words…> [--limit 8] [--json]`
-
-Ranked learnings ([scoring](../concepts/learnings.md#search)).
-
-### `learnings validate [files…]` · `learnings list [--retire]` · `learnings stats`
-
-`validate`: every learning (or the given files) against the schema, exit 1 if one is invalid. `list`:
-JSON of path, title, type, module, date, and `retire_when` when declared; `--retire` keeps only those
-(the conditions `/kaizen:prune-learnings` checks). `stats`: counts by `problem_type`, `component`, `module` — the
-corpus vocabulary to reuse.
-
-### `packs [--json] [--refresh]` · `pack new <name>`
-
-`packs`: the declared [Kaizen Packs](../packs.md) resolved — local folders, `~/` paths, or git sources
-cloned (shallow, at `ref`) into `${CLAUDE_PLUGIN_DATA}/packs/` (`--refresh` re-clones). A folder with
-top-level rules is one pack; otherwise each subfolder is one (`pack: [...]` filters). Each rule needs
-`title` and `applies_when`; at most 25 rules per pack are listed; problems are warnings. `pack new`
-creates `kaizen-packs/<name>/` (README + `research/`) and declares it in `.kaizen/config.json`; it
-refuses a non-empty folder.
-
-### `adr new --title "…"` · `adr list`
-
-`new` reserves `<docs_root>/adr/NNNN-<title>.md` (next number, atomic) and prints the path. `list`:
-JSON of path, title, status, date.
+redacted preview, never the value. Exit 1 if anything is found. The same scan runs in the
+[secret gate](../concepts/gates.md#no-secret-committed).
 
 ## Review
 
-### `review record --verdict ready|concerns|blocked [--run <folder>] [--allow-missing a,b]`
+### `review status` · `review check [--branch <name> --sha <sha>]`
 
-Records the reviewed tree of the current branch. Refused without evidence of a reviewer since the
-previous review, except a light review (branch ≤ 20 lines) or an update after fixes (≤
-`review.max_unreviewed_lines` since the reviewed tree). Refused too when a reviewer launched for this
-run on this branch (logged by the PreToolUse hook on Agent, with its `Slice:` and `Run:` lines) left no
-`<name>[-<slice>].json` holding a `findings` array in the run folder its prompt named. `--allow-missing`
-does not record: it prints a code the user approves (`confirm <code>` after Claude Code's prompt, or
-`kaizen waive <code>` typed with `approvals: "code"`), and the review is then recorded with `gaps`. Prints the entry: branch, head, tree, verdict,
-depth (`agents` | `light` | `update`), reviewers, models, run, at. `reserves` is accepted for
-`concerns`.
-
-### `review estimate --reviewers a,b [--profile <p>] [--base <ref>] [--json]`
-
-What a review will cost before it runs: for each reviewer (`correctness`, `security-reviewer` or
-`kaizen:adversarial-reviewer`), its model under the profile (`--profile`: the cycle's, see `profile`),
-its tokens and its cost in relative units (`review.cost_weights`). Tokens per reviewer: the mean of the
-review agents recorded in this repo's cycles once there are at least 5 (`source: history`), otherwise
-60,000 + 150 per changed line, new files included (`source: heuristic`). `--json`: `reviewers`,
-`total_tokens`, `cost`, `by_model`, `confirm` (above `review.confirm_above_cost`), `source`, `method`.
-An order of magnitude, not a bill.
+`status`: the recorded review (tree, verdict, source — `code-review-and-quality` or `code-reviewer`),
+a pending waiver, and the push decision. `check`: the push decision alone, exit 1 when a push would be
+stopped; `--branch`/`--sha` check a given commit of a branch instead of `HEAD` (what the pre-push hook
+passes). The review records itself: there is no command to record one by hand.
+[The review before push](../concepts/gates.md#the-review-before-push).
 
 ### `review waive --reason "…"`
 
 Creates a pending waiver for the branch and prints `{ code, expires_in_minutes: 30, instruction }`. Only
-you confirm it: `confirm <code>` after Claude Code's prompt, or your message `kaizen waive <code>` with
-`approvals: "code"`.
+you confirm it: `confirm <code>` through Claude Code's prompt, or your own message `kaizen waive <code>`
+with `approvals: "code"`.
 
 ### `confirm <code>`
 
-With `approvals: "ask"` (default): confirms a pending review waiver or review gap
-— only after the review hook turned this very call into Claude Code's permission prompt and you
-accepted it (10 minutes, single use). Refused otherwise, and always with `approvals: "code"`. The hook
-only lets it run on its own with the code written out (no variable, nothing chained after it), so the
-prompt shows exactly what you confirm.
+With `approvals: "ask"` (default): confirms a pending waiver — only after the hook turned this very call
+into Claude Code's permission prompt and you accepted it (10 minutes, single use). Refused otherwise, and
+always with `approvals: "code"`. The hook lets it run only with the code written out (no variable,
+nothing chained after it), so the prompt shows exactly what you confirm.
 
-### `review status` · `review check [--branch <name> --sha <sha>]`
+## Learnings
 
-`status`: the recorded review, a pending waiver, and the push decision. `check`: the push decision
-alone, exit 1 when a push would be refused; `--branch`/`--sha` check a given commit of a branch instead
-of `HEAD` (what the git pre-push hook passes). See
-[the decision at push time](../concepts/gates-and-hooks.md#the-decision-at-push-time).
+### `learnings search <words…> [--limit 8] [--json]`
 
-### `run-dir <type>`
+Learnings ranked against the words: title and tags weigh 4, module and component 3, symptoms and root
+cause 2, body 1 ([Learnings](../concepts/learnings.md#how-they-come-back)).
 
-Creates and prints `.kaizen/state/<type>/<YYYYMMDD-HHMMSS>/`, a local working folder ignored by git
-(e.g. `run-dir reviews` for the raw reviewer returns).
+### `learnings validate [files…]` · `learnings list [--retire]` · `learnings stats`
+
+`validate`: every learning (or the given files) against the schema, exit 1 if one is invalid. `list`:
+JSON of path, title, type, module, date, `files` and `retire_when` when declared; `--retire` keeps only
+those with `retire_when` (what `/kaizen:learn prune` checks). `stats`: counts by `problem_type`,
+`component`, `module` — the corpus vocabulary to reuse.
+
+## Metrics and cost
+
+### `metrics [--since 90d] [--no-github]`
+
+JSON with `window`, `changes`, `throughput`, `instability`, `batch_size`, `kaizen_loop`, `friction`,
+`work_items`. Every computation: [Metrics](../concepts/metrics.md).
+
+### `metrics dashboard [--out <file>]`
+
+Writes one self-contained HTML page (no dependency, no network), by default
+`.kaizen/state/cost-dashboard.html`: cost per work item, stops, waivers and guard rails, in the relative
+units of `review.cost_weights`. Prints `{ file, items, friction_events }`.
+
+### `cost [<item> | current] [--since 90d] [--json]`
+
+What each feature or fix cost, end to end, from the ledger the Stop hook keeps
+([work items](../concepts/metrics.md#cost-work_items-kaizen-cost)). `cost` lists the items by cost with
+their kind, tokens and sessions, then the median per kind; `cost <item>` details one (`priced_share`:
+tokens with a known model); `cost current` says what the turns are charged to right now. `--json`:
+`{ items, summary }`.
 
 ## Pull requests (`gh` required)
 
-All accept `--pr <n|url>` and `--repo owner/name`; by default the current branch’s PR in the current
-repository. Mechanics in [Pull requests](../concepts/pull-requests.md#driving-the-pr-to-looks-ready).
+All accept `--pr <n|url>` and `--repo owner/name`; by default the current branch's PR in the current
+repository. Used by [`/kaizen:watch`](../guides/watch.md).
 
 | Command | Does |
 |---|---|
@@ -272,63 +191,29 @@ repository. Mechanics in [Pull requests](../concepts/pull-requests.md#driving-th
 | `pr resolve --thread ID` | resolves a thread |
 | `pr comment --body-file F` | top-level comment, marker added |
 | `pr update-branch` | updates the branch through the GitHub API **only if** GitHub says `BEHIND`, with the expected head SHA |
-| `pr overlap --base <ref>` | local git only (no `gh`): PR files the base modified, moved or deleted since the merge-base (`touched`), folders the base removed under a path the PR adds (`removed_dirs`), every PR patch already in the base (`absorbed`), commits `behind`; `assess: true` when any is set |
+| `pr overlap --base <ref>` | local git only: PR files the base modified, moved or deleted since the merge base (`touched`), folders the base removed under a path the PR adds (`removed_dirs`), PR patches already in the base (`absorbed`), commits `behind`; `assess: true` when any is set |
 
 `KAIZEN_GH` replaces `gh` (a binary or a Node script, used by the tests).
 
-## Release
-
-### `release notes [--from <tag>] [--to <ref>]`
-
-JSON: `from`, `to`, `commits`, `non_conventional`, `breaking`, `level`, `current`, `next`, `groups`,
-`rollout` (shipped plans with their rollout fields and what is missing). See
-[Plans](../concepts/plans.md).
-
-## Metrics and dev server
-
-### `metrics [--since 90d] [--no-github]`
-
-JSON with `window`, `changes`, `throughput`, `instability`, `batch_size`, `kaizen_loop`,
-`cycle_cost`, `friction`, `work_items`. Every computation: [Metrics](../concepts/metrics.md).
-
-### `cost [<item> | current] [--since 90d] [--json]`
-
-What each feature or fix cost, end to end. Every turn in the repo (any skill, gate or not) is charged by
-the `Stop` hook to its **work item**: the branch's Jira key (`feat/SHOP-412-…` → `SHOP-412`), otherwise the
-plan being written or implemented (its `jira:`, otherwise `plan:<topic>`), otherwise `branch:<name>`,
-otherwise `unattributed` — never a guess. `cost` lists the items by cost (relative units of
-`review.cost_weights`) with their kind (the plan's `type:` or the branch prefix), tokens and sessions,
-then the median per kind; `cost <item>` details one (`priced_share`: tokens with a known model);
-`cost current` says what the turns are charged to right now. `--json`: `{ items, summary }`.
-
-### `metrics dashboard [--out <file>]`
-
-Writes one self-contained HTML page (no dependency, no network) over the cycles recorded in
-`.kaizen/state/cycles.jsonl`, to `.kaizen/state/cost-dashboard.html` by default: period filter (7, 30,
-90 days, all), cost, cycles, tokens, subagent share, stops and waivers, tokens per cycle stacked by
-role, cost by model, tokens by role, the guard rails' stops and lifts, and the table of cycles. Cost is in the relative units of
-`review.cost_weights` and only for cycles that recorded tokens per model (Kaizen 3.7+). Prints
-`{ file, cycles, priced, friction_events }`.
-
-### `dev detect` · `dev probe --url <url> [--timeout-seconds 30]`
-
-`detect`: dev server candidates `{ name, framework, command, cwd, port, url, source }` — Node projects
-(Next.js, Nuxt, SvelteKit, Remix, React Router, Astro, Angular, Gatsby, Create React App, Vite,
-Storybook, or plain node with the port read from the script or the entry point), Rails, `Procfile.dev`,
-Django, Phoenix, Laravel — at the root and in monorepo folders (`apps/`, `packages/`, `web/`, `frontend/`,
-`client/`, `services/`); configurations declared in `.vscode/launch.json` take precedence. `probe`
-waits until the URL answers (exit 1 if it never does). Used by [`/kaizen:polish`](../guides/polish.md);
-launching the server itself is left to Claude, so the session keeps its logs.
-
 ## Hook scripts
 
-Not meant to be called by hand (and `review-hooks.mjs` is refused by the PreToolUse hook when called
-directly):
+Registered by `hooks/hooks.json`, not meant to be called by hand (calling `review-hooks.mjs` directly is
+refused):
 
 | Script | Registered as |
 |---|---|
-| `secret-gate.mjs` | PreToolUse on Bash |
-| `review-gate.mjs` | PreToolUse |
-| `quality-gate.mjs` (`--claim`) | Stop (PostToolUse on Bash) |
-| `review-hooks.mjs --evidence` / `--confirm` | PostToolUse on Agent/Task / UserPromptSubmit |
+| `review-hooks.mjs --heartbeat` | SessionStart: records that Kaizen's hooks fire (`doctor`'s `hooks` check) |
+| `secret-gate.mjs` | PreToolUse on Bash: no `git commit` adding a secret |
+| `review-gate.mjs` | PreToolUse: no unreviewed `git push`; `confirm` turned into Claude Code's prompt; no direct write to the review state |
+| `post-edit.mjs` | PostToolUse on Write, Edit, MultiEdit, NotebookEdit: quality gate on, learnings brought back |
+| `review-hooks.mjs --evidence` | PostToolUse on Agent, Task, Skill: agent-skills' review recorded (persona) or marked (skill) |
+| `quality-gate.mjs` | Stop: verification while the gate is on |
+| `review-hooks.mjs --stop` | Stop: reads the review agent-skills' skill wrote this turn, and records it |
+| `ledger-hook.mjs` | Stop: the turn's tokens charged to the work item |
+| `review-hooks.mjs --confirm` | UserPromptSubmit: `kaizen waive <code>` typed by you (`approvals: "code"`) |
 | `run-bounded.mjs <ms> <command>` | internal: runs a command and kills its whole process tree on timeout |
+
+The other scripts are modules the CLI loads: `lib.mjs`, `review-state.mjs`, `approvals.mjs`,
+`learnings.mjs`, `agentskills.mjs`, `secrets.mjs`, `doctor.mjs`, `upgrade.mjs`, `githooks.mjs`,
+`metrics.mjs`, `ledger.mjs`, `dashboard.mjs`, `pr.mjs`, and `aliases.mjs`, which generates `commands/`
+from agent-skills' commands (`--check` fails when they differ).

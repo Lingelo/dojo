@@ -207,15 +207,15 @@ function repoStatus(root) {
   // Next step: the first situation that applies.
   const next = [];
   const say = (command, why) => next.push({ command, why });
-  if (!initialized) say('/kaizen', 'Kaizen is not initialized in this repo (setup)');
+  if (!initialized) say('/kaizen:setup', 'Kaizen is not initialized in this repo');
   if (gate?.active && gate.blocks) say('make the checks green', `the quality gate stopped the last turn${gate.blocks > 1 ? ` ${gate.blocks} times` : ''} (\`node $K verify\`; \`gate off\` only if the failure is outside the task)`);
   else if (branch && branch !== def && (ahead || dirty)) {
     if (review?.pending_waiver) say(approvalMode(config) === 'code' ? 'kaizen waive <code>' : 'answer Claude\'s question', 'a review waiver awaits your confirmation');
-    else if (review?.review && review.push.allowed && ahead && !dirty) say('/agent-skills:ship', `branch ${branch} reviewed (${review.push.reason}): push, open the PR, then /kaizen:watch`);
-    else say('/agent-skills:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
-  } else if (tasks && tasks.done < tasks.total) say('/agent-skills:build', `${tasks.done}/${tasks.total} tasks done in ${tasks.path}, next: ${tasks.next}`);
-  else if (as.spec && !as.tasks) say('/agent-skills:plan', `${as.spec.path} has no task list yet`);
-  if (initialized && !next.length) say('/agent-skills:spec <what to build>', 'the next feature: spec, plan, build, review, ship (a bug → /agent-skills:test with its reproduction)');
+    else if (review?.review && review.push.allowed && ahead && !dirty) say('/kaizen:ship', `branch ${branch} reviewed (${review.push.reason}): push, open the PR, then /kaizen:watch`);
+    else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
+  } else if (tasks && tasks.done < tasks.total) say('/kaizen:build', `${tasks.done}/${tasks.total} tasks done in ${tasks.path}, next: ${tasks.next}`);
+  else if (as.spec && !as.tasks) say('/kaizen:plan', `${as.spec.path} has no task list yet`);
+  if (initialized && !next.length) say('/kaizen:spec <what to build>', 'the next feature: spec, plan, build, review, ship (a bug → /kaizen:test with its reproduction)');
   return {
     repo: basename(root),
     branch,

@@ -118,11 +118,11 @@
 <path class="line blue" d="M646,444 L678,444" marker-end="url(#h-blue)"/>
 <text class="small" x="36" y="500" text-anchor="start">Default root docs/ (docs_root). No file carries a mutable "status": progress is read from git and from agent-skills’ task checkboxes.</text>
 <rect class="agent" x="36" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="60" y="540">agent-skills (/agent-skills:…)</text>
-<rect class="skill" x="268" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="292" y="540">Kaizen (/kaizen:…)</text>
-<rect class="artifact" x="425.6" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="449.6" y="540">file in your repo</text>
-<rect class="state" x="577" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="601" y="540">local state</text>
+<text class="small" x="60" y="540">agent-skills command (/kaizen:spec…)</text>
+<rect class="skill" x="305.20000000000005" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="329.20000000000005" y="540">Kaizen skill (setup, learn, metrics, watch)</text>
+<rect class="artifact" x="617.8000000000001" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="641.8000000000001" y="540">file in your repo</text>
+<rect class="state" x="769.2" y="530" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="793.2" y="540">local state</text>
 </svg>

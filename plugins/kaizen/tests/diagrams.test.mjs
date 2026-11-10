@@ -49,12 +49,12 @@ test('hooks diagram: every registration of hooks.json drawn, and the count it an
 
 test('the loop diagram draws agent-skills\' commands and each of Kaizen\'s skills', () => {
   const text = unescape(svg('kaizen-loop.svg'));
-  for (const c of ['/spec', '/plan', '/build', '/test', '/review', '/ship']) assert.ok(text.includes(`>${c}<`), `kaizen-loop.svg: ${c}`);
+  for (const c of ['spec', 'plan', 'build', 'test', 'review', 'ship']) assert.ok(text.includes(`>/kaizen:${c}<`), `kaizen-loop.svg: /kaizen:${c}`);
   for (const s of readdirSync(join(PLUGIN, 'skills'))) assert.ok(text.includes(`/kaizen:${s}`), `kaizen-loop.svg: /kaizen:${s}`);
 });
 
 test('no diagram names a removed command', () => {
-  for (const f of svgs) assert.doesNotMatch(unescape(svg(f)), /kaizen-ops|\/kaizen:(deploy|monitor|postmortem|plan|work|review|ship|brainstorm|ideate|constitution|doc-review|decide|debug|polish|autopilot|release|help|prune-learnings|address-feedback|watch-pr)\b/, f);
+  for (const f of svgs) assert.doesNotMatch(unescape(svg(f)), /kaizen-ops|\/kaizen:(deploy|monitor|postmortem|work|brainstorm|ideate|constitution|doc-review|decide|debug|polish|autopilot|release|help|prune-learnings|address-feedback|watch-pr)\b/, f);
 });
 
 test('every diagram is used by a page, every page links an existing diagram', () => {

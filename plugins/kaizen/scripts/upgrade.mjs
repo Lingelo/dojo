@@ -77,7 +77,7 @@ function surfaceLeftovers(root) {
     if (keys.length) found.push({ file: f, step: `remove ${keys.map((k) => `"${k}"`).join(', ')} from ${f} (no longer read)` });
   }
   if (existsSync(join(root, 'CONSTITUTION.md')) && !existsSync(join(root, 'CONSTRAINTS.md'))) {
-    found.push({ file: 'CONSTITUTION.md', step: 'turn CONSTITUTION.md into agent-skills\' CONSTRAINTS.md with /agent-skills:constraints (its articles become the floor and the enforced rows), then delete it' });
+    found.push({ file: 'CONSTITUTION.md', step: 'turn CONSTITUTION.md into agent-skills\' CONSTRAINTS.md with /kaizen:constraints (its articles become the floor and the enforced rows), then delete it' });
   }
   if (existsSync(join(root, 'kaizen-packs'))) found.push({ file: 'kaizen-packs/', step: 'move the rules of kaizen-packs/ you still want into CONSTRAINTS.md or AGENTS.md, then delete the folder' });
   return found;

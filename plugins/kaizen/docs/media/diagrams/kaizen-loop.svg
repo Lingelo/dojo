@@ -66,24 +66,24 @@
 <text class="title" x="28" y="38">Kaizen around agent-skills</text>
 <text class="desc" x="28" y="58">agent-skills does the work; Kaizen’s hooks make it hold, keep what was learned, follow the PR and measure.</text>
 <rect class="region" x="28" y="76" width="1044" height="120" rx="12"/>
-<text class="regionlabel" x="40" y="93">AGENT-SKILLS — THE WORKFLOW</text>
+<text class="regionlabel" x="40" y="93">AGENT-SKILLS’ WORKFLOW, UNDER KAIZEN’S PREFIX</text>
 <rect class="agent" x="42" y="112" width="128" height="60" rx="8" stroke-width="1.5"/>
-<text class="label" x="106" y="139" text-anchor="middle">/spec</text>
+<text class="label" x="106" y="139" text-anchor="middle">/kaizen:spec</text>
 <text class="sub" x="106" y="154" text-anchor="middle">what, for whom</text>
 <rect class="agent" x="192" y="112" width="128" height="60" rx="8" stroke-width="1.5"/>
-<text class="label" x="256" y="139" text-anchor="middle">/plan</text>
+<text class="label" x="256" y="139" text-anchor="middle">/kaizen:plan</text>
 <text class="sub" x="256" y="154" text-anchor="middle">tasks, files</text>
 <rect class="agent" x="342" y="112" width="128" height="60" rx="8" stroke-width="1.5"/>
-<text class="label" x="406" y="139" text-anchor="middle">/build</text>
+<text class="label" x="406" y="139" text-anchor="middle" style="font-size:12.7px">/kaizen:build</text>
 <text class="sub" x="406" y="154" text-anchor="middle" style="font-size:9.8px">one task, test first</text>
 <rect class="agent" x="492" y="112" width="128" height="60" rx="8" stroke-width="1.5"/>
-<text class="label" x="556" y="139" text-anchor="middle">/test</text>
+<text class="label" x="556" y="139" text-anchor="middle">/kaizen:test</text>
 <text class="sub" x="556" y="154" text-anchor="middle">proof</text>
 <rect class="agent" x="642" y="112" width="128" height="60" rx="8" stroke-width="1.5"/>
-<text class="label" x="706" y="139" text-anchor="middle">/review</text>
+<text class="label" x="706" y="139" text-anchor="middle" style="font-size:11.8px">/kaizen:review</text>
 <text class="sub" x="706" y="154" text-anchor="middle">five axes</text>
 <rect class="agent" x="792" y="112" width="128" height="60" rx="8" stroke-width="1.5"/>
-<text class="label" x="856" y="139" text-anchor="middle">/ship</text>
+<text class="label" x="856" y="139" text-anchor="middle">/kaizen:ship</text>
 <text class="sub" x="856" y="154" text-anchor="middle">push, PR</text>
 <path class="line accent" d="M170,142 L192,142" marker-end="url(#h-accent)"/>
 <path class="line accent" d="M320,142 L342,142" marker-end="url(#h-accent)"/>
@@ -141,13 +141,13 @@
 <text class="label" x="555" y="571" text-anchor="middle">/kaizen:setup</text>
 <text class="sub" x="555" y="586" text-anchor="middle">config, both plugins declared, doctor, upgrade</text>
 <rect class="agent" x="36" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="60" y="640">agent-skills (/agent-skills:…)</text>
-<rect class="skill" x="268" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="292" y="640">Kaizen (/kaizen:…)</text>
-<rect class="gate" x="425.6" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="449.6" y="640">Kaizen hook or check</text>
-<rect class="artifact" x="595.6" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="619.6" y="640">file in your repo</text>
-<rect class="outside" x="747" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
-<text class="small" x="771" y="640">you</text>
+<text class="small" x="60" y="640">agent-skills command (/kaizen:spec…)</text>
+<rect class="skill" x="305.20000000000005" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="329.20000000000005" y="640">Kaizen skill (setup, learn, metrics, watch)</text>
+<rect class="gate" x="617.8000000000001" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="641.8000000000001" y="640">Kaizen hook or check</text>
+<rect class="artifact" x="787.8000000000001" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="811.8000000000001" y="640">file in your repo</text>
+<rect class="outside" x="939.2" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
+<text class="small" x="963.2" y="640">you</text>
 </svg>
