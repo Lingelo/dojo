@@ -1,7 +1,8 @@
 # Learnings schema (`<root>/learnings/`)
 
-Frontmatter contract of the learnings written by `/kaizen:learn` and maintained by
-`/kaizen:prune-learnings`. Validation: `node "$K" learnings validate <file>` (exit 1 if invalid).
+Frontmatter contract of the learnings written and pruned by `/kaizen:learn`. Kaizen's PostToolUse hook
+reads them back: the ones matching agent-skills' `SPEC.md` or `tasks/` when those are written, and the
+ones whose `files` match a file Claude edits. Validation: `node "$K" learnings validate <file>` (exit 1 if invalid).
 
 ## The durability test
 
@@ -54,13 +55,15 @@ why.
 
 - `category` — subfolder of `learnings/`
 - `tags` — ≤ 8 lowercase-with-dashes keywords
+- `files` — globs of the files the lesson is about (`src/exports/**`, `config/routes.rb`): when Claude
+  edits a matching file, the learning is added to its context, once per session
 - `related_components` — other components
 - `retire_when` — the change **outside the repo** that would make the learning obsolete, and a
   **check that runs without changing the repo** (an issue URL to read, `npm view <pkg> version`, a
   release page…). Example: `"bun#1234 and bun#1240 fixed — gh issue view 1234 -R oven-sh/bun"`.
   A single string; quoted if it contains ` #` or `: `. A verification that needs a repo change
   (remove the workaround, watch CI) goes in the body, not here. A met condition is a reason to
-  **verify** removing the workaround, never proof that removal is safe (see `/kaizen:prune-learnings`).
+  **verify** removing the workaround, never proof that removal is safe (see `/kaizen:learn prune`).
 
 ## Corpus vocabulary first
 

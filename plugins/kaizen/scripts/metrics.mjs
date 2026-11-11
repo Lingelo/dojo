@@ -1,15 +1,13 @@
 // Kaizen — delivery metrics (DORA, approximated from git and GitHub) and loop health.
 //
 // DORA 2025: throughput (deployment frequency, change lead time, rework rate) and instability
-// (change failure rate, time to restore). Without access to the deployment system, these values are
-// **approximations** from the default branch; each metric states its method.
+// (change failure rate, time to restore). Kaizen does not deploy:
+// these values are **approximations** from the default branch and GitHub; each metric states its method.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { deployments } from './deploy.mjs';
-import { DEFAULT_WEIGHTS } from './estimate.mjs';
-import { costByKind, itemCosts, readLedger } from './ledger.mjs';
+import { DEFAULT_WEIGHTS, costByKind, itemCosts, readLedger } from './ledger.mjs';
 import { FRICTION, defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, usageTotal, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
@@ -86,32 +84,29 @@ function loopHealth(root, from, branch) {
   }
   const learningsDir = join(docs, 'learnings');
   const learnings = walkMarkdown(learningsDir).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
-  const plans = walkMarkdown(join(docs, 'plans'));
-  const recentPlans = plans.filter((f) => {
+  // What plans the work: agent-skills' spec and plan.
+  const plans = [join(root, 'SPEC.md'), join(root, 'docs', 'SPEC.md'), join(root, 'tasks', 'plan.md'), join(root, 'tasks', 'todo.md')].filter((f) => existsSync(f));
+  // A plan touched in the window counts as recent: agent-skills' files carry no date.
+  const touched = (f) => {
     const d = parseFrontmatter(readFileSync(f, 'utf8')).data?.date;
-    return d && Date.parse(d) >= from.getTime();
-  });
+    if (d) return Date.parse(d) >= from.getTime();
+    const last = git(root, ['log', '-1', '--format=%cI', '--', relative(root, f)], { allowFail: true });
+    return last ? Date.parse(last) >= from.getTime() : true;
+  };
+  const recentPlans = plans.filter(touched);
   const cited = new Set();
-  let exceptions = 0;
-  for (const p of recentPlans) {
-    const text = readFileSync(p, 'utf8');
-    for (const m of text.matchAll(LEARNING_REF)) cited.add(m[0]);
-    const cc = text.split('<!-- kaizen:constitution -->')[1]?.split(/<!-- kaizen:[a-z-]+ -->/)[0] || '';
-    exceptions += (cc.match(/⚠️/g) || []).length;
-  }
+  for (const p of recentPlans) for (const m of readFileSync(p, 'utf8').matchAll(LEARNING_REF)) cited.add(m[0]);
   // A citation in a plan says a learning was read; a citation in a commit message that reached the
-  // default branch says it changed code (a unit or a review fix applying it).
+  // default branch says it changed code.
   const appliedIn = new Set();
   const ref = git(root, ['rev-parse', '--verify', '--quiet', `origin/${branch}`], { allowFail: true }) ? `origin/${branch}` : branch;
   const bodies = git(root, ['log', ref, `--since=${from.toISOString()}`, '--format=%B'], { allowFail: true }) || '';
   for (const m of bodies.matchAll(LEARNING_REF)) appliedIn.add(m[0]);
 
-  // Never cited anywhere (plans, ADRs, postmortems, commits) and older than the window: a candidate
-  // for /kaizen:prune-learnings — a learning nobody reads back closes no loop.
+  // Never cited anywhere (plans, commits) and older than the window: a candidate for pruning
+  // (/kaizen:learn prune) — a learning nobody reads back closes no loop.
   const everCited = new Set(appliedIn);
-  for (const f of [...plans, ...walkMarkdown(join(docs, 'adr')), ...walkMarkdown(join(docs, 'postmortems'))]) {
-    for (const m of readFileSync(f, 'utf8').matchAll(LEARNING_REF)) everCited.add(m[0]);
-  }
+  for (const f of plans) for (const m of readFileSync(f, 'utf8').matchAll(LEARNING_REF)) everCited.add(m[0]);
   const allBodies = git(root, ['log', ref, '--format=%B', '-n', '5000'], { allowFail: true }) || '';
   for (const m of allBodies.matchAll(LEARNING_REF)) everCited.add(m[0]);
   const key = (f) => `learnings/${relative(learningsDir, f).split(sep).join('/')}`;
@@ -119,124 +114,17 @@ function loopHealth(root, from, branch) {
     .filter((l) => !(l.data.date && Date.parse(l.data.date) >= from.getTime()))
     .map((l) => key(l.f))
     .filter((k) => ![...everCited].some((c) => c.endsWith(k)));
-
-  const postmortems = walkMarkdown(join(docs, 'postmortems')).map((f) => parseFrontmatter(readFileSync(f, 'utf8')).data || {});
-  const recovery = postmortems
-    .filter((p) => p.detected && p.resolved && Date.parse(p.detected) >= from.getTime())
-    .map((p) => (Date.parse(p.resolved) - Date.parse(p.detected)) / 3600000)
-    .filter((h) => h >= 0);
-  const adrs = existsSync(join(docs, 'adr')) ? walkMarkdown(join(docs, 'adr')).length : 0;
   const used = new Set([...cited, ...appliedIn]);
   return {
     learnings_total: learnings.length,
     learnings_new: learnings.filter((l) => l.data.date && Date.parse(l.data.date) >= from.getTime()).length,
-    plans_new: recentPlans.length,
-    learnings_cited_by_new_plans: cited.size,
+    plans_touched: recentPlans.length,
+    learnings_cited_by_plans: cited.size,
     learnings_applied_in_commits: appliedIn.size,
     learning_reuse_rate: learnings.length && (recentPlans.length || appliedIn.size) ? round(used.size / learnings.length, 2) : null,
-    learning_reuse_method: 'distinct learnings cited by a recent plan or a commit message in the window / existing learnings — a plan citation means "read", a commit citation means "applied"',
+    learning_reuse_method: 'distinct learnings cited by a plan touched in the window (SPEC.md, tasks/) or by a commit message in the window / existing learnings — a plan citation means "read", a commit citation means "applied"',
     learnings_never_cited: neverCited.length,
     learnings_never_cited_sample: neverCited.slice(0, 10),
-    constitution_exceptions: exceptions,
-    postmortems: postmortems.length,
-    recovery_hours_median: round(median(recovery)),
-    adrs,
-  };
-}
-
-// DORA measured on real deployments (deploy/<env>/… and rollback/<env>/… tags created by
-// `kaizen.mjs deploy`), when there are any in the window: frequency, commit → production lead time,
-// failure rate (deployment followed by a rollback or an incident before the next one), time to
-// restore (incident detection — or the deployment, with no recorded incident — → rollback or
-// resolution). Incidents (`incident/<env>/…`) come from monitor watch, patrol or an alert.
-function doraFromDeployments(root, from, env) {
-  const all = deployments(root, { env });
-  const deploys = all.filter((d) => d.kind === 'deploy');
-  const inWindow = deploys.filter((d) => Date.parse(d.at) >= from.getTime());
-  if (!inWindow.length) return null;
-  const lead = [];
-  let failed = 0;
-  const restore = [];
-  for (const d of inWindow) {
-    const prev = deploys[deploys.indexOf(d) - 1];
-    const range = prev ? `${prev.sha}..${d.sha}` : d.sha;
-    const times = (git(root, ['log', '--format=%aI', range, '-n', '500'], { allowFail: true }) || '').split('\n').filter(Boolean).map(Date.parse);
-    for (const t of times) lead.push((Date.parse(d.at) - t) / 3600000);
-    const next = deploys[deploys.indexOf(d) + 1];
-    const during = (x) => x.at >= d.at && (!next || x.at < next.at);
-    const rb = all.find((x) => x.kind === 'rollback' && during(x));
-    const inc = all.find((x) => x.kind === 'incident' && during(x));
-    if (rb || inc) {
-      failed++;
-      const start = inc && (!rb || inc.at <= rb.at) ? inc.at : d.at;
-      const end = all.find((x) => (x.kind === 'rollback' || x.kind === 'resolve') && x.at >= start);
-      if (end) restore.push((Date.parse(end.at) - Date.parse(start)) / 3600000);
-    }
-  }
-  const windowed = (kind) => all.filter((x) => x.kind === kind && Date.parse(x.at) >= from.getTime());
-  return {
-    env,
-    deployments: inWindow.length,
-    rollbacks: windowed('rollback').length,
-    incidents: windowed('incident').length,
-    lead_time_hours_median: round(median(lead.filter((h) => h >= 0))),
-    change_failure_rate: round(failed / inWindow.length, 2),
-    time_to_restore_hours_median: round(median(restore)),
-    method: `tags deploy/${env}/…, rollback/${env}/…, incident/${env}/… and resolve/${env}/… (kaizen.mjs deploy, monitor): lead time = first commit → deployment, failure = rollback or incident before the next deployment, restore = incident detection (otherwise, deployment) → rollback or resolution`,
-  };
-}
-
-// Cost of finished work/autopilot cycles (`gate off`), recorded locally: duration, quality gate
-// blocks, tokens of the main session and its subagents, broken down by role (model policy). Local to
-// the machine, like .kaizen/state/.
-function cycleCost(root, from) {
-  let lines = [];
-  try {
-    lines = readFileSync(join(root, '.kaizen', 'state', 'cycles.jsonl'), 'utf8').split('\n').filter(Boolean);
-  } catch {
-    return null;
-  }
-  const cycles = lines
-    .map((l) => {
-      try {
-        return JSON.parse(l);
-      } catch {
-        return null;
-      }
-    })
-    .filter((c) => c && Date.parse(c.ended) >= from.getTime());
-  if (!cycles.length) return null;
-  const withUsage = cycles.filter((c) => c.usage);
-  // Cycles recorded before subagent tracking only have the main session.
-  const withSub = withUsage.filter((c) => c.subagents);
-  const subTotal = (c) => usageTotal(c.subagents?.usage);
-  const mainSum = withSub.reduce((n, c) => n + usageTotal(c.usage), 0);
-  const subSum = withSub.reduce((n, c) => n + subTotal(c), 0);
-  const byRole = {};
-  for (const c of withSub) {
-    for (const [role, u] of Object.entries(c.subagents.by_role || {})) {
-      const r = (byRole[role] ||= { tokens: 0, output_tokens: 0 });
-      r.tokens += usageTotal(u);
-      r.output_tokens += Number(u.output_tokens) || 0;
-    }
-  }
-  return {
-    cycles: cycles.length,
-    minutes_median: round(median(cycles.map((c) => c.minutes))),
-    tokens_median: round(median(withUsage.map((c) => usageTotal(c.usage) + subTotal(c))), 0),
-    output_tokens_median: round(median(withUsage.map((c) => (c.usage.output_tokens || 0) + (Number(c.subagents?.usage?.output_tokens) || 0))), 0),
-    main_tokens_median: round(median(withUsage.map((c) => usageTotal(c.usage))), 0),
-    subagent_tokens_median: withSub.length ? round(median(withSub.map(subTotal)), 0) : null,
-    subagents_median: withSub.length ? round(median(withSub.map((c) => c.subagents.agents || 0)), 0) : null,
-    subagent_share: mainSum + subSum ? round(subSum / (mainSum + subSum), 2) : null,
-    tokens_by_role: withSub.length ? byRole : null,
-    gate_blocks_total: cycles.reduce((n, c) => n + (c.gate_blocks || 0), 0),
-    cycles_with_gate_block_share: round(cycles.filter((c) => c.gate_blocks > 0).length / cycles.length, 2),
-    method:
-      '/kaizen:work and /kaizen:autopilot cycles closed by gate off on this machine; tokens = main session + subagents ' +
-      '(Claude Code <session>/subagents/ transcripts, deduplicated per message); a subagent\'s role comes from its launch ' +
-      'logged by the Agent hook (agent id, otherwise start of the prompt), `unknown` without a match; share and breakdown ' +
-      `computed over ${withSub.length}/${withUsage.length} recorded cycle(s) with subagents`,
   };
 }
 
@@ -265,25 +153,22 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
   const sizes = prs?.length ? prs.map((p) => p.additions + p.deletions) : changes.map((c) => c.lines);
   const config = loadConfig(root);
 
-  const real = doraFromDeployments(root, from, config.deploy.metrics_env || 'production');
-  const weeksReal = real ? round(real.deployments / weeks) : null;
-
   return {
     window: { since, days, from: from.toISOString().slice(0, 10), default_branch: branch },
-    deployments: real,
     changes: changes.length,
     throughput: {
-      deployment_frequency_per_week: real ? weeksReal : round(changes.length / weeks),
-      deployment_frequency_method: real ? `real deployments to ${real.env} (deploy/ tags)` : 'changes that reached the default branch (deployment proxy)',
-      lead_time_hours_median: real?.lead_time_hours_median ?? round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
-      lead_time_method: real?.lead_time_hours_median != null ? `first commit → deployment to ${real.env}` : leadFromPrs.length ? 'PR opened → merged (GitHub)' : leadFromMerges.length ? 'first commit → merge (git)' : 'unavailable (squash merges without GitHub access)',
+      deployment_frequency_per_week: round(changes.length / weeks),
+      deployment_frequency_method: 'changes that reached the default branch (deployment proxy)',
+      lead_time_hours_median: round(median(leadFromPrs.length ? leadFromPrs : leadFromMerges)),
+      lead_time_method: leadFromPrs.length ? 'PR opened → merged (GitHub)' : leadFromMerges.length ? 'first commit → merge (git)' : 'unavailable (squash merges without GitHub access)',
       rework_rate: changes.length ? round(changes.filter((c) => c.fix).length / changes.length, 2) : null,
       rework_method: 'share of fix / hotfix / revert changes',
     },
     instability: {
-      change_failure_rate: real ? real.change_failure_rate : nonFix ? round(failed / nonFix, 2) : null,
-      change_failure_method: real ? `deployments to ${real.env} followed by a rollback` : 'changes followed within 7 days by a fix or revert touching the same files',
-      time_to_restore_hours_median: real?.time_to_restore_hours_median ?? null,
+      change_failure_rate: nonFix ? round(failed / nonFix, 2) : null,
+      change_failure_method: 'changes followed within 7 days by a fix or revert touching the same files',
+      time_to_restore_hours_median: null,
+      time_to_restore_method: 'unavailable: Kaizen records no deployment nor incident',
     },
     batch_size: {
       lines_median: round(median(sizes), 0),
@@ -293,7 +178,6 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
       source: prs?.length ? 'GitHub PRs' : 'diffstat git',
     },
     kaizen_loop: loopHealth(root, from, branch),
-    cycle_cost: cycleCost(root, from),
     friction: friction(root, from),
     work_items: workItems(root, from, config),
   };
@@ -313,7 +197,7 @@ export function workItems(root, from, config = loadConfig(root)) {
     unattributed_share: total && unattributed ? Math.round((unattributed.tokens / total) * 100) / 100 : 0,
     method:
       'every turn in this repo on this machine (Stop hook, .kaizen/state/ledger.jsonl) charged to the branch\'s Jira key, ' +
-      'otherwise the plan in progress (jira:, else topic), otherwise the branch; cost = tokens per model family × review.cost_weights',
+      'otherwise the branch; cost = tokens per model family × review.cost_weights',
   };
 }
 
@@ -343,21 +227,23 @@ export function friction(root, from) {
   const count = (pred) => events.filter(pred).length;
   const tally = (list, key) => list.reduce((o, e) => ((o[e[key] ?? 'other'] = (o[e[key] ?? 'other'] || 0) + 1), o), {});
 
-  // Time blocked on push: from the first refusal on a branch to what lifted it (review recorded or
-  // waiver confirmed on that branch). A refusal never lifted in the window counts as still blocked.
-  const blockedMinutes = [];
+  // Time stopped on push: from the first stop on a branch (Claude asked the user) to the next review
+  // recorded on it. A stop never lifted in the window counts as still waiting.
+  const stops = (e) => e.gate === 'push' && e.kind === 'asked';
+  const waitedMinutes = [];
   const open = new Map();
   for (const e of events.filter((x) => x.gate === 'push')) {
-    if (e.kind === 'refused' && !open.has(e.branch)) open.set(e.branch, Date.parse(e.at));
-    if ((e.kind === 'review_recorded' || e.kind === 'waiver_confirmed') && open.has(e.branch)) {
-      blockedMinutes.push((Date.parse(e.at) - open.get(e.branch)) / 60000);
+    if (stops(e) && !open.has(e.branch)) open.set(e.branch, Date.parse(e.at));
+    if (e.kind === 'review_recorded' && open.has(e.branch)) {
+      waitedMinutes.push((Date.parse(e.at) - open.get(e.branch)) / 60000);
       open.delete(e.branch);
     }
+    // Pushed without a review: the user's choice ends the wait too.
+    if (e.kind === 'skip_confirm') open.delete(e.branch);
   }
-  const pushRefused = events.filter((e) => e.gate === 'push' && e.kind === 'refused');
+  const stopped = events.filter(stops);
   const recorded = count((e) => e.kind === 'review_recorded');
-  const confirmed = count((e) => e.kind === 'waiver_confirmed' && !e.gap);
-  // "ask" mode: the user chose "Push without a review" and Claude Code's prompt asked them to confirm it.
+  // The user chose "Push without a review" and Claude Code's prompt asked them to confirm it.
   const skipped = count((e) => e.gate === 'push' && e.kind === 'skip_confirm');
   const quality = events.filter((e) => e.gate === 'quality');
   const checks = {};
@@ -365,32 +251,21 @@ export function friction(root, from) {
   return {
     events: events.length,
     push: {
-      refused: pushRefused.length,
-      // review.require_before_push: "ask" — pushes Claude asked the user to judge, the ones they chose to
-      // push without a review, and unreviewed pushes from their own terminal (the git hook only reminds).
-      asked: count((e) => e.gate === 'push' && e.kind === 'asked' && e.source !== 'git'),
+      stopped: stopped.length,
       pushed_without_review: skipped,
-      unreviewed_from_terminal: count((e) => e.gate === 'push' && e.kind === 'asked' && e.source === 'git'),
-      by_reason: tally(pushRefused, 'reason'),
-      by_source: tally(pushRefused, 'source'),
-      unblocked_median_minutes: round(median(blockedMinutes), 0),
-      still_blocked: open.size,
+      by_reason: tally(stopped, 'reason'),
+      unblocked_median_minutes: round(median(waitedMinutes), 0),
+      still_waiting: open.size,
+      // Share of pushes that went out without a review (a declined prompt included) rather than after
+      // one: a rising share means the review is felt as a tax.
+      skip_share: recorded + skipped ? round(skipped / (recorded + skipped), 2) : null,
     },
     reviews_recorded: recorded,
-    waivers: {
-      requested: count((e) => e.kind === 'waiver_requested'),
-      confirmed,
-      gaps_accepted: count((e) => e.kind === 'waiver_confirmed' && e.gap),
-      // Share of pushes cleared by a waiver (or, in "ask" mode, by choosing to push without a review)
-      // rather than a review: a rising share means the review is felt as a tax.
-      share: recorded + confirmed + skipped ? round((confirmed + skipped) / (recorded + confirmed + skipped), 2) : null,
-    },
     quality: { blocked: count((e) => e.gate === 'quality' && e.kind === 'blocked'), released: count((e) => e.gate === 'quality' && e.kind === 'released'), by_check: checks },
     secrets: { refused: count((e) => e.gate === 'secrets' && e.kind === 'refused'), no_verify: count((e) => e.gate === 'secrets' && e.kind === 'no_verify') },
-    other_refusals: tally(events.filter((e) => ['deploy', 'state', 'tag'].includes(e.gate)), 'gate'),
+    other_refusals: tally(events.filter((e) => e.gate === 'state'), 'gate'),
     method:
-      'stops logged by the Kaizen hooks and git hooks on this machine (.kaizen/state/friction.jsonl); time blocked = first push ' +
-      'refusal on a branch → next review recorded or waiver confirmed on it; waiver share = (waivers + pushes without a review ' +
-      'chosen in "ask" mode, a declined prompt included) / (reviews + both)',
+      'stops logged by the Kaizen hooks on this machine (.kaizen/state/friction.jsonl); time stopped = first push stop on a ' +
+      'branch → next review recorded on it; skip share = pushes without a review (a declined prompt included) / (reviews + those)',
   };
 }

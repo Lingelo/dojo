@@ -49,3 +49,20 @@ export function cleanup(dir) {
   // retry rather than fail.
   rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 }
+
+export const POST_EDIT = join(PLUGIN, 'scripts', 'post-edit.mjs');
+
+// Runs a hook script with a JSON payload on stdin, like Claude Code does.
+export function hook(script, payload, args = []) {
+  const r = spawnSync(process.execPath, [script, ...args], { input: JSON.stringify(payload), encoding: 'utf8' });
+  let json = null;
+  try {
+    json = JSON.parse(r.stdout);
+  } catch {}
+  return { code: r.status, stdout: r.stdout, stderr: r.stderr, json };
+}
+
+// agent-skills' code-reviewer persona returning a review (PostToolUse on the Agent tool).
+export function personaReview(dir, text = '## Review Summary\n\n**Verdict:** APPROVE\n\n### Critical Issues\n- None\n', session = 'S1') {
+  return hook(REVIEW_HOOKS, { cwd: dir, session_id: session, tool_name: 'Agent', tool_input: { subagent_type: 'agent-skills:code-reviewer', prompt: 'Review the branch' }, tool_response: { content: [{ type: 'text', text }] } }, ['--evidence']);
+}

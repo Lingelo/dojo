@@ -1,0 +1,3 @@
+# Copied by .github/scripts/sync-plugin.mjs. Do not edit plugins/agent-skills/: change agent-skills in its own repository.
+repository: https://github.com/addyosmani/agent-skills
+sha: 301b02b12bff98e4688e6984af6556802322bbde

@@ -1,146 +1,60 @@
 ---
 name: setup
-description: Installs the Kaizen SDLC in a repo and audits it — project maturity diagnosis (audit: CI, tests, secrets, branch protection, CODEOWNERS, dependencies, deployment, rollback, monitoring, constitution) with a prioritized roadmap and guided fixes; creates .kaizen/config.json and the deliverable folders, detects the stack, the verification commands and the deployment platform, sets profile, models, language and tracker, creates a Kaizen Pack (pack:<name>), health check (check). Use when the user says "install/configure kaizen", "set up the SDLC", "audit the project", "what is this repo missing?", /kaizen:setup.
+description: Sets Kaizen up in a repository next to agent-skills, and says where the repository stands — initializes .kaizen/config.json and docs/learnings/, validates the verification commands the quality gate will run, declares kaizen@dojo and agent-skills@dojo for every clone, runs kaizen doctor, then names the next command. Use when the user says "install/configure Kaizen", "set up Kaizen", "where are we", "what next", "is Kaizen working", "check Kaizen", /kaizen:setup. Not for writing a spec or a plan (/kaizen:spec, /kaizen:plan).
 allowed-tools: Bash(node:*), Bash(git:*), Read, Write, Edit, Glob, AskUserQuestion
-argument-hint: "[audit] [pack:<name>] [check]"
+argument-hint: "[check]"
 ---
 
-# Setup — preparing the repo for the Kaizen loop
+# Setup — Kaizen in this repository, and where it stands
 
-Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`.
-`K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
+## Overview
 
-Prerequisites: Node ≥ 18 and a git repository. Otherwise, say what is missing and stop.
+Kaizen guards agent-skills' workflow; this skill makes sure the guards are on in this repository, then
+says what to run next. With `check`, it only reads and reports.
 
-Every mode starts with `node "$K" doctor --in-skill` (conventions, "Guard rails"); its findings are part
-of what setup fixes.
+Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"`
 
-## `check` — health check only (no writes)
+## When to Use
 
-`node "$K" doctor`, `node "$K" root`, `node "$K" config`, `node "$K" detect`, `node "$K" learnings validate`,
-`node "$K" packs`, `node "$K" constitution check`, `node "$K" gate status`, `node "$K" review status`,
-`node "$K" models` (warnings), `node "$K" upgrade` (migrations pending after a Kaizen update) → report:
-✔/⚠ per point, with the proposed fix.
-A gate left active without work in progress (`gate status` active) → propose `gate off`.
+- First time in a repository, or a fresh clone where `kaizen doctor` shows ⚠.
+- "Where are we? What do I run now?"
 
-## `audit` — set up the SDLC, in order
+**Not for:** writing the spec, the plan or the code — that is agent-skills (`/kaizen:spec`…).
 
-For a project starting with Kaizen, or one that wants to know what it is missing.
+## Process
 
-1. `node "$K" audit` (add `--no-github` if `gh` is not authenticated). Show the areas and their score,
-   then the list **by priority**: P1 first (what protects: CI, tests, secrets, branch protection,
-   deployment and rollback), then P2 and P3. Nothing green needs redoing.
-2. Offer to handle the points **one by one**, highest priority first, one question at a time
-   (**fix** (Recommended) · **later** · **never for this repo**):
-   - **scaffold** (`scaffold` not null) → `node "$K" audit fix <id>` (CODEOWNERS: ask for
-     `--owner @…` first, never invent it; `monitor_patrol`: also offer `monitor_alert` if the team has
-     alerts, and a pinned `--ref <sha>` of the Kaizen repository — same for `secret_scanning`). Show the written file; it stays
-     uncommitted, to be reviewed;
-   - **deployment** → `node "$K" deploy detect`, show the candidates (commands, rollback, confidence,
-     notes), have the user choose, then `node "$K" deploy configure <id>`; nothing recognized →
-     installation step 9;
-   - **monitoring / health** → declare at least the health-check (environment URL, health route
-     found), then `node "$K" monitor check --env <env>`;
-   - **branch protection** → give the exact settings (required PR, one approval, required CI): it is a
-     repository administration setting, you do not change it;
-   - **skill** (`skill` not null: constitution, setup) → propose it, only chain it with approval.
-3. Rerun `node "$K" audit` at the end and show the before/after scores. What remains is noted with its
-   reason ("later", "never").
+1. **Diagnose.** `node "$K" doctor --in-skill` and `node "$K" status`. With `check`: report every line
+   (✔ ⚠ ·) with its fix and stop here — write nothing.
+2. **Initialize** (no `.kaizen/config.json`): `node "$K" init`. Show what was created.
+3. **Verification commands.** `node "$K" detect`: show the `test`, `lint`, `typecheck` commands found.
+   Ask once whether they are right; fix them in `.kaizen/config.json` → `verify`. Then
+   `node "$K" verify` must run (red is fine — say what is red; missing is not). These are what the
+   quality gate runs after every turn that edits code: slow ones go to `gate.targeted` with `{files}`.
+4. **Both plugins for every clone.** `node "$K" install settings` declares `kaizen@dojo` and
+   `agent-skills@dojo` in the versioned `.claude/settings.json` (ask first: a versioned file).
+5. **Learnings findable.** With approval, add to `CLAUDE.md` (or `AGENTS.md` if that is what the repo
+   uses): `Read docs/learnings/ before planning; /kaizen:learn after a non-obvious fix.`
+6. **Next. One line per item of `status`'s `next`, the first one recommended. A repository without a
+   spec → `/kaizen:spec <what to build>`; without `CONSTRAINTS.md` → mention
+   `/kaizen:constraints` once, as optional.
 
-## Installation (default)
+## Common Rationalizations
 
-1. **Initialize** — `node "$K" init` (idempotent: does not rewrite an existing config). Show what was
-   created.
-2. **Verification** — show the detected commands (`test`, `lint`, `typecheck`). Ask (one question):
-   **keep them** (Recommended) · **adjust them** (then write `verify` in `.kaizen/config.json`, e.g.
-   `{"test": "pnpm vitest run", "lint": "pnpm eslint ."}`) · **disable the gate** (`gate.enabled:
-   false`). Nothing detected → ask for the commands or disable it. Run `node "$K" verify` once to check
-   they work; a command already failing on the default branch is reported (the gate would block
-   wrongly). Slow suite (over a minute) → propose **targeted** checks for the gate, `gate.targeted`
-   with `{files}` (e.g. `{"test": "pnpm vitest related --run {files}", "lint": "pnpm eslint
-   {files}"}`); the full verification remains the one of `work` and `ship`.
-3. **Language** — `language: auto` follows the conversation; offer to pin it (`en`, `fr`…) if the team
-   writes its deliverables in a specific language.
-4. **Tracker** — `tracker: auto` (Jira key read from the branch, GitHub issues through `gh`); adjust if
-   the team uses something else.
-5. **Location** — `docs_root: docs` by default. If `docs/` is already a published documentation site,
-   propose another folder (e.g. `.kaizen/docs` or `engineering/`) before any first deliverable.
-6. **Findability** — with approval, add to `CLAUDE.md` (existing only; otherwise propose `/init`
-   first) a short section:
+| Excuse | Reality |
+|---|---|
+| "The tests are slow, leave `verify` empty." | An empty `verify` turns the quality gate off silently. Put the slow suite in `gate.targeted` instead. |
+| "No need to declare the plugins, it works on my machine." | A clone or a cloud session without `.claude/settings.json` runs with no gate at all. |
+| "I'll fix the red tests later." | Then the next turn that edits code will be blocked on them. Say what is red now. |
+| "The doctor warnings are noise." | Each ⚠ is a gate that is off. Relay all of them with their fix. |
 
-   ```markdown
-   ## Kaizen
-   - Before planning or debugging, look for the project's learnings in `docs/learnings/`
-     (frontmatter: module, tags, symptoms, applies_when).
-   - Plans in `docs/plans/`; a feature: /kaizen:plan → /kaizen:work → /kaizen:ship (a bug: /kaizen:debug).
-     /kaizen:help names the next command.
-   ```
-7. **Constitution** — no `CONSTITUTION.md` → mention `/kaizen:constitution` as **optional**: without it,
-   plan and review only have generic rules, and it pays most once a first cycle showed what the team
-   cares about. Run it now only if the user wants to; never make it a step before the first plan.
-   Present → `node "$K" constitution check`.
-8. **PR size** — `pr.max_lines` (400 by default): ask whether the team has another limit.
-9. **Deployment and monitoring** (optional) — if the team wants Kaizen to drive production releases
-   too: `node "$K" deploy detect` recognizes the platform (Vercel, Netlify, Fly.io, Heroku, Kamal,
-   Capistrano, Helm, Kustomize, Serverless, SAM, Firebase, GitHub Actions workflows, Makefile, npm
-   scripts, Compose, Terraform) and proposes commands, rollback and health-check. Show them with their
-   notes, have the user choose, then `node "$K" deploy configure <id>`. Nothing recognized → ask for
-   the commands, never invent them. Complete the signals (error rate, latency: a command printing a
-   number). `production` is protected by default. Check with `node "$K" monitor check --env <env>`.
-9b. **Guard rails without the plugin** — Kaizen's gates are Claude Code hooks: in a clone or a cloud
-   session where the plugin is not loaded, nothing refuses anything. Offer, one question each:
-   - **declare the plugin** (Recommended when `doctor` says it is not): `node "$K" audit fix
-     claude_settings` merges the dojo marketplace and `kaizen@dojo` into the versioned
-     `.claude/settings.json` — show the diff, it stays uncommitted;
-   - **git hooks** (opt-in: they change the git configuration): `node "$K" audit fix git_hooks`
-     writes `.githooks/pre-push` (no push of an unreviewed branch) and `.githooks/pre-commit` (no
-     staged secret) and sets `core.hooksPath`. They refuse when the Kaizen CLI cannot be found — say so.
-     Hooks already in use (husky, `.git/hooks`) → nothing is shadowed: relay the `chain` lines. Each
-     clone wires them once with `git config core.hooksPath .githooks` (`doctor` reminds it).
-10. **Profile** — ask (one question), chosen by the **stakes of the repo**, never by the team's
-   experience with Kaizen: **prototype** (prototype, spike, internal tool: minimal ceremony, gates kept) ·
-   **product** (a product in production) · **critical** (regulated or critical domains: payment, health,
-   sensitive data at scale). Mark as Recommended the one the repo suggests (deployment detected, risk
-   surfaces, domain); unsure → **product**. The profile also sets
-   **each agent's model** (`node "$K" models`): show it, and offer to adjust a role (`models.roles`)
-   or an agent (`models.agents`) if the team has a cost or quality constraint. Write `profile` in
-   `.kaizen/config.json`. Team of several people → propose `approvers` in `CONSTITUTION.md` and a
-   `CODEOWNERS` line for `CONSTITUTION.md` and `kaizen-packs/`. Remind that an unreviewed
-   `git push` stops and asks the developer, the review as the first option (`review.require_before_push:
-   "ask"`, default; `true` refuses it outright, `false` turns it off), and that approvals are a question
-   plus Claude Code's prompt, never a typed code (`approvals: "ask"`; `"code"` if the team wants codes).
-11. **Summary** — open it with the **profile in effect and what it costs**, on its own line, before anything
-   else: e.g. "Profile **prototype**: code review on sonnet, critical review on sonnet (opus in product) — change
-   it with `profile` in `.kaizen/config.json`". It decides the price and depth of every later review, so it
-   is never buried among the assumptions, least of all when it was chosen without asking. Then the health
-   check above and the **four-command path**: next is `/kaizen:plan <what to build>`, then
-   `/kaizen:work <plan>`, then `/kaizen:ship` (a fuzzy idea → `/kaizen:brainstorm` first, a bug →
-   `/kaizen:debug`). The constitution is offered as optional, once, not as a prerequisite; remind that
-   `/kaizen:help` says at any time what to do next.
+## Red Flags
 
-## `pack:<name>` — create a Kaizen Pack
+- Writing `.kaizen/config.json` or `.claude/settings.json` without saying so.
+- Recommending a Kaizen command for spec, plan, build, review or ship (they are agent-skills').
+- `check` that modifies a file.
 
-1. `node "$K" pack new <name>` creates `kaizen-packs/<name>/` (README + `research/` storage folder) and
-   declares it in `.kaizen/config.json`. Refuses to write into a non-empty folder.
-2. If the user described a first rule, write it: `kaizen-packs/<name>/<slug>.md`
+## Verification
 
-   ```markdown
-   ---
-   title: Pages receive their data as server props, never through a parallel JSON endpoint
-   applies_when:
-     - adding a page that needs server data
-     - adding or changing an endpoint consumed by the application's pages
-   tags: [routes, props, api]
-   ---
-
-   <the rule, its reason, and the exception if any — no biography or history>
-   ```
-
-   `applies_when` describes **situations**, with the words a feature request would use ("adding a
-   page…"), not topic labels ("architecture"). One situation per line; two or three concrete
-   conditions beat an abstract one. Two rules of the same pack do not prescribe the same thing.
-3. `node "$K" packs` to show the resolved pack and its warnings, if any.
-
-Packs shared between repos: declare a pinned git source (`{"source": "https://github.com/org/packs",
-"ref": "v1.2.0", "pack": ["rails"]}`); it is cloned into a cache in the plugin's data
-(`node "$K" packs --refresh` to update it).
+- [ ] `node "$K" doctor` shows no ⚠ the user did not choose to keep.
+- [ ] `node "$K" verify` runs every configured command.
+- [ ] The user knows the next command and why.

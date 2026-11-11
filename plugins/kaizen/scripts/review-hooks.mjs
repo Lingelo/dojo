@@ -1,16 +1,13 @@
 #!/usr/bin/env node
-// Kaizen — hooks that give the review evidence the agent cannot declare itself.
+// Kaizen — hooks that record what the agent cannot declare itself.
 //
-//   --evidence  (PostToolUse, Agent/Task tool): logs every Kaizen code reviewer actually launched;
-//               `review record` requires it. During a work/autopilot cycle (gate active), also logs
-//               every subagent (role, model, id) to break the cycle's cost down.
-//   --launch    (PreToolUse, Agent/Task tool): logs every Kaizen code reviewer as it is launched, with
-//               its slice and run folder; `review record --run` then requires each one's output.
+//   --evidence  (PostToolUse, Agent/Task/Skill): agent-skills' review. Its code-reviewer persona (`/ship`)
+//               returns its review: recorded at once, verdict read from its text. Its review skill
+//               (`/kaizen:review`) only loads instructions: a mark is left for --stop.
+//   --stop      (Stop): the turn that loaded the review skill has ended — its last message is the review;
+//               the verdict is read from it and the reviewed tree recorded.
 //   --heartbeat (SessionStart): records that Claude Code runs Kaizen's hooks in this repo
 //               (`.kaizen/state/hooks-seen.json`), read by `kaizen doctor`.
-//   --confirm   (UserPromptSubmit, `approvals: "code"`): a user message containing `kaizen waive <code>` confirms the review
-//               waiver requested by `review waive`; `kaizen deploy <code>` approves the deployment to a
-//               protected environment requested by `deploy request`.
 // Always exit 0: these hooks observe, they block nothing. Inactive outside a Kaizen repo.
 
 import { readFileSync } from 'node:fs';
@@ -20,57 +17,44 @@ try {
   input = JSON.parse(readFileSync(0, 'utf8') || '{}');
 } catch {}
 
-const mode = ['confirm', 'heartbeat', 'launch'].find((m) => process.argv.includes(`--${m}`)) || 'evidence';
-const WAIVE = /\bkaizen\s+(waive|deploy)\s+([A-F0-9]{6})\b/i;
+const mode = ['heartbeat', 'stop'].find((m) => process.argv.includes(`--${m}`)) || 'evidence';
 
-// Cheap filters before any import: these hooks see every message and every subagent.
-if (mode === 'confirm' && !WAIVE.test(String(input.prompt || ''))) process.exit(0);
-if ((mode === 'evidence' || mode === 'launch') && !/^(Agent|Task)$/.test(String(input.tool_name || ''))) process.exit(0);
+// Cheap filter before any import: this hook sees every tool call.
+if (mode === 'evidence' && !/^(Agent|Task|Skill)$/.test(String(input.tool_name || ''))) process.exit(0);
+
+// Text of a tool response or of the transcript's last assistant message.
+const textOf = (v) => (typeof v === 'string' ? v : Array.isArray(v) ? v.map(textOf).join('\n') : v && typeof v === 'object' ? textOf(v.text ?? v.content ?? v.result ?? '') : '');
+function lastAssistantText(file) {
+  try {
+    const lines = readFileSync(file, 'utf8').trim().split('\n');
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const e = JSON.parse(lines[i]);
+      if (e.type === 'assistant' || e.message?.role === 'assistant') {
+        const t = textOf((e.message?.content || []).filter((c) => c.type === 'text'));
+        if (t.trim()) return t;
+      }
+    }
+  } catch {}
+  return '';
+}
 
 try {
   const { existsSync } = await import('node:fs');
   const { join } = await import('node:path');
   const { repoRoot } = await import('./lib.mjs');
   const root = repoRoot(input.cwd || process.cwd());
-  if (!root) process.exit(0);
+  if (!root || !existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
   const state = await import('./review-state.mjs');
+  const session = input.session_id || null;
 
-  if (mode === 'launch') {
-    if (existsSync(join(root, '.kaizen', 'config.json'))) state.addLaunch(root, input.tool_input, { session: input.session_id || null });
-  } else if (mode === 'heartbeat') {
-    if (existsSync(join(root, '.kaizen', 'config.json'))) state.recordHeartbeat(root, { session: input.session_id || null, source: input.source || null });
-  } else if (mode === 'evidence') {
-    const reviewer = state.reviewerOf(input.tool_input);
-    if (existsSync(join(root, '.kaizen', 'state', 'gate.json'))) {
-      const { recordLaunch } = await import('./cycle-agents.mjs');
-      recordLaunch(root, input, reviewer);
-    }
-    if (!existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
-    if (reviewer) state.addEvidence(root, { reviewer, session: input.session_id || null, model: input.tool_input?.model || null });
-  } else {
-    if (!existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
-    const [, kind, code] = WAIVE.exec(String(input.prompt));
-    if (kind.toLowerCase() === 'deploy') {
-      const { confirmDeploy } = await import('./deploy.mjs');
-      const a = confirmDeploy(root, code, { session: input.session_id || null });
-      process.stdout.write(
-        a
-          ? `[kaizen] Deployment of ${a.sha.slice(0, 7)} to ${a.env} approved by the user (30 min): run \`deploy run ${a.env}\` for this commit, then watch.\n`
-          : `[kaizen] Deployment code ${code} unknown or expired (30 min): run \`deploy request\` again if the user still wants it.\n`,
-      );
-      process.exit(0);
-    }
-    const entry = state.confirmWaiver(root, code, { session: input.session_id || null });
-    // On UserPromptSubmit, standard output is added to Claude's context.
-    process.stdout.write(
-      entry?.gaps
-        ? `[kaizen] Review of ${entry.branch} recorded with the gap accepted by the user (${entry.gaps.join(', ')} without output). ` +
-            'The PR must name the missing reviewers in its review section.\n'
-        : entry
-        ? `[kaizen] Review waiver confirmed by the user for ${entry.branch} (reason: ${entry.reason}). ` +
-            'The push is allowed; the PR must say so in a "Review waived" section.\n'
-        : `[kaizen] Waiver code ${code} unknown or expired (30 min): run \`review waive --reason\` again if the user still wants it.\n`,
-    );
+  if (mode === 'heartbeat') state.recordHeartbeat(root, { session, source: input.source || null });
+  else if (mode === 'evidence') {
+    const source = state.reviewSourceOf(input.tool_name, input.tool_input);
+    if (source === 'code-reviewer') state.recordReview(root, { verdict: state.verdictOf(textOf(input.tool_response)), source, session });
+    else if (source) state.markPendingReview(root, { session, source });
+  } else if (mode === 'stop') {
+    const p = state.takePendingReview(root, session);
+    if (p && input.transcript_path) state.recordReview(root, { verdict: state.verdictOf(lastAssistantText(input.transcript_path)), source: p.source, session });
   }
 } catch (err) {
   process.stderr.write(`[kaizen] review-hooks: ${err.message}\n`);

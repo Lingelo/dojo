@@ -2,23 +2,22 @@
 // hook fires, nothing is blocked, nothing says so. The doctor makes that visible.
 //
 // Static checks need no Claude Code session: configuration, plugin declared in the versioned
-// `.claude/settings.json`, git hooks wired, branch review state. The hook check reads the heartbeat the
+// `.claude/settings.json`, branch review state. The hook check reads the heartbeat the
 // SessionStart hook writes (`.kaizen/state/hooks-seen.json`): from a terminal, no heartbeat only means
 // "not verified"; from a skill (`--in-skill`) the session has started, so no heartbeat means "off".
 // Each check returns { id, title, status: ok|warn|info, evidence, fix }. Read-only.
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { docsRoot, git, loadConfig, verifyCommands } from './lib.mjs';
 import { checkPush, currentBranch } from './review-state.mjs';
-import { pending as pendingMigrations } from './upgrade.mjs';
+import { readAgentSkills } from './agentskills.mjs';
 
 export const MARKETPLACE = 'dojo';
 export const PLUGIN_ID = `kaizen@${MARKETPLACE}`;
-// Since Kaizen 4.0 the production commands (deploy, monitor, postmortem) live in a second plugin.
-export const OPS_ID = `kaizen-ops@${MARKETPLACE}`;
+// Addy Osmani's agent-skills, shipped in the same marketplace: the base Kaizen runs on.
+export const AGENT_SKILLS_ID = `agent-skills@${MARKETPLACE}`;
 const DAY_MS = 24 * 3600 * 1000;
 
 function readJson(path) {
@@ -47,32 +46,32 @@ export function pluginDeclared(root) {
   return { declared: true };
 }
 
-// Why this repository needs Kaizen's production commands (kaizen-ops), or null: declared environments
-// or signals, or a production history — postmortems, deployment or incident tags — left by the
-// commands that moved in 4.0 (a team that only wrote postmortems declares no deployment).
-export function opsNeeded(root, config = loadConfig(root)) {
-  if (Object.keys(config.deploy?.environments || {}).length) return 'declares deployment environments';
-  if (Object.keys(config.monitor?.signals || {}).length) return 'declares production signals';
-  try {
-    if (readdirSync(join(docsRoot(root, config), 'postmortems')).some((f) => f.endsWith('.md'))) return 'has postmortems';
-  } catch {}
-  const tags = git(root, ['tag', '-l', 'deploy/*', 'rollback/*', 'incident/*', 'resolve/*'], { allowFail: true });
-  return tags ? 'has deployment or incident tags' : null;
-}
-
-// Is kaizen-ops enabled in the versioned project settings (what every clone gets)?
-export function opsDeclaredForClones(root) {
-  return readJson(join(root, '.claude', 'settings.json'))?.enabledPlugins?.[OPS_ID] === true;
-}
-
-// Is kaizen-ops enabled for this repository: project settings, local settings or the user's settings.
-export function opsDeclared(root, env = process.env) {
+// Is a plugin enabled for this repository: project settings, local settings or the user's settings.
+export function pluginEnabled(root, id, env = process.env) {
   const files = [
     join(root, '.claude', 'settings.json'),
     join(root, '.claude', 'settings.local.json'),
     join(env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude'), 'settings.json'),
   ];
-  return files.some((f) => readJson(f)?.enabledPlugins?.[OPS_ID] === true);
+  return files.some((f) => readJson(f)?.enabledPlugins?.[id] === true);
+}
+
+// Where agent-skills' floor guard runs, if anywhere: a git hook (.githooks/, .husky/, .git/hooks/), a
+// pre-commit or lefthook config, package.json scripts or a CI workflow naming it.
+export function floorGuardWiring(root) {
+  const candidates = ['.pre-commit-config.yaml', 'lefthook.yml', 'package.json'];
+  for (const dir of ['.githooks', '.husky', join('.git', 'hooks'), join('.github', 'workflows')]) {
+    try {
+      for (const f of readdirSync(join(root, dir))) candidates.push(join(dir, f));
+    } catch {}
+  }
+  return candidates.filter((rel) => {
+    try {
+      return statSync(join(root, rel)).isFile() && /floor-guard/.test(readFileSync(join(root, rel), 'utf8'));
+    } catch {
+      return false;
+    }
+  }).map((rel) => rel.split('\\').join('/'));
 }
 
 export function heartbeat(root) {
@@ -80,29 +79,29 @@ export function heartbeat(root) {
   return h && Date.parse(h.at) ? h : null;
 }
 
-// Kaizen's hooks in `.githooks/`, whether git runs them (core.hooksPath) and why not: a hook that is
-// not Kaizen's, or versioned without the executable bit (committed from Windows), is ignored by git.
-// The line of a Kaizen git hook that finds the CLI: the part a newer Kaizen may tighten (4.1.2: an
-// explicit pointer must be Kaizen core). Matched with its line ending kept, CRLF included.
-export const HOOK_LOOKUP = /^cli=\$\(node -e '[^'\n]*'\) \|\| exit 1(?=\r?$)/m;
-const HOOK_TEMPLATES = fileURLToPath(new URL('../templates/githooks/', import.meta.url));
-export const templateLookup = (hook) => readFileSync(join(HOOK_TEMPLATES, hook), 'utf8').match(HOOK_LOOKUP)?.[0] ?? null;
-
-export function gitHooksState(root) {
-  const dir = join(root, '.githooks');
-  const present = ['pre-push', 'pre-commit'].filter((f) => existsSync(join(dir, f)));
-  const hooksPath = git(root, ['config', '--get', 'core.hooksPath'], { allowFail: true }) || null;
-  const foreign = present.filter((f) => !readFileSync(join(dir, f), 'utf8').includes(`githook ${f}`));
-  // Kaizen's hooks whose CLI lookup is not this version's: install never overwrites a hook, so an older
-  // lookup stays until `audit fix git_hooks` refreshes that one line.
-  const outdated = present.filter((f) => !foreign.includes(f) && readFileSync(join(dir, f), 'utf8').match(HOOK_LOOKUP)?.[0] !== templateLookup(f));
-  const notExecutable = present.filter((f) => {
-    const staged = git(root, ['ls-files', '-s', `.githooks/${f}`], { allowFail: true });
-    if (staged) return staged.startsWith('100644');
-    return process.platform !== 'win32' && (statSync(join(dir, f)).mode & 0o111) === 0;
-  });
-  const wired = present.length > 0 && !foreign.length && !notExecutable.length && hooksPath !== null && hooksPath.replace(/[\\/]+$/, '') === '.githooks';
-  return { present, hooksPath, wired, foreign, notExecutable, outdated };
+// Declares the dojo marketplace, Kaizen and agent-skills in the versioned `.claude/settings.json`, so a
+// fresh clone or a cloud session loads both (`kaizen install settings`).
+const KAIZEN_SOURCE = 'Lingelo/dojo';
+export function declarePlugin(root) {
+  const path = join(root, '.claude', 'settings.json');
+  let settings = {};
+  if (existsSync(path)) {
+    try {
+      settings = JSON.parse(readFileSync(path, 'utf8'));
+    } catch {
+      throw new Error('.claude/settings.json is not valid JSON: nothing is overwritten');
+    }
+  }
+  const markets = (settings.extraKnownMarketplaces ||= {});
+  const plugins = (settings.enabledPlugins ||= {});
+  const wanted = [PLUGIN_ID, AGENT_SKILLS_ID];
+  const missing = wanted.filter((id) => plugins[id] !== true);
+  if (markets[MARKETPLACE] && !missing.length) throw new Error(`${wanted.join(' and ')} already declared`);
+  markets[MARKETPLACE] ||= { source: { source: 'github', repo: KAIZEN_SOURCE } };
+  for (const id of missing) plugins[id] = true;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(settings, null, 2)}\n`);
+  return { written: '.claude/settings.json', enabled: missing };
 }
 
 export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
@@ -118,33 +117,42 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     '/kaizen:setup',
   );
 
-  // What a Kaizen update still asks of this repo, detected from its state (kaizen upgrade).
-  const migrations = pendingMigrations(root, config);
-  if (migrations.length) {
-    const auto = migrations.filter((m) => m.auto).length;
-    add('upgrade', 'Kaizen migrations', 'warn', `${migrations.length} Kaizen migration(s) pending (${migrations.map((m) => m.id).join(', ')})${auto < migrations.length ? `, ${migrations.length - auto} by hand` : ''}`, 'node "$K" upgrade  (lists them), then node "$K" upgrade --apply');
-  } else if (existsSync(join(root, '.kaizen', 'config.json'))) add('upgrade', 'Kaizen migrations', 'ok', 'nothing to migrate');
-
   const decl = pluginDeclared(root);
   add(
     'plugin_declared',
     'Plugin declared for every clone',
     decl.declared ? 'ok' : 'warn',
     decl.declared ? `.claude/settings.json enables ${PLUGIN_ID}` : `${decl.why}: a fresh clone or a cloud session runs without Kaizen`,
-    decl.declared ? null : 'node "$K" audit fix claude_settings',
+    decl.declared ? null : 'node "$K" install settings',
   );
 
-  const why = opsNeeded(root, config);
-  if (why) {
-    const on = opsDeclared(root);
+  // agent-skills: the base of the workflow.
+  const as = readAgentSkills(root);
+  const asOn = pluginEnabled(root, AGENT_SKILLS_ID);
+  const files = [
+    as.spec?.path,
+    as.plan?.path,
+    as.tasks && `${as.tasks.path} (${as.tasks.list.filter((t) => t.done).length}/${as.tasks.list.length} tasks done)`,
+    as.constraints?.path,
+  ].filter(Boolean);
+  {
+    const seen = files.length ? `reads ${files.join(', ')}` : 'none of its files yet (SPEC.md, tasks/, CONSTRAINTS.md)';
     add(
-      'ops_plugin',
-      'Production commands (kaizen-ops)',
-      on ? 'ok' : 'warn',
-      on
-        ? `${OPS_ID} enabled: /kaizen-ops:deploy, /kaizen-ops:monitor, /kaizen-ops:postmortem`
-        : `this repo ${why}, but the production commands moved to kaizen-ops in Kaizen 4.0 and ${OPS_ID} is not enabled`,
-      on ? null : `"enabledPlugins": { "${OPS_ID}": true } in .claude/settings.json (node "$K" audit fix claude_settings), then a new session`,
+      'agent_skills',
+      'agent-skills (the workflow Kaizen guards)',
+      asOn ? 'ok' : 'warn',
+      asOn ? `${AGENT_SKILLS_ID} enabled; Kaizen ${seen}` : `${AGENT_SKILLS_ID} is not enabled: /kaizen:spec, plan, build, review, ship are missing, and no review can record itself`,
+      asOn ? null : 'node "$K" install settings (declares it next to kaizen@dojo), then a new session',
+    );
+  }
+  if (as.constraints) {
+    const wired = floorGuardWiring(root);
+    add(
+      'floor_guard',
+      'Floor guard (CONSTRAINTS.md)',
+      wired.length ? 'ok' : 'warn',
+      wired.length ? `runs from ${wired.join(', ')}` : 'CONSTRAINTS.md has a floor but no floor guard runs: skipped tests and silenced checks pass unnoticed',
+      wired.length ? null : 'install the reference of agent-skills/skills/constraint-driven-development/references/floor-guard.md in a pre-commit hook and the CI',
     );
   }
 
@@ -158,13 +166,6 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     add('hooks', 'Claude Code hooks firing', 'info', 'not verified: no Claude Code session with Kaizen has started here yet', 'start a session with the plugin enabled');
   }
 
-  const gh = gitHooksState(root);
-  if (gh.wired && gh.outdated.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/${gh.outdated.join(', ')}: CLI lookup of an older Kaizen (it may run a file that is not Kaizen core)`, 'node "$K" audit fix git_hooks  (refreshes that line only), then commit .githooks/');
-  else if (gh.wired) add('git_hooks', 'Git hooks', 'ok', `.githooks/ (${gh.present.join(', ')}) wired through core.hooksPath`);
-  else if (gh.notExecutable.length) add('git_hooks', 'Git hooks', 'warn', `${gh.notExecutable.join(', ')} not executable in git (committed from Windows?): git ignores them`, `git update-index --chmod=+x ${gh.notExecutable.map((f) => `.githooks/${f}`).join(' ')}`);
-  else if (gh.foreign.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/${gh.foreign.join(', ')} is not Kaizen's: the review and secret checks are not installed`, 'chain it: add  node "$K" githook <name> "$@" || exit 1  to that hook');
-  else if (gh.present.length) add('git_hooks', 'Git hooks', 'warn', `.githooks/ present but core.hooksPath is ${gh.hooksPath ? `"${gh.hooksPath}"` : 'unset'} (fresh clone?): the hooks do not run`, 'git config core.hooksPath .githooks');
-  else add('git_hooks', 'Git hooks', 'info', 'not installed: without the plugin, nothing refuses an unreviewed push', 'node "$K" audit fix git_hooks');
 
   const verify = verifyCommands(root, config);
   const names = Object.keys(verify.commands);

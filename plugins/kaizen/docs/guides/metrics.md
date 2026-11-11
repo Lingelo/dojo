@@ -1,50 +1,42 @@
-# `/kaizen:metrics`
+# `/kaizen:metrics` — delivery, learnings, friction and cost
 
-> Are we really improving? The DORA metrics, approximated from git and GitHub (or measured from real
-> deployments), plus Kaizen's own indicator: are the learnings reused?
-
-## At a glance
-
-| | |
-|---|---|
-| **What it does** | Computes the indicators over a window, says how each one is computed and its limits, draws 2 or 3 findings and 1 to 3 actions |
-| **When to use it** | Retrospective, quarterly review, "is Kaizen useful at all?", after changing a practice |
-| **When not to use it** | To judge people: these indicators measure a delivery system, not individuals |
-| **What it produces** | A short report (30 lines at most), and on request `docs/metrics/YYYY-MM-DD.md` to follow the trend |
-| **What next** | The actions point to a skill: `prune-learnings`, slicing, `constitution amend`… |
-
-## Examples
-
-```text
-/kaizen:metrics                # last 90 days
-/kaizen:metrics 30d
-/kaizen:metrics 12w compare    # with the previous window
+```
+/kaizen:metrics                 # last 90 days
+/kaizen:metrics 30d             # another window (30d, 12w, 6m)
+/kaizen:metrics 12w compare     # against the previous window of the same length
+/kaizen:metrics cost SHOP-412   # what one feature or fix cost, end to end
 ```
 
-Raw: `node $K metrics --since 90d` (add `--no-github` if `gh` is not authenticated, `--json` for the
-machine-readable output).
+Every number and how it is computed: [Metrics](../concepts/metrics.md).
 
-## The indicators
+## When
 
-The four DORA indicators (deployment frequency, lead time, change failure rate, time to restore), plus
-rework rate, batch size, the **Kaizen loop** (learnings read and applied, constitution exceptions, ADRs)
-and the **cycle cost** of `work`/`autopilot` runs. How each is computed:
-[metrics](../concepts/metrics.md).
+- A periodic look — monthly, at the end of a quarter — at delivery, quality and the learning loop.
+- "What did this feature cost?", "Is Kaizen worth it?"
+- Before and after changing a practice, to see whether it helped.
 
-To follow cost over time, `node $K metrics dashboard` writes a self-contained HTML page
-(`.kaizen/state/cost-dashboard.html`): cost and tokens per cycle, by role and by model, over 7, 30, 90
-days or everything. `/kaizen:metrics` offers it when the cycle cost is part of the question.
+## What you get
 
-## Reading honestly
+A report of 30 lines at most: the numbers with their method, the limits of the window, 2 or 3 findings
+and 1 to 3 actions, each tied to a number.
 
-With [`/kaizen-ops:deploy`](../../../kaizen-ops/docs/guides/deploy.md), the indicators come from **real** deployments and incidents;
-without them, they are **approximations** from the default branch, and each indicator shows its method.
-Learnings written but never cited mean the loop does not close: see
-[Troubleshooting](../troubleshooting.md#the-learnings-are-not-reused).
+```
+Delivery (90d, approximated from main + GitHub)
+  7.9 changes/week · lead time 6 h (PR opened → merged) · rework 12 % · change failure 4 %
+  batch size: median 180 lines, p90 900, 31 % above pr.max_lines (400)
+Learnings: 24, reuse 38 % (6 read by a plan, 4 applied in commits), 9 never cited
+Friction: 14 pushes stopped (12 no review), unblocked in 18 min median, 7 % pushed without a review
+Cost: feature median 2.1 M tokens (sonnet-weighted), most expensive SHOP-412
 
-## See also
+→ p90 of 900 lines: split with /kaizen:plan into smaller tasks
+→ 9 learnings never cited: /kaizen:learn prune
+```
 
-In depth: [metrics](../concepts/metrics.md).
+Claude never quotes a number the CLI did not produce, says when the window has fewer than 10 changes,
+and changes no code.
 
+## Cost of one item
 
-[postmortem](../../../kaizen-ops/docs/guides/postmortem.md) · [prune-learnings](prune-learnings.md) · [release](release.md) · [deploy](../../../kaizen-ops/docs/guides/deploy.md)
+`node $K cost <item>` — a Jira key, `branch:<name>`, `plan:<topic>`, or `current` for the work item of
+this branch — gives its tokens per model family and in relative units, from the first turn on it
+(spec, plan) to the last (PR follow-up). The ledger is local to your machine.

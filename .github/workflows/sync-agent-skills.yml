@@ -1,0 +1,90 @@
+name: sync-agent-skills
+
+# Copies Addy Osmani's agent-skills (addyosmani/agent-skills, MIT) into plugins/agent-skills/, the base Kaizen runs
+# on. Unlike kioku, this is third-party code whose scripts and hooks run on users' machines: a new upstream
+# commit is never pushed to main, it is proposed as a pull request (branch sync/agent-skills) for a human to review,
+# with the executable files it changes listed in its body. The copy is never edited here.
+#
+# Triggers: daily; by hand (Actions > sync-agent-skills > Run workflow).
+on:
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/scripts/sync-plugin*.mjs'
+      - '.github/workflows/sync-agent-skills.yml'
+      - 'plugins/kaizen/scripts/aliases.mjs'
+
+concurrency:
+  group: sync-agent-skills
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test .github/scripts/sync-plugin.test.mjs
+
+  sync:
+    needs: test
+    # A pull request only runs the tests: the sync runs from main.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: sync/agent-skills
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Copy agent-skills main into plugins/agent-skills
+        run: node .github/scripts/sync-plugin.mjs --plugin agent-skills --source addyosmani/agent-skills --ref main
+      - name: Regenerate Kaizen's /kaizen:<command> aliases of his commands
+        run: node plugins/kaizen/scripts/aliases.mjs
+      - name: Propose the copy as a pull request if it changed
+        run: |
+          git add -A plugins/agent-skills plugins/kaizen/commands .claude-plugin/marketplace.json
+          if git diff --cached --quiet; then
+            echo "plugins/agent-skills already up to date"
+            exit 0
+          fi
+          sha=$(sed -n 's/^sha: //p' plugins/agent-skills/.agent-skills-source)
+          # Executable changes first: scripts, hooks and anything a shell or Node can run.
+          executable=$(git diff --cached --name-only -- plugins/agent-skills \
+            | grep -E '(^|/)(hooks|scripts|bin)/|\.(sh|bash|mjs|cjs|js|ts|py|ps1|cmd|bat)$' || true)
+          others=$(git diff --cached --name-only -- plugins/agent-skills | grep -vxF -f <(printf '%s\n' "$executable") || true)
+          {
+            echo "Copy of [addyosmani/agent-skills@${sha:0:7}](https://github.com/addyosmani/agent-skills/commit/${sha}) into \`plugins/agent-skills/\`, by \`.github/workflows/sync-agent-skills.yml\`."
+            echo
+            echo "Third-party code: read the executable changes before merging. Never edit \`plugins/agent-skills/\` here; propose changes upstream."
+            echo
+            echo "### Executable changes"
+            if [ -n "$executable" ]; then printf -- '- `%s`\n' $executable; else echo "None."; fi
+            echo
+            echo "### Other changes"
+            if [ -n "$others" ]; then printf -- '- `%s`\n' $others | head -200; else echo "None."; fi
+          } > "$RUNNER_TEMP/body.md"
+          git switch -c "$BRANCH"
+          git -c user.name=Claude -c user.email=noreply@anthropic.com commit -q \
+            -m "chore(agent-skills): sync plugins/agent-skills to addyosmani/agent-skills@${sha:0:7}" \
+            -m "Copied by .github/workflows/sync-agent-skills.yml from https://github.com/addyosmani/agent-skills/commit/${sha}"
+          git push --force origin "$BRANCH"
+          title="chore(agent-skills): sync to addyosmani/agent-skills@${sha:0:7}"
+          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')" ]; then
+            gh pr edit "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --base main --head "$BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md"
+          fi

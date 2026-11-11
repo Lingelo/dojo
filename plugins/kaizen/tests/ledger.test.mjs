@@ -36,7 +36,7 @@ test('readNew: only complete lines, each message once, offsets carried over', ()
   cleanup(dir);
 });
 
-test('Stop hook: plan on the default branch, then its fix branch, subagents, unattributed', () => {
+test('Stop hook: default branch unattributed, then a feature branch and a fix branch, subagents', () => {
   const dir = tempRepo({ '.kaizen/config.json': {}, 'app.js': 'a\n' });
   const proj = join(dir, '..', `${dir.split(/[\\/]/).pop()}-proj`);
   mkdirSync(join(proj, 'S1', 'subagents'), { recursive: true });
@@ -45,12 +45,13 @@ test('Stop hook: plan on the default branch, then its fix branch, subagents, una
   // Nothing identifies the work yet.
   writeFiles(proj, { 'S1.jsonl': msg('a1', 'claude-opus-5-5', 100000) });
   stop(dir, transcript);
-  // A plan is being written on the default branch: its jira key names the item.
-  writeFiles(dir, { 'docs/plans/2026-10-20-export.md': '---\ntitle: CSV export - Plan\ntype: feat\ntopic: csv-export\njira: SHOP-412\n---\n# CSV export - Plan\n' });
+  // A feature branch: its Jira key names the item, agent-skills' spec its title.
+  gitc(dir, ['checkout', '-qb', 'feat/SHOP-412-export']);
+  writeFiles(dir, { 'SPEC.md': '# Spec: CSV export\n' });
   appendFileSync(transcript, msg('a2', 'claude-opus-5-5', 2000000));
   stop(dir, transcript);
-  // A fix branch: the branch key wins; subagent tokens are charged too.
-  gitc(dir, ['add', '-A'], ['commit', '-qm', 'docs: plan'], ['checkout', '-qb', 'fix/SHOP-7-crash']);
+  // A fix branch: subagent tokens are charged too.
+  gitc(dir, ['add', '-A'], ['commit', '-qm', 'docs: spec'], ['checkout', '-q', 'main'], ['checkout', '-qb', 'fix/SHOP-7-crash']);
   appendFileSync(transcript, msg('a3', 'claude-sonnet-5-5', 50000));
   writeFiles(join(proj, 'S1', 'subagents'), { 'agent-x.jsonl': msg('s1', 'claude-haiku-5-5', 1000000) });
   stop(dir, transcript);

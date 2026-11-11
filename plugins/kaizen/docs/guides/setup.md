@@ -1,85 +1,49 @@
-# `/kaizen:setup`
+# `/kaizen:setup` — Kaizen in a repository, and where it stands
 
-> Set up the SDLC on a project: diagnose what it is missing, install Kaizen, check it is healthy, or
-> create a Kaizen Pack.
-
-## At a glance
-
-| | |
-|---|---|
-| **What it does** | Creates the config and the folders, has the verification commands validated, sets language, tracker, documents location and PR limit, makes the learnings findable from `CLAUDE.md`, mentions the constitution as optional, detects the deployment platform |
-| **When to use it** | First use in a repo; `audit` to find out what the project is missing and fix it in order; `check` when something looks wrong; `pack:<name>` to create a pack |
-| **When not to use it** | Writing the project's principles (→ [constitution](constitution.md), optional, best after a first cycle) |
-| **What it produces** | `.kaizen/config.json`, `docs/{plans,learnings,ideation}/`, one line in `.gitignore`, possibly a section in `CLAUDE.md` and scaffolded files (`audit`) |
-| **What next** | `/kaizen:plan <what to build>`, then `/kaizen:work`, then `/kaizen:ship` ([the four-command path](../../README.md#start-here-four-commands)); `/kaizen:constitution` whenever you want sharper rules |
-
-## Examples
-
-```text
-/kaizen:setup audit           # project SDLC maturity, guided fixes by priority
-/kaizen:setup                 # guided installation
-/kaizen:setup check           # health check, no writes
-/kaizen:setup pack:house-rules
-/kaizen:setup pack:house-rules first rule: every CSV export starts with a BOM
+```
+/kaizen:setup          # set up, or say what to run next
+/kaizen:setup check    # read-only: report the guard rails, write nothing
 ```
 
-![What Kaizen writes in your repo and who reads it](../media/diagrams/artifacts-map.svg)
+## When
 
-In depth: [state and files](../reference/state-and-files.md).
+- The first time in a repository, or in a fresh clone where `kaizen doctor` shows ⚠.
+- "Where are we? What do I run now?" — it names the next command.
 
-## The audit: setting up the SDLC
+Not for writing a spec, a plan or code: that is `/kaizen:spec`, `/kaizen:plan`, `/kaizen:build`
+(agent-skills).
 
-`node $K audit` scores the project on five areas — foundations, flow, delivery, operations, Kaizen loop —
-each check `ok`, `warn`, `missing` or `unknown` with its evidence and a priority. Claude then offers to
-fix each point, **P1 first**, one by one, with your approval: scaffolds generated from your stack and
-never written over an existing file (`audit fix ci`, `pr_template`, `dependabot`, `codeowners`,
-`gitignore_env`, `secret_scanning`, `monitor_patrol`, `monitor_alert`, `git_hooks`, `claude_settings`), deployment through
-`deploy detect`, the exact branch protection settings for you to apply. The audit is rerun at the end to
-show the before/after. Every check and scaffold: [SDLC audit](../reference/audit.md).
+## What it does
 
-## The installation, step by step
+1. **Diagnoses**: `kaizen doctor` and `kaizen status`. With `check`, it stops here.
+2. **Initializes** `.kaizen/config.json` and `docs/learnings/` when they are missing.
+3. **Validates the verification commands**: shows the `test`, `lint`, `typecheck` it detected, asks
+   whether they are right and runs them once. These are what the [quality gate](../concepts/gates.md#the-quality-gate)
+   runs after every turn that edits code; a slow suite goes to `gate.targeted`.
+4. **Declares both plugins** in the versioned `.claude/settings.json` (`kaizen@dojo`,
+   `agent-skills@dojo`, the dojo marketplace) — asks first. Every clone and cloud session then gets them.
+5. **Makes the learnings findable** for other tools: with your approval, a line in `CLAUDE.md` or
+   `AGENTS.md`.
+6. **Names the next command**, in the [decision order](../concepts/the-loop.md#knowing-where-you-are).
 
-1. **Initialize**: `node $K init`, idempotent (never overwrites an existing config).
-2. **Checks**: Claude shows you the detected `test`, `lint` and `typecheck` commands. You keep them,
-   adjust them, or disable the gate. It runs them once to make sure they already pass on the default
-   branch. Slow suite → targeted checks for the gate (`gate.targeted` with `{files}`).
-3. **Language**: `auto` (follows the conversation), or pinned (`en`, `fr`…) for the deliverables.
-4. **Tracker**: `auto` (Jira read from the branch, GitHub through `gh`).
-5. **Location**: `docs_root` (`docs` by default). To change **before** the first documents if `docs/`
-   is already a published site.
-6. **Findability** (with your approval): a short section in `CLAUDE.md`, so that any agent reads
-   `docs/learnings/` before planning or debugging.
-7. **Constitution**: proposed if missing, checked if it exists.
-8. **PR size**: `pr.max_lines` (400 by default).
-9. **Deployment and monitoring** (optional): `deploy detect` recognizes your platform and proposes
-   commands, rollback and health-check; you choose. See [deploy](../../../kaizen-ops/docs/guides/deploy.md).
-10. **Profile**, by the repo's stakes: `prototype` (spike, internal tool), `product` (product in
-    production) or `critical` (regulated or critical domains). It also sets each agent's model.
-    See [Configuration](../configuration.md#profile) and
-    [`models`](../configuration.md#models--the-right-model-for-each-task).
-11. **Summary**.
+## What you get
 
-## The health check (`check`)
+```
+✔ config        .kaizen/config.json
+✔ agent_skills  agent-skills@dojo enabled
+✔ verify        test: npm test · lint: npm run lint
+Next: /kaizen:spec <what to build>
+```
 
-Config, detected checks, learnings, packs, constitution, gate, review state and models, each shown ✔ or
-⚠ with the proposed fix.
+Every ⚠ is a guard rail that is off, with its fix: [Doctor](../concepts/gates.md#doctor).
 
-## Good to know
+## Files written
 
-- What `setup` creates is to be **committed**: the config and the folders are shared by the team.
-  `.kaizen/config.local.json` and `.kaizen/state/` are not versioned.
-- The scaffolds stay uncommitted: review them before committing.
+`.kaizen/config.json` ([Configuration](../reference/configuration.md)), `docs/learnings/`, and with your
+approval `.claude/settings.json`, one line in `CLAUDE.md`/`AGENTS.md`. Commit them: the
+team shares them.
 
-## Guard rails without the plugin
+## Optional next step
 
-Setup starts with `kaizen doctor`. After a Kaizen update, it lists what the repository still has to
-change (`kaizen upgrade`: renamed profile, kaizen-ops to enable, git hooks to refresh, a folder to rename
-by hand) and offers `kaizen upgrade --apply` for the automatable ones; `setup check` runs it too. It offers, with your consent: `audit fix claude_settings`
-(declares `kaizen@dojo` in the versioned `.claude/settings.json`, so every clone loads Kaizen) and
-`audit fix git_hooks` (git hooks that refuse an unreviewed push and a staged secret even when the plugin
-is not loaded; they refuse when the Kaizen CLI cannot be found — set `git config kaizen.cli
-<path>/scripts/kaizen.mjs` when Kaizen runs from a checkout rather than the plugin cache).
-
-## See also
-
-[Getting started](../getting-started.md) · [Configuration](../configuration.md) · [Kaizen Packs](../packs.md) · [constitution](constitution.md)
+`/kaizen:constraints` (agent-skills) writes the project's quality bar, `CONSTRAINTS.md`, and installs its
+floor guard. `kaizen doctor` then checks that the guard is wired (`floor_guard`).

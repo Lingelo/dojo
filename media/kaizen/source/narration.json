@@ -2,15 +2,15 @@
   "lines": [
     { "id": "hook",    "at": 0.6, "text": "AI writes code faster than ever." },
     { "id": "amp",     "at": 3, "text": "According to DORA 2025 and 2026, it speeds up delivery, but also increases instability.", "pause": 0.6 },
-    { "id": "kaizen",  "at": 11.07, "text": "Kaizen turns Claude Code into a controlled development cycle.", "pause": 0.6 },
-    { "id": "const",   "at": 14.95, "text": "Everything starts from a constitution: your principles, each with a verifiable check." },
-    { "id": "plan1",   "at": 21.58, "text": "The brainstorm defines what to build. The plan decides how." },
-    { "id": "plan2",   "at": 27.04, "text": "Requirements, tests, rollback: everything is traced, then reviewed by specialized agents.", "pause": 0.6 },
-    { "id": "gate",    "at": 35.44, "text": "During the work, a quality gate blocks the end of a step while tests are red." },
-    { "id": "review",  "at": 41.69, "text": "Reviewers chosen for the changed code inspect it, and without their review, nothing is pushed.", "pause": 0.6 },
-    { "id": "ship",    "at": 48.87, "text": "The pull request is described, its size checked, then it is followed until it is ready.", "caption": "The PR is described, its size checked, then it is followed until it is ready." },
+    { "id": "kaizen",  "at": 11.07, "text": "Kaizen is the engine around Addy Osmani's agent skills.", "caption": "Kaizen is the engine around Addy Osmani's agent-skills.", "pause": 0.6 },
+    { "id": "const",   "at": 14.95, "text": "Everything starts from a quality bar: constraints, each enforced by a check that runs." },
+    { "id": "plan1",   "at": 21.58, "text": "The spec defines what to build. The plan decides how." },
+    { "id": "plan2",   "at": 27.04, "text": "Small tasks, each with its test and its verification. Past lessons come back by themselves.", "pause": 0.6 },
+    { "id": "gate",    "at": 35.44, "text": "As soon as code changes, a quality gate keeps the turn open while tests are red." },
+    { "id": "review",  "at": 41.69, "text": "The five-axis review records itself, and without a review, nothing is pushed.", "pause": 0.6 },
+    { "id": "ship",    "at": 48.87, "text": "Ship runs the launch checklist, then the pull request is followed until it is ready.", "caption": "Ship runs the launch checklist, then the PR is followed until it is ready." },
     { "id": "merge",   "at": 57.26, "text": "Merging and going to production stay in your hands.", "pause": 0.7 },
-    { "id": "loop1",   "at": 61.24, "text": "Finally, durable lessons are captured, and read back by the next cycle." },
+    { "id": "loop1",   "at": 61.24, "text": "Finally, durable lessons are captured, and come back by themselves next cycle." },
     { "id": "loop2",   "at": 67.76, "text": "The goal: every unit of work makes the next one easier.", "pause": 0.8 },
-    { "id": "outro",   "at": 74.06, "text": "Kaizen. For Claude Code." }
+    { "id": "outro",   "at": 74.06, "text": "Kaizen and agent skills. For Claude Code.", "caption": "Kaizen and agent-skills. For Claude Code." }
   ] }

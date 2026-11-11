@@ -1,61 +1,56 @@
-# `/kaizen:learn`
+# `/kaizen:learn` — capture, harvest and prune learnings
 
-> Write **one** durable learning in `docs/learnings/`, where the next plan and the next review will read
-> it. This is the step that makes the next cycle easier.
-
-## At a glance
-
-| | |
-|---|---|
-| **What it does** | Applies the durability test, gathers the problem, symptoms, dead ends, solution and prevention, looks for an existing learning to update, classifies with the corpus vocabulary, writes and validates |
-| **When to use it** | After **verified** work that produced non-obvious reasoning: an API trap, a surprising cause, a costly dead end, a decision hard to reconstruct |
-| **When not to use it** | A routine fix the test and the commit message already explain; a problem not solved yet |
-| **What it produces** | `docs/learnings/<category>/<title>.md`, new or updated, validated frontmatter; or "Learning not written: <reason>" |
-| **What next** | The learning is read by `learnings-researcher` at every plan, brainstorm, review and debug |
-
-## Examples
-
-```text
-/kaizen:learn
-/kaizen:learn the UTF-8 BOM for Excel
-/kaizen:learn mode:auto                 # no questions (used by work, autopilot, debug)
-/kaizen:learn harvest                   # end of a long cycle: list every candidate, choose, write one at a time
+```
+/kaizen:learn                   # capture the problem just solved
+/kaizen:learn the CSV encoding  # with a hint of what to capture
+/kaizen:learn harvest           # every lesson of the branch, one learning each
+/kaizen:learn prune             # keep the corpus true
 ```
 
-`harvest` reads the whole cycle (fix and revert commits, fixed review findings, plan amendments, dead
-ends in the conversation), applies the durability test to each candidate, finds the existing learnings
-to update, asks which to write, then writes them one complete run at a time — still one learning per
-document.
+How learnings work — the format, the durability test, how they come back: [Learnings](../concepts/learnings.md).
 
-![How learnings are written, read back, measured and pruned](../media/diagrams/learnings-loop.svg)
+## When
 
-In depth: [learnings](../concepts/learnings.md).
+- **Capture**: a problem was just solved **and verified**, and its cause was not obvious.
+- **Harvest**: a piece of work is finished and taught several things; none should be lost.
+- **Prune**: learnings are old, contradicted by the code or duplicated — `/kaizen:metrics` lists the
+  ones never cited.
 
-## The durability test
+## Capture
 
-> If this document disappeared, would a future developer reading the final implementation probably
-> make the mistake again, or redo the same investigation?
+Claude applies the durability test first. If the knowledge already lives in a test, a commit message or
+a comment, it **writes nothing** and says where it lives. Otherwise it gathers the exact symptoms, what
+was tried and failed, the fix and why it works; searches for an existing learning on the same problem
+(and updates it rather than adding a duplicate); classifies it with the corpus vocabulary; writes it from
+the template; and validates it (`kaizen learnings validate`). It adds `files:` when the lesson is about
+specific files: editing them later brings it back.
 
-If the answer is no, nothing is written and Claude says why (a typo fixed in the README: "the diff and
-the commit message are enough").
+```
+Learning written: docs/learnings/integration-issues/csv-export-excel-bom.md
+Track: bug · found by: csv, excel, encoding, bom · comes back when src/exports/** is edited
+```
 
-## A learning
+## Harvest
 
-A Markdown file in `docs/learnings/` with a validated frontmatter, on one of two tracks: **bug**
-(`symptoms`, `root_cause`, `resolution_type` required) or **knowledge** (`applies_when` recommended).
-Schema and a full example: [learnings](../concepts/learnings.md#format).
+Claude lists the candidates of the branch — fix and revert commits, review findings fixed, dead ends
+visible in the conversation — one line each with its evidence, drops those that fail the durability
+test, and asks which to write. Each chosen one is a separate capture: never one merged document.
 
-## Good to know
+## Prune
 
-- **One learning per run.** Several learnings means several successive runs.
-- **Corpus vocabulary first**: `component`, `root_cause` and the folder reuse the values already used in
-  `docs/learnings/` (`node $K learnings stats`), so that searches find them.
-- An existing learning that became wrong is **updated**, not duplicated.
-- A learning that holds for the whole team can become a **pack rule**: Claude proposes it.
-- `retire_when`: only if the learning depends on a state outside the repo (upstream bug, tool version):
-  the change that would retire it and how to check it without touching the repo.
-- Nothing secret or personal in a learning (`<REDACTED>`).
+Claude checks each candidate against the current code — paths and symbols still there, `retire_when`
+met, the same lesson elsewhere — and decides with the evidence: **Keep**, **Update**, **Merge**,
+**Replace** or **Delete**. It asks before deleting or merging, and never touches product code. A
+`retire_when` met while the workaround is still in the code: it keeps the learning and recommends
+removing the workaround.
 
-## See also
+## Unattended
 
-[prune-learnings](prune-learnings.md) · [Kaizen Packs](../packs.md) · [metrics](metrics.md)
+`mode:auto` asks nothing and ends with exactly `Learning written: <path>` or
+`Learning not written: <reason>` — for a scheduled task or a script. Prune in `mode:auto` only updates
+and keeps; it reports the rest.
+
+## Without the skill
+
+`node $K learnings search <words…>`, `learnings validate [files…]`, `learnings list [--retire]`,
+`learnings stats` ([CLI](../reference/cli.md#learnings)).
