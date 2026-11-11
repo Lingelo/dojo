@@ -42,7 +42,6 @@ touches and, when it cannot be automated, the steps to run by hand.
 
 | Migration | Since | Applies when | `--apply` |
 |---|---|---|---|
-| `production-removed` | 6.0.0 | `deploy` or `monitor` in `.kaizen/config.json` / `config.local.json`, or `kaizen-ops@dojo` in `.claude/settings.json` | by hand: remove them, move the commands to your own tools |
 | `agent-skills-base` | 6.0.0 | `.claude/settings.json` declares `kaizen@dojo` but not `agent-skills@dojo`, or keys and files of Kaizen 5.x remain (`profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `CONSTITUTION.md`, `kaizen-packs/`) | declares `agent-skills@dojo`; the rest by hand ([Migrating to 6.0](../migrating-to-6.md)) |
 
 `--apply` runs the automatable ones that still apply, writes only what each owns (formatting and team

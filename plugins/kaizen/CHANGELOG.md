@@ -69,7 +69,7 @@ roadmap: `docs/ideation/2026-11-09-kaizen-6-ideation.md` of the dojo repository.
 - **`kaizen doctor`**: `agent_skills` (is `agent-skills@dojo` enabled) and `floor_guard` (when
   `CONSTRAINTS.md` exists, does its floor guard run from a git hook or CI).
 - **`kaizen upgrade`**: `agent-skills-base` (declares `agent-skills@dojo`; lists the 5.x keys and files
-  to remove by hand) and `production-removed`.
+  to remove by hand).
 - **The four skills follow agent-skills' anatomy**: Overview, When to Use, Process, Common
   Rationalizations, Red Flags, Verification.
 - Documentation rewritten: getting started, one guide per skill, concepts (the loop, gates and hooks,

@@ -79,34 +79,6 @@ test('agent-skills-base: a constitution and Kaizen Packs are turned into CONSTRA
   cleanup(dir);
 });
 
-test('production-removed: deploy/monitor config and kaizen-ops listed by hand, never touched (6.0)', () => {
-  const dir = tempRepo({
-    '.kaizen/config.json': { deploy: { environments: { production: { command: 'make deploy' } } }, monitor: { signals: {} } },
-    '.claude/settings.json': { enabledPlugins: { 'kaizen@dojo': true, 'kaizen-ops@dojo': true } },
-  });
-  const [m] = run(dir, ['upgrade', '--json']).json.pending;
-  assert.equal(m.id, 'production-removed');
-  assert.equal(m.since, '6.0.0');
-  assert.equal(m.auto, false);
-  assert.deepEqual(m.files, ['.kaizen/config.json', '.claude/settings.json']);
-  assert.equal(m.manual.length, 3);
-  assert.match(m.manual.join('\n'), /remove the "deploy" key from \.kaizen\/config\.json/);
-  assert.match(m.manual.join('\n'), /remove "kaizen-ops@dojo" from enabledPlugins in \.claude\/settings\.json/);
-  const before = read(dir, '.kaizen/config.json');
-  run(dir, ['upgrade', '--apply']);
-  assert.equal(read(dir, '.kaizen/config.json'), before, 'never edited by Kaizen');
-  cleanup(dir);
-});
-
-test('each migration: does not apply once fixed by hand, nor when its trigger is absent', () => {
-  // Production leftovers removed by hand: nothing to migrate.
-  const ops = tempRepo({ '.kaizen/config.json': { monitor: { signals: { up: { type: 'http', url: 'https://x' } } } } });
-  assert.deepEqual(run(ops, ['upgrade', '--json']).json.pending.map((m) => m.id), ['production-removed']);
-  writeFileSync(join(ops, '.kaizen', 'config.json'), '{}\n');
-  assert.deepEqual(run(ops, ['upgrade', '--json']).json.pending, []);
-  cleanup(ops);
-});
-
 test('AE4: doctor reports pending migrations with their count, ids and the fix', () => {
   const dir = oldRepo();
   const check = (d) => run(d, ['doctor', '--json']).json.checks.find((c) => c.id === 'upgrade');
@@ -118,12 +90,10 @@ test('AE4: doctor reports pending migrations with their count, ids and the fix',
   assert.match(check(dir).evidence, /1 Kaizen migration\(s\) pending \(agent-skills-base\)/, 'its manual step is left');
   writeFileSync(join(dir, '.kaizen', 'config.json'), '{}\n');
   assert.deepEqual([check(dir).status, check(dir).evidence], ['ok', 'nothing to migrate']);
-  // A manual one is counted as such; outside a Kaizen repo, no check at all.
-  const manual = tempRepo({ '.kaizen/config.json': { deploy: {} } });
-  assert.match(check(manual).evidence, /1 Kaizen migration\(s\) pending \(production-removed\), 1 by hand/);
+  // Outside a Kaizen repo, no check at all.
   const bare = tempRepo({ 'a.txt': 'a\n' });
   assert.equal(check(bare), undefined);
-  for (const d of [dir, manual, bare]) cleanup(d);
+  for (const d of [dir, bare]) cleanup(d);
 });
 
 // AE5: every release from 4.3.0 on that breaks or deprecates something declares its migration, or says
