@@ -97,5 +97,4 @@ The quality gate (Stop hook). It turns itself on when a session edits a code fil
 ## Removed in 6.0
 
 `profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `deploy`, `monitor`, `approvals` and `review.confirm_above_cost`
-are no longer read. `kaizen upgrade` lists the ones left in a repository:
-[Migrating to 6.0](../migrating-to-6.md).
+are no longer read: remove them ([Migrating to 6.0](../migrating-to-6.md)).

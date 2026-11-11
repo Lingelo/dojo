@@ -244,7 +244,7 @@ written.push(
     d.arrow(['learn.b', [840, 470]], { tone: 'blue', label: 'writes' });
     d.arrow([[100, 470], [100, 404], [d.pt('g1.b')[0], 404], 'g1.b'], { tone: 'ok', label: 'read back', at: 1 });
     d.box('metrics', 36, 548, 330, 52, 'skill', '/kaizen:metrics', 'DORA approximated · learnings reuse · friction · cost');
-    d.box('setup', 390, 548, 330, 52, 'skill', '/kaizen:setup', 'config, both plugins declared, doctor, upgrade');
+    d.box('setup', 390, 548, 330, 52, 'skill', '/kaizen:setup', 'config, both plugins declared, doctor');
     d.legend(36, 640, LEGEND);
   }),
 );

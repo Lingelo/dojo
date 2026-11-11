@@ -33,24 +33,6 @@ Are the guard rails on? One line per check with the command that fixes it:
 [Doctor](../concepts/gates.md#doctor). `--in-skill` (passed by `/kaizen:setup`) reports missing hooks as
 "off" rather than "not verified". Exit 0, or 1 with `--strict` when anything needs attention.
 
-### `upgrade [--apply] [--json]`
-
-The migrations this repository still needs after a Kaizen update, detected from its state (files,
-settings, hooks, folders), never from a remembered version: a fresh clone and a repository fixed by hand
-get the same answer. Each line gives the version that introduced it, why it applies, the files it
-touches and, when it cannot be automated, the steps to run by hand.
-
-| Migration | Since | Applies when | `--apply` |
-|---|---|---|---|
-| `agent-skills-base` | 6.0.0 | `.claude/settings.json` declares `kaizen@dojo` but not `agent-skills@dojo`, or keys and files of Kaizen 5.x remain (`profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `CONSTITUTION.md`, `kaizen-packs/`) | declares `agent-skills@dojo`; the rest by hand ([Migrating to 6.0](../migrating-to-6.md)) |
-
-`--apply` runs the automatable ones that still apply, writes only what each owns (formatting and team
-lines kept) and ends with the files to commit; run twice, it changes nothing. Nothing is pending outside
-a Kaizen repository. `kaizen doctor` reports the pending ones (check `upgrade`).
-
-A release that breaks or deprecates something declares its migration here, or why it needs none
-(`NO_MIGRATION` in `scripts/upgrade.mjs`): a contract test fails otherwise.
-
 ### `root`
 
 The deliverable paths as JSON: `repo`, `docs_root`, `learnings`, `config_file`.
@@ -194,6 +176,6 @@ refused):
 | `run-bounded.mjs <ms> <command>` | internal: runs a command and kills its whole process tree on timeout |
 
 The other scripts are modules the CLI loads: `lib.mjs`, `review-state.mjs`,
-`learnings.mjs`, `agentskills.mjs`, `secrets.mjs`, `doctor.mjs`, `upgrade.mjs`,
+`learnings.mjs`, `agentskills.mjs`, `secrets.mjs`, `doctor.mjs`,
 `metrics.mjs`, `ledger.mjs`, `pr.mjs`, and `aliases.mjs`, which generates `commands/`
 from agent-skills' commands (`--check` fails when they differ).

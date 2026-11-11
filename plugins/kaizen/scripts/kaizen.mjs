@@ -10,7 +10,6 @@
 //   node kaizen.mjs detect                       stack and verification commands (JSON)
 //   node kaizen.mjs verify [--only test,lint] [--json]     runs the checks (exit 1 if red)
 //   node kaizen.mjs doctor [--in-skill] [--json] [--strict]   are the guard rails on? exit 1 with --strict
-//   node kaizen.mjs upgrade [--apply] [--json]   what this repo still has to change after a Kaizen update
 //   node kaizen.mjs install settings             kaizen@dojo and agent-skills@dojo declared for every clone
 //   node kaizen.mjs gate status | off             quality gate of this session (on by itself when code is edited)
 //   node kaizen.mjs review status | check
@@ -32,7 +31,6 @@ import { declarePlugin, doctor, formatDoctor } from './doctor.mjs';
 import { isEmpty, loadLearnings, searchLearnings, termsOf, validateLearning } from './learnings.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { checkPush, currentBranch, reviewStatus } from './review-state.mjs';
-import { applyAll, formatUpgrade, pending as pendingMigrations } from './upgrade.mjs';
 import { DEFAULT_CONFIG, changedFiles, defaultBranch, detectStack, diffBase, docsRoot, git, loadConfig, readState, repoRoot, runVerify, verifyCommands, walkMarkdown } from './lib.mjs';
 
 const argv = process.argv.slice(2);
@@ -272,17 +270,6 @@ try {
       const r = doctor(requireRepo(), { inSkill: !!flags['in-skill'] });
       out(flags.json ? r : formatDoctor(r));
       if (flags.strict && r.status !== 'ok') process.exit(1);
-      break;
-    }
-    case 'upgrade': {
-      const root = requireRepo();
-      if (flags.apply) {
-        const result = applyAll(root);
-        out(flags.json ? result : formatUpgrade(null, result));
-      } else {
-        const list = pendingMigrations(root);
-        out(flags.json ? { pending: list } : formatUpgrade(list));
-      }
       break;
     }
     case 'install': {

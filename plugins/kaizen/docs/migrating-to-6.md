@@ -11,9 +11,8 @@ Why: [Positioning](positioning.md#why-agent-skills).
 
 1. **Install agent-skills** next to Kaizen: `/plugin install agent-skills@dojo` (after
    `/plugin marketplace update dojo`).
-2. **Run `node $K upgrade`** (or `/kaizen:setup`): it lists what this repository still has to change.
-   `node $K upgrade --apply` declares `agent-skills@dojo` in `.claude/settings.json`; the rest is by hand,
-   below.
+2. **Declare both plugins for every clone**: `/kaizen:setup` (or `node $K install settings`) adds
+   `agent-skills@dojo` next to `kaizen@dojo` in `.claude/settings.json`. The rest is by hand, below.
 3. **Clean the configuration**: remove from `.kaizen/config.json` (and `config.local.json`) the keys no
    longer read — `profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `deploy`, `monitor`,
    `approvals`, `review.confirm_above_cost`. Remove `kaizen-ops@dojo` from `.claude/settings.json`.
@@ -72,6 +71,7 @@ The agent-skills commands also answer to their own prefix: `/agent-skills:spec` 
 | `audit`, `audit fix claude_settings` | `doctor`; `install settings` |
 | `install git-hooks`, `githook`, `audit fix git_hooks` | — (Kaizen's gates are Claude Code hooks) |
 | `metrics dashboard` | `metrics`, `cost` |
+| `upgrade`, `upgrade --apply` | this guide |
 | `review waive`, `confirm <code>`, `kaizen waive <code>` | push again when Claude asks: Claude Code's prompt asks you to confirm |
 | `deploy`, `monitor`, `postmortem new` | your tools |
 

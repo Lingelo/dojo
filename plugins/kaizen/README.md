@@ -155,7 +155,6 @@ node $K config                                 # effective configuration
 node $K detect                                 # stack and verification commands
 node $K verify [--only test,lint] [--json]     # the checks (exit 1 if red)
 node $K doctor [--in-skill] [--json] [--strict]   # are the guard rails on?
-node $K upgrade [--apply] [--json]             # what this repo still has to change after a Kaizen update
 node $K install settings                       # both plugins declared for every clone
 node $K gate status | off                      # this session's quality gate
 node $K review status | check                 # review state, push decision

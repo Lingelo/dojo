@@ -9,7 +9,6 @@
 
 - The first time in a repository, or in a fresh clone where `kaizen doctor` shows ⚠.
 - "Where are we? What do I run now?" — it names the next command.
-- After a Kaizen update: `kaizen upgrade` lists what the repository still has to change.
 
 Not for writing a spec, a plan or code: that is `/kaizen:spec`, `/kaizen:plan`, `/kaizen:build`
 (agent-skills).
@@ -25,8 +24,7 @@ Not for writing a spec, a plan or code: that is `/kaizen:spec`, `/kaizen:plan`, 
    `agent-skills@dojo`, the dojo marketplace) — asks first. Every clone and cloud session then gets them.
 5. **Makes the learnings findable** for other tools: with your approval, a line in `CLAUDE.md` or
    `AGENTS.md`.
-6. **Lists pending migrations** (`kaizen upgrade`) and offers to apply the automatable ones.
-7. **Names the next command**, in the [decision order](../concepts/the-loop.md#knowing-where-you-are).
+6. **Names the next command**, in the [decision order](../concepts/the-loop.md#knowing-where-you-are).
 
 ## What you get
 

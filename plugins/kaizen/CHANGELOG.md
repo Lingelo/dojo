@@ -30,6 +30,8 @@ roadmap: `docs/ideation/2026-11-09-kaizen-6-ideation.md` of the dojo repository.
   `size`, `release`, `dev`, `run-dir`, `audit`, `review record`, `review estimate`, `gate on`,
   `metrics dashboard` (the HTML cost dashboard: `metrics` and `cost` give the same numbers).
   `audit fix claude_settings` becomes `install settings`.
+- **`kaizen upgrade` removed**, with its migrations and the doctor's `upgrade` check: the steps from
+  5.x are in [Migrating to 6.0](docs/migrating-to-6.md).
 - **Review waivers and `approvals` removed** (`review waive`, `confirm`, the UserPromptSubmit hook,
   `waivers.json`, `confirm-asks.json`, `approvals: "code"`). One flow remains: an unreviewed push is
   stopped once, Claude asks you, the review first; pushing again reaches Claude Code's own permission
@@ -68,8 +70,6 @@ roadmap: `docs/ideation/2026-11-09-kaizen-6-ideation.md` of the dojo repository.
   `metrics` counts the learnings they cite.
 - **`kaizen doctor`**: `agent_skills` (is `agent-skills@dojo` enabled) and `floor_guard` (when
   `CONSTRAINTS.md` exists, does its floor guard run from a git hook or CI).
-- **`kaizen upgrade`**: `agent-skills-base` (declares `agent-skills@dojo`; lists the 5.x keys and files
-  to remove by hand).
 - **The four skills follow agent-skills' anatomy**: Overview, When to Use, Process, Common
   Rationalizations, Red Flags, Verification.
 - Documentation rewritten: getting started, one guide per skill, concepts (the loop, gates and hooks,
