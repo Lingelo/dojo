@@ -64,5 +64,5 @@ export function hook(script, payload, args = []) {
 
 // agent-skills' code-reviewer persona returning a review (PostToolUse on the Agent tool).
 export function personaReview(dir, text = '## Review Summary\n\n**Verdict:** APPROVE\n\n### Critical Issues\n- None\n', session = 'S1') {
-  return hook(REVIEW_HOOKS, { cwd: dir, session_id: session, tool_name: 'Agent', tool_input: { subagent_type: 'agent-skills:code-reviewer', prompt: 'Review the branch' }, tool_response: { content: [{ type: 'text', text }] } }, ['--evidence']);
+  return hook(REVIEW_HOOKS, { cwd: dir, session_id: session, tool_name: 'Agent', tool_input: { subagent_type: 'kaizen:code-reviewer', prompt: 'Review the branch' }, tool_response: { content: [{ type: 'text', text }] } }, ['--evidence']);
 }

@@ -10,14 +10,16 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { docsRoot, git, loadConfig, verifyCommands } from './lib.mjs';
 import { checkPush, currentBranch } from './review-state.mjs';
 import { readAgentSkills } from './agentskills.mjs';
 
 export const MARKETPLACE = 'dojo';
 export const PLUGIN_ID = `kaizen@${MARKETPLACE}`;
-// Addy Osmani's agent-skills, shipped in the same marketplace: the base Kaizen runs on.
+// Addy Osmani's agent-skills is embedded in Kaizen; enabled on its own as well, its skills would load twice.
 export const AGENT_SKILLS_ID = `agent-skills@${MARKETPLACE}`;
+const EMBEDDED = fileURLToPath(new URL('../agent-skills/.agent-skills-source', import.meta.url));
 const DAY_MS = 24 * 3600 * 1000;
 
 function readJson(path) {
@@ -79,8 +81,8 @@ export function heartbeat(root) {
   return h && Date.parse(h.at) ? h : null;
 }
 
-// Declares the dojo marketplace, Kaizen and agent-skills in the versioned `.claude/settings.json`, so a
-// fresh clone or a cloud session loads both (`kaizen install settings`).
+// Declares the dojo marketplace and Kaizen in the versioned `.claude/settings.json`, so a fresh clone or a
+// cloud session loads it (`kaizen install settings`).
 const KAIZEN_SOURCE = 'Lingelo/dojo';
 export function declarePlugin(root) {
   const path = join(root, '.claude', 'settings.json');
@@ -94,7 +96,7 @@ export function declarePlugin(root) {
   }
   const markets = (settings.extraKnownMarketplaces ||= {});
   const plugins = (settings.enabledPlugins ||= {});
-  const wanted = [PLUGIN_ID, AGENT_SKILLS_ID];
+  const wanted = [PLUGIN_ID];
   const missing = wanted.filter((id) => plugins[id] !== true);
   if (markets[MARKETPLACE] && !missing.length) throw new Error(`${wanted.join(' and ')} already declared`);
   markets[MARKETPLACE] ||= { source: { source: 'github', repo: KAIZEN_SOURCE } };
@@ -126,9 +128,10 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     decl.declared ? null : 'node "$K" install settings',
   );
 
-  // agent-skills: the base of the workflow.
+  // agent-skills: embedded, the base of the workflow.
   const as = readAgentSkills(root);
-  const asOn = pluginEnabled(root, AGENT_SKILLS_ID);
+  const twice = pluginEnabled(root, AGENT_SKILLS_ID);
+  const version = /^sha: ([0-9a-f]{7})/m.exec(existsSync(EMBEDDED) ? readFileSync(EMBEDDED, 'utf8') : '')?.[1];
   const files = [
     as.spec?.path,
     as.plan?.path,
@@ -139,10 +142,12 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     const seen = files.length ? `reads ${files.join(', ')}` : 'none of its files yet (SPEC.md, tasks/, CONSTRAINTS.md)';
     add(
       'agent_skills',
-      'agent-skills (the workflow Kaizen guards)',
-      asOn ? 'ok' : 'warn',
-      asOn ? `${AGENT_SKILLS_ID} enabled; Kaizen ${seen}` : `${AGENT_SKILLS_ID} is not enabled: /kaizen:spec, plan, build, review, ship are missing, and no review can record itself`,
-      asOn ? null : 'node "$K" install settings (declares it next to kaizen@dojo), then a new session',
+      'agent-skills (embedded, the workflow Kaizen guards)',
+      twice ? 'warn' : 'ok',
+      twice
+        ? `${AGENT_SKILLS_ID} is enabled too: Kaizen embeds it, so its skills load twice`
+        : `embedded${version ? ` (addyosmani/agent-skills@${version})` : ''}; Kaizen ${seen}`,
+      twice ? `disable ${AGENT_SKILLS_ID} (/plugin), and remove it from .claude/settings.json if declared there` : null,
     );
   }
   if (as.constraints) {
@@ -152,7 +157,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
       'Floor guard (CONSTRAINTS.md)',
       wired.length ? 'ok' : 'warn',
       wired.length ? `runs from ${wired.join(', ')}` : 'CONSTRAINTS.md has a floor but no floor guard runs: skipped tests and silenced checks pass unnoticed',
-      wired.length ? null : 'install the reference of agent-skills/skills/constraint-driven-development/references/floor-guard.md in a pre-commit hook and the CI',
+      wired.length ? null : 'run /kaizen:constraints: it installs the floor guard (constraint-driven-development skill, references/floor-guard.md) in a pre-commit hook and the CI',
     );
   }
 

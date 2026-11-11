@@ -1,18 +1,22 @@
 #!/usr/bin/env node
 /**
- * Copies a plugin developed in its own repository into plugins/<plugin>/, so that it ships as an internal plugin of
- * this marketplace: kioku (Lingelo/kioku) and agent-skills (addyosmani/agent-skills). Why: Claude Code's marketplace
- * auto-update refreshes the marketplace and updates the plugins that live in it, but it did not update kioku while it
- * was an external source (observed 2026-11-03).
+ * Copies a plugin developed in its own repository into this marketplace: kioku (Lingelo/kioku) as an internal plugin
+ * of its own (plugins/kioku/), agent-skills (addyosmani/agent-skills) embedded in Kaizen (--into
+ * plugins/kaizen/agent-skills). Why a copy: Claude Code's marketplace auto-update refreshes the marketplace and updates
+ * the plugins that live in it, but it did not update kioku while it was an external source (observed 2026-11-03).
  *
  *   node .github/scripts/sync-plugin.mjs [--plugin <name>] [--source <owner/repo>] [--ref <branch|sha>] [--from <local git dir>]
+ *                                        [--into <folder of this repository>]
  *
  * - --plugin defaults to kioku; --source defaults to the plugin's known repository (required for any other plugin);
+ * - --into copies into that folder instead of plugins/<plugin>/, as part of another plugin: no marketplace entry of
+ *   its own is needed nor touched;
  * - reads the commit SHA of the ref (default: main);
  * - if plugins/<plugin>/.<plugin>-source already names that SHA, does nothing (exit 0, "up to date");
  * - otherwise replaces plugins/<plugin>/ with the tracked files of the source at that SHA (git archive), without
  *   .github/, and writes plugins/<plugin>/.<plugin>-source (repository and SHA, the provenance of the copy);
- * - points the plugin's marketplace entry, which must exist, to "./plugins/<plugin>" (idempotent; other fields kept).
+ * - without --into, points the plugin's marketplace entry, which must exist, to "./plugins/<plugin>" (idempotent; other
+ *   fields kept).
  * It never edits the plugin's files: plugins/<plugin>/ is a copy, changed in the plugin's own repository only.
  * Whether the copy is pushed or proposed as a pull request is the workflow's choice, not this script's.
  * Exit codes: 0 done or up to date; 1 error (nothing half-written: the copy is built aside, then swapped).
@@ -38,6 +42,7 @@ const plugin = opt('--plugin', 'kioku');
 const source = opt('--source', SOURCES[plugin] || null);
 const ref = opt('--ref', 'main');
 const from = opt('--from', null);
+const into = opt('--into', null);
 
 const git = (args, cwd) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 class SyncError extends Error {}
@@ -45,9 +50,12 @@ const fail = (message) => {
   throw new SyncError(message);
 };
 
-const TARGET = path.join(ROOT, 'plugins', plugin);
+// Checked before it names a folder: inside plugins/, a relative path without `..`.
+const intoOk = into === null || (/^plugins\/[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)+$/.test(into));
+const TARGET = into && intoOk ? path.join(ROOT, ...into.split('/')) : path.join(ROOT, 'plugins', plugin);
 const MARKER = `.${plugin}-source`;
-const STAGED = path.join(ROOT, 'plugins', `.${plugin}-staging-${process.pid}`);
+const STAGED = path.join(path.dirname(TARGET), `.${plugin}-staging-${process.pid}`);
+const SHOWN = into || `plugins/${plugin}`;
 const work = mkdtempSync(path.join(tmpdir(), 'sync-plugin-'));
 const sync = () => {
   // Checked first: the name becomes a folder of this repository.
@@ -55,6 +63,7 @@ const sync = () => {
   if (!source) fail(`--plugin ${plugin}: no known repository, pass --source <owner/repo>`);
   if (!/^[\w.-]+\/[\w.-]+$/.test(source)) fail(`--source "${source}": owner/repo expected`);
   if (!/^[\w./-]+$/.test(ref)) fail(`--ref "${ref}": a branch name or a SHA expected`);
+  if (!intoOk) fail(`--into "${into}": a folder under plugins/<plugin>/ expected (lowercase, no ..)`);
   // The source repository: a local clone (tests, --from) or a fresh shallow fetch of the public repository.
   let repo = from;
   if (!repo) {
@@ -68,9 +77,9 @@ const sync = () => {
   const markerFile = path.join(TARGET, MARKER);
   const current = existsSync(markerFile) ? readFileSync(markerFile, 'utf8').match(/^sha: ([0-9a-f]{40})$/m)?.[1] : null;
   const catalog = JSON.parse(readFileSync(CATALOG, 'utf8'));
-  const entry = catalog.plugins.find((p) => p.name === plugin);
-  if (!entry) fail(`no ${plugin} entry in .claude-plugin/marketplace.json`);
-  const catalogUpToDate = entry.source === `./plugins/${plugin}`;
+  const entry = into ? null : catalog.plugins.find((p) => p.name === plugin);
+  if (!into && !entry) fail(`no ${plugin} entry in .claude-plugin/marketplace.json`);
+  const catalogUpToDate = into ? true : entry.source === `./plugins/${plugin}`;
 
   if (current === sha && catalogUpToDate) {
     console.log(`sync-${plugin}: up to date (${source}@${sha.slice(0, 7)})`);
@@ -103,9 +112,10 @@ const sync = () => {
   if (JSON.parse(readFileSync(path.join(staged, '.claude-plugin', 'plugin.json'), 'utf8')).name !== plugin) fail(`plugin.json name is not "${plugin}"`);
   writeFileSync(
     path.join(staged, MARKER),
-    `# Copied by .github/scripts/sync-plugin.mjs. Do not edit plugins/${plugin}/: change ${plugin} in its own repository.\nrepository: https://github.com/${source}\nsha: ${sha}\n`,
+    `# Copied by .github/scripts/sync-plugin.mjs. Do not edit ${SHOWN}/: change ${plugin} in its own repository.\nrepository: https://github.com/${source}\nsha: ${sha}\n`,
   );
   rmSync(TARGET, { recursive: true, force: true });
+  mkdirSync(path.dirname(TARGET), { recursive: true });
   renameSync(staged, TARGET);
 
   if (!catalogUpToDate) {
@@ -113,7 +123,7 @@ const sync = () => {
     const indent = /\n {4}"/.test(readFileSync(CATALOG, 'utf8')) ? 4 : 2;
     writeFileSync(CATALOG, `${JSON.stringify(catalog, null, indent)}\n`);
   }
-  console.log(`sync-${plugin}: plugins/${plugin} now at ${source}@${sha.slice(0, 7)}${current ? ` (was ${current.slice(0, 7)})` : ''}`);
+  console.log(`sync-${plugin}: ${SHOWN} now at ${source}@${sha.slice(0, 7)}${current ? ` (was ${current.slice(0, 7)})` : ''}`);
 };
 let code = 0;
 try {

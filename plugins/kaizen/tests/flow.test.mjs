@@ -74,7 +74,7 @@ test('the whole cycle, hook by hook', () => {
   assert.match(first.stderr, /1\. "Run the review \(Recommended\)"/);
 
   // 7. /kaizen:review — agent-skills' skill loads (PostToolUse Skill), writes its review, the turn ends.
-  run(REVIEW_HOOKS, { tool_name: 'Skill', tool_input: { skill: 'agent-skills:code-review-and-quality' } }, ['--evidence']);
+  run(REVIEW_HOOKS, { tool_name: 'Skill', tool_input: { skill: 'kaizen:code-review-and-quality' } }, ['--evidence']);
   say('m3', '## Review Summary\n\n**Verdict:** APPROVE\n\n### Critical Issues\n- None\n', 60000);
   stop();
   const st = cli(dir, ['review', 'status']).json;

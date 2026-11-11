@@ -7,12 +7,13 @@ import { parseFrontmatter } from '../scripts/lib.mjs';
 import { PLUGIN } from './helpers.mjs';
 
 const ROOT = join(PLUGIN, '..', '..');
-const AGENT_SKILLS = join(ROOT, 'plugins', 'agent-skills');
+const AGENT_SKILLS = join(PLUGIN, 'agent-skills');
 const skills = readdirSync(join(PLUGIN, 'skills')).filter((d) => statSync(join(PLUGIN, 'skills', d)).isDirectory());
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (['node_modules', '.git', 'fixtures'].includes(e.name)) continue;
+    // agent-skills/ is the embedded upstream copy, never edited here.
+    if (['node_modules', '.git', 'fixtures', 'agent-skills'].includes(e.name)) continue;
     const full = join(dir, e.name);
     if (e.isDirectory()) walk(full, out);
     else if (e.name.endsWith('.md')) out.push(full);
@@ -23,9 +24,18 @@ const docs = walk(PLUGIN).map((f) => ({ file: relative(PLUGIN, f).split('\\').jo
 
 const commands = readdirSync(join(PLUGIN, 'commands')).map((f) => f.replace(/\.md$/, ''));
 
-test('four skills, nothing agent-skills already does', () => {
+test('four skills of its own, agent-skills embedded: its skills loaded, its personas as Kaizen agents', async () => {
   assert.deepEqual([...skills].sort(), ['learn', 'metrics', 'setup', 'watch']);
-  assert.ok(!existsSync(join(PLUGIN, 'agents')), 'agent-skills\' personas review; Kaizen ships no agent');
+  const manifest = JSON.parse(readFileSync(join(PLUGIN, '.claude-plugin/plugin.json'), 'utf8'));
+  assert.deepEqual(manifest.skills, ['./skills', './agent-skills/skills']);
+  assert.ok(existsSync(join(AGENT_SKILLS, '.agent-skills-source')), 'the embedded copy records its source');
+  const asSkills = readdirSync(join(AGENT_SKILLS, 'skills'));
+  assert.deepEqual(skills.filter((s) => asSkills.includes(s)), [], 'no Kaizen skill shadows one of agent-skills');
+  const { expectedAgents } = await import('../scripts/aliases.mjs');
+  const want = expectedAgents();
+  assert.deepEqual(readdirSync(join(PLUGIN, 'agents')).sort(), Object.keys(want).sort(), 'run node plugins/kaizen/scripts/aliases.mjs');
+  for (const [f, text] of Object.entries(want)) assert.equal(readFileSync(join(PLUGIN, 'agents', f), 'utf8').replace(/\r\n/g, '\n'), text, `agents/${f} differs — run node plugins/kaizen/scripts/aliases.mjs`);
+  assert.ok(want['code-reviewer.md'], 'the code-reviewer persona the review hook records');
 });
 
 test('agent-skills\' commands under Kaizen\'s prefix: exact copies, one per command, never shadowing a skill', async () => {
@@ -61,15 +71,17 @@ test('every file cited through ${CLAUDE_PLUGIN_ROOT} exists', () => {
   assert.deepEqual(missing, []);
 });
 
-test('every /kaizen:<name> names a Kaizen skill or command, every agent-skills:<name> one of its commands or skills', () => {
-  const asCommands = readdirSync(join(AGENT_SKILLS, '.claude', 'commands')).map((f) => f.replace(/\.md$/, ''));
+test('every /kaizen:<name> names a command or skill, every kaizen:<name> a skill or agent, and nothing points to agent-skills:', () => {
   const asSkills = readdirSync(join(AGENT_SKILLS, 'skills'));
+  const agents = readdirSync(join(PLUGIN, 'agents')).map((f) => f.replace(/\.md$/, ''));
   const bad = [];
   const sources = [...docs, { file: 'README(root)', text: readFileSync(join(ROOT, 'README.md'), 'utf8') }];
   for (const f of readdirSync(join(PLUGIN, 'scripts'))) sources.push({ file: `scripts/${f}`, text: readFileSync(join(PLUGIN, 'scripts', f), 'utf8') });
   for (const { file, text } of sources) {
-    for (const m of text.matchAll(/(?<![\w-])\/kaizen:([a-z][a-z-]*)/g)) if (!skills.includes(m[1]) && !commands.includes(m[1])) bad.push(`${file} → /kaizen:${m[1]}`);
-    for (const m of text.matchAll(/(?<![\w./-])agent-skills:([a-z][a-z-]*)/g)) if (!asCommands.includes(m[1]) && !asSkills.includes(m[1])) bad.push(`${file} → agent-skills:${m[1]}`);
+    for (const m of text.matchAll(/(?<![\w-])\/kaizen:([a-z][a-z-]*)/g)) if (!skills.includes(m[1]) && !commands.includes(m[1]) && !asSkills.includes(m[1])) bad.push(`${file} → /kaizen:${m[1]}`);
+    for (const m of text.matchAll(/(?<![\w./-])kaizen:([a-z][a-z-]*)/g)) if (!skills.includes(m[1]) && !asSkills.includes(m[1]) && !agents.includes(m[1]) && !commands.includes(m[1])) bad.push(`${file} → kaizen:${m[1]}`);
+    // agent-skills is embedded: its skills and personas are kaizen:<name>, not agent-skills:<name>.
+    if (!/^scripts\/(aliases|review-state|doctor)\.mjs$/.test(file)) for (const m of text.matchAll(/(?<![\w./-])\/?agent-skills:([a-z][a-z-]*)/g)) bad.push(`${file} → ${m[0]}`);
   }
   assert.deepEqual(bad, []);
 });
@@ -97,10 +109,10 @@ test('hooks.json points to existing scripts, with quoted paths', () => {
   }
 });
 
-test('the plugin is registered in the marketplace, next to agent-skills, and documented', () => {
+test('the plugin is registered in the marketplace, agent-skills only inside it, and documented', () => {
   const market = JSON.parse(readFileSync(join(ROOT, '.claude-plugin/marketplace.json'), 'utf8'));
   assert.equal(market.plugins.find((p) => p.name === 'kaizen')?.source, './plugins/kaizen');
-  assert.equal(market.plugins.find((p) => p.name === 'agent-skills')?.source, './plugins/agent-skills');
+  assert.equal(market.plugins.find((p) => p.name === 'agent-skills'), undefined, 'embedded in Kaizen, not a plugin of its own');
   const manifest = JSON.parse(readFileSync(join(PLUGIN, '.claude-plugin/plugin.json'), 'utf8'));
   for (const k of ['name', 'version', 'description', 'author']) assert.ok(manifest[k], k);
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);

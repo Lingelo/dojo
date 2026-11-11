@@ -33,7 +33,7 @@ That is the push gate: in a Kaizen repository, a branch does not leave without a
 | "N lines changed since the review" | beyond `review.max_unreviewed_lines`: `/kaizen:review` again |
 | "the last review found Critical issues" | fix them, then `/kaizen:review` again |
 | "the reviewed tree cannot be found (history rewritten?)" | the branch was rebased or amended after the review: review again |
-| `/kaizen:review` ran but nothing was recorded | the review must be agent-skills' (`/kaizen:review`, `/agent-skills:review`, or the `code-reviewer` persona); check `node $K review status`, and that `kaizen doctor` shows `hooks` and `agent_skills` ✔ |
+| `/kaizen:review` ran but nothing was recorded | the review must be agent-skills' (`/kaizen:review`, or the `kaizen:code-reviewer` persona through `/kaizen:ship`); check `node $K review status`, and that `kaizen doctor` shows `hooks` and `agent_skills` ✔ |
 | You want to push without a review (hotfix, throwaway branch) | choose "Push without a review" when Claude asks, then confirm in Claude Code's prompt |
 | You do not want this rule | `"review": { "require_before_push": false }` |
 
@@ -50,9 +50,10 @@ The secret scan found a key or token in the lines about to be committed (`file:l
 
 ## `/kaizen:spec` or `/kaizen:build` is unknown
 
-Those commands come from agent-skills. Install it next to Kaizen (`/plugin install agent-skills@dojo`) —
-`kaizen doctor` reports it (`agent_skills`) and `node $K install settings` declares it for every clone.
-After a marketplace update: `/plugin marketplace update dojo`.
+Those commands are generated from the agent-skills Kaizen embeds: the plugin is not loaded, or is an old
+version. `/plugin marketplace update dojo`, then check `/plugin` shows `kaizen@dojo` enabled;
+`node $K install settings` declares it for every clone. If `agent-skills@dojo` is also enabled,
+`kaizen doctor` says so (`agent_skills`): disable it, Kaizen already loads its skills.
 
 ## `gh` is not authenticated
 

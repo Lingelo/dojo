@@ -89,7 +89,7 @@
 <rect class="artifact" x="296" y="228" width="350" height="48" rx="8" stroke-width="1.5"/>
 <text class="t12 mono" x="471" y="256" text-anchor="middle">.claude/settings.json</text>
 <rect class="plain" x="678" y="228" width="386" height="48" rx="8" stroke-width="1.5"/>
-<text class="t12" x="871" y="256" text-anchor="middle">Claude Code: both plugins for every clone</text>
+<text class="t12" x="871" y="256" text-anchor="middle">Claude Code: Kaizen for every clone</text>
 <path class="line accent" d="M266,252 L296,252" marker-end="url(#h-accent)"/>
 <path class="line blue" d="M646,252 L678,252" marker-end="url(#h-blue)"/>
 <rect class="skill" x="36" y="292" width="230" height="48" rx="8" stroke-width="1.5"/>

@@ -135,12 +135,12 @@ test('status: setup, then agent-skills\' commands, review and ship in order', ()
   cleanup(dir);
 });
 
-test('install settings declares kaizen@dojo and agent-skills@dojo; gate status and off', () => {
+test('install settings declares kaizen@dojo (agent-skills is embedded); gate status and off', () => {
   const dir = tempRepo({ '.kaizen/config.json': {} });
   const r = cli(dir, ['install', 'settings']).json;
-  assert.deepEqual(r.enabled, ['kaizen@dojo', 'agent-skills@dojo']);
+  assert.deepEqual(r.enabled, ['kaizen@dojo']);
   const settings = JSON.parse(readFileSync(join(dir, '.claude/settings.json'), 'utf8'));
-  assert.equal(settings.enabledPlugins['agent-skills@dojo'], true);
+  assert.equal(settings.enabledPlugins['agent-skills@dojo'], undefined);
   assert.notEqual(cli(dir, ['install', 'settings']).code, 0, 'already declared');
   assert.deepEqual(cli(dir, ['gate', 'status']).json, { active: false });
   writeFiles(dir, { '.kaizen/state/gate.json': { active: true, session: 'S1' } });

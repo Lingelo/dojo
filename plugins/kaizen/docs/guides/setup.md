@@ -20,8 +20,8 @@ Not for writing a spec, a plan or code: that is `/kaizen:spec`, `/kaizen:plan`, 
 3. **Validates the verification commands**: shows the `test`, `lint`, `typecheck` it detected, asks
    whether they are right and runs them once. These are what the [quality gate](../concepts/gates.md#the-quality-gate)
    runs after every turn that edits code; a slow suite goes to `gate.targeted`.
-4. **Declares both plugins** in the versioned `.claude/settings.json` (`kaizen@dojo`,
-   `agent-skills@dojo`, the dojo marketplace) — asks first. Every clone and cloud session then gets them.
+4. **Declares Kaizen** in the versioned `.claude/settings.json` (`kaizen@dojo`, the dojo marketplace) —
+   asks first. Every clone and cloud session then gets it, agent-skills included.
 5. **Makes the learnings findable** for other tools: with your approval, a line in `CLAUDE.md` or
    `AGENTS.md`.
 6. **Names the next command**, in the [decision order](../concepts/the-loop.md#knowing-where-you-are).
@@ -30,7 +30,7 @@ Not for writing a spec, a plan or code: that is `/kaizen:spec`, `/kaizen:plan`, 
 
 ```
 ✔ config        .kaizen/config.json
-✔ agent_skills  agent-skills@dojo enabled
+✔ agent_skills  embedded (addyosmani/agent-skills@3f1c2ab)
 ✔ verify        test: npm test · lint: npm run lint
 Next: /kaizen:spec <what to build>
 ```

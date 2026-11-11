@@ -51,8 +51,9 @@ function snapshot(root, branch) {
 // --- agent-skills' review, seen by the hooks ------------------------------------------------------------
 
 // The review skill through the Skill tool, or the code-reviewer persona through the Agent tool.
-const REVIEW_SKILL = /^(agent-skills:)?code-review-and-quality$/;
-const REVIEWER_AGENT = /^(agent-skills:)?code-reviewer$/;
+// Embedded in Kaizen, agent-skills' skill and persona are `kaizen:…`; enabled on its own, `agent-skills:…`.
+const REVIEW_SKILL = /^((kaizen|agent-skills):)?code-review-and-quality$/;
+const REVIEWER_AGENT = /^((kaizen|agent-skills):)?code-reviewer$/;
 export function reviewSourceOf(toolName, toolInput = {}) {
   if (/^(Agent|Task)$/.test(String(toolName)) && REVIEWER_AGENT.test(String(toolInput.subagent_type || ''))) return 'code-reviewer';
   if (toolName === 'Skill' && REVIEW_SKILL.test(String(toolInput.skill || toolInput.name || toolInput.command || '').replace(/^\//, ''))) return 'code-review-and-quality';

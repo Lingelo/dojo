@@ -9,8 +9,8 @@ mechanism, the **reference** lists every command, key and file. A guide links to
 instead of repeating it.
 
 Kaizen is the engine around [agent-skills](https://github.com/addyosmani/agent-skills): the workflow
-commands (`/kaizen:spec`, `/kaizen:plan`, `/kaizen:build`…) are agent-skills', documented in
-`plugins/agent-skills/` (its README and `docs/`). This documentation covers what Kaizen adds.
+commands (`/kaizen:spec`, `/kaizen:plan`, `/kaizen:build`…) are agent-skills', embedded in Kaizen and
+documented in `agent-skills/` (its README and `docs/`). This documentation covers what Kaizen adds.
 
 ## Where to start
 
