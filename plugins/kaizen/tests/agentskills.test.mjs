@@ -6,7 +6,6 @@ import { readAgentSkills } from '../scripts/agentskills.mjs';
 import { PLUGIN, cleanup, tempRepo } from './helpers.mjs';
 
 const FIXTURES = join(PLUGIN, 'tests', 'fixtures', 'agent-skills');
-const REPO_ROOT = join(PLUGIN, '..', '..');
 
 function withFixtures(files = null) {
   const dir = tempRepo({}, { commit: false });
@@ -95,13 +94,4 @@ test('agent-skills: spec in docs/, CRLF files, missing sections and files are ab
   } finally {
     cleanup(dir);
   }
-});
-
-test('agent-skills: reads this repository\'s own spec and tasks (dogfooding)', () => {
-  const r = readAgentSkills(REPO_ROOT);
-  assert.equal(r.spec.path, 'docs/SPEC.md');
-  assert.ok(r.spec.boundaries.never.length >= 1);
-  assert.ok(r.tasks.list.length >= 5, 'the 5.2 tasks');
-  assert.ok(r.tasks.list.every((t) => t.n && t.title), 'every task has a number and a title');
-  assert.ok(r.tasks.list.find((t) => t.n === 1).done, 'task 1 is done');
 });

@@ -146,8 +146,7 @@ dojo/
 ├── .claude-plugin/
 │   └── marketplace.json      # Marketplace registry
 ├── .github/workflows/        # CI (kaizen.yml: Kaizen tests on Linux, macOS, Windows; slide-studio.yml: same for Slide Studio; sync-kioku.yml: copies kioku hourly; sync-agent-skills.yml: proposes agent-skills updates as pull requests)
-├── docs/                     # This repo's own ideation, plans and learnings; docs/SPEC.md: the current work, in agent-skills' format
-├── tasks/                    # plan.md and todo.md of the current work, in agent-skills' format
+├── docs/learnings/           # This repo's own learnings (Kaizen format)
 ├── plugins/
 │   ├── kaizen/               # The engine around agent-skills: 4 skills, aliased commands, hooks, zero-dependency CLI
 │   ├── agent-skills/         # Addy Osmani's agent-skills: a copy of addyosmani/agent-skills, proposed by pull request by .github/workflows/sync-agent-skills.yml

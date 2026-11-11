@@ -1,7 +1,7 @@
 name: sync-agent-skills
 
-# Copies Addy Osmani's agent-skills (addyosmani/agent-skills, MIT) into plugins/agent-skills/, the base Kaizen converges
-# on (docs/SPEC.md). Unlike kioku, this is third-party code whose scripts and hooks run on users' machines: a new upstream
+# Copies Addy Osmani's agent-skills (addyosmani/agent-skills, MIT) into plugins/agent-skills/, the base Kaizen runs
+# on. Unlike kioku, this is third-party code whose scripts and hooks run on users' machines: a new upstream
 # commit is never pushed to main, it is proposed as a pull request (branch sync/agent-skills) for a human to review,
 # with the executable files it changes listed in its body. The copy is never edited here.
 #
