@@ -11,9 +11,7 @@ test('init creates the config and the learnings folder, and ignores config.local
   assert.equal(r.code, 0, r.stderr);
   const config = JSON.parse(readFileSync(join(dir, '.kaizen/config.json'), 'utf8'));
   assert.equal(config.language, 'en');
-  for (const k of ['profile', 'packs', 'tracker', 'models']) assert.ok(!(k in config), `${k} is no longer written`);
   assert.ok(existsSync(join(dir, 'docs', 'learnings')));
-  for (const d of ['plans', 'ideation']) assert.ok(!existsSync(join(dir, 'docs', d)), `docs/${d} is agent-skills' business now`);
   assert.match(readFileSync(join(dir, '.gitignore'), 'utf8'), /\.kaizen\/config\.local\.json/);
   assert.deepEqual(cli(dir, ['init']).json.created, [], 'idempotent');
   cleanup(dir);

@@ -1,21 +1,20 @@
 // Kaizen — what a feature or a fix costs, end to end.
 //
-// A cycle (`gate on` → `gate off`) only covers implementation. The ledger covers everything: at the
-// end of every turn in a Kaizen repo, the Stop hook (ledger-hook.mjs) reads the tokens added to the
-// session's transcripts since its last read (byte offsets, so nothing is counted twice) and charges them
-// to the **work item** in progress — brainstorm and plan on the default branch, debug, review, ship,
-// PR follow-up alike, gate or not.
+// At the end of every turn in a Kaizen repo, the Stop hook (ledger-hook.mjs) reads the tokens added to
+// the session's transcripts since its last read (byte offsets, so nothing is counted twice) and charges
+// them to the **work item** in progress — spec, plan, build, review, ship, PR follow-up alike.
 //
-// The work item, in order: the Jira key of the branch (`feat/SHOP-412-…` → SHOP-412); the plan being
-// written or implemented (its `jira:`, otherwise `plan:<topic>`); the branch; otherwise `unattributed`
-// — never a guess. Its kind (feature, fix, …) comes from the plan's `type:` or the branch prefix.
+// The work item, in order: the Jira key of the branch (`feat/SHOP-412-…` → SHOP-412); the branch
+// (`branch:<name>`); otherwise `unattributed` — never a guess. Its kind (feature, fix, …) comes from the
+// branch prefix, its title from agent-skills' SPEC.md.
 
-import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readFileSync, readSync, statSync, writeFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readFileSync, readSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 // Relative weight of a million tokens per model family (`review.cost_weights` overrides it).
 export const DEFAULT_WEIGHTS = { haiku: 1, sonnet: 3, opus: 5 };
 
-import { changedFiles, defaultBranch, diffBase, docsRoot, emptyUsage, git, parseFrontmatter, readUsage, subagentTranscripts, usageTotal } from './lib.mjs';
+import { defaultBranch, emptyUsage, git, readUsage, subagentTranscripts, usageTotal } from './lib.mjs';
+import { readAgentSkills } from './agentskills.mjs';
 
 export const LEDGER = join('.kaizen', 'state', 'ledger.jsonl');
 const CURSOR = join('.kaizen', 'state', 'ledger-cursor.json');
@@ -33,49 +32,14 @@ export function kindOf(type) {
   return KINDS[String(type || '').toLowerCase()] || null;
 }
 
-function readPlan(root, rel) {
-  try {
-    const data = parseFrontmatter(readFileSync(join(root, rel), 'utf8')).data || {};
-    return { path: rel.split(sep).join('/'), jira: data.jira || null, topic: data.topic || null, type: data.type || null, title: data.title || null };
-  } catch {
-    return null;
-  }
-}
-
-// The plan this turn works on: the one the gate names, otherwise the most recently modified plan the
-// branch (or the working tree, on the default branch) touches.
-function currentPlan(root, branch, onDefault) {
-  try {
-    const gate = JSON.parse(readFileSync(join(root, '.kaizen', 'state', 'gate.json'), 'utf8'));
-    if (gate.active && gate.plan) return readPlan(root, gate.plan);
-  } catch {}
-  let plansDir;
-  try {
-    plansDir = relative(root, join(docsRoot(root), 'plans')).split(sep).join('/');
-  } catch {
-    return null;
-  }
-  const files = changedFiles(root, onDefault ? 'HEAD' : diffBase(root))
-    .map((f) => f.split(sep).join('/'))
-    .filter((f) => f.startsWith(`${plansDir}/`) && f.endsWith('.md'));
-  if (!files.length) return null;
-  const latest = files.sort((a, b) => statSync(join(root, b)).mtimeMs - statSync(join(root, a)).mtimeMs)[0];
-  return readPlan(root, latest);
-}
-
 export function workItem(root) {
   const branch = git(root, ['rev-parse', '--abbrev-ref', 'HEAD'], { allowFail: true });
   const onDefault = !branch || branch === 'HEAD' || branch === defaultBranch(root);
-  const plan = currentPlan(root, branch, onDefault);
-  const prefix = onDefault ? null : /^([a-z]+)\//i.exec(branch)?.[1];
-  const kind = kindOf(plan?.type) || kindOf(prefix) || 'other';
-  const title = plan?.title?.replace(/\s+-\s+Plan$/, '') || null;
-  const fromBranch = onDefault ? null : jiraKey(branch);
-  if (fromBranch) return { item: fromBranch, kind, title, branch, source: 'branch-jira' };
-  if (plan?.jira) return { item: plan.jira, kind, title, branch, source: 'plan-jira' };
-  if (plan?.topic) return { item: `plan:${plan.topic}`, kind, title, branch, source: 'plan' };
-  if (!onDefault) return { item: `branch:${branch}`, kind, title, branch, source: 'branch' };
-  return { item: 'unattributed', kind: 'other', title: null, branch: branch || null, source: 'none' };
+  if (onDefault) return { item: 'unattributed', kind: 'other', title: null, branch: branch || null, source: 'none' };
+  const kind = kindOf(/^([a-z]+)\//i.exec(branch)?.[1]) || 'other';
+  const title = readAgentSkills(root).spec?.title || null;
+  const key = jiraKey(branch);
+  return key ? { item: key, kind, title, branch, source: 'branch-jira' } : { item: `branch:${branch}`, kind, title, branch, source: 'branch' };
 }
 
 // Tokens appended to a transcript since `state` ({ offset, ids }), up to its last complete line.

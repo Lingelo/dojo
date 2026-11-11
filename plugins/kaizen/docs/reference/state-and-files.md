@@ -17,8 +17,7 @@ Everything Kaizen reads and writes, where it lives, who writes it, and whether i
 **Read, never written, by Kaizen** — agent-skills' files: `SPEC.md` (or `docs/SPEC.md`), `tasks/plan.md`,
 `tasks/todo.md`, `CONSTRAINTS.md` (`scripts/agentskills.mjs`, tolerant of any shape). `status` reads the
 tasks left, `post-edit.mjs` brings learnings back when they are written, `metrics` counts the learnings
-they cite, `doctor` checks `CONSTRAINTS.md`'s floor guard. Plans of Kaizen 5.x in `<docs>/plans/` are
-still read by `metrics` and `cost`.
+they cite, `doctor` checks `CONSTRAINTS.md`'s floor guard.
 
 No file carries a mutable "status": progress is read from git and from the task checkboxes.
 

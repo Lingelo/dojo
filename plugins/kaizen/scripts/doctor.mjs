@@ -126,7 +126,7 @@ export function doctor(root, { inSkill = false, now = Date.now() } = {}) {
     decl.declared ? null : 'node "$K" install settings',
   );
 
-  // agent-skills: the base of the workflow since Kaizen 6.0.
+  // agent-skills: the base of the workflow.
   const as = readAgentSkills(root);
   const asOn = pluginEnabled(root, AGENT_SKILLS_ID);
   const files = [

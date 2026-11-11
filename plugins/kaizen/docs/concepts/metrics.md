@@ -54,7 +54,7 @@ DORA 2025 calls small batches the first lever; this is where AI-sized PRs show.
 | Indicator | Computed as |
 |---|---|
 | `learnings_total`, `learnings_new` | learnings in `docs/learnings/`, and those dated in the window |
-| `plans_touched` | plans changed in the window: `SPEC.md`, `docs/SPEC.md`, `tasks/plan.md`, `tasks/todo.md`, and plans of Kaizen 5.x in `docs/plans/` |
+| `plans_touched` | plans changed in the window: `SPEC.md`, `docs/SPEC.md`, `tasks/plan.md`, `tasks/todo.md` |
 | `learnings_cited_by_plans` | distinct `learnings/….md` paths those plans cite — **read** |
 | `learnings_applied_in_commits` | distinct paths cited by commit messages on the default branch in the window — **applied** |
 | `learning_reuse_rate` | (read ∪ applied) / total learnings |
@@ -90,9 +90,10 @@ read from the transcripts by byte offset so a turn is never counted twice — to
 match wins:
 
 1. the Jira key of the branch (`feat/PROJ-123-…` → `PROJ-123`);
-2. otherwise, for a Kaizen 5.x plan the branch touches in `docs/plans/`, its `jira:` or `plan:<topic>`;
-3. otherwise `branch:<name>`;
-4. on the default branch with none of these, `unattributed` — never a guess.
+2. otherwise `branch:<name>`;
+3. on the default branch, `unattributed` — never a guess.
+
+Its kind (feature, fix, refactor…) comes from the branch prefix, its title from `SPEC.md`.
 
 Each line of `.kaizen/state/ledger.jsonl` keeps the tokens per model family (`opus`, `sonnet`, `haiku`),
 priced in the relative units of `review.cost_weights` (default haiku 1, sonnet 3, opus 5).

@@ -76,7 +76,7 @@ The quality gate (Stop hook). It turns itself on when a session edits a code fil
 
 | Key | Default | Role |
 |---|---|---|
-| `review.require_before_push` | `true` | `true`: an unreviewed push is stopped once, Claude asks you, and you can push without a review by confirming in Claude Code's prompt (`"ask"`, the 5.x spelling, means the same); `false`: no check |
+| `review.require_before_push` | `true` | `true`: an unreviewed push is stopped once, Claude asks you, and you can push without a review by confirming in Claude Code's prompt; `false`: no check |
 | `review.max_unreviewed_lines` | `80` | lines changed since the last review beyond which the push needs a new one |
 | `review.cost_weights` | `{}` | relative weight of a million tokens per model family for `kaizen cost` and metrics; defaults `haiku` 1, `sonnet` 3, `opus` 5 |
 
@@ -93,8 +93,3 @@ The quality gate (Stop hook). It turns itself on when a session edits a code fil
 |---|---|---|
 | `pr.max_lines` | `400` | batch size threshold reported by `metrics` (`over_limit_share`) |
 | `pr.ignore` | lockfiles, `*.min.*`, `*.snap`, `*.generated.*`, `dist/**`, `vendor/**` | files not counted in batch size |
-
-## Removed in 6.0
-
-`profile`, `models`, `risk`, `perf`, `packs`, `tracker`, `deploy`, `monitor`, `approvals` and `review.confirm_above_cost`
-are no longer read: remove them ([Migrating to 6.0](../migrating-to-6.md)).

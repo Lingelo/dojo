@@ -6,7 +6,7 @@ A Claude Code plugin marketplace, providing an AI-assisted SDLC (Kaizen, converg
 
 | Plugin | Description | Components |
 |---|---|---|
-| [**kaizen**](plugins/kaizen/README.md) | The engine around Addy Osmani's agent-skills (since 6.0): agent-skills' commands under the `/kaizen:` prefix (`spec` → `plan` → `build` → `test` → `review` → `ship`), and what they do not do — a quality gate that keeps a turn open while checks are red, the review recorded by itself and required before any push, no secret committed, learnings brought back when a spec, a plan or a file they cover is touched, the PR followed to "looks ready" (`/kaizen:watch`), DORA approximations, friction and the cost of each feature or fix (`/kaizen:metrics`) | 4 skills, 9 aliased commands, 8 hook registrations, zero-dependency CLI |
+| [**kaizen**](plugins/kaizen/README.md) | The engine around Addy Osmani's agent-skills: agent-skills' commands under the `/kaizen:` prefix (`spec` → `plan` → `build` → `test` → `review` → `ship`), and what they do not do — a quality gate that keeps a turn open while checks are red, the review recorded by itself and required before any push, no secret committed, learnings brought back when a spec, a plan or a file they cover is touched, the PR followed to "looks ready" (`/kaizen:watch`), DORA approximations, friction and the cost of each feature or fix (`/kaizen:metrics`) | 4 skills, 9 aliased commands, 8 hook registrations, zero-dependency CLI |
 | [**agent-skills**](plugins/agent-skills/README.md) | [Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills) (MIT), copied unmodified: engineering workflows for AI coding agents from spec to ship (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`…), with rationalization tables and verification gates in every skill. The base Kaizen runs on (its commands are also `/kaizen:<name>`); proposed here by pull request at each upstream change, never edited in this repository | Skills, commands, reviewer personas |
 | [**motion-studio**](plugins/motion-studio/README.md) | Motion design as code: HTML/CSS/SVG/Canvas → MP4/WebM/GIF frame by frame, synced sound, voice-over and subtitles (Playwright + ffmpeg) | Skill, scripts |
 | [**kioku**](plugins/kioku/README.md) | A guarded knowledge vault on the LLM Wiki pattern: you drop raw sources, Claude maintains a structured wiki. Silos (work, personal…) sealed from each other by a hook, bronze → silver → gold medallion, a gate (deterministic checks + independent reviewer) before any page enters the wiki; `/kioku:setup` creates the vault in an empty folder, `npm run <silo>` opens a session. Developed in [its own repository](https://github.com/Lingelo/kioku), copied here hourly; the vault is your own private repository | Skills, reviewer agent, guard and gate hooks, CLI, local dashboard |
@@ -44,7 +44,7 @@ Or interactively:
 ```bash
 /plugin install motion-studio@dojo
 /plugin install kaizen@dojo
-/plugin install agent-skills@dojo    # Addy Osmani's workflows: Kaizen 6 runs on them
+/plugin install agent-skills@dojo    # Addy Osmani's workflows: Kaizen runs on them
 /plugin install slide-studio@dojo
 /plugin install kioku@dojo           # user scope: kioku vaults enable it themselves
 ```
@@ -109,8 +109,7 @@ Documentation: [getting started](plugins/kaizen/docs/getting-started.md) ·
 [configuration](plugins/kaizen/docs/reference/configuration.md) ·
 [troubleshooting](plugins/kaizen/docs/troubleshooting.md) ·
 [how it works](plugins/kaizen/docs/README.md#how-it-works) ·
-[CLI reference](plugins/kaizen/docs/reference/cli.md) ·
-[migrating from 5.x](plugins/kaizen/docs/migrating-to-6.md).
+[CLI reference](plugins/kaizen/docs/reference/cli.md).
 
 ### Motion Studio
 ```bash

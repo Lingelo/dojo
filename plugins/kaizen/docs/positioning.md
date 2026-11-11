@@ -1,21 +1,18 @@
 # Kaizen — positioning
 
-*As of November 10, 2026, Kaizen 6.0.0 with agent-skills 0.6.15.*
+*As of November 11, 2026, Kaizen 1.0.0 with agent-skills 0.6.15.*
 
-Since 6.0 Kaizen is not a method of its own. The method is Addy Osmani's
+Kaizen is not a method of its own. The method is Addy Osmani's
 [agent-skills](https://github.com/addyosmani/agent-skills) — spec, plan, build, test, review, ship,
 written as processes with exit criteria — shipped unmodified next to Kaizen in the dojo marketplace.
 Kaizen is the engine around it: what agent-skills **asks** the agent to do, Kaizen's hooks **check**.
 
 ## Why agent-skills
 
-Kaizen 2.x to 5.x combined Every's [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin)
-loop with GitHub [Spec Kit](https://github.com/github/spec-kit)'s constitution: 20 skills, 22 agents,
-profiles, packs, a plan format with traceability IDs. Complete, and heavy to learn. agent-skills covers
-the same development loop with less ceremony: plain Markdown files (`SPEC.md`, `tasks/`), one skill per
-concern, an anti-rationalization table in each, and it already runs in many agents. Kaizen 6.0 dropped
-what duplicated it and kept only what agent-skills does not do: enforcement, memory, PR follow-up and
-measurement.
+agent-skills covers the development loop with little ceremony: plain Markdown files (`SPEC.md`,
+`tasks/`), one skill per concern, an anti-rationalization table in each, and it already runs in many
+agents. Writing another method next to it would only make two to learn. Kaizen adds only what
+agent-skills does not do: enforcement, memory, PR follow-up and measurement.
 
 ## What each does
 

@@ -53,10 +53,6 @@ test('the loop diagram draws agent-skills\' commands and each of Kaizen\'s skill
   for (const s of readdirSync(join(PLUGIN, 'skills'))) assert.ok(text.includes(`/kaizen:${s}`), `kaizen-loop.svg: /kaizen:${s}`);
 });
 
-test('no diagram names a removed command', () => {
-  for (const f of svgs) assert.doesNotMatch(unescape(svg(f)), /kaizen-ops|\/kaizen:(deploy|monitor|postmortem|work|brainstorm|ideate|constitution|doc-review|decide|debug|polish|autopilot|release|help|prune-learnings|address-feedback|watch-pr)\b/, f);
-});
-
 test('every diagram is used by a page, every page links an existing diagram', () => {
   const used = new Set();
   for (const p of [join(ROOT, 'README.md'), ...walk(PLUGIN)]) {

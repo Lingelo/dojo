@@ -48,14 +48,6 @@ The secret scan found a key or token in the lines about to be committed (`file:l
 - **`--no-verify` refused**: run that commit yourself if you mean it.
 - Check without committing: `node $K secrets scan` (or `--staged`).
 
-## A Kaizen 5.x command is unknown
-
-Fourteen skills of Kaizen 5.x were removed in 6.0 (help, work, brainstorm, constitution, autopilot, the PR
-and pruning skills…): agent-skills does that work now, and some moved — PR follow-up is `/kaizen:watch`,
-pruning is `/kaizen:learn prune`, orientation is `/kaizen:setup`. The table of equivalents:
-[Migrating to 6.0](migrating-to-6.md#commands). The kaizen-ops plugin (deploy, monitor, postmortem) is
-gone too: Kaizen no longer deploys nor monitors.
-
 ## `/kaizen:spec` or `/kaizen:build` is unknown
 
 Those commands come from agent-skills. Install it next to Kaizen (`/plugin install agent-skills@dojo`) —

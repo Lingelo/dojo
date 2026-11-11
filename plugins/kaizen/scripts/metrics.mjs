@@ -1,7 +1,7 @@
 // Kaizen — delivery metrics (DORA, approximated from git and GitHub) and loop health.
 //
 // DORA 2025: throughput (deployment frequency, change lead time, rework rate) and instability
-// (change failure rate, time to restore). Kaizen does not deploy (production commands removed in 6.0):
+// (change failure rate, time to restore). Kaizen does not deploy:
 // these values are **approximations** from the default branch and GitHub; each metric states its method.
 
 import { execFileSync } from 'node:child_process';
@@ -84,9 +84,8 @@ function loopHealth(root, from, branch) {
   }
   const learningsDir = join(docs, 'learnings');
   const learnings = walkMarkdown(learningsDir).map((f) => ({ f, data: parseFrontmatter(readFileSync(f, 'utf8')).data || {} }));
-  // What plans the work: agent-skills' spec and plan, and the plans of Kaizen before 6.0 (read only).
-  const planFiles = [join(root, 'SPEC.md'), join(root, 'docs', 'SPEC.md'), join(root, 'tasks', 'plan.md'), join(root, 'tasks', 'todo.md')].filter((f) => existsSync(f));
-  const plans = [...planFiles, ...walkMarkdown(join(docs, 'plans'))];
+  // What plans the work: agent-skills' spec and plan.
+  const plans = [join(root, 'SPEC.md'), join(root, 'docs', 'SPEC.md'), join(root, 'tasks', 'plan.md'), join(root, 'tasks', 'todo.md')].filter((f) => existsSync(f));
   // A plan touched in the window counts as recent: agent-skills' files carry no date.
   const touched = (f) => {
     const d = parseFrontmatter(readFileSync(f, 'utf8')).data?.date;
@@ -123,7 +122,7 @@ function loopHealth(root, from, branch) {
     learnings_cited_by_plans: cited.size,
     learnings_applied_in_commits: appliedIn.size,
     learning_reuse_rate: learnings.length && (recentPlans.length || appliedIn.size) ? round(used.size / learnings.length, 2) : null,
-    learning_reuse_method: 'distinct learnings cited by a plan touched in the window (SPEC.md, tasks/, docs/plans/) or by a commit message in the window / existing learnings — a plan citation means "read", a commit citation means "applied"',
+    learning_reuse_method: 'distinct learnings cited by a plan touched in the window (SPEC.md, tasks/) or by a commit message in the window / existing learnings — a plan citation means "read", a commit citation means "applied"',
     learnings_never_cited: neverCited.length,
     learnings_never_cited_sample: neverCited.slice(0, 10),
   };
@@ -169,7 +168,7 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
       change_failure_rate: nonFix ? round(failed / nonFix, 2) : null,
       change_failure_method: 'changes followed within 7 days by a fix or revert touching the same files',
       time_to_restore_hours_median: null,
-      time_to_restore_method: 'unavailable: Kaizen records no deployment nor incident (production removed in 6.0)',
+      time_to_restore_method: 'unavailable: Kaizen records no deployment nor incident',
     },
     batch_size: {
       lines_median: round(median(sizes), 0),
@@ -198,7 +197,7 @@ export function workItems(root, from, config = loadConfig(root)) {
     unattributed_share: total && unattributed ? Math.round((unattributed.tokens / total) * 100) / 100 : 0,
     method:
       'every turn in this repo on this machine (Stop hook, .kaizen/state/ledger.jsonl) charged to the branch\'s Jira key, ' +
-      'otherwise the plan in progress (jira:, else topic), otherwise the branch; cost = tokens per model family × review.cost_weights',
+      'otherwise the branch; cost = tokens per model family × review.cost_weights',
   };
 }
 
@@ -228,9 +227,9 @@ export function friction(root, from) {
   const count = (pred) => events.filter(pred).length;
   const tally = (list, key) => list.reduce((o, e) => ((o[e[key] ?? 'other'] = (o[e[key] ?? 'other'] || 0) + 1), o), {});
 
-  // Time stopped on push: from the first stop on a branch (Claude asked the user; `refused` in older
-  // logs) to the next review recorded on it. A stop never lifted in the window counts as still waiting.
-  const stops = (e) => e.gate === 'push' && (e.kind === 'asked' || e.kind === 'refused');
+  // Time stopped on push: from the first stop on a branch (Claude asked the user) to the next review
+  // recorded on it. A stop never lifted in the window counts as still waiting.
+  const stops = (e) => e.gate === 'push' && e.kind === 'asked';
   const waitedMinutes = [];
   const open = new Map();
   for (const e of events.filter((x) => x.gate === 'push')) {

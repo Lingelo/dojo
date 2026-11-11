@@ -20,7 +20,6 @@ commands (`/kaizen:spec`, `/kaizen:plan`, `/kaizen:build`…) are agent-skills',
 | Know which command to run, right now | `/kaizen:setup` ([guide](guides/setup.md)) |
 | See Kaizen in one minute | [The presentation video](../../../media/kaizen/kaizen-presentation.mp4) |
 | Understand what Kaizen adds to agent-skills | [Kaizen around agent-skills](concepts/the-loop.md) |
-| Come from Kaizen 5.x | [Migrating to 6.0](migrating-to-6.md) |
 | Tune Kaizen for my project | [Configuration](reference/configuration.md) |
 | Get unstuck | [Troubleshooting](troubleshooting.md) |
 | Compare Kaizen with other AI SDLCs | [Positioning](positioning.md) |
@@ -47,7 +46,6 @@ commands (`/kaizen:spec`, `/kaizen:plan`, `/kaizen:build`…) are agent-skills',
 
 ## Also
 
-- [Migrating to 6.0](migrating-to-6.md) — what changed from Kaizen 5.x, step by step
 - [Troubleshooting](troubleshooting.md)
 - [Positioning](positioning.md)
 - [Changelog](../CHANGELOG.md)

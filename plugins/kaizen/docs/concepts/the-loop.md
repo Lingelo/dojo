@@ -15,7 +15,7 @@ spec, the tests, the review, the scope. Two complementary answers:
 | Covers | spec, plan, build, test, review, ship, constraints, simplification, performance, and a skill per concern (security, API design, observability…) | the gates around that work, the memory between cycles, the PR until it is ready, the measure |
 | Lives in | `plugins/agent-skills/` (a copy, synced from upstream by pull request, never edited) | `plugins/kaizen/` |
 
-Kaizen never redoes what agent-skills does. Since 6.0 it has four skills of its own and runs
+Kaizen never redoes what agent-skills does. It has four skills of its own and runs
 agent-skills' commands under its prefix.
 
 ## The commands

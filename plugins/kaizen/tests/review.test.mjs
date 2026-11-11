@@ -165,15 +165,6 @@ test('the user judges an unreviewed push, Claude Code asks them', () => {
   cleanup(dir);
 });
 
-test('"ask" from 5.x and true mean the same: the user decides', () => {
-  for (const value of ['ask', true]) {
-    const dir = featureRepo({ review: { require_before_push: value } });
-    assert.equal(prePush(dir).status, 2);
-    assert.equal(JSON.parse(prePush(dir).stdout).hookSpecificOutput.permissionDecision, 'ask');
-    cleanup(dir);
-  }
-});
-
 test('bypass-permissions mode: Kaizen cannot ask the user, the skip is refused', () => {
   const dir = featureRepo();
   const push = () => spawnSync(process.execPath, [REVIEW_GATE], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git push' }, cwd: dir, permission_mode: 'bypassPermissions' }), encoding: 'utf8' });

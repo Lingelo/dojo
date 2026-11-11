@@ -53,7 +53,7 @@ By hand: `node $K learnings search <words…>`.
 ## Read, applied, never cited
 
 `/kaizen:metrics` (`kaizen_loop`) counts a learning as **read** when a plan touched in the window cites it
-(`SPEC.md`, `tasks/`, or a plan from Kaizen 5.x), **applied** when a commit message on the default branch
+(`SPEC.md`, `tasks/`), **applied** when a commit message on the default branch
 cites it, and lists those **never cited** — candidates for `/kaizen:learn prune`. A learning nobody reads
 back closes no loop.
 

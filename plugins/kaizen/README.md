@@ -8,7 +8,7 @@
 · [subtitles](../../media/kaizen/kaizen-presentation.srt). Reproducible source:
 [media/kaizen/source/](../../media/kaizen/source/README.md), rendered with the `motion-studio` plugin.*
 
-Since 6.0, Kaizen is **the engine around [agent-skills](https://github.com/addyosmani/agent-skills)**,
+Kaizen is **the engine around [agent-skills](https://github.com/addyosmani/agent-skills)**,
 Addy Osmani's engineering workflows for coding agents, shipped next to it in the dojo marketplace.
 
 - **agent-skills does the work.** Its commands are available under Kaizen's prefix: `/kaizen:spec`,
@@ -48,7 +48,7 @@ in your language**, and the learnings and PR replies it writes follow `language`
 - **[Guides](docs/README.md#guides)** — [setup](docs/guides/setup.md), [learn](docs/guides/learn.md), [metrics](docs/guides/metrics.md), [watch](docs/guides/watch.md)
 - **[How it works](docs/README.md#how-it-works)** — [Kaizen around agent-skills](docs/concepts/the-loop.md), [gates and hooks](docs/concepts/gates.md), [learnings](docs/concepts/learnings.md), [metrics](docs/concepts/metrics.md)
 - **Reference** — [CLI](docs/reference/cli.md) · [configuration](docs/reference/configuration.md) · [state and files](docs/reference/state-and-files.md)
-- [Migrating to 6.0](docs/migrating-to-6.md) · [Troubleshooting](docs/troubleshooting.md) · [Positioning](docs/positioning.md) · [Changelog](CHANGELOG.md)
+- [Troubleshooting](docs/troubleshooting.md) · [Positioning](docs/positioning.md) · [Changelog](CHANGELOG.md)
 
 ## Installation
 
@@ -198,9 +198,9 @@ node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, co
 
 - **Contract tests** check that there are four skills in agent-skills' anatomy (rationalizations, red
   flags, verification checklist), that the `/kaizen:` commands are exact copies of agent-skills', that
-  every `/kaizen:` and `agent-skills:` name exists, that no page sends anyone to a removed command, that
-  this README lists every CLI command and hook, that every page is indexed and every link and anchor
-  resolves, and that every configuration key is documented.
+  every `/kaizen:` and `agent-skills:` name exists, that this README lists every CLI command and hook,
+  that every page is indexed and every link and anchor resolves, and that every configuration key is
+  documented.
 - **Diagram tests** hold the SVGs to `docs/media/source/diagrams.mjs` (edit the generator, then run it)
   and to `hooks.json`.
 - **CI** (`.github/workflows/kaizen.yml`): Linux, macOS and Windows, Node 18 and 22.

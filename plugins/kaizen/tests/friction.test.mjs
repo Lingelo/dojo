@@ -56,7 +56,7 @@ test('metrics friction: time stopped on push, skip share, checks that block, sti
   const dir = tempRepo({});
   const t = (min) => new Date(Date.UTC(2026, 9, 1, 10, min)).toISOString();
   const log = [
-    { at: t(0), gate: 'push', kind: 'refused', reason: 'no_review', branch: 'a', source: 'claude' },
+    { at: t(0), gate: 'push', kind: 'asked', reason: 'no_review', branch: 'a', source: 'claude' },
     { at: t(5), gate: 'push', kind: 'asked', reason: 'no_review', branch: 'a', source: 'claude' },
     { at: t(30), gate: 'push', kind: 'review_recorded', branch: 'a' },
     { at: t(31), gate: 'push', kind: 'asked', reason: 'stale', branch: 'b', source: 'claude' },
@@ -73,7 +73,7 @@ test('metrics friction: time stopped on push, skip share, checks that block, sti
   writeFiles(dir, { '.kaizen/state/friction.jsonl': `${log.map((e) => JSON.stringify(e)).join('\n')}\nnot json\n` });
   const f = friction(dir, new Date(Date.UTC(2026, 8, 1)));
   assert.equal(f.events, 13);
-  assert.equal(f.push.stopped, 5, '"refused" of older logs counts as a stop');
+  assert.equal(f.push.stopped, 5);
   assert.deepEqual(f.push.by_reason, { no_review: 4, stale: 1 });
   assert.equal(f.push.unblocked_median_minutes, 20, 'median of 30 (from the first stop) and 10');
   assert.equal(f.push.still_waiting, 1, 'c; d was pushed without a review');

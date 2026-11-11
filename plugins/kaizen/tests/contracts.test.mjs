@@ -20,9 +20,6 @@ function walk(dir, out = []) {
   return out;
 }
 const docs = walk(PLUGIN).map((f) => ({ file: relative(PLUGIN, f).split('\\').join('/'), text: readFileSync(f, 'utf8') }));
-// Where removed things may still be named: the changelog and the migration guide.
-const HISTORY = [/(^|\/)CHANGELOG\.md$/, /^docs\/migrating-to-6\.md$/];
-const isHistory = (file) => HISTORY.some((re) => re.test(file));
 
 const commands = readdirSync(join(PLUGIN, 'commands')).map((f) => f.replace(/\.md$/, ''));
 
@@ -70,17 +67,9 @@ test('every /kaizen:<name> names a Kaizen skill or command, every agent-skills:<
   const sources = [...docs, { file: 'README(root)', text: readFileSync(join(ROOT, 'README.md'), 'utf8') }];
   for (const f of readdirSync(join(PLUGIN, 'scripts'))) sources.push({ file: `scripts/${f}`, text: readFileSync(join(PLUGIN, 'scripts', f), 'utf8') });
   for (const { file, text } of sources) {
-    if (isHistory(file)) continue;
     for (const m of text.matchAll(/(?<![\w-])\/kaizen:([a-z][a-z-]*)/g)) if (!skills.includes(m[1]) && !commands.includes(m[1])) bad.push(`${file} → /kaizen:${m[1]}`);
     for (const m of text.matchAll(/(?<![\w./-])agent-skills:([a-z][a-z-]*)/g)) if (!asCommands.includes(m[1]) && !asSkills.includes(m[1])) bad.push(`${file} → agent-skills:${m[1]}`);
   }
-  assert.deepEqual(bad, []);
-});
-
-test('nothing sends anyone to a removed command, outside history', () => {
-  const removed = /\/kaizen-ops:|\/kaizen:(deploy|monitor|postmortem|work|brainstorm|ideate|constitution|doc-review|decide|debug|polish|autopilot|release|help|prune-learnings|address-feedback|watch-pr)\b|node "?\$K"? (plan|constitution|audit|packs?|profile|models|perf|size|adr|release|dev|run-dir|deploy|monitor)\b/;
-  const files = [...docs.map((d) => d.file), ...readdirSync(join(PLUGIN, 'scripts')).map((f) => `scripts/${f}`), 'hooks/hooks.json'];
-  const bad = files.filter((f) => !isHistory(f) && removed.test(readFileSync(join(PLUGIN, f), 'utf8')));
   assert.deepEqual(bad, []);
 });
 
@@ -89,7 +78,6 @@ test('every CLI command cited in the docs and skills exists', () => {
   const cases = new Set([...cli.matchAll(/case '([a-z-]+)':/g)].map((m) => m[1]));
   const bad = [];
   for (const { file, text } of docs) {
-    if (isHistory(file)) continue;
     for (const m of text.matchAll(/node "?\$K"? ([a-z-]+)/g)) if (!cases.has(m[1])) bad.push(`${file} → ${m[1]}`);
   }
   assert.deepEqual(bad, []);
