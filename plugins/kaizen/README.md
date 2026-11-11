@@ -13,7 +13,8 @@ Addy Osmani's engineering workflows for coding agents, shipped next to it in the
 
 - **agent-skills does the work.** Its commands are available under Kaizen's prefix: `/kaizen:spec`,
   `/kaizen:plan`, `/kaizen:build`, `/kaizen:test`, `/kaizen:review`, `/kaizen:ship`,
-  `/kaizen:constraints`, `/kaizen:webperf`, `/kaizen:code-simplify`. Each step has an exit criterion,
+  `/kaizen:constraints`, `/kaizen:webperf`, `/kaizen:code-simplify` — and `/kaizen:ideate` to brainstorm
+  before the spec, onto its `idea-refine` and `interview-me` skills. Each step has an exit criterion,
   a table of rationalizations to refuse, and evidence to show.
 - **Kaizen makes it hold**, with hooks you never have to run:
   - Claude cannot end a turn with red checks after editing code;
@@ -68,6 +69,7 @@ dependency.
 | # | Command | What happens |
 |---|---|---|
 | 1 | `/kaizen:setup` | once per repo: config, the verification commands the quality gate runs, both plugins declared, guard rails checked |
+| — | `/kaizen:ideate <rough idea>` (optional) | a vague idea clarified (one question at a time), widened, stress-tested and narrowed to one concept |
 | 2 | `/kaizen:spec <what to build>` | agent-skills interviews you and writes `SPEC.md`; Kaizen adds the matching learnings to the context |
 | 3 | `/kaizen:plan` | small tasks with acceptance criteria and files in `tasks/todo.md` |
 | 4 | `/kaizen:build` (or `/kaizen:build auto`) | one task at a time, test first, one commit per task; the quality gate holds every turn that edits code |
@@ -94,6 +96,13 @@ repo stands and what to run next.
 | `/kaizen:constraints` | the quality bar as `CONSTRAINTS.md`: floor, thresholds with their command, ratchets, dated exceptions |
 | `/kaizen:webperf` | web performance audit (Core Web Vitals) |
 | `/kaizen:code-simplify` | simplification without changing behavior |
+
+**Kaizen's entry point onto agent-skills' skills** (agent-skills has the skills but no command; generated
+by the same script, it only invokes them):
+
+| Command | What it does |
+|---|---|
+| `/kaizen:ideate` | brainstorm before the spec: `interview-me` when the idea is vague, then `idea-refine` — diverge, stress-test, converge on one concept, with the matching learnings; ends with the `/kaizen:spec` to run |
 
 **Kaizen's own skills** (what agent-skills does not do):
 

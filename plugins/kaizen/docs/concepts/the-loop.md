@@ -24,6 +24,7 @@ agent-skills' commands under its prefix.
 |---|---|---|---|
 | Set up (once) | `/kaizen:setup` | Kaizen | `.kaizen/config.json`, both plugins declared, guard rails checked |
 | Quality bar (optional, once) | `/kaizen:constraints` | agent-skills | `CONSTRAINTS.md`, its floor guard installed |
+| Idea (optional) | `/kaizen:ideate` | agent-skills' `interview-me` and `idea-refine` | one refined concept, the `/kaizen:spec` to run |
 | What | `/kaizen:spec` | agent-skills | `SPEC.md` |
 | How | `/kaizen:plan` | agent-skills | `tasks/plan.md`, `tasks/todo.md` |
 | Build | `/kaizen:build` (`auto`) | agent-skills | one commit per task, tests first |

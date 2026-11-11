@@ -94,6 +94,7 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 
 ```bash
 /kaizen:setup                                   # config, verification commands, guard rails; then where you stand
+/kaizen:ideate exports for accountants          # optional: a vague idea clarified, stress-tested, narrowed
 /kaizen:spec orders CSV export                  # WHAT to build → SPEC.md (agent-skills); matching learnings come back
 /kaizen:plan                                    # HOW → tasks/plan.md, tasks/todo.md
 /kaizen:build auto                              # test first, task by task; the quality gate holds red turns
