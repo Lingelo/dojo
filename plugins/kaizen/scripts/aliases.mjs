@@ -158,7 +158,7 @@ function entryOf(name, { skills, text }) {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const want = expected();
   const have = existsSync(TARGET) ? readdirSync(TARGET).filter((f) => f.endsWith('.md')) : [];
-  const stale = [...have.filter((f) => !(f in want)), ...Object.keys(want).filter((f) => !existsSync(join(TARGET, f)) || readFileSync(join(TARGET, f), 'utf8') !== want[f])];
+  const stale = [...have.filter((f) => !(f in want)), ...Object.keys(want).filter((f) => !existsSync(join(TARGET, f)) || readFileSync(join(TARGET, f), 'utf8').replace(/\r\n/g, '\n') !== want[f])];
   if (process.argv.includes('--check')) {
     if (stale.length) process.stderr.write(`aliases: out of date: ${stale.join(', ')} — run node plugins/kaizen/scripts/aliases.mjs\n`);
     process.exit(stale.length ? 1 : 0);

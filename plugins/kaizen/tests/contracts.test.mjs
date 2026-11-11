@@ -32,7 +32,7 @@ test('agent-skills\' commands under Kaizen\'s prefix: exact copies, one per comm
   const { expected } = await import('../scripts/aliases.mjs');
   const want = expected();
   assert.deepEqual([...commands].sort(), Object.keys(want).map((f) => f.replace(/\.md$/, '')).sort(), 'run node plugins/kaizen/scripts/aliases.mjs');
-  for (const [f, text] of Object.entries(want)) assert.equal(readFileSync(join(PLUGIN, 'commands', f), 'utf8'), text, `commands/${f} differs from agent-skills' — run node plugins/kaizen/scripts/aliases.mjs`);
+  for (const [f, text] of Object.entries(want)) assert.equal(readFileSync(join(PLUGIN, 'commands', f), 'utf8').replace(/\r\n/g, '\n'), text, `commands/${f} differs from agent-skills' — run node plugins/kaizen/scripts/aliases.mjs`);
   for (const c of ['spec', 'plan', 'build', 'test', 'review', 'ship']) assert.ok(commands.includes(c), `/kaizen:${c}`);
   assert.deepEqual(commands.filter((c) => skills.includes(c)), []);
 });
