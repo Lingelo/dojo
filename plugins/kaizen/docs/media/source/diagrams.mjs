@@ -244,7 +244,7 @@ written.push(
     d.arrow(['learn.b', [840, 470]], { tone: 'blue', label: 'writes' });
     d.arrow([[100, 470], [100, 404], [d.pt('g1.b')[0], 404], 'g1.b'], { tone: 'ok', label: 'read back', at: 1 });
     d.box('metrics', 36, 548, 330, 52, 'skill', '/kaizen:metrics', 'DORA approximated · learnings reuse · friction · cost');
-    d.box('setup', 390, 548, 330, 52, 'skill', '/kaizen:setup', 'config, both plugins declared, doctor');
+    d.box('setup', 390, 548, 330, 52, 'skill', '/kaizen:setup', 'config, Kaizen declared, doctor');
     d.legend(36, 640, LEGEND);
   }),
 );
@@ -455,7 +455,7 @@ written.push(
     const rows = [
       ['/kaizen:learn', 'docs/learnings/<folder>/<slug>.md', 'post-edit hook → Claude, at spec, plan, edit'],
       ['/kaizen:setup · init', '.kaizen/config.json', 'every hook and the CLI'],
-      ['/kaizen:setup', '.claude/settings.json', 'Claude Code: both plugins for every clone'],
+      ['/kaizen:setup', '.claude/settings.json', 'Claude Code: Kaizen for every clone'],
       ['hooks · CLI', '.kaizen/state/ (git-ignored)', 'gates · watch · metrics · cost'],
       ['agent-skills', 'SPEC.md · tasks/ · CONSTRAINTS.md', 'Kaizen reads them (doctor, status, learnings)'],
     ];

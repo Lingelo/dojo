@@ -145,44 +145,48 @@ const fakeAgentSkills = () => {
   git(dir, 'commit', '-q', '-m', 'v1');
   return { dir, sha: git(dir, 'rev-parse', 'HEAD') };
 };
-const addEntry = (name) => {
-  const cat = catalogue();
-  if (!cat.plugins.some((p) => p.name === name)) cat.plugins.push({ name, source: `./plugins/${name}`, description: 'x' });
-  writeFileSync(path.join(market, '.claude-plugin', 'marketplace.json'), `${JSON.stringify(cat, null, 4)}\n`);
-};
+const INTO = ['--into', 'plugins/kaizen/agent-skills'];
 
-test('--plugin agent-skills: copied into plugins/agent-skills with its own marker, kioku untouched', () => {
+test('--plugin agent-skills --into: embedded in Kaizen with its own marker, no marketplace entry needed nor touched', () => {
   const { dir, sha } = fakeAgentSkills();
-  addEntry('agent-skills');
-  const r = syncPlugin('agent-skills', dir);
+  const before = readFileSync(path.join(market, '.claude-plugin', 'marketplace.json'), 'utf8');
+  const r = syncPlugin('agent-skills', dir, INTO);
   assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, new RegExp(`plugins/agent-skills now at addyosmani/agent-skills@${sha.slice(0, 7)}`));
-  assert.equal(readFileSync(path.join(market, 'plugins/agent-skills/hooks/session-start.sh'), 'utf8'), '#!/bin/sh\necho v1\n');
-  assert.ok(!existsSync(path.join(market, 'plugins/agent-skills/.github')), '.github is not copied');
-  const marker = readFileSync(path.join(market, 'plugins/agent-skills/.agent-skills-source'), 'utf8');
+  assert.match(r.stdout, new RegExp(`plugins/kaizen/agent-skills now at addyosmani/agent-skills@${sha.slice(0, 7)}`));
+  const base = path.join(market, 'plugins/kaizen/agent-skills');
+  assert.equal(readFileSync(path.join(base, 'hooks/session-start.sh'), 'utf8'), '#!/bin/sh\necho v1\n');
+  assert.ok(!existsSync(path.join(base, '.github')), '.github is not copied');
+  const marker = readFileSync(path.join(base, '.agent-skills-source'), 'utf8');
   assert.match(marker, new RegExp(`^sha: ${sha}$`, 'm'));
   assert.match(marker, /^repository: https:\/\/github\.com\/addyosmani\/agent-skills$/m);
-  assert.match(marker, /Do not edit plugins\/agent-skills\//);
+  assert.match(marker, /Do not edit plugins\/kaizen\/agent-skills\//);
+  assert.equal(readFileSync(path.join(market, '.claude-plugin', 'marketplace.json'), 'utf8'), before, 'catalogue untouched');
   assert.ok(!existsSync(path.join(market, 'plugins/kioku')), 'kioku is not copied by an agent-skills run');
-  assert.deepEqual(readdirSync(path.join(market, 'plugins')), ['agent-skills'], 'no staging directory left behind');
+  assert.deepEqual(readdirSync(path.join(market, 'plugins/kaizen')), ['agent-skills'], 'no staging directory left behind');
+  assert.match(syncPlugin('agent-skills', dir, INTO).stdout, /up to date/);
 });
 
-test('--plugin agent-skills: a plugin.json named otherwise is refused', () => {
+test('--plugin agent-skills --into: a plugin.json named otherwise is refused, nothing copied', () => {
   const { dir } = fakeAgentSkills();
-  addEntry('agent-skills');
   put(dir, '.claude-plugin/plugin.json', JSON.stringify({ name: 'kioku' }));
   git(dir, 'commit', '-qam', 'renamed');
-  const r = syncPlugin('agent-skills', dir);
+  const r = syncPlugin('agent-skills', dir, INTO);
   assert.equal(r.status, 1);
   assert.match(r.stderr, /name is not "agent-skills"/);
-  assert.ok(!existsSync(path.join(market, 'plugins/agent-skills')));
+  assert.ok(!existsSync(path.join(market, 'plugins/kaizen/agent-skills')));
 });
 
-test('--plugin without a marketplace entry: refused, nothing copied', () => {
+test('--into outside plugins/<plugin>/ or with ..: refused before anything is copied', () => {
   const { dir } = fakeAgentSkills();
-  const cat = catalogue();
-  cat.plugins = cat.plugins.filter((p) => p.name !== 'agent-skills');
-  writeFileSync(path.join(market, '.claude-plugin', 'marketplace.json'), `${JSON.stringify(cat, null, 4)}\n`);
+  for (const into of ['plugins', 'plugins/kaizen', 'docs/x', 'plugins/kaizen/../../etc', '/tmp/x', 'plugins/Kaizen/x']) {
+    const r = syncPlugin('agent-skills', dir, ['--into', into]);
+    assert.equal(r.status, 1, into);
+    assert.match(r.stderr, /--into/, into);
+  }
+});
+
+test('--plugin without --into and without a marketplace entry: refused, nothing copied', () => {
+  const { dir } = fakeAgentSkills();
   const r = syncPlugin('agent-skills', dir);
   assert.equal(r.status, 1);
   assert.match(r.stderr, /no agent-skills entry in \.claude-plugin\/marketplace\.json/);

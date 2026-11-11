@@ -75,7 +75,7 @@ test('plugin declared in the versioned settings, all green after a review', () =
   const dir = featureRepo({
     '.claude/settings.json': {
       extraKnownMarketplaces: { dojo: { source: { source: 'github', repo: 'Lingelo/dojo' } } },
-      enabledPlugins: { 'kaizen@dojo': true, 'agent-skills@dojo': true },
+      enabledPlugins: { 'kaizen@dojo': true },
     },
     'package.json': { scripts: { test: 'node -e 0' } },
   });
@@ -126,37 +126,27 @@ test('a branch already pushed without a review is reported', () => {
   cleanup(bare);
 });
 
-// --- agent-skills (Addy Osmani's plugin, the base Kaizen converges on) -----------------------------------
+// --- agent-skills (Addy Osmani's workflow, embedded in Kaizen) ------------------------------------------
 
 const AS = (...lines) => lines.join('\n') + '\n';
 const settings = (plugins) => ({ extraKnownMarketplaces: { dojo: {} }, enabledPlugins: plugins });
 
-test('agent_skills: not enabled → warn with the fix, since agent-skills is the workflow Kaizen guards', () => {
-  const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
-  const dir = tempRepo({ '.kaizen/config.json': {}, 'docs/SPEC.md': AS('# Spec: X') });
-  const c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
-  assert.equal(c.status, 'warn');
-  assert.match(c.evidence, /agent-skills@dojo is not enabled/);
-  assert.match(c.fix, /install settings/);
-  cleanup(dir);
-  cleanup(home);
-});
-
-test('agent_skills: enabled → ok, with the files Kaizen reads', () => {
+test('agent_skills: embedded → ok with the files Kaizen reads; also enabled on its own → warn (loaded twice)', () => {
   const home = mkdtempSync(join(tmpdir(), 'kaizen-home-'));
   const dir = tempRepo({
     '.kaizen/config.json': {},
-    '.claude/settings.json': settings({ 'kaizen@dojo': true, 'agent-skills@dojo': true }),
     'SPEC.md': AS('# Spec: X', '', '## Objective', 'x'),
     'tasks/todo.md': AS('# Tasks', '', '## Task 1: A', '', '**Acceptance criteria:**', '- [x] a', '', '## Task 2: B', '', '**Acceptance criteria:**', '- [ ] b'),
   });
-  const c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
+  let c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
   assert.equal(c.status, 'ok');
-  assert.match(c.evidence, /agent-skills@dojo enabled; Kaizen reads SPEC\.md, tasks\/todo\.md \(1\/2 tasks done\)/);
-  const user = tempRepo({ '.kaizen/config.json': {} });
-  writeFiles(home, { 'settings.json': { enabledPlugins: { 'agent-skills@dojo': true } } });
-  assert.equal(check(cli(user, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills').status, 'ok', 'enabled in the user settings counts');
-  for (const d of [dir, user, home]) cleanup(d);
+  assert.match(c.evidence, /^embedded \(addyosmani\/agent-skills@[0-9a-f]{7}\); Kaizen reads SPEC\.md, tasks\/todo\.md \(1\/2 tasks done\)/);
+  writeFiles(dir, { '.claude/settings.json': settings({ 'kaizen@dojo': true, 'agent-skills@dojo': true }) });
+  c = check(cli(dir, ['doctor', '--json'], { env: { CLAUDE_CONFIG_DIR: home } }), 'agent_skills');
+  assert.equal(c.status, 'warn');
+  assert.match(c.evidence, /agent-skills@dojo is enabled too/);
+  assert.match(c.fix, /disable agent-skills@dojo/);
+  for (const d of [dir, home]) cleanup(d);
 });
 
 test('agent_skills: CONSTRAINTS.md without a wired floor guard → warn with the reference; wired in CI or a git hook → ok', () => {
@@ -166,7 +156,7 @@ test('agent_skills: CONSTRAINTS.md without a wired floor guard → warn with the
   let c = check(cli(dir, ['doctor', '--json'], { env }), 'floor_guard');
   assert.equal(c.status, 'warn');
   assert.match(c.evidence, /CONSTRAINTS\.md has a floor but no floor guard runs/);
-  assert.match(c.fix, /constraint-driven-development\/references\/floor-guard\.md/);
+  assert.match(c.fix, /\/kaizen:constraints/);
   writeFiles(dir, { '.github/workflows/ci.yml': 'jobs:\n  floor:\n    steps:\n      - run: node scripts/floor-guard.mjs --base origin/main\n' });
   c = check(cli(dir, ['doctor', '--json'], { env }), 'floor_guard');
   assert.equal(c.status, 'ok');

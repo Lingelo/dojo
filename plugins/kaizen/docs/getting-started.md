@@ -10,16 +10,15 @@ voice-over and [subtitles](../../../media/kaizen/kaizen-presentation.srt)).
 
 ## 1. Install
 
-In Claude Code, add the marketplace and enable both plugins:
+In Claude Code, add the marketplace and install Kaizen:
 
 ```
 /plugin marketplace add Lingelo/dojo
-/plugin install agent-skills@dojo
 /plugin install kaizen@dojo
 ```
 
-`agent-skills` does the work (spec, plan, build, test, review, ship); `kaizen` guards it, keeps the
-learnings, follows the PR and measures. Kaizen needs Node ≥ 18 and git; `gh` (authenticated) for pull
+One plugin: Kaizen embeds Addy Osmani's agent-skills, which does the work (spec, plan, build, test,
+review, ship); Kaizen guards it, keeps the learnings, follows the PR and measures. Kaizen needs Node ≥ 18 and git; `gh` (authenticated) for pull
 requests.
 
 ## 2. Set up the repository
@@ -32,8 +31,8 @@ Claude:
 - creates `.kaizen/config.json` and `docs/learnings/`;
 - shows the `test`, `lint` and `typecheck` commands it found and asks you to confirm them — **these are
   what the quality gate runs** after any turn that edits code;
-- offers to declare both plugins in the versioned `.claude/settings.json`, so every clone and cloud
-  session gets them;
+- offers to declare Kaizen in the versioned `.claude/settings.json`, so every clone and cloud session
+  gets it;
 - runs `kaizen doctor` and says what to run next.
 
 Every ⚠ of the doctor is a guard rail that is off: [Gates and hooks](concepts/gates.md#doctor).

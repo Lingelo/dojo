@@ -11,7 +11,7 @@ Everything Kaizen reads and writes, where it lives, who writes it, and whether i
 | `<docs>/learnings/<folder>/<slug>.md` | `/kaizen:learn` | one lesson per file, [format](../concepts/learnings.md#the-format); `docs_root` is `docs/` by default |
 | `<docs>/metrics/YYYY-MM-DD.md` | `/kaizen:metrics`, on request | trend reports |
 | `.kaizen/config.json` | `/kaizen:setup`, `init`, you | [configuration](configuration.md) |
-| `.claude/settings.json` (three keys) | `install settings`, with approval | the dojo marketplace, `kaizen@dojo`, `agent-skills@dojo` |
+| `.claude/settings.json` (two keys) | `install settings`, with approval | the dojo marketplace, `kaizen@dojo` |
 | one line in `CLAUDE.md` or `AGENTS.md` | `/kaizen:setup`, with approval | makes the learnings findable by any agent |
 
 **Read, never written, by Kaizen** — agent-skills' files: `SPEC.md` (or `docs/SPEC.md`), `tasks/plan.md`,

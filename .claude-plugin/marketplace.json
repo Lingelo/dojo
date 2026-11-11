@@ -10,13 +10,7 @@
         {
             "name": "kaizen",
             "source": "./plugins/kaizen",
-            "description": "The engine around Addy Osmani's agent-skills: its commands under the /kaizen: prefix (spec, plan, build, test, review, ship), plus what they do not do — a quality gate that keeps a turn open while checks are red, agent-skills' review recorded by itself and required before any push, no secret committed, learnings brought back when a spec, a plan or a file they cover is touched, the PR followed to looks-ready (/kaizen:watch), approximated DORA metrics, friction and cost per feature (/kaizen:metrics). Stops at the merge-ready PR: no deployment",
-            "category": "development"
-        },
-        {
-            "name": "agent-skills",
-            "source": "./plugins/agent-skills",
-            "description": "Addy Osmani's agent-skills (MIT), copied unmodified from addyosmani/agent-skills: production-grade engineering workflows for AI coding agents covering spec, plan, build, verify, review and ship, with /spec, /plan, /build, /test, /review, /ship commands. The base Kaizen runs on: install both; its commands are also available as /kaizen:<name>",
+            "description": "The engine around Addy Osmani's agent-skills, embedded: one plugin with its whole workflow under /kaizen: (spec, plan, build, test, review, ship, ideate, debug…), plus what it does not do — a quality gate that keeps a turn open while checks are red, agent-skills' review recorded by itself and required before any push, no secret committed, learnings brought back when a spec, a plan or a file they cover is touched, the PR followed to looks-ready (/kaizen:watch), approximated DORA metrics, friction and cost per feature (/kaizen:metrics). Stops at the merge-ready PR: no deployment",
             "category": "development"
         },
         {

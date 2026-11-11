@@ -10,7 +10,7 @@
 //   node kaizen.mjs detect                       stack and verification commands (JSON)
 //   node kaizen.mjs verify [--only test,lint] [--json]     runs the checks (exit 1 if red)
 //   node kaizen.mjs doctor [--in-skill] [--json] [--strict]   are the guard rails on? exit 1 with --strict
-//   node kaizen.mjs install settings             kaizen@dojo and agent-skills@dojo declared for every clone
+//   node kaizen.mjs install settings             kaizen@dojo declared for every clone
 //   node kaizen.mjs gate status | off             quality gate of this session (on by itself when code is edited)
 //   node kaizen.mjs review status | check
 //                                                 reviewed state per branch, required before git push; the review

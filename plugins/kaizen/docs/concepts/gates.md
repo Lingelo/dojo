@@ -88,7 +88,7 @@ your repository (pre-commit and CI); `kaizen doctor` reports whether it is wired
 |---|---|
 | `config` | no `.kaizen/config.json`: every gate but the secret scan is off |
 | `plugin_declared` | `.claude/settings.json` does not declare `kaizen@dojo` and its marketplace: clones run without Kaizen |
-| `agent_skills` | `agent-skills@dojo` is not enabled: the workflow commands are missing and no review can record itself |
+| `agent_skills` | `agent-skills@dojo` is enabled too: Kaizen embeds it, so its skills load twice — disable it |
 | `floor_guard` | `CONSTRAINTS.md` exists but its floor guard runs from no hook nor CI |
 | `hooks` | in a skill, no Kaizen hook has fired in this repo: every gate is off in this session |
 | `verify` | no verification command: the quality gate has nothing to run |

@@ -139,7 +139,7 @@
 <text class="sub" x="201" y="586" text-anchor="middle" style="font-size:10.6px">DORA approximated · learnings reuse · friction · cost</text>
 <rect class="skill" x="390" y="548" width="330" height="52" rx="8" stroke-width="1.5"/>
 <text class="label" x="555" y="571" text-anchor="middle">/kaizen:setup</text>
-<text class="sub" x="555" y="586" text-anchor="middle">config, both plugins declared, doctor</text>
+<text class="sub" x="555" y="586" text-anchor="middle">config, Kaizen declared, doctor</text>
 <rect class="agent" x="36" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>
 <text class="small" x="60" y="640">agent-skills command (/kaizen:spec…)</text>
 <rect class="skill" x="305.20000000000005" y="630" width="18" height="12" rx="3" stroke-width="1.3"/>

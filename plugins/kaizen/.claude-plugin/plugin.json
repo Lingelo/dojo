@@ -1,11 +1,22 @@
 {
   "name": "kaizen",
-  "description": "The engine around Addy Osmani's agent-skills: its commands under the /kaizen: prefix (spec, plan, build, test, review, ship), plus what they do not do — a quality gate that keeps a turn open while checks are red, agent-skills' review recorded by itself and required before any push, no secret committed, learnings brought back when a spec, a plan or a file they cover is touched, the PR followed to looks-ready (/kaizen:watch), approximated DORA metrics, friction and cost per feature (/kaizen:metrics). Stops at the merge-ready PR: no deployment",
-  "version": "1.0.0",
+  "description": "The engine around Addy Osmani's agent-skills, embedded: one plugin with its whole workflow under /kaizen: (spec, plan, build, test, review, ship, ideate, debug…), plus what it does not do — a quality gate that keeps a turn open while checks are red, agent-skills' review recorded by itself and required before any push, no secret committed, learnings brought back when a spec, a plan or a file they cover is touched, the PR followed to looks-ready (/kaizen:watch), approximated DORA metrics, friction and cost per feature (/kaizen:metrics). Stops at the merge-ready PR: no deployment",
+  "version": "1.1.0",
   "author": {
     "name": "Angelo LIMA",
     "email": "contact@example.com"
   },
   "license": "MIT",
-  "keywords": ["sdlc", "agent-skills", "quality-gate", "code-review", "learnings", "metrics"]
+  "keywords": [
+    "sdlc",
+    "agent-skills",
+    "quality-gate",
+    "code-review",
+    "learnings",
+    "metrics"
+  ],
+  "skills": [
+    "./skills",
+    "./agent-skills/skills"
+  ]
 }

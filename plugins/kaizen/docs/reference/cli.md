@@ -57,7 +57,7 @@ Stack and verification commands, as JSON: `test`, `lint`, `typecheck` (and `audi
 
 ### `install settings`
 
-Declares the dojo marketplace, `kaizen@dojo` and `agent-skills@dojo` in the versioned
+Declares the dojo marketplace and `kaizen@dojo` (agent-skills included) in the versioned
 `.claude/settings.json`, keeping everything else.
 
 ## Checks

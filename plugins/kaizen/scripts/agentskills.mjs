@@ -1,4 +1,4 @@
-// Kaizen — reads the files agent-skills (Addy Osmani, plugins/agent-skills) writes in a repository, so
+// Kaizen — reads the files agent-skills (Addy Osmani, embedded in agent-skills/) writes in a repository, so
 // that Kaizen's engine can enforce them without asking the agent to run anything:
 //   SPEC.md or docs/SPEC.md   spec-driven-development: sections, boundaries (Always / Ask first / Never)
 //   tasks/plan.md             planning-and-task-breakdown: the plan (path only)
