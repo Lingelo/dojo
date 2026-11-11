@@ -25,12 +25,13 @@ const NOT_CODE = /\.(md|mdx|txt|rst|adoc)$|(^|[\\/])\.kaizen[\\/]|(^|[\\/])(CHAN
 try {
   const { createHash } = await import('node:crypto');
   const { existsSync } = await import('node:fs');
-  const { isAbsolute, join, relative } = await import('node:path');
-  const { loadConfig, readState, repoRoot, writeState } = await import('./lib.mjs');
+  const { isAbsolute, join } = await import('node:path');
+  const { loadConfig, readState, repoRelative, repoRoot, writeState } = await import('./lib.mjs');
   const root = repoRoot(input.cwd || process.cwd());
   if (!root || !existsSync(join(root, '.kaizen', 'config.json'))) process.exit(0);
-  const relFile = relative(root, isAbsolute(file) ? file : join(input.cwd || root, file)).split('\\').join('/');
-  if (relFile.startsWith('..')) process.exit(0);
+  const relFile = repoRelative(root, file, input.cwd || root);
+  // Outside the repository (another folder, another Windows drive): not this repository's code.
+  if (!relFile || relFile.startsWith('..') || isAbsolute(relFile)) process.exit(0);
 
   if (PLANNING.test(relFile)) {
     const text = existsSync(join(root, relFile)) ? readFileSync(join(root, relFile), 'utf8') : '';

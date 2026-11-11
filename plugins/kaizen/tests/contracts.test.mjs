@@ -39,7 +39,8 @@ test('agent-skills\' commands under Kaizen\'s prefix: exact copies, one per comm
 
 test('every skill: complete frontmatter, and agent-skills\' anatomy (when, process, rationalizations, red flags, verification)', () => {
   for (const s of skills) {
-    const text = readFileSync(join(PLUGIN, 'skills', s, 'SKILL.md'), 'utf8');
+    // A Windows checkout may turn line endings into CRLF.
+    const text = readFileSync(join(PLUGIN, 'skills', s, 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
     const { data, error } = parseFrontmatter(text);
     assert.equal(error, null, `${s}: ${error}`);
     assert.equal(data.name, s, `${s}: name`);

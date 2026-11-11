@@ -2,9 +2,9 @@
 // Repo root, configuration, YAML frontmatter (subset), stack detection.
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // ---------------------------------------------------------------------------
@@ -88,6 +88,23 @@ export function loadConfig(root) {
   merged.secrets = { ...DEFAULT_CONFIG.secrets, ...(base.secrets || {}), ...(local.secrets || {}) };
   if (base.docs_root) merged.docs_root = base.docs_root;
   return merged;
+}
+
+// A file a tool names (absolute, or relative to the session's cwd), relative to the repository, POSIX
+// slashes. Both sides are resolved to their real path first: git reports the real one, while the tool may
+// pass a symbolic link (macOS: /var → /private/var) or a Windows short name (RUNNER~1). A file not
+// written yet resolves through its nearest existing folder.
+function realPath(p) {
+  try {
+    return realpathSync.native(p);
+  } catch {
+    const parent = dirname(p);
+    return parent === p ? p : join(realPath(parent), basename(p));
+  }
+}
+export function repoRelative(root, file, cwd = root) {
+  const abs = isAbsolute(file) ? file : join(cwd, file);
+  return relative(realPath(root), realPath(abs)).split(sep).join('/');
 }
 
 export function docsRoot(root, config = loadConfig(root)) {
