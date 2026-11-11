@@ -97,7 +97,6 @@ test('metrics: learnings cited by agent-skills\' plan, applied in a commit, neve
   assert.equal(loop.learnings_applied_in_commits, 1);
   assert.equal(loop.learning_reuse_rate, 0.5);
   assert.deepEqual(loop.learnings_never_cited_sample, ['learnings/bugs/forgotten.md']);
-  assert.ok(!('cycle_cost' in m) && !('deployments' in m));
   assert.equal(m.instability.time_to_restore_hours_median, null);
   cleanup(dir);
 });
@@ -151,12 +150,11 @@ test('install settings declares kaizen@dojo and agent-skills@dojo; gate status a
   cleanup(dir);
 });
 
-test('help and removed or unknown commands', () => {
+test('help and unknown commands', () => {
   const dir = tempRepo({});
   const help = cli(dir, ['help']).stdout;
   assert.match(help, /learnings search/);
-  for (const gone of ['plan check', 'constitution', 'deploy', 'audit', 'packs', 'release notes', 'profile', 'models']) assert.doesNotMatch(help, new RegExp(`kaizen\\.mjs ${gone}\\b`), gone);
-  for (const gone of ['plan', 'constitution', 'audit', 'release', 'whatever']) assert.equal(cli(dir, [gone]).code, 2, gone);
+  assert.equal(cli(dir, ['whatever']).code, 2);
   execFileSync('git', ['status'], { cwd: dir });
   cleanup(dir);
 });

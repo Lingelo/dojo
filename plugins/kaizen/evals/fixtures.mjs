@@ -35,7 +35,7 @@ test('filter by status', () => {
   assert.equal(byStatus('shipped').length, 1);
 });
 `,
-  '.gitignore': 'node_modules\n.kaizen/runs\n',
+  '.gitignore': 'node_modules\n',
 };
 
 export const HEADLESS = 'Nobody is available to answer your questions during this session: whenever you would ask, take your recommendation and record it as an assumption in the deliverable.';
