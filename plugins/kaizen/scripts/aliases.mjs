@@ -49,6 +49,91 @@ code and no spec.
 Close by proposing the next step: /kaizen:spec with the refined idea.
 `,
   },
+  debug: {
+    skills: ['debugging-and-error-recovery'],
+    text: `---
+description: Find the root cause of a failure — reproduce, isolate, fix, guard against its return
+disable-model-invocation: true
+---
+
+Invoke the agent-skills:debugging-and-error-recovery skill.
+
+Stop the line: no new feature work until the failure is understood. First search docs/learnings/ for
+the symptoms (error message, component, file) — this may have been solved before.
+
+Then follow the skill: reproduce the failure, localize it, reduce it to a minimal case, fix the root cause
+(not the symptom), and add a test that fails without the fix. Show the evidence: the failing run, then
+the passing one.
+
+If the cause was not obvious, propose /kaizen:learn to keep it.
+`,
+  },
+  adr: {
+    skills: ['documentation-and-adrs'],
+    text: `---
+description: Record an architecture decision — context, options, decision, consequences
+disable-model-invocation: true
+---
+
+Invoke the agent-skills:documentation-and-adrs skill.
+
+Write an Architecture Decision Record for the decision given (or the one just made in this
+conversation): the context and the forces at play, the options considered with their trade-offs, the
+decision, and its consequences — what becomes easier, what becomes harder. Follow the repository's
+existing ADR folder and numbering if there is one, otherwise the skill's default.
+
+Record the reasoning, not only the outcome: someone reading it in a year must understand why.
+`,
+  },
+  security: {
+    skills: ['security-and-hardening'],
+    text: `---
+description: Security audit of the changes or of a given area — untrusted input, auth, secrets, data
+disable-model-invocation: true
+---
+
+Invoke the agent-skills:security-and-hardening skill.
+
+Audit the area given, or by default what the current branch changes against the default branch. Check
+every path untrusted data takes, authentication and authorization, secrets and data at rest, and external
+integrations, against the skill's checklist.
+
+Report findings by severity with file:line, the exploit scenario and the fix. Fix only what the user
+approves; each fix comes with a test that fails without it.
+`,
+  },
+  doubt: {
+    skills: ['doubt-driven-development'],
+    text: `---
+description: Cross-examine a plan, a decision or a claim before it stands — fresh-context adversarial review
+disable-model-invocation: true
+---
+
+Invoke the agent-skills:doubt-driven-development skill.
+
+Take the plan, decision or claim given (or the latest one in this conversation) and subject it to the
+skill's adversarial review: state it precisely, list what must be true for it to hold, look for the
+evidence against each, and name the failure modes nobody has checked.
+
+End with a verdict — holds, holds with changes, or does not hold — and what would change it.
+`,
+  },
+  migrate: {
+    skills: ['deprecation-and-migration'],
+    text: `---
+description: Plan a deprecation or a migration — old system, API, feature or schema out, safely
+disable-model-invocation: true
+---
+
+Invoke the agent-skills:deprecation-and-migration skill.
+
+For what is being removed or replaced: inventory its users, choose the strategy the skill describes (for a
+schema: expand, migrate, contract, without downtime), write the steps with their verification and their
+rollback, and the communication to the people affected.
+
+Write the plan, not the code: implementation goes through /kaizen:plan and /kaizen:build.
+`,
+  },
 };
 
 export function expected() {

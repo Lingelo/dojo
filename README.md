@@ -103,6 +103,8 @@ Add to your project's `.claude/settings.json` to configure every team member aut
 /kaizen:watch                                   # review comments, CI, branch — until "looks ready"; you merge
 /kaizen:learn                                   # the lesson, brought back by the next spec, plan or edit
 /kaizen:metrics                                 # are we improving, and at what cost
+# at any time: /kaizen:debug (root cause) · /kaizen:adr (decision) · /kaizen:security (audit)
+#              /kaizen:doubt (stress-test a plan) · /kaizen:migrate (deprecation, migration)
 ```
 
 Documentation: [getting started](plugins/kaizen/docs/getting-started.md) ·
