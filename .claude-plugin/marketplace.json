@@ -1,7 +1,7 @@
 {
     "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
     "name": "dojo",
-    "description": "Claude Code plugins: Kaizen (AI-assisted SDLC), Agent Skills (Addy Osmani's engineering workflows, the base Kaizen converges on), Motion Studio (motion design as code), Slide Studio (presentation decks) and Kioku (a guarded knowledge vault)",
+    "description": "Claude Code plugins: Kaizen (AI-assisted SDLC), Agent Skills (Addy Osmani's engineering workflows, the base Kaizen converges on), Motion Studio (motion design as code) and Slide Studio (presentation decks)",
     "owner": {
         "name": "Angelo Lima",
         "email": "angelomiguellima@gmail.com"
@@ -23,12 +23,6 @@
             "name": "slide-studio",
             "source": "./plugins/slide-studio",
             "description": "Presentation decks as one HTML file: themed template with 19 layouts (ink, paper, kaizen), browser presenter with notes and steps, slide-by-slide layout check, PDF/PNG export",
-            "category": "productivity"
-        },
-        {
-            "name": "kioku",
-            "source": "./plugins/kioku",
-            "description": "A guarded knowledge vault for Claude Code, on the LLM Wiki pattern: silos (work, personal…) sealed from each other by a PreToolUse hook, a bronze → silver → gold medallion, and a gate that admits a page to the wiki only after deterministic checks and an independent reviewer. Creates the vault (/kioku:setup), ingests, queries, triages, lints; local dashboard; optional Plaud capture",
             "category": "productivity"
         }
     ]
