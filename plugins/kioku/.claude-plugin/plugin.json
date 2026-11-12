@@ -1,8 +1,0 @@
-{
-  "name": "kioku",
-  "description": "Coffre de connaissance garde : medaillon, silos etanches, gate relue.",
-  "license": "MIT",
-  "agents": [
-    "./agents/reviewer.md"
-  ]
-}
