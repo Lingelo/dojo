@@ -37,6 +37,11 @@ beforeEach(() => {
   market = path.join(root, 'dojo');
   mkdirSync(path.join(market, 'plugins'), { recursive: true });
   cpSync(path.join(REAL_ROOT, '.claude-plugin'), path.join(market, '.claude-plugin'), { recursive: true });
+  // kioku a quitte le vrai catalogue (2026-11-12) : il reste le plugin d'essai de ces tests, avec une entree factice.
+  const catalog = path.join(market, '.claude-plugin', 'marketplace.json');
+  const data = JSON.parse(readFileSync(catalog, 'utf8'));
+  if (!data.plugins.some((p) => p.name === 'kioku')) data.plugins.push({ name: 'kioku', source: './plugins/kioku', description: 'test fixture' });
+  writeFileSync(catalog, `${JSON.stringify(data, null, 4)}\n`);
   cpSync(HERE, path.join(market, '.github', 'scripts'), { recursive: true });
   // A fake kioku repository.
   kioku = path.join(root, 'kioku');
