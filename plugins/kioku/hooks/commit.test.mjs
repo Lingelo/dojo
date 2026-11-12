@@ -113,11 +113,26 @@ describe('kioku commit', () => {
     assert.match(r.stdout, /sans gate:/);
   });
 
-  test('silo : une session pro ne commite pas perso ; setup et triage refuses', () => {
+  test('silo : une session pro ne commite pas perso ; setup refuse', () => {
     put('wiki/perso/log.md', '# Journal\n\nx\n');
     assert.match(commit(session('query', 'pro'), 'perso').stdout, /la session est pro, pas perso/);
-    assert.match(commit(session('setup', 'pro'), 'pro').stdout, /query ou ingest seulement/);
-    assert.match(commit(session('triage', undefined), 'pro').stdout, /query ou ingest seulement/);
+    assert.match(commit(session('setup', 'pro'), 'pro').stdout, /query, ingest ou triage seulement/);
+  });
+
+  test('triage : commite le brut du domaine seulement, ni argent, ni wiki, ni verdicts, ni autre domaine', () => {
+    put('raw/pro/meetings/2026-11-12-a.md', 'brut');
+    put('raw/perso/articles/2026-11-12-b.md', 'brut perso');
+    put('silver/pro/2026-11-05-a.md', 'argent');
+    put('wiki/pro/log.md', '# Journal\n\nx\n');
+    put('.verdicts/aaa.json', verdict('pro', '.candidats/wiki/pro/concepts/zeta.md'));
+    put('.candidats/wiki/pro/concepts/zeta.md', 'brouillon'); // une candidate en attente ne bloque pas le tri
+    const r = commit(session('triage', undefined), 'pro');
+    assert.equal(r.status, 0, r.stdout);
+    assert.deepEqual(committed(), ['raw/pro/meetings/2026-11-12-a.md']);
+    assert.equal(git('log', '-1', '--format=%s').stdout.trim(), 'triage(pro) : 1 source(s) rangee(s)');
+    const r2 = commit(session('triage', undefined), 'perso');
+    assert.equal(r2.status, 0, r2.stdout);
+    assert.deepEqual(committed(), ['raw/perso/articles/2026-11-12-b.md']);
   });
 
   test('dans Claude Code sans variables : le default_session s applique', () => {

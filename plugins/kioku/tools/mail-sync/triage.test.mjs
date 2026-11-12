@@ -168,7 +168,8 @@ describe('N4 et N6 : relance depuis une session, depot a la main', () => {
     const r = run('abstient', { FAUX_RELANCE: relance, FAUX_NODE: process.execPath, FAUX_RUN: RUN });
     assert.equal(r.status, 0, r.stderr);
     assert.equal(readFileSync(relance, 'utf8').trim(), '1');
-    assert.match(readFileSync(`${relance}.err`, 'utf8'), /jamais depuis une session Claude Code/);
+    // La session de tri ouverte par le circuit porte KIOKU_CIRCUIT : refus avant meme la regle des sessions.
+    assert.match(readFileSync(`${relance}.err`, 'utf8'), /ne se relance pas depuis une session qu'il a ouverte/);
   });
 
   test('une source deposee a la main (sans marque) : nommee a part, avec la voie a suivre', () => {

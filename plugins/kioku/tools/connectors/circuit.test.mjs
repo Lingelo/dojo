@@ -16,7 +16,7 @@ import path from 'node:path';
 import { after, afterEach, before, beforeEach, describe, test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { declareFakeGuard, nodeOnlyPath, terminalEnv, testHome, writeTestConfig } from '../test-vault.mjs';
-import { assertConnector, byDay, dropArgs, parseQueue } from './circuit.mjs';
+import { assertConnector, byDay, dropArgs, parseQueue, sessionRefusal } from './circuit.mjs';
 import { legacyLockPath, lockPath } from './lock.mjs';
 
 const CIRCUIT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'circuit.mjs');
@@ -51,6 +51,27 @@ describe('fonctions pures', () => {
     assert.deepEqual(dropArgs(['--drop', 'a', '--drop', 'b']), ['a', 'b']);
     assert.deepEqual(dropArgs(['--drop']), ['']);
     assert.deepEqual(dropArgs(['--yes']), []);
+  });
+});
+
+// Decision du 2026-11-12 : Plaud se lance depuis une session de tri ouverte par l'utilisateur, rien d'autre ne s'ouvre.
+describe('sessionRefusal', () => {
+  test('terminal : permis pour tout connecteur', () => {
+    assert.equal(sessionRefusal({}, 'plaud'), null);
+    assert.equal(sessionRefusal({}, 'mail'), null);
+  });
+  test('session de tri : Plaud permis ; mail et connecteur sans id refuses', () => {
+    assert.equal(sessionRefusal({ VAULT_MODE: 'triage', CLAUDECODE: '1' }, 'plaud'), null);
+    assert.match(sessionRefusal({ VAULT_MODE: 'triage', CLAUDECODE: '1' }, 'mail'), /jamais depuis une session Claude Code/);
+    assert.match(sessionRefusal({ VAULT_MODE: 'triage' }, undefined), /jamais depuis une session Claude Code/);
+  });
+  test('session ouverte par un circuit (KIOKU_CIRCUIT) : refus, meme en tri, meme pour Plaud', () => {
+    assert.match(sessionRefusal({ VAULT_MODE: 'triage', KIOKU_CIRCUIT: '1' }, 'plaud'), /ne se relance pas/);
+  });
+  test('query, ingest, Claude Code sans mode : refus pour Plaud', () => {
+    for (const env of [{ VAULT_MODE: 'query', VAULT_DOMAIN: 'pro' }, { VAULT_MODE: 'ingest', VAULT_DOMAIN: 'pro' }, { CLAUDECODE: '1' }, { VAULT_MODE: 'setup' }]) {
+      assert.match(sessionRefusal(env, 'plaud'), /ou une session de tri/, JSON.stringify(env));
+    }
   });
 });
 
@@ -160,7 +181,7 @@ describe('un connecteur factice branche sur le circuit', () => {
       const r = spawnSync(process.execPath, [entry, '--vault', vault, '--skip-fetch'], { encoding: 'utf8', env: terminalEnv({ HOME: testHome(vault), FAUX_LOG: log(), PATH: `${bin}${path.delimiter}${process.env.PATH}` }) });
       assert.match(r.stdout, /Tri de 1 source/, `le parent, lance du terminal, demarre : ${r.stderr}`);
       assert.equal(readFileSync(relance, 'utf8').trim(), '1 VAULT_MODE=triage', 'la session de tri a VAULT_MODE et sa relance est refusee');
-      assert.match(readFileSync(`${relance}.err`, 'utf8'), /jamais depuis une session Claude Code/);
+      assert.match(readFileSync(`${relance}.err`, 'utf8'), /ne se relance pas depuis une session qu'il a ouverte \(KIOKU_CIRCUIT=1\)/);
       assert.deepEqual(fetches(), [], 'la relance n a rien depose');
     } finally {
       rmSync(bin, { recursive: true, force: true });

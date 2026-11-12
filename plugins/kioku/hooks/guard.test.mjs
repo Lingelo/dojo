@@ -44,6 +44,15 @@ const guard = (session, payload, raw) => {
   const input = raw ?? JSON.stringify({ ...payload, cwd: vault });
   return spawnSync(process.execPath, [TARGET], { input, env, encoding: 'utf8' }).status;
 };
+// Meme chose avec des variables en plus (KIOKU_CIRCUIT d'une session ouverte par un circuit).
+const guardWith = (session, payload, extra) => {
+  const env = { ...process.env, CLAUDE_PROJECT_DIR: vault, ...extra };
+  delete env.VAULT_MODE;
+  delete env.VAULT_DOMAIN;
+  if (session.mode !== undefined) env.VAULT_MODE = session.mode;
+  if (session.domain !== undefined) env.VAULT_DOMAIN = session.domain;
+  return spawnSync(process.execPath, [TARGET], { input: JSON.stringify({ ...payload, cwd: vault }), env, encoding: 'utf8' }).status;
+};
 // Session nue (ni VAULT_MODE ni VAULT_DOMAIN) ouverte sur un autre dossier projet ; projectDir null = variable absente.
 const guardAt = (projectDir, payload) => {
   const env = { ...process.env };
@@ -653,11 +662,21 @@ describe('circuits de capture refuses dans toutes les sessions', () => {
     'node tools/connectors/pending.mjs --state tools/plaud-sync list',
     'npm test && kioku plaud',
   ];
+  // Decision du 2026-11-12 : une session de tri ouverte par l'utilisateur lance le relais `kioku plaud`.
+  const RELAY = new Set(['kioku plaud --dry-run', "kioku 'plaud' --skip-fetch", 'kioku "plaud"', 'node tools/kioku.mjs plaud', 'npm test && kioku plaud']);
   for (const sess of SESSIONS) {
-    test(`${sess.mode} : kioku plaud, ses scripts npm et ses outils refuses`, () => {
-      for (const cmd of CMDS) assert.equal(guard(sess, bash(cmd)), REFUS, `${sess.mode} : ${cmd}`);
+    test(`${sess.mode} : kioku plaud, ses scripts npm et ses outils refuses${sess.mode === 'triage' ? ' (sauf le relais)' : ''}`, () => {
+      for (const cmd of CMDS) assert.equal(guard(sess, bash(cmd)), sess.mode === 'triage' && RELAY.has(cmd) ? OK : REFUS, `${sess.mode} : ${cmd}`);
     });
   }
+  test('triage ouvert par un circuit (KIOKU_CIRCUIT) : tout reste refuse, relais compris', () => {
+    for (const cmd of CMDS) assert.equal(guardWith({ mode: 'triage' }, bash(cmd), { KIOKU_CIRCUIT: '1' }), REFUS, cmd);
+  });
+  test('triage : le mail reste refuse ; forger ou vider KIOKU_CIRCUIT est refuse', () => {
+    for (const cmd of ['kioku mail --dry-run', 'KIOKU_CIRCUIT= kioku plaud', 'unset KIOKU_CIRCUIT; kioku plaud', 'env -u KIOKU_CIRCUIT kioku plaud', 'KIOKU_GH=/tmp/gh kioku push']) {
+      assert.equal(guard({ mode: 'triage' }, bash(cmd)), REFUS, cmd);
+    }
+  });
   test('la gate et doctor restent admis la ou ils l etaient ; un mot voisin ne declenche rien', () => {
     assert.equal(guard({ mode: 'ingest', domain: 'a' }, bash('kioku check .candidats/wiki/a/concepts/x.md')), OK);
     assert.equal(guard({ mode: 'query', domain: 'a' }, bash('kioku doctor')), OK);
@@ -890,10 +909,12 @@ describe('rien ne sort du coffre (N1)', () => {
 describe('filet : concatenations shell et options npm (N4)', () => {
   beforeEach(() => config(THREE));
   const SESSIONS = [{ mode: 'query', domain: 'a' }, { mode: 'ingest', domain: 'a' }, { mode: 'triage' }, { mode: 'setup' }];
-  test('kioku pl""aud, p\'\'laud, pla\\ud, $\'plaud\', npm --silent run, npm -s run : refuses partout', () => {
+  test('kioku pl""aud, p\'\'laud, pla\\ud, $\'plaud\', npm --silent run, npm -s run : refuses partout (relais : sauf en tri)', () => {
+    const relay = ['kioku pl""aud --dry-run', "kioku p''laud", 'kioku pla\\ud', "kioku $'plaud' --dry-run", 'kioku "p"laud'];
     for (const sess of SESSIONS) {
-      for (const cmd of ['kioku pl""aud --dry-run', "kioku p''laud", 'kioku pla\\ud', "kioku $'plaud' --dry-run", 'kioku "p"laud', 'npm --silent run plaud:dry-run', 'npm -s run plaud:dry-run', 'npm --prefix . run-script plaud:sync', "npm run -s 'plaud:pending'"]) {
-        assert.equal(guard(sess, bash(cmd)), REFUS, `${sess.mode} : ${cmd}`);
+      for (const cmd of [...relay, 'npm --silent run plaud:dry-run', 'npm -s run plaud:dry-run', 'npm --prefix . run-script plaud:sync', "npm run -s 'plaud:pending'"]) {
+        assert.equal(guard(sess, bash(cmd)), sess.mode === 'triage' && relay.includes(cmd) ? OK : REFUS, `${sess.mode} : ${cmd}`);
+        assert.equal(guardWith(sess, bash(cmd), { KIOKU_CIRCUIT: '1' }), REFUS, `${sess.mode} (circuit) : ${cmd}`);
       }
     }
   });
@@ -1039,6 +1060,77 @@ describe('filet : kioku mail reconstitue par le shell (N4)', () => {
         assert.equal(guard(sess, bash(cmd)), REFUS, `${sess.mode} : ${cmd}`);
       }
     }
+  });
+});
+
+// Faux positifs du 2026-11-12 : les regles « recherche recursive » et « historique git » jugent les commandes lancees
+// (decoupage en mots), plus le texte. Les formes qui lancent vraiment une recherche ou un git de contenu restent refusees.
+describe('commandes lancees, pas texte (faux positifs du 2026-11-12)', () => {
+  const s = { mode: 'query', domain: 'pro' };
+  test('un mot dans une note, un message ou un argument n est pas une commande', () => {
+    for (const cmd of [
+      'kioku quarantine pro 2026-11-02-x sensible meetings/2026-11-02-x.md "section evolution du poste"',
+      'kioku flag pro people/x jugement-personne "retour du 12/03, find et tree cites"',
+      'orca orchestration send --to x --subject "Corrections" --body "lance grep -r puis find ."',
+      'git branch --show-current',
+      'git rev-parse --abbrev-ref HEAD',
+      'git log --oneline --grep=ingest',
+      'git switch -c feat/x',
+      'echo "du texte" && ls -lrt wiki/pro',
+      "python3 - <<'EOF'\nimport os\ndu = 3\nfind = 4\nEOF",
+      'cat > /tmp/x.txt <<EOF\ngrep -r foo .\nEOF',
+    ]) {
+      assert.equal(guard(s, bash(cmd)), OK, cmd);
+    }
+  });
+  test('une vraie recherche recursive reste refusee, sous toutes ses formes de lancement', () => {
+    for (const cmd of [
+      'find . -name x',
+      '"find" .',
+      "f'in'd .",
+      'du -sh .',
+      'grep -rn foo .',
+      'grep -Rl foo .',
+      'grep --recursive foo .',
+      'ls -laR',
+      'echo x | xargs grep -r foo',
+      'env LC_ALL=C find .',
+      'timeout 30 rg foo',
+      'X=1 tree',
+      'sh -c "find ."',
+      "bash -lc 'grep -r foo .'",
+      'eval "find ."',
+      'echo $(find .)',
+      'echo `du -sh .`',
+      'bash <<EOF\nfind .\nEOF',
+      'cd x && /usr/bin/find .',
+    ]) {
+      assert.equal(guard(s, bash(cmd)), REFUS, cmd);
+    }
+  });
+  test('git de contenu reste refuse, options globales et alias compris', () => {
+    for (const cmd of [
+      'git show HEAD',
+      'git -C . show HEAD:x.md',
+      'git -c core.pager=cat diff',
+      'git --no-pager log -p',
+      'git log -1p',
+      'git log --patch',
+      'git log -L1,2:x.md',
+      'git stash list',
+      'git checkout x',
+      'git -c alias.v=show v HEAD',
+      '"git" show',
+      'sh -c "git show HEAD"',
+      'echo x | xargs git cat-file -p',
+      'git whatchanged',
+    ]) {
+      assert.equal(guard(s, bash(cmd)), REFUS, cmd);
+    }
+  });
+  test('une recherche recursive dans un dossier autorise passe toujours', () => {
+    assert.equal(guard(s, bash('grep -rn foo wiki/pro')), OK);
+    assert.equal(guard(s, bash('find wiki/pro -name "*.md"')), OK);
   });
 });
 

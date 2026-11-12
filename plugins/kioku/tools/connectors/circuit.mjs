@@ -121,13 +121,23 @@ export const dropArgs = (argv) =>
  * --dry-run, qui liste les sources de tous les domaines) est refusee ici, quelle que soit la forme de la commande. Le
  * circuit parent, lance depuis le terminal de l'utilisateur, n'a ni VAULT_MODE ni CLAUDECODE. Rend la raison, ou null.
  */
-export const sessionRefusal = (env = process.env) =>
-  env.VAULT_MODE !== undefined || env.CLAUDECODE
-    ? `un circuit de capture se lance depuis le terminal de l'utilisateur, jamais depuis une session Claude Code (VAULT_MODE=${env.VAULT_MODE ?? '-'}, CLAUDECODE=${env.CLAUDECODE ?? '-'}).`
+/*
+ * Decision du 2026-11-12 (autonomie des sessions) : une session de TRI ouverte par l'utilisateur peut lancer le circuit
+ * Plaud. Le tri voit deja tout l'entrant, sans domaine : le dry-run et le rapport ne lui apprennent rien de plus. Les
+ * sessions que le circuit ouvre portent KIOKU_CIRCUIT=1 (pose ci-dessous, garde aussi par la garde) : aucune ne relance
+ * un circuit, meme en tri. Les sessions query et ingest restent refusees (silo), et le mail aussi (non decide).
+ */
+export const PLAUD_FROM_TRIAGE = new Set(['plaud']);
+export const sessionRefusal = (env = process.env, connectorId = undefined) => {
+  if (env.KIOKU_CIRCUIT) return `un circuit ne se relance pas depuis une session qu'il a ouverte (KIOKU_CIRCUIT=${env.KIOKU_CIRCUIT}).`;
+  if (env.VAULT_MODE === 'triage' && PLAUD_FROM_TRIAGE.has(connectorId)) return null;
+  return env.VAULT_MODE !== undefined || env.CLAUDECODE
+    ? `un circuit de capture se lance depuis le terminal de l'utilisateur${PLAUD_FROM_TRIAGE.has(connectorId) ? ' (ou une session de tri)' : ''}, jamais depuis une session Claude Code (VAULT_MODE=${env.VAULT_MODE ?? '-'}, CLAUDECODE=${env.CLAUDECODE ?? '-'}).`
     : null;
+};
 
 export const runCircuit = async (connector, argv = process.argv.slice(2)) => {
-  const refusal = sessionRefusal();
+  const refusal = sessionRefusal(process.env, connector?.id);
   if (refusal) {
     console.error(`Erreur : ${refusal}`);
     process.exit(1);
@@ -206,7 +216,10 @@ export const runCircuit = async (connector, argv = process.argv.slice(2)) => {
 
   // Tous les enfants visent CE coffre (fetch et pending lisent CLAUDE_PROJECT_DIR).
   // Les sessions claude -p attendent le plugin avant leur premier tour : sans lui, la garde manquerait.
-  const baseEnv = { ...withCorePath(process.env), CLAUDE_PROJECT_DIR: VAULT, CLAUDE_CODE_SYNC_PLUGIN_INSTALL: '1' };
+  // KIOKU_CIRCUIT : marque les sessions ouvertes ici (aucune ne relance un circuit). CLAUDECODE retire : lance depuis
+  // une session de tri, le circuit ouvre des sessions claude -p de premier niveau, comme depuis un terminal.
+  const baseEnv = { ...withCorePath(process.env), CLAUDE_PROJECT_DIR: VAULT, CLAUDE_CODE_SYNC_PLUGIN_INSTALL: '1', KIOKU_CIRCUIT: '1' };
+  delete baseEnv.CLAUDECODE;
   // Pas de session sans garde. Seuls le dry-run, --drop et --requeue n'en ouvrent aucune (--decide passe par la session de tri).
   if (!flag('--dry-run') && !flag('--drop') && !flag('--requeue')) {
     const refusal = startupRefusal(VAULT);

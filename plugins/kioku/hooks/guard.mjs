@@ -317,7 +317,7 @@ const KIOKU_WRITE = /(^|[\s;&|(/\\])kioku(\.mjs)?["']?\s+(init|add-domain|upgrad
 // En setup, ce qui lirait un domaine ou ouvrirait une session d'un autre mode : la gate, les circuits de capture, le lanceur,
 // le dashboard. Ni lecture de nom de page, ni escalade par processus enfant.
 // La gate s'appelle `kioku <commande>` : ses sous-commandes (pas init, add-domain, doctor) lisent ou ecrivent un domaine.
-const KIOKU_GATE = /(^|[\s;&|(/\\])kioku(\.mjs)?["']?\s+(commit|check|verdict|promote|stage|rotate-log|propose-org|tag-org|propose-raw|tag-raw|quarantine|undecided|audit|flag|decide|seed)\b/;
+const KIOKU_GATE = /(^|[\s;&|(/\\])kioku(\.mjs)?["']?\s+(commit|push|inbox-add|check|verdict|promote|stage|rotate-log|propose-org|tag-org|propose-raw|tag-raw|quarantine|undecided|audit|flag|decide|seed)\b/;
 // Les scripts npm du coffre (generes par init) : un par domaine declare (session query/<D>) et les prefixes communs.
 // Les domaines viennent de la configuration : une liste figee laisserait `npm run travail` ouvrir une session de domaine
 // depuis setup. `pro` et `perso` restent, pour les coffres anterieurs a la configuration.
@@ -335,6 +335,11 @@ const KIOKU_TOOLS = kiokuSub(['session', 'dashboard', 'plaud', 'mail']);
 // de tous les domaines. Refuses dans TOUS les modes : le relais, les scripts npm, leurs outils et le socle des
 // connecteurs (circuit, file d'ingestion, verrou). Le circuit, lui, n'a jamais besoin de se relancer depuis une session.
 const CIRCUIT_DENIED = [kiokuSub(['plaud', 'mail']), npmScripts(['plaud', 'mail']), /plaud-sync[/\\]/, /mail-sync[/\\]/, /tools[/\\]connectors[/\\]/];
+// Exception (decision du 2026-11-12) : une session de tri ouverte par l'utilisateur lance `kioku plaud` (le relais
+// seulement : ni l'outil, ni npm, ni le mail). Pas une session que le circuit a ouverte (KIOKU_CIRCUIT) : le circuit
+// refuse aussi de lui-meme (tools/connectors/circuit.mjs, sessionRefusal).
+const PLAUD_IN_TRIAGE = MODE === 'triage' && !process.env.KIOKU_CIRCUIT;
+const CIRCUIT_DENIED_HERE = PLAUD_IN_TRIAGE ? [kiokuSub(['mail']), ...CIRCUIT_DENIED.slice(1)] : CIRCUIT_DENIED;
 const SETUP_DENIED = [/vault\.mjs/, KIOKU_GATE, KIOKU_TOOLS, /tools[/\\]dashboard[/\\]/, NPM_DENIED];
 
 // Une commande shell qui ecrit, et qui vise une zone fermee en ecriture.
@@ -392,11 +397,7 @@ const stripMessages = (command) =>
   command.replace(MESSAGE_ARG, (whole, lead, flag, value) => (/[$`]/.test(value) ? whole : `${lead}${flag}""`));
 
 // Le brut et tous les domaines sont versionnes : l'historique git les contient tous. Dans aucun mode
-// git ne sert a relire du contenu (le domaine de la session se lit par Read/Grep, sous la garde).
-const GIT_CONTENT = [
-  /(^|[\s;&|(])git\b[^|;&\n]*\b(show|grep|diff|cat-file|archive|blame|stash|restore|checkout)\b/,
-  /(^|[\s;&|(])git\b[^|;&\n]*\blog\b[^|;&\n]*\s(-p|-u|--patch)\b/,
-];
+// git ne sert a relire du contenu (le domaine de la session se lit par Read/Grep, sous la garde) : voir isGitContent.
 
 // --- Invariants sur les commandes shell (revue N1) : verifies par le code, pas par des motifs. ---
 //
@@ -605,7 +606,107 @@ const reachesSecret = (command) => {
   return false;
 };
 
-const RECURSIVE = [/(^|[\s;&|(])(rg|ag|find|tree|du)\b/, /\bgrep\b[^|;&\n]*\s-\w*[rR]/, /\bls\b[^|;&\n]*\s-\w*R/];
+// --- Les commandes reellement lancees (faux positifs du 2026-11-12) ---
+//
+// Les regles « recherche recursive » et « historique git » lisaient le texte entier : ` du ` dans une note libre
+// (`kioku quarantine … "section … du …"`) passait pour l'utilitaire du, `git branch --show-current` pour un git show,
+// `git log --grep=` pour un git grep, un mot `grep` dans le corps d'un message `orca … --body "…"` pour une recherche.
+// Elles jugent desormais le NOM de chaque commande simple et ses arguments, apres decoupage en mots (shellWords) :
+// un mot entre guillemets en position d'argument n'est plus une commande. Ce qui fait lancer une commande reste vu :
+// prefixes (env, xargs, sudo, time, nohup, timeout…), `sh|bash|zsh -c "<commande>"`, `eval`, `$( … )` et accents
+// graves (debut de commande), corps d'un heredoc donne a un shell. Le corps d'un heredoc donne a un autre programme
+// (cat > /tmp/x.sh, python3 -) n'est pas lu comme du shell : c'est deja la limite dite en tete (un script ecrit puis
+// lance echappe a la garde), pas une ouverture de plus.
+const PREFIXES = new Set(['sudo', 'env', 'nice', 'nohup', 'time', 'command', 'builtin', 'exec', 'xargs', 'timeout', 'gtimeout', 'stdbuf', 'caffeinate', 'doas']);
+const SHELLS = new Set(['sh', 'bash', 'zsh', 'dash', 'ksh', 'fish']);
+const HEREDOC = /<<-?[ \t]*(['"]?)([A-Za-z_][\w-]*)\1/;
+
+/** Retire le corps des heredocs qui ne sont pas donnes a un shell (python3 - <<EOF, cat > f <<EOF). */
+const dropForeignHeredocs = (command) => {
+  const lines = command.split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    out.push(line);
+    const m = line.match(HEREDOC);
+    if (!m) continue;
+    const segment = line.slice(0, m.index).split(/[;&|(]/).pop().trim();
+    const first = segment.split(/\s+/).find((w) => w && !/^[A-Za-z_]\w*=/.test(w) && !PREFIXES.has(path.basename(w))) ?? '';
+    if (SHELLS.has(fold(path.basename(first.replace(/['"]/g, ''))))) continue; // corps execute : il reste analyse
+    let j = i + 1;
+    while (j < lines.length && lines[j].replace(/^\t+/, '') !== m[2]) j++;
+    i = j; // le corps et la ligne de fin sautent (fin absente : jusqu'au bout, comme le shell)
+  }
+  return out.join('\n');
+};
+
+/**
+ * Chaque commande lancee : { name (basename, plie), args: [{ raw, value }] }. Profondeur bornee : au-dela, une commande
+ * inconnue « ? » est rendue, que les regles traitent comme suspecte (dans le doute, on refuse).
+ */
+const invocations = (command, depth = 0) => {
+  if (depth > 4) return [{ name: '?', args: [] }];
+  const out = [];
+  const src = dropForeignHeredocs(command).replace(/`/g, ';');
+  for (const { words } of shellWords(src)) {
+    let i = 0;
+    while (i < words.length) {
+      const w = words[i].value;
+      if (/^[A-Za-z_]\w*=/.test(w) || w === '$' || w === '!') {
+        i++; // affectation, `$(` deja coupe par shellWords, negation
+        continue;
+      }
+      const name = fold(path.basename(w));
+      if (PREFIXES.has(name)) {
+        i++;
+        // Options du prefixe et leur valeur numerique ou de duree (`nice -n 5`, `timeout 30s`, `xargs -0 -n1`).
+        while (i < words.length && (/^-/.test(words[i].value) || /^\d+[smhd]?$/.test(words[i].value))) i++;
+        continue;
+      }
+      const args = words.slice(i + 1);
+      out.push({ name, args });
+      if (SHELLS.has(name)) {
+        const c = args.findIndex((a) => /^-[A-Za-z]*c[A-Za-z]*$/.test(a.value));
+        if (c >= 0 && args[c + 1]) out.push(...invocations(args[c + 1].value, depth + 1));
+      }
+      if (name === 'eval') out.push(...invocations(args.map((a) => a.value).join(' '), depth + 1));
+      break;
+    }
+  }
+  return out;
+};
+
+const SEARCHERS = new Set(['rg', 'ag', 'find', 'tree', 'du', 'fd', 'ugrep', 'ack']);
+const GREPS = new Set(['grep', 'egrep', 'fgrep', 'zgrep']);
+// Les drapeaux se lisent en casse reelle (`ls -R` recursif, `ls -r` tri inverse), meme sur un volume insensible a la casse.
+const isRecursiveSearch = ({ name, args }) => {
+  if (name === '?' || SEARCHERS.has(name)) return true;
+  const flags = args.map((a) => a.value).filter((v) => v.startsWith('-'));
+  if (GREPS.has(name)) return flags.some((f) => /^-[A-Za-z]*[rR]/.test(f) || f === '--recursive' || f === '--dereference-recursive' || f.startsWith('--directories=recurse'));
+  if (name === 'ls') return flags.some((f) => /^-[A-Za-z1@]*R/.test(f) || f === '--recursive');
+  return false;
+};
+
+// Sous-commandes git qui affichent du contenu versionne. `log` seulement avec un patch (-p, -u, --patch, -L, --cc).
+const GIT_CONTENT_SUBS = new Set(['show', 'grep', 'diff', 'cat-file', 'archive', 'blame', 'stash', 'restore', 'checkout', 'whatchanged', 'format-patch', 'difftool', 'range-diff', 'annotate', 'bundle', 'fast-export']);
+// Options globales de git qui prennent une valeur dans le mot suivant.
+const GIT_VALUE_OPTS = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace', '--exec-path', '--config-env', '--super-prefix']);
+const isGitContent = ({ name, args }) => {
+  if (name === '?') return true;
+  if (name !== 'git') return false;
+  let i = 0;
+  while (i < args.length && args[i].value.startsWith('-')) {
+    const v = args[i].value;
+    // Un alias pose a la volee (`git -c alias.x=show x`) ferait d'un mot anodin une commande de contenu.
+    if (v === '-c' && /^alias\./i.test(args[i + 1]?.value ?? '')) return true;
+    if (/^-calias\./i.test(v) || /^--config-env=alias\./i.test(v)) return true;
+    i += GIT_VALUE_OPTS.has(v) ? 2 : 1;
+  }
+  const sub = fold(args[i]?.value ?? '');
+  if (GIT_CONTENT_SUBS.has(sub)) return true;
+  if (sub !== 'log') return false;
+  return args.slice(i + 1).some(({ value: v }) => (/^-[A-Za-z0-9]*[pu]/.test(v) && !v.startsWith('--')) || /^--patch/.test(v) || /^-L/.test(v) || v === '--cc' || v === '--full-diff');
+};
 
 const decide = () => {
   let input;
@@ -677,10 +778,11 @@ const decide = () => {
     const forms = FOLD ? [normalized, fold(normalized)] : [normalized];
     const hit = (r) => forms.some((f) => r.test(f));
     if (forbiddenMentions().some(hit)) refuse(`${CONSIGNE_LIRE}\n(Commande refusee : elle nomme une zone fermee.)`);
-    if (GIT_CONTENT.some(hit)) {
+    const launched = invocations(command);
+    if (launched.some(isGitContent)) {
       refuse(`${CONSIGNE_LIRE}\n(Commande refusee : l'historique git contient le brut et tous les domaines. Lis avec Read/Grep sur le dossier de ton domaine.)`);
     }
-    if (RECURSIVE.some(hit) && !hit(allowedMention())) {
+    if (launched.some(isRecursiveSearch) && !hit(allowedMention())) {
       refuse(`${CONSIGNE_LIRE}\n(Commande refusee : recherche recursive sans dossier autorise. Utilise Grep/Glob avec un path.)`);
     }
     if (hit(KIOKU_WRITE) && MODE !== 'setup') {
@@ -694,11 +796,11 @@ const decide = () => {
     const hitAll = (r) => hit(r) || squashedForms.some((f) => r.test(f));
     // Se faire passer pour un terminal (vider VAULT_MODE ou CLAUDECODE) pour lancer un circuit : refuse partout.
     // Constat 5 : option collee (`env -uVAULT_MODE`), `env -` seul, chemin de l'outil (`/usr/bin/env`), `exec -c`.
-    if (hitAll(/(^|[\s;&|(/])(unset\s|env\s+((-\S+\s+)*-\w*[iu]|-(\s|$)|--(ignore-environment|unset))|exec\s+(-\S+\s+)*-\w*c)|\b(VAULT_MODE|VAULT_DOMAIN|CLAUDECODE)\s*=/)) {
-      refuse(`Session ${MODE}/${D ?? '-'} : modifier l'environnement de la session (VAULT_MODE, CLAUDECODE, env -i/-u, unset) est refuse : c'est ce qui la fait reconnaitre.`);
+    if (hitAll(/(^|[\s;&|(/])(unset\s|env\s+((-\S+\s+)*-\w*[iu]|-(\s|$)|--(ignore-environment|unset))|exec\s+(-\S+\s+)*-\w*c)|\b(VAULT_MODE|VAULT_DOMAIN|CLAUDECODE|KIOKU_CIRCUIT|KIOKU_GH)\s*=/)) {
+      refuse(`Session ${MODE}/${D ?? '-'} : modifier l'environnement de la session (VAULT_MODE, CLAUDECODE, KIOKU_CIRCUIT, env -i/-u, unset) est refuse : c'est ce qui la fait reconnaitre.`);
     }
-    if (CIRCUIT_DENIED.some(hitAll)) {
-      refuse(`Session ${MODE}/${D ?? '-'} : un circuit de capture (kioku plaud|mail, npm run plaud:*|mail:*, leurs outils, tools/connectors/) se lance depuis le terminal de l'utilisateur, jamais depuis une session du coffre. Donne-lui la commande.`);
+    if (CIRCUIT_DENIED_HERE.some(hitAll)) {
+      refuse(`Session ${MODE}/${D ?? '-'} : un circuit de capture (kioku plaud|mail, npm run plaud:*|mail:*, leurs outils, tools/connectors/) se lance depuis le terminal de l'utilisateur${PLAUD_IN_TRIAGE ? '' : ' (kioku plaud : aussi depuis une session de tri ouverte par l\'utilisateur)'}, jamais depuis une autre session du coffre. Donne-lui la commande.`);
     }
     if (MODE === 'setup' && SETUP_DENIED.some(hitAll)) {
       refuse(`${CONSIGNE_LIRE}\n(Commande refusee : en session setup, ni la gate, ni les circuits de capture (Plaud, mail), ni le lanceur, ni le dashboard : ils lisent un domaine ou ouvrent une autre session.)`);

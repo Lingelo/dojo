@@ -74,7 +74,7 @@ Le [guide d'utilisation](docs/guide/README.md) (en anglais, illustré de schéma
 | Ranger l'entrant | session `triage`, `/kioku:triage` |
 | Relire le wiki | `/kioku:lint <D>` en session `query` |
 | Filer une analyse durable | `/kioku:save` |
-| Commiter | automatique en fin d'ingestion, de `/kioku:save` et de lint (`kioku commit <D>`) ; le push reste à vous |
+| Commiter et pousser | automatique en fin d'ingestion, de tri, de `/kioku:save` et de lint (`kioku commit <D>`, puis `kioku push` : remote privé vérifié par `gh` ou dépôt local, sinon rien ne part) |
 
 Les scripts npm du coffre (générés par `init`) ouvrent les sessions et les outils :
 

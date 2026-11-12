@@ -39,16 +39,19 @@
  *   kioku seed <domaine>           amorce : copie l'or existant dans silver/<domaine>/heritage/
  *   kioku commit <domaine> [-m "<message>"] [--dry-run]
  *                                                         commite le travail du domaine (chemins calcules par le code,
- *                                                         refus si une candidate attend ; jamais de push)
+ *                                                         refus si une candidate attend ; en triage : raw/<D> seul)
+ *   kioku push [--dry-run]         pousse la branche courante si le remote est prive (gh isPrivate) ou local
+ *   kioku inbox-add <fichier>...   copie un fichier externe dans inbox/ (session triage)
  *                                                         (instantane de depart, une seule fois, ferme ensuite)
  *
  * Une candidate vit sous .candidats/wiki/<domaine>/<dossier>/<slug>.md (chemin final).
  * Codes de sortie : 0 ok, 1 refusee (format/provenance), 3 pas de verdict, 4 retenue (quarantaine).
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, readdirSync, copyFileSync, renameSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, readdirSync, copyFileSync, renameSync, lstatSync, realpathSync, constants as fsConstants } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.mjs';
@@ -1078,10 +1081,14 @@ const commitSession = (domain) => {
     // Claude Code sans variables ni default_session : la garde refuse deja tout ; terminal : l'utilisateur est libre.
     return process.env.CLAUDECODE ? 'commit : session sans VAULT_MODE ni default_session' : null;
   }
-  if (!['query', 'ingest'].includes(session.mode)) return `commit : session query ou ingest seulement (mode "${session.mode ?? ''}")`;
+  // Le tri n'a pas de domaine : il range dans raw/<D>/ de chacun. Il commite donc par domaine, son brut seulement.
+  if (session.mode === 'triage') return null;
+  if (!['query', 'ingest'].includes(session.mode)) return `commit : session query, ingest ou triage seulement (mode "${session.mode ?? ''}")`;
   if (session.domain !== domain) return `commit : la session est ${session.domain ?? '(sans domaine)'}, pas ${domain}`;
   return null;
 };
+// Mode de la session vue par commit : celui de l'environnement, ou du default_session dans Claude Code sans variables.
+const sessionMode = () => process.env.VAULT_MODE ?? (process.env.VAULT_DOMAIN === undefined && process.env.CLAUDECODE ? CFG.defaultSession?.mode : undefined);
 const cmdCommit = (args) => {
   const at = args.indexOf('-m');
   const message = at >= 0 ? args[at + 1] : undefined;
@@ -1095,13 +1102,15 @@ const cmdCommit = (args) => {
   if (refused) return console.log(refused), 1;
   if (git(['rev-parse', '--is-inside-work-tree']).stdout.trim() !== 'true') return console.log("commit : le coffre n'est pas un depot git"), 1;
 
-  const pending = walk(path.join(VAULT, '.candidats', 'wiki', domain));
+  const triage = sessionMode() === 'triage';
+  const pending = triage ? [] : walk(path.join(VAULT, '.candidats', 'wiki', domain));
   if (pending.length) {
     console.log(`commit refuse : ${pending.length} candidate(s) sous .candidats/wiki/${domain}/ : finir la gate (check, relecteur, promote) avant de commiter`);
     return 1;
   }
 
-  const zones = ['raw', 'silver', 'wiki', 'quarantine'].map((z) => `${z}/${domain}`).filter((z) => existsSync(path.join(VAULT, z)));
+  // Tri : le brut du domaine seulement (ce que le tri a deplace depuis inbox/), ni verdicts ni autre zone.
+  const zones = (triage ? ['raw'] : ['raw', 'silver', 'wiki', 'quarantine']).map((z) => `${z}/${domain}`).filter((z) => existsSync(path.join(VAULT, z)));
   const changed = zones.length ? porcelain(zones) : [];
   // Une page nouvelle de l'or sans gate: a ete ecrite hors gate (l'or herite, deja suivi, n'est pas concerne).
   const ungated = changed.filter(({ status, file }) => {
@@ -1118,7 +1127,7 @@ const cmdCommit = (args) => {
   }
 
   // Les verdicts du relecteur de ce domaine (avant le decoupage par domaine : ceux d'une candidate de ce domaine).
-  const verdicts = existsSync(path.join(VAULT, '.verdicts'))
+  const verdicts = !triage && existsSync(path.join(VAULT, '.verdicts'))
     ? porcelain(['.verdicts']).filter(({ status, file }) => {
         if (status.includes('D')) return false;
         try {
@@ -1145,6 +1154,7 @@ const cmdCommit = (args) => {
   const entries = now.filter((h) => !known.has(h)).map((h) => h.replace(/^## /, ''));
   const typeOf = (e) => (e.match(/^\[[^\]]+\]\s*([\w-]+)/) ?? [])[1] ?? '?';
   let subject = message;
+  if (!subject && triage) subject = `triage(${domain}) : ${files.length} source(s) rangee(s)`;
   if (!subject) {
     if (entries.length === 1) subject = `${typeOf(entries[0])}(${domain}) : ${entries[0].replace(/^\[[^\]]+\]\s*[\w-]+\s*\|\s*/, '')}`;
     else if (entries.length > 1) {
@@ -1171,12 +1181,144 @@ const cmdCommit = (args) => {
     return 1;
   }
   const head = git(['rev-parse', '--short', 'HEAD']).stdout.trim();
-  console.log(`commite ${head} : ${files.length} fichier(s) (${summary})\nsujet : ${subject}\npush non fait : a lancer quand tu le decides`);
+  console.log(`commite ${head} : ${files.length} fichier(s) (${summary})\nsujet : ${subject}\npush non fait : kioku push (remote prive verifie)`);
+  return 0;
+};
+
+/**
+ * Mode des commandes reservees a une session (inbox-add, push) : null hors Claude Code et sans VAULT_MODE (terminal,
+ * libre) ; sinon le mode de la session (default_session dans Claude Code sans variables).
+ */
+const sessionOrTerminal = () => (process.env.VAULT_MODE === undefined && process.env.VAULT_DOMAIN === undefined && !process.env.CLAUDECODE ? null : sessionMode());
+
+/**
+ * Faire entrer un fichier externe dans inbox/ (copie : l'original reste ou il est). En triage, la garde refuse toute
+ * commande qui ecrit avec un chemin hors du coffre (« rien ne sort du coffre ») : `mv <dehors> inbox/`, qui fait
+ * pourtant ENTRER, est refuse avec le reste, et l'utilisateur le tapait en `!`.
+ *   - session triage seulement (l'entrant n'a pas de domaine, seul le tri le lit) ; terminal : libre ;
+ *   - refus : source dans le coffre (une page de raw/ ou du wiki repasserait par l'entrant, hors silo), lien
+ *     symbolique, autre chose qu'un fichier, dossier de configuration de Kioku (jetons du module mail), nom deja present,
+ *     worktree git (son inbox/ n'est pas celui du coffre, comme pour les circuits) sauf --allow-worktree.
+ */
+const cmdInboxAdd = (args) => {
+  const files = args.filter((a) => a !== '--allow-worktree');
+  if (!files.length) return console.log('usage : inbox-add <fichier>... [--allow-worktree]'), 1;
+  const mode = sessionOrTerminal();
+  if (mode !== null && mode !== 'triage') return console.log(`inbox-add : session triage seulement (mode "${mode ?? ''}")`), 1;
+  if (lstatSync(path.join(VAULT, '.git'), { throwIfNoEntry: false })?.isFile() && !args.includes('--allow-worktree')) {
+    return console.log("inbox-add : ce coffre est un worktree git, son inbox/ n'est pas celui du checkout principal (--allow-worktree pour forcer)"), 1;
+  }
+  const vaultReal = realpathSync(VAULT);
+  const kiokuConfig = path.join(os.homedir(), '.config', 'kioku');
+  const inbox = path.join(VAULT, 'inbox');
+  let worst = 0;
+  for (const f of files) {
+    const refuse = (why) => (console.log(`refuse   ${f} : ${why}`), (worst = 1));
+    const abs = path.resolve(f);
+    const st = lstatSync(abs, { throwIfNoEntry: false });
+    if (!st) {
+      refuse('introuvable');
+      continue;
+    }
+    if (st.isSymbolicLink()) {
+      refuse('lien symbolique (donne le fichier lui-meme)');
+      continue;
+    }
+    if (!st.isFile()) {
+      refuse("pas un fichier");
+      continue;
+    }
+    const real = realpathSync(abs);
+    const rel = path.relative(vaultReal, real);
+    if (rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel))) {
+      refuse('deja dans le coffre : rien a faire entrer (le tri deplace avec mv inbox/… raw/<domaine>/…)');
+      continue;
+    }
+    const relCfg = path.relative(kiokuConfig, real);
+    if (!relCfg.startsWith('..') && !path.isAbsolute(relCfg)) {
+      refuse('dossier de configuration de Kioku (jetons) : ferme');
+      continue;
+    }
+    const name = path.basename(real);
+    if (name.startsWith('.')) {
+      refuse('fichier cache');
+      continue;
+    }
+    const dest = path.join(inbox, name);
+    if (existsSync(dest)) {
+      refuse(`inbox/${name} existe deja`);
+      continue;
+    }
+    mkdirSync(inbox, { recursive: true });
+    copyFileSync(real, dest, fsConstants.COPYFILE_EXCL);
+    console.log(`entre    inbox/${name}`);
+  }
+  return worst;
+};
+
+/**
+ * Publier les commits du coffre sur son remote, apres verification qu'il est prive (schema §1). Une session commitait
+ * (kioku commit) mais ne poussait jamais : l'utilisateur tapait `! git pull --no-rebase && git push`.
+ *   - session query, ingest ou triage (setup : refuse par la garde) ; terminal : libre ;
+ *   - remote : celui de la branche courante, sinon origin ; URL EFFECTIVE de push (insteadOf compris) ;
+ *   - confidentialite : depot GitHub dont `gh repo view --json isPrivate` rend true ; un chemin local (rien ne sort de
+ *     la machine) passe ; tout autre hote, gh absent ou en erreur : refus (dans le doute, rien ne part) ;
+ *   - integre d'abord la branche distante (merge sans edition, jamais de rebase) ; conflit : merge annule, refus ;
+ *   - jamais de --force, jamais une tete detachee.
+ * KIOKU_GH (chemin d'un gh de test) n'est lu que hors Claude Code : une session ne peut pas substituer la verification.
+ */
+const GITHUB_URL = /^(?:(?:ssh:\/\/)?git@github\.com[:/]|https:\/\/(?:[^@/]+@)?github\.com\/)([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i;
+const cmdPush = (args) => {
+  const dry = args.includes('--dry-run');
+  const mode = sessionOrTerminal();
+  if (mode !== null && !['query', 'ingest', 'triage'].includes(mode)) return console.log(`push : session query, ingest ou triage seulement (mode "${mode ?? ''}")`), 1;
+  if (git(['rev-parse', '--is-inside-work-tree']).stdout.trim() !== 'true') return console.log("push : le coffre n'est pas un depot git"), 1;
+  const branch = git(['symbolic-ref', '--short', '-q', 'HEAD']).stdout.trim();
+  if (!branch) return console.log('push : tete detachee, aucune branche a pousser'), 1;
+  const remote = git(['config', '--get', `branch.${branch}.remote`]).stdout.trim() || 'origin';
+  const urlR = git(['remote', 'get-url', '--push', remote]);
+  if (urlR.status !== 0) return console.log(`push : remote ${remote} introuvable`), 1;
+  const url = urlR.stdout.trim();
+
+  let where;
+  const gh = url.match(GITHUB_URL);
+  if (/^(\/|\.{1,2}\/|file:\/\/)/.test(url)) where = 'depot local';
+  else if (gh) {
+    const repo = `${gh[1]}/${gh[2]}`;
+    const bin = (!process.env.CLAUDECODE && process.env.KIOKU_GH) || 'gh';
+    const r = spawnSync(bin, ['repo', 'view', repo, '--json', 'isPrivate', '-q', '.isPrivate'], { encoding: 'utf8' });
+    if (r.error) return console.log(`push refuse : gh indisponible (${r.error.code ?? r.error.message}) : confidentialite de ${repo} non verifiee`), 1;
+    if (r.status !== 0) return console.log(`push refuse : gh repo view ${repo} a echoue : ${(r.stderr || r.stdout).trim().split('\n')[0]}`), 1;
+    if (r.stdout.trim() !== 'true') return console.log(`push refuse : ${repo} n'est pas prive (isPrivate=${r.stdout.trim() || '?'}) : un push publierait tous les domaines`), 1;
+    where = `${repo}, prive`;
+  } else return console.log(`push refuse : remote ${remote} hors GitHub (${url.replace(/\/\/[^@/]+@/, '//')}) : confidentialite inverifiable`), 1;
+
+  const fetch = git(['fetch', '-q', remote]);
+  if (fetch.status !== 0) return console.log(`push : git fetch ${remote} a echoue : ${fetch.stderr.trim().split('\n')[0]}`), 1;
+  const tracking = `refs/remotes/${remote}/${branch}`;
+  const known = git(['rev-parse', '--verify', '-q', tracking]).status === 0;
+  const count = (range) => Number(git(['rev-list', '--count', range]).stdout.trim() || 0);
+  const behind = known ? count(`HEAD..${tracking}`) : 0;
+  const ahead = known ? count(`${tracking}..HEAD`) : count('HEAD');
+  if (!ahead && !behind) return console.log(`rien a pousser : ${branch} est a jour sur ${remote} (${where})`), 0;
+  if (dry) return console.log(`simulation : ${branch} -> ${remote} (${where}) : ${ahead} commit(s) a pousser, ${behind} a integrer d'abord`), 0;
+
+  if (behind) {
+    const merge = git(['merge', '--no-edit', '-q', tracking]);
+    if (merge.status !== 0) {
+      git(['merge', '--abort']);
+      return console.log(`push refuse : l'integration de ${remote}/${branch} (${behind} commit(s)) est en conflit ou bloquee, merge annule. A resoudre par l'utilisateur.`), 1;
+    }
+  }
+  if (!ahead && behind) return console.log(`integre ${behind} commit(s) de ${remote}/${branch} ; rien a pousser`), 0;
+  const push = git(['push', '-q', ...(git(['config', '--get', `branch.${branch}.merge`]).stdout.trim() ? [] : ['-u']), remote, `HEAD:refs/heads/${branch}`]);
+  if (push.status !== 0) return console.log(`push : git push a echoue : ${(push.stderr || push.stdout).trim().split('\n')[0]}`), 1;
+  console.log(`pousse ${branch} -> ${remote} (${where}) : ${ahead + (behind ? 1 : 0)} commit(s)${behind ? `, apres integration de ${behind}` : ''}`);
   return 0;
 };
 
 const [cmd, ...args] = process.argv.slice(2);
-const table = { commit: cmdCommit, check: cmdCheck, verdict: cmdVerdict, promote: cmdPromote, quarantine: cmdQuarantine, undecided: cmdUndecided, audit: cmdAudit, flag: cmdFlag, decide: cmdDecide, seed: cmdSeed, stage: cmdStage, 'rotate-log': cmdRotateLog, 'propose-org': cmdProposeOrg, 'tag-org': cmdTagOrg, 'propose-raw': cmdProposeRaw, 'tag-raw': cmdTagRaw };
+const table = { commit: cmdCommit, push: cmdPush, 'inbox-add': cmdInboxAdd,check: cmdCheck, verdict: cmdVerdict, promote: cmdPromote, quarantine: cmdQuarantine, undecided: cmdUndecided, audit: cmdAudit, flag: cmdFlag, decide: cmdDecide, seed: cmdSeed, stage: cmdStage, 'rotate-log': cmdRotateLog, 'propose-org': cmdProposeOrg, 'tag-org': cmdTagOrg, 'propose-raw': cmdProposeRaw, 'tag-raw': cmdTagRaw };
 if (!table[cmd]) {
   console.log('usage : vault.mjs commit|check|verdict|promote|stage|rotate-log|propose-org|tag-org|quarantine|undecided ... (voir l\'en-tete du fichier)');
   process.exit(1);

@@ -74,7 +74,7 @@ Skills : `/kioku:query`, `/kioku:ingest`, `/kioku:triage`, `/kioku:save`, `/kiok
 2. **Argent** : écrire `silver/<D>/<slug>.md` (frontmatter `raw`, `domain`, `flags`, `status` ; résumé structuré, points clés, entités, lacunes). Locuteurs résolus **en hypothèse signalée** (un « Speaker 1 » n'est pas un fait). Aucune injure ni portrait recopié ; les retours de travail attribués et datés (§7) se gardent. Propos insultants, portrait ou donnée sensible : **pointeur en quarantaine** (`kioku quarantine`), drapeau dans `flags:`.
 3. **Or** : depuis la fiche argent, rédiger sous `.candidats/wiki/<D>/…` la page `sources/` (avec `raw:`), la page `meetings/` si réunion (la page source la lie : `*Réunion structurée : [[meetings/<slug>]]*`), les ADR dans `decisions/`, les entités touchées (règles ci-dessous ; callout `> [!warning]` sur contradiction).
 4. **Gate** (§7) : `kioku check` → agent `kioku:reviewer` → `kioku promote`.
-5. Mettre à jour `index.md`, `overview.md` si la compréhension globale change, et `log.md` ; puis `kioku commit <D>` (chemins calculés par le code, jamais de push).
+5. Mettre à jour `index.md`, `overview.md` si la compréhension globale change, et `log.md` ; puis `kioku commit <D>` (chemins calculés par le code) et `kioku push` (remote privé vérifié par le code, intégration sans rebase, jamais de force ; refus = on rapporte, on ne contourne pas).
 6. Rapporter : pages admises / retenues, contradictions, questions ouvertes.
 
 Pour modifier une page déjà dans l'or : `kioku stage <D> <dossier/slug>` la copie sous `.candidats/`, sans sa ligne `gate:` (session `ingest` de son domaine).
@@ -103,7 +103,7 @@ Synthèse durable → `.candidats/wiki/<D>/syntheses/<slug>.md` → gate → ind
 
 ### 4.5 Modules de capture (optionnels : Plaud, mail)
 
-Si un module est déclaré dans la config (`modules.plaud`, `modules.mail`) : le connecteur dépose dans `inbox/`, le tri classe sur le **contenu** ou s'abstient (parqué dans `inbox/a-trancher/`), une **confirmation** montre ce qui va entrer dans l'or par domaine, puis une session `ingest` par source. Lancé par l'utilisateur, jamais planifié, depuis le checkout principal ; un seul circuit à la fois par coffre.
+Si un module est déclaré dans la config (`modules.plaud`, `modules.mail`) : le connecteur dépose dans `inbox/`, le tri classe sur le **contenu** ou s'abstient (parqué dans `inbox/a-trancher/`), une **confirmation** montre ce qui va entrer dans l'or par domaine, puis une session `ingest` par source. Lancé par l'utilisateur, jamais planifié, depuis le checkout principal ; un seul circuit à la fois par coffre. Plaud se lance aussi depuis une session `triage` ouverte par l'utilisateur (`kioku plaud`, puis `--skip-fetch --yes` après son « oui » dans la conversation) ; jamais depuis une session ouverte par un circuit (`KIOKU_CIRCUIT`), ni depuis `query` ou `ingest`. Un fichier externe entre dans `inbox/` par `kioku inbox-add <chemin>` (session `triage`).
 
 - **Plaud** : notes de réunion, `raw/<D>/meetings/`.
 - **Mail** : fils portant un libellé choisi par l'utilisateur, lecture seule ; `raw/<D>/emails/` et PDF joints dans `raw/<D>/pdfs/`. Le `hint` d'un compte (domaine, organisation) est **un indice pour le tri, jamais une décision**.
