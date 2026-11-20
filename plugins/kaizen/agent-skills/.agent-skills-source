@@ -1,3 +1,3 @@
-# Copied by .github/scripts/sync-plugin.mjs. Do not edit plugins/agent-skills/: change agent-skills in its own repository.
+# Copied by .github/scripts/sync-plugin.mjs. Do not edit plugins/kaizen/agent-skills/: change agent-skills in its own repository.
 repository: https://github.com/addyosmani/agent-skills
-sha: 301b02b12bff98e4688e6984af6556802322bbde
+sha: 8c99fa36d90068c82d547f7c12a9d67a3e95f4ee
