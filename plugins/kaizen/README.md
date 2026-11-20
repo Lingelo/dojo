@@ -212,6 +212,7 @@ command: [CLI reference](docs/reference/cli.md).
 ```bash
 node --test plugins/kaizen/tests/*.test.mjs    # unit, CLI, gates, hooks, PR (fake gh), contracts
 node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, costly)
+node plugins/kaizen/evals/run.mjs --model claude-sonnet-5-5 --effort medium   # the same, model and effort pinned (A/B)
 ```
 
 - **Contract tests** check that there are four skills in agent-skills' anatomy (rationalizations, red
