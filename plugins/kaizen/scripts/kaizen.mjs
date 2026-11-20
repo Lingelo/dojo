@@ -27,7 +27,7 @@ import { basename, join, relative, resolve, sep } from 'node:path';
 import * as prmod from './pr.mjs';
 import { readAgentSkills } from './agentskills.mjs';
 import { computeMetrics, parseSince, workItems } from './metrics.mjs';
-import { DEFAULT_WEIGHTS, itemCosts, readLedger, workItem } from './ledger.mjs';
+import { itemCosts, pricingOf, readLedger, workItem } from './ledger.mjs';
 import { declarePlugin, doctor, formatDoctor } from './doctor.mjs';
 import { isEmpty, loadLearnings, searchLearnings, termsOf, validateLearning } from './learnings.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
@@ -332,8 +332,8 @@ try {
         break;
       }
       const { from } = parseSince(typeof flags.since === 'string' ? flags.since : '90d');
-      const weights = { ...DEFAULT_WEIGHTS, ...(config.review?.cost_weights || {}) };
-      const items = itemCosts(readLedger(root).filter((e) => Date.parse(e.at) >= from.getTime()), weights);
+      const pricing = pricingOf(config);
+      const items = itemCosts(readLedger(root).filter((e) => Date.parse(e.at) >= from.getTime()), pricing);
       if (sub) {
         const it = items.find((i) => i.item.toLowerCase() === String(sub).toLowerCase() || i.item === `plan:${sub}` || i.item === `branch:${sub}`);
         if (!it) die(`no cost recorded for "${sub}" in the window (kaizen cost lists the work items)`);
@@ -349,7 +349,11 @@ try {
         break;
       }
       const k = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : `${Math.round(n / 1000)}k`);
-      out(`Cost per work item (relative units, ${Object.entries(weights).map(([m, w]) => `${m} ${w}`).join(', ')})`);
+      out(
+        pricing.unit === '$'
+          ? 'Cost per work item ($ at Anthropic API list prices, per model and token type — an estimate; on a subscription, read it as relative usage)'
+          : `Cost per work item (relative units) — ${pricing.deprecated}`,
+      );
       for (const it of items.slice(0, 20)) {
         out(`  ${it.item.padEnd(28)} ${it.kind.padEnd(9)} ${String(it.cost).padStart(8)}  ${k(it.tokens).padStart(6)} tokens  ${it.sessions} session(s)${it.title ? `  ${it.title}` : ''}${it.priced_share !== null && it.priced_share < 1 ? `  (${Math.round(it.priced_share * 100)}% priced)` : ''}`);
       }

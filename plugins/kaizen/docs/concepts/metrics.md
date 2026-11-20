@@ -95,8 +95,15 @@ match wins:
 
 Its kind (feature, fix, refactor…) comes from the branch prefix, its title from `SPEC.md`.
 
-Each line of `.kaizen/state/ledger.jsonl` keeps the tokens per model family (`opus`, `sonnet`, `haiku`),
-priced in the relative units of `review.cost_weights` (default haiku 1, sonnet 3, opus 5).
+Each line of `.kaizen/state/ledger.jsonl` keeps the tokens per model family (`fable`, `opus`, `sonnet`,
+`haiku`) and per token type: input, cache write (and the part written for one hour), cache read, output.
+The cost is each type at its own price — Anthropic's API list prices in $, overridable with
+[`cost.prices`](../reference/configuration.md#cost). Pricing every token alike would make the cost a count
+of context read again: a session's cache reads are most of its tokens but, at 1/100 of an output token on
+Opus and Sonnet 5.5, a small part of its cost. On a subscription, read the $ as relative usage between
+items and models, not as a bill. Each item gives `cost`, `unit` (`$`), `cost_by_model`, `cost_by_type`
+and `priced_share` (tokens of a family with no price, or from transcripts without a model, are not
+priced). The deprecated `review.cost_weights`, when set, keeps the former relative units and says so.
 `metrics` reports, in `work_items`: the number of `items`, the median cost per kind in `by_kind`
 (feature, fix, refactor… from the branch prefix), the five most expensive in `top` (item, kind, title,
 cost, tokens, sessions) and the share of tokens nobody could attribute (`unattributed_share`); `node $K cost <item>` gives one item, end to end — spec, plan, build, review, PR

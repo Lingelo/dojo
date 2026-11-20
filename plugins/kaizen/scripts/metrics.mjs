@@ -7,7 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { DEFAULT_WEIGHTS, costByKind, itemCosts, readLedger } from './ledger.mjs';
+import { costByKind, itemCosts, pricingOf, readLedger } from './ledger.mjs';
 import { FRICTION, defaultBranch, docsRoot, ghCommand, git, loadConfig, parseFrontmatter, usageTotal, walkMarkdown } from './lib.mjs';
 
 const DAY = 86400 * 1000;
@@ -187,7 +187,8 @@ export function computeMetrics(root, { since = '90d', useGitHub = true } = {}) {
 export function workItems(root, from, config = loadConfig(root)) {
   const entries = readLedger(root).filter((e) => Date.parse(e.at) >= from.getTime());
   if (!entries.length) return null;
-  const items = itemCosts(entries, { ...DEFAULT_WEIGHTS, ...(config.review?.cost_weights || {}) });
+  const pricing = pricingOf(config);
+  const items = itemCosts(entries, pricing);
   const unattributed = items.find((i) => i.item === 'unattributed');
   const total = items.reduce((n, i) => n + i.tokens, 0);
   return {
@@ -195,9 +196,12 @@ export function workItems(root, from, config = loadConfig(root)) {
     by_kind: costByKind(items),
     top: items.filter((i) => i.item !== 'unattributed').slice(0, 5).map(({ item, kind, title, cost, tokens, sessions }) => ({ item, kind, title, cost, tokens, sessions })),
     unattributed_share: total && unattributed ? Math.round((unattributed.tokens / total) * 100) / 100 : 0,
+    unit: pricing.unit,
+    ...(pricing.deprecated ? { deprecated: pricing.deprecated } : {}),
     method:
       'every turn in this repo on this machine (Stop hook, .kaizen/state/ledger.jsonl) charged to the branch\'s Jira key, ' +
-      'otherwise the branch; cost = tokens per model family × review.cost_weights',
+      'otherwise the branch; cost = tokens per model family and token type (input, cache write, cache read, output) × ' +
+      (pricing.unit === '$' ? 'Anthropic API list prices in $ (cost.prices overrides them)' : 'review.cost_weights (deprecated, relative units)'),
   };
 }
 

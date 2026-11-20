@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { costByKind, itemCosts, jiraKey, kindOf, readNew } from '../scripts/ledger.mjs';
+import { PRICES, costByKind, itemCosts, jiraKey, kindOf, pricingOf, readNew, usageCost } from '../scripts/ledger.mjs';
 import { PLUGIN, cleanup, cli, gitc, tempRepo, writeFiles } from './helpers.mjs';
 
 const HOOK = join(PLUGIN, 'scripts', 'ledger-hook.mjs');
@@ -66,13 +66,21 @@ test('Stop hook: default branch unattributed, then a feature branch and a fix br
   assert.ok(existsSync(join(dir, '.kaizen', 'state', '.gitignore')));
 
   const items = cli(dir, ['cost', '--json']).json;
-  assert.deepEqual(items.items.map((i) => i.item), ['SHOP-412', 'SHOP-7', 'unattributed'], 'by cost: opus 2M (10) > sonnet 50k + haiku 1M (1.15) > opus 100k (0.5)');
+  assert.deepEqual(items.items.map((i) => i.item), ['SHOP-412', 'unattributed', 'SHOP-7'], 'by cost: opus 2M input ($8) > opus 100k ($0.40) > sonnet 50k + haiku 1M ($0.10 + $0.10)');
+  assert.equal(items.items[2].cost, 0.2);
+  assert.deepEqual(items.items[2].cost_by_model, { sonnet: 0.1, haiku: 0.1 });
+  assert.equal(items.items[0].unit, '$');
   assert.equal(items.summary.items, 2);
   assert.equal(items.summary.unattributed_share, Math.round((100000 / 3150000) * 100) / 100);
   assert.equal(cli(dir, ['cost', 'shop-7', '--json']).json.tokens, 1050000);
   assert.equal(cli(dir, ['cost', 'current']).json.item, 'SHOP-7');
   assert.notEqual(cli(dir, ['cost', 'NOPE-1']).code, 0);
   assert.match(cli(dir, ['cost']).stdout, /SHOP-412 +feature/);
+  assert.match(cli(dir, ['cost']).stdout, /\$ at Anthropic API list prices/);
+  // The deprecated weights still work, in relative units, and say so.
+  writeFiles(dir, { '.kaizen/config.json': { review: { cost_weights: { opus: 5 } } } });
+  assert.equal(cli(dir, ['cost', 'SHOP-412', '--json']).json.cost, 10, 'opus 2M × 5');
+  assert.match(cli(dir, ['cost']).stdout, /relative units.*review\.cost_weights is deprecated/);
   cleanup(dir);
   cleanup(proj);
 });
@@ -85,11 +93,59 @@ test('no ledger outside a Kaizen repo', () => {
   cleanup(dir);
 });
 
-test('itemCosts and costByKind: per item, median per kind, unpriced share', () => {
-  const e = (item, kind, tokens, model) => ({ at: '2026-10-01T00:00:00Z', session: item, item, kind, usage: { input_tokens: tokens, ...(model ? { by_model: { [model]: { input_tokens: tokens } } } : {}) } });
-  const items = itemCosts([e('A-1', 'feature', 1e6, 'opus'), e('A-2', 'feature', 3e6, 'sonnet'), e('A-3', 'fix', 1e6, 'sonnet'), e('A-3', 'fix', 1e6), e('unattributed', 'other', 9e6, 'opus')], { opus: 5, sonnet: 3 });
+test('usageCost: every token type at its price — a cache read is not an output token', () => {
+  const opus = usageCost({ input_tokens: 1e6, cache_creation_input_tokens: 2e6, cache_creation_1h_input_tokens: 1e6, cache_read_input_tokens: 10e6, output_tokens: 1e6 }, PRICES.opus);
+  assert.deepEqual(opus.byType, { input: 4, cache_write: 13, cache_read: 2, output: 20 }, '5 min write $5 + 1 h write $8');
+  assert.equal(opus.total, 39);
+  const sonnet = usageCost({ input_tokens: 1e6, cache_creation_input_tokens: 2e6, cache_creation_1h_input_tokens: 1e6, cache_read_input_tokens: 10e6, output_tokens: 1e6 }, PRICES.sonnet);
+  assert.equal(sonnet.total * 2, opus.total, 'Sonnet 5.5 is half Opus 5.5 for every type');
+  assert.equal(usageCost({ input_tokens: 1 }, undefined), null);
+});
+
+test('pricingOf: list prices, cost.prices overrides, review.cost_weights as a deprecated alias', () => {
+  assert.equal(pricingOf({}).unit, '$');
+  assert.equal(pricingOf({}).prices.opus.output, 20);
+  const custom = pricingOf({ cost: { prices: { opus: { output: 25 }, other: { input: 1, output: 1 } } } });
+  assert.deepEqual(custom.prices.opus, { ...PRICES.opus, output: 25 });
+  assert.equal(custom.prices.other.input, 1);
+  const legacy = pricingOf({ review: { cost_weights: { opus: 6 } } });
+  assert.equal(legacy.unit, 'relative');
+  assert.deepEqual(legacy.prices.opus, { input: 6, cache_write: 6, cache_write_1h: 6, cache_read: 6, output: 6 });
+  assert.equal(legacy.prices.sonnet.output, 3, 'former defaults for the others');
+  assert.match(legacy.deprecated, /deprecated/);
+  assert.equal(pricingOf({ review: { cost_weights: { opus: 6 } }, cost: { prices: { opus: { output: 25 } } } }).unit, '$', 'cost.prices wins');
+});
+
+test('itemCosts and costByKind: per item, per model and token type, median per kind, unpriced share', () => {
+  const e = (item, kind, usage, model) => ({ at: '2026-10-01T00:00:00Z', session: item, item, kind, usage: { ...usage, ...(model ? { by_model: { [model]: usage } } : {}) } });
+  const items = itemCosts([
+    e('A-1', 'feature', { cache_read_input_tokens: 10e6, output_tokens: 1e5 }, 'opus'),
+    e('A-2', 'feature', { input_tokens: 1e6, output_tokens: 1e6 }, 'sonnet'),
+    e('A-3', 'fix', { input_tokens: 1e6 }, 'sonnet'),
+    e('A-3', 'fix', { input_tokens: 1e6 }),
+    e('A-4', 'fix', { input_tokens: 1e6 }, 'other'),
+    e('unattributed', 'other', { input_tokens: 9e6 }, 'opus'),
+  ]);
+  const a1 = items.find((i) => i.item === 'A-1');
+  assert.equal(a1.cost, 4, '10M cache reads ($2) + 100k output ($2): the reads are most tokens, not most of the cost');
+  assert.deepEqual(a1.cost_by_type, { input: 0, cache_write: 0, cache_read: 2, output: 2 });
+  assert.deepEqual(a1.cost_by_model, { opus: 4 });
+  assert.equal(items.find((i) => i.item === 'A-2').cost, 12);
   const a3 = items.find((i) => i.item === 'A-3');
-  assert.equal(a3.cost, 3);
+  assert.equal(a3.cost, 2);
   assert.equal(a3.priced_share, 0.5);
-  assert.deepEqual(costByKind(items), { feature: { items: 2, cost_median: 7, cost_total: 14 }, fix: { items: 1, cost_median: 3, cost_total: 3 } });
+  const a4 = items.find((i) => i.item === 'A-4');
+  assert.deepEqual([a4.cost, a4.priced_share], [0, 0], 'a model without a price is not priced');
+  assert.deepEqual(costByKind(items), { feature: { items: 2, cost_median: 8, cost_total: 16 }, fix: { items: 2, cost_median: 1, cost_total: 2 } });
+});
+
+test('readNew: the 1-hour cache writes Claude Code reports are kept apart', () => {
+  const dir = tempRepo({});
+  const line = JSON.stringify({ type: 'assistant', message: { id: 'w', model: 'claude-opus-5-5', usage: { input_tokens: 1, cache_creation_input_tokens: 300, cache_creation: { ephemeral_5m_input_tokens: 100, ephemeral_1h_input_tokens: 200 }, output_tokens: 2 } } });
+  writeFiles(dir, { 't.jsonl': `${line}\n` });
+  const { usage } = readNew(join(dir, 't.jsonl'), {});
+  assert.equal(usage.cache_creation_input_tokens, 300);
+  assert.equal(usage.cache_creation_1h_input_tokens, 200);
+  assert.equal(usage.by_model.opus.cache_creation_1h_input_tokens, 200);
+  cleanup(dir);
 });
