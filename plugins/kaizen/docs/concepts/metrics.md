@@ -76,7 +76,7 @@ recorded, push confirmed by you). Logging never changes a decision.
 | `push.unblocked_median_minutes`, `push.still_waiting` | first stop on a branch → next review on it; branches still waiting in the window |
 | `push.skip_share` | pushes without a review / (reviews + those): a rising share means the review is felt as a tax |
 | `reviews_recorded` | reviews Kaizen recorded |
-| `quality.blocked`, `quality.released`, `quality.by_check` | turns the quality gate stopped, gates released after `max_blocks`, the checks that block most |
+| `quality.blocked`, `quality.released`, `quality.escalated`, `quality.by_check` | turns the quality gate stopped, gates released after `max_blocks`, gates that asked for an Opus subagent ([`models.escalate_after`](../reference/configuration.md#models)), the checks that block most |
 | `secrets.refused`, `secrets.no_verify` | commits refused for a secret, `--no-verify` attempts |
 | `other_refusals` | direct writes to Kaizen's review state refused (`state`) |
 | `events` | every event of the window, all gates together |

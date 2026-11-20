@@ -261,7 +261,7 @@ export function friction(root, from) {
       skip_share: recorded + skipped ? round(skipped / (recorded + skipped), 2) : null,
     },
     reviews_recorded: recorded,
-    quality: { blocked: count((e) => e.gate === 'quality' && e.kind === 'blocked'), released: count((e) => e.gate === 'quality' && e.kind === 'released'), by_check: checks },
+    quality: { blocked: count((e) => e.gate === 'quality' && e.kind === 'blocked'), released: count((e) => e.gate === 'quality' && e.kind === 'released'), escalated: count((e) => e.gate === 'quality' && e.kind === 'escalated'), by_check: checks },
     secrets: { refused: count((e) => e.gate === 'secrets' && e.kind === 'refused'), no_verify: count((e) => e.gate === 'secrets' && e.kind === 'no_verify') },
     other_refusals: tally(events.filter((e) => e.gate === 'state'), 'gate'),
     method:
