@@ -4,7 +4,11 @@
 //
 //   node evals/run.mjs                 every scenario
 //   node evals/run.mjs setup-route push-guard
+//   node evals/run.mjs --model claude-sonnet-5-5 --effort medium   every scenario on a pinned model/effort
 //   KAIZEN_EVAL_KEEP=1                 keeps the temporary repos for inspection
+//
+// --model and --effort are passed to `claude -p` as is: pin a full model ID for an A/B comparison (an alias
+// moves with releases), and note `claude --version` next to the results.
 //
 // Costly (real model calls): run before a release, not in CI by default.
 
@@ -56,9 +60,34 @@ function makeRepo(files, steps) {
   return dir;
 }
 
-function runClaude(dir, prompt, timeoutMs) {
+// --model <alias or ID> and --effort <level> (`--model=x` too), passed to claude -p; the rest names scenarios.
+export function parseArgs(argv) {
+  const opts = { model: null, effort: null, scenarios: [] };
+  for (let i = 0; i < argv.length; i++) {
+    const m = /^--(model|effort)(?:=(.*))?$/.exec(argv[i]);
+    if (!m) {
+      opts.scenarios.push(argv[i]);
+      continue;
+    }
+    const value = m[2] ?? argv[++i];
+    if (!value || value.startsWith('--')) throw new Error(`--${m[1]} needs a value`);
+    opts[m[1]] = value;
+  }
+  return opts;
+}
+
+export function claudeArgs(prompt, { model = null, effort = null } = {}) {
+  return [
+    '--plugin-dir', PLUGIN, '-p', prompt,
+    ...(model ? ['--model', model] : []),
+    ...(effort ? ['--effort', effort] : []),
+    '--allowedTools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Agent', 'Skill', 'TaskCreate', 'TaskUpdate',
+  ];
+}
+
+function runClaude(dir, prompt, timeoutMs, opts) {
   return new Promise((resolve) => {
-    const args = ['--plugin-dir', PLUGIN, '-p', prompt, '--allowedTools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Agent', 'Skill', 'TaskCreate', 'TaskUpdate'];
+    const args = claudeArgs(prompt, opts);
     // Isolated session: otherwise, a claude -p launched from a Claude Code session inherits its id and
     // writes into its task list.
     const env = { ...process.env };
@@ -131,38 +160,50 @@ const ctx = (dir) => ({
   },
 });
 
-const wanted = process.argv.slice(2);
-const files = readdirSync(join(HERE, 'scenarios')).filter((f) => f.endsWith('.mjs')).sort();
-let failed = 0;
-for (const f of files) {
-  const sc = (await import(join(HERE, 'scenarios', f))).default;
-  if (wanted.length && !wanted.includes(sc.name)) continue;
-  const dir = makeRepo(sc.files, sc.steps);
-  const started = Date.now();
-  const { out } = await runClaude(dir, sc.prompt, (sc.timeoutMinutes || 10) * 60000);
-  const results = sc.checks.map(([label, fn]) => {
-    let ok = false;
-    let note = '';
-    try {
-      const r = fn(out, ctx(dir));
-      ok = r === true || r?.ok === true;
-      note = r?.note || '';
-    } catch (e) {
-      note = e.message;
-    }
-    return { label, ok, note };
-  });
-  stopLeftovers(dir);
-  const pass = results.every((r) => r.ok);
-  if (!pass) failed++;
-  console.log(`${pass ? '✔' : '✘'} ${sc.name} (${Math.round((Date.now() - started) / 1000)} s)`);
-  for (const r of results) console.log(`    ${r.ok ? '✔' : '✘'} ${r.label}${r.note ? ` — ${r.note}` : ''}`);
-  if (!pass || process.env.KAIZEN_EVAL_KEEP) {
-    writeFileSync(join(dir, 'eval-output.txt'), out);
-    console.log(`    repo kept: ${dir} (output in eval-output.txt)`);
-  } else {
-    rmSync(dir, { recursive: true, force: true });
-    rmSync(`${dir}-origin.git`, { recursive: true, force: true });
+async function main() {
+  let opts;
+  try {
+    opts = parseArgs(process.argv.slice(2));
+  } catch (e) {
+    console.error(`evals: ${e.message}`);
+    process.exit(2);
   }
+  const wanted = opts.scenarios;
+  if (opts.model || opts.effort) console.log(`model: ${opts.model || 'default'} · effort: ${opts.effort || 'default'}`);
+  const files = readdirSync(join(HERE, 'scenarios')).filter((f) => f.endsWith('.mjs')).sort();
+  let failed = 0;
+  for (const f of files) {
+    const sc = (await import(join(HERE, 'scenarios', f))).default;
+    if (wanted.length && !wanted.includes(sc.name)) continue;
+    const dir = makeRepo(sc.files, sc.steps);
+    const started = Date.now();
+    const { out } = await runClaude(dir, sc.prompt, (sc.timeoutMinutes || 10) * 60000, opts);
+    const results = sc.checks.map(([label, fn]) => {
+      let ok = false;
+      let note = '';
+      try {
+        const r = fn(out, ctx(dir));
+        ok = r === true || r?.ok === true;
+        note = r?.note || '';
+      } catch (e) {
+        note = e.message;
+      }
+      return { label, ok, note };
+    });
+    stopLeftovers(dir);
+    const pass = results.every((r) => r.ok);
+    if (!pass) failed++;
+    console.log(`${pass ? '✔' : '✘'} ${sc.name} (${Math.round((Date.now() - started) / 1000)} s)`);
+    for (const r of results) console.log(`    ${r.ok ? '✔' : '✘'} ${r.label}${r.note ? ` — ${r.note}` : ''}`);
+    if (!pass || process.env.KAIZEN_EVAL_KEEP) {
+      writeFileSync(join(dir, 'eval-output.txt'), out);
+      console.log(`    repo kept: ${dir} (output in eval-output.txt)`);
+    } else {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(`${dir}-origin.git`, { recursive: true, force: true });
+    }
+  }
+  process.exit(failed ? 1 : 0);
 }
-process.exit(failed ? 1 : 0);
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) await main();

@@ -76,7 +76,7 @@ recorded, push confirmed by you). Logging never changes a decision.
 | `push.unblocked_median_minutes`, `push.still_waiting` | first stop on a branch → next review on it; branches still waiting in the window |
 | `push.skip_share` | pushes without a review / (reviews + those): a rising share means the review is felt as a tax |
 | `reviews_recorded` | reviews Kaizen recorded |
-| `quality.blocked`, `quality.released`, `quality.by_check` | turns the quality gate stopped, gates released after `max_blocks`, the checks that block most |
+| `quality.blocked`, `quality.released`, `quality.escalated`, `quality.by_check` | turns the quality gate stopped, gates released after `max_blocks`, gates that asked for an Opus subagent ([`models.escalate_after`](../reference/configuration.md#models)), the checks that block most |
 | `secrets.refused`, `secrets.no_verify` | commits refused for a secret, `--no-verify` attempts |
 | `other_refusals` | direct writes to Kaizen's review state refused (`state`) |
 | `events` | every event of the window, all gates together |
@@ -95,8 +95,15 @@ match wins:
 
 Its kind (feature, fix, refactor…) comes from the branch prefix, its title from `SPEC.md`.
 
-Each line of `.kaizen/state/ledger.jsonl` keeps the tokens per model family (`opus`, `sonnet`, `haiku`),
-priced in the relative units of `review.cost_weights` (default haiku 1, sonnet 3, opus 5).
+Each line of `.kaizen/state/ledger.jsonl` keeps the tokens per model family (`fable`, `opus`, `sonnet`,
+`haiku`) and per token type: input, cache write (and the part written for one hour), cache read, output.
+The cost is each type at its own price — Anthropic's API list prices in $, overridable with
+[`cost.prices`](../reference/configuration.md#cost). Pricing every token alike would make the cost a count
+of context read again: a session's cache reads are most of its tokens but, at 1/100 of an output token on
+Opus and Sonnet 5.5, a small part of its cost. On a subscription, read the $ as relative usage between
+items and models, not as a bill. Each item gives `cost`, `unit` (`$`), `cost_by_model`, `cost_by_type`
+and `priced_share` (tokens of a family with no price, or from transcripts without a model, are not
+priced). The deprecated `review.cost_weights`, when set, keeps the former relative units and says so.
 `metrics` reports, in `work_items`: the number of `items`, the median cost per kind in `by_kind`
 (feature, fix, refactor… from the branch prefix), the five most expensive in `top` (item, kind, title,
 cost, tokens, sessions) and the share of tokens nobody could attribute (`unattributed_share`); `node $K cost <item>` gives one item, end to end — spec, plan, build, review, PR

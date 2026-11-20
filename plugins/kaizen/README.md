@@ -80,14 +80,16 @@ dependency.
 | 6 | `/kaizen:ship`, then `/kaizen:watch` | go/no-go checklist, the PR opened, then followed until it looks ready |
 
 Then **you merge**, and `/kaizen:learn` keeps what was not obvious. Lost? `/kaizen:setup` says where the
-repo stands and what to run next.
+repo stands and what to run next — with `models.enabled`, also the session to open for it (Opus to
+decide and review, Sonnet to build: [Models per phase](docs/concepts/the-loop.md#models-per-phase)).
 
 ## The commands
 
 **agent-skills' commands, under Kaizen's prefix** (generated from
 `agent-skills/.claude/commands/` by `scripts/aliases.mjs`; they run its skills, embedded in Kaizen as
 `kaizen:<skill>`, and its personas as `kaizen:code-reviewer`, `kaizen:security-auditor`,
-`kaizen:test-engineer`, `kaizen:web-performance-auditor`):
+`kaizen:test-engineer`, `kaizen:web-performance-auditor` — the first two on Opus with effort `high`, the
+other two on Sonnet; which model for which phase: [Models per phase](docs/concepts/the-loop.md#models-per-phase)):
 
 | Command | What it does |
 |---|---|
@@ -153,7 +155,8 @@ SPEC.md, tasks/, CONSTRAINTS.md   agent-skills' files, read by Kaizen
   "verify": { "test": "pnpm vitest run", "lint": "pnpm eslint ." },
   "gate": { "max_blocks": 3, "targeted": { "lint": "pnpm eslint {files}" } },
   "review": { "require_before_push": true, "max_unreviewed_lines": 80 },
-  "pr": { "max_lines": 400 }
+  "pr": { "max_lines": 400 },
+  "models": { "enabled": true }
 }
 ```
 
@@ -166,7 +169,7 @@ Every key: [configuration](docs/reference/configuration.md).
 `K="${CLAUDE_PLUGIN_ROOT}/scripts/kaizen.mjs"` — zero dependency, used by the skills and the hooks.
 
 ```bash
-node $K status [--json]                        # where the repo stands, next command
+node $K status [--json]                        # where the repo stands, next command (and its session, models.enabled)
 node $K root                                   # deliverable paths
 node $K init [--docs-root d] [--language en]   # .kaizen/config.json and docs/learnings/
 node $K config                                 # effective configuration
@@ -212,6 +215,7 @@ command: [CLI reference](docs/reference/cli.md).
 ```bash
 node --test plugins/kaizen/tests/*.test.mjs    # unit, CLI, gates, hooks, PR (fake gh), contracts
 node plugins/kaizen/evals/run.mjs              # end-to-end evals (claude -p, costly)
+node plugins/kaizen/evals/run.mjs --model claude-sonnet-5-5 --effort medium   # the same, model and effort pinned (A/B)
 ```
 
 - **Contract tests** check that there are four skills in agent-skills' anatomy (rationalizations, red

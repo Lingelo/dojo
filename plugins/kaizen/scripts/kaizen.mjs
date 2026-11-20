@@ -3,7 +3,8 @@
 // build, test, review, ship) is agent-skills': Kaizen holds the gates around it, keeps the learnings,
 // follows pull requests and measures.
 //
-//   node kaizen.mjs status [--json]              where the repo stands, and the next command
+//   node kaizen.mjs status [--json]              where the repo stands, and the next command (with models.enabled,
+//                                                 the session to open for it)
 //   node kaizen.mjs root                         deliverable paths (JSON)
 //   node kaizen.mjs init [--docs-root d] [--language en]   creates .kaizen/config.json and docs/learnings/
 //   node kaizen.mjs config                       effective configuration (JSON)
@@ -26,12 +27,12 @@ import { basename, join, relative, resolve, sep } from 'node:path';
 import * as prmod from './pr.mjs';
 import { readAgentSkills } from './agentskills.mjs';
 import { computeMetrics, parseSince, workItems } from './metrics.mjs';
-import { DEFAULT_WEIGHTS, itemCosts, readLedger, workItem } from './ledger.mjs';
+import { itemCosts, pricingOf, readLedger, workItem } from './ledger.mjs';
 import { declarePlugin, doctor, formatDoctor } from './doctor.mjs';
 import { isEmpty, loadLearnings, searchLearnings, termsOf, validateLearning } from './learnings.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { checkPush, currentBranch, reviewStatus } from './review-state.mjs';
-import { DEFAULT_CONFIG, changedFiles, defaultBranch, detectStack, diffBase, docsRoot, git, loadConfig, readState, repoRoot, runVerify, verifyCommands, walkMarkdown } from './lib.mjs';
+import { DEFAULT_CONFIG, changedFiles, defaultBranch, detectStack, diffBase, docsRoot, git, launchFor, loadConfig, readState, repoRoot, runVerify, verifyCommands, walkMarkdown } from './lib.mjs';
 
 const argv = process.argv.slice(2);
 const flags = {};
@@ -214,6 +215,11 @@ function repoStatus(root) {
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   }
   if (initialized && !next.length) say('/kaizen:spec <what to build>', 'the next feature: spec, plan, build, review, ship (a bug → /kaizen:test with its reproduction)');
+  // models.enabled: the session to open for it — advice, the user keeps the choice of model.
+  for (const n of next) {
+    const launch = launchFor(n.command, config);
+    if (launch) n.launch = launch;
+  }
   return {
     repo: basename(root),
     branch,
@@ -240,7 +246,10 @@ function cmdStatus(root) {
   if (st.gate.active) out(`  ⚠ quality gate on since ${st.gate.since}${st.gate.blocks ? ` (${st.gate.blocks} block(s))` : ''}`);
   if (st.review) out(`  ${yes(st.review.push_allowed)} push: ${st.review.reason}`);
   out('\nNext:');
-  for (const n of st.next) out(`  → ${n.command} — ${n.why}`);
+  for (const n of st.next) {
+    out(`  → ${n.command} — ${n.why}`);
+    if (n.launch) out(`    in a fresh session: ${n.launch.command} (models.${n.launch.phase}; SPEC.md and tasks/ carry the context)`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -323,8 +332,8 @@ try {
         break;
       }
       const { from } = parseSince(typeof flags.since === 'string' ? flags.since : '90d');
-      const weights = { ...DEFAULT_WEIGHTS, ...(config.review?.cost_weights || {}) };
-      const items = itemCosts(readLedger(root).filter((e) => Date.parse(e.at) >= from.getTime()), weights);
+      const pricing = pricingOf(config);
+      const items = itemCosts(readLedger(root).filter((e) => Date.parse(e.at) >= from.getTime()), pricing);
       if (sub) {
         const it = items.find((i) => i.item.toLowerCase() === String(sub).toLowerCase() || i.item === `plan:${sub}` || i.item === `branch:${sub}`);
         if (!it) die(`no cost recorded for "${sub}" in the window (kaizen cost lists the work items)`);
@@ -340,7 +349,11 @@ try {
         break;
       }
       const k = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : `${Math.round(n / 1000)}k`);
-      out(`Cost per work item (relative units, ${Object.entries(weights).map(([m, w]) => `${m} ${w}`).join(', ')})`);
+      out(
+        pricing.unit === '$'
+          ? 'Cost per work item ($ at Anthropic API list prices, per model and token type — an estimate; on a subscription, read it as relative usage)'
+          : `Cost per work item (relative units) — ${pricing.deprecated}`,
+      );
       for (const it of items.slice(0, 20)) {
         out(`  ${it.item.padEnd(28)} ${it.kind.padEnd(9)} ${String(it.cost).padStart(8)}  ${k(it.tokens).padStart(6)} tokens  ${it.sessions} session(s)${it.title ? `  ${it.title}` : ''}${it.priced_share !== null && it.priced_share < 1 ? `  (${Math.round(it.priced_share * 100)}% priced)` : ''}`);
       }

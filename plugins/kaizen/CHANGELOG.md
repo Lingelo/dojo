@@ -2,6 +2,35 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Models per phase** ([the loop](docs/concepts/the-loop.md#models-per-phase)): Opus to decide and to
+  review, Sonnet to build, one session per phase with `SPEC.md` and `tasks/` carrying the context.
+  - The personas run on a model of their own, written into `agents/` by `scripts/aliases.mjs`
+    (`PERSONA_RUNTIME`): `kaizen:code-reviewer` and `kaizen:security-auditor` on Opus, effort `high`;
+    `kaizen:test-engineer` and `kaizen:web-performance-auditor` on Sonnet. A contract test holds every
+    persona to a model, and no command to one.
+  - New `models` configuration key, off by default (`models.enabled: false`) until measured: with it,
+    `kaizen status` and `/kaizen:setup` name, with the next command, the session to open for it
+    (`claude --model sonnet --effort medium` for `/kaizen:build`) — advice, Kaizen never changes the model.
+  - The quality gate escalates: from block `models.escalate_after` (2) on, its report asks for a subagent
+    on Opus to find the root cause (or `/advisor opus`); the first escalation is logged as `escalated`
+    in `friction.jsonl` and counted by metrics (`friction.quality.escalated`).
+- **`evals/run.mjs --model <id> --effort <level>`**, passed to `claude -p`, for A/B runs on a pinned model.
+
+### Changed
+- **`kaizen cost` and metrics price each token type at its own price**: input, cache write (5-minute and
+  1-hour), cache read and output, per model family (`fable`, `opus`, `sonnet`, `haiku`), at Anthropic's
+  API list prices in $ (`scripts/ledger.mjs` `PRICES`, overridable with the new `cost.prices` key). Items
+  gain `unit`, `cost_by_model` and `cost_by_type`. Before, every token weighed the same, so a cache read
+  (1/100 of an output token on Opus 5.5) counted as much as an output token, with Sonnet at 3/5 of Opus
+  instead of 1/2. Costs recorded before are re-priced on read: the ledger keeps the raw counts.
+
+### Deprecated
+- `review.cost_weights`: still honoured while `cost.prices` is empty, in the former relative units, and
+  `kaizen cost` says it is deprecated.
+
 ## [1.1.0] - 2026-11-11
 
 ### Changed

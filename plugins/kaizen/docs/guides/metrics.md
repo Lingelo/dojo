@@ -38,5 +38,5 @@ and changes no code.
 ## Cost of one item
 
 `node $K cost <item>` — a Jira key, `branch:<name>`, `plan:<topic>`, or `current` for the work item of
-this branch — gives its tokens per model family and in relative units, from the first turn on it
+this branch — gives its tokens and its cost per model family and per token type (in $ at API list prices), from the first turn on it
 (spec, plan) to the last (PR follow-up). The ledger is local to your machine.

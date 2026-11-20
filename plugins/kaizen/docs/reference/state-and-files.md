@@ -40,7 +40,7 @@ progress, the reviews recorded (the next push asks for one) and the cost history
 | `push-offers.json` | review hook | per branch: the commit you were asked about | 30 min, used by the next push of that commit |
 | `hooks-seen.json` | SessionStart hook | the last time Kaizen's hooks fired here (`doctor`) | replaced |
 | `learnings-seen.json` | `post-edit.mjs` | learnings already brought back: per planning file content, per session | kept |
-| `friction.jsonl` | every gate that stops the work, and what lifts it | at, gate, kind (`refused`, `asked`, `skip_confirm`, `blocked`, `released`, `no_verify`, `review_recorded`), reason, branch, checks, source | kept |
+| `friction.jsonl` | every gate that stops the work, and what lifts it | at, gate, kind (`refused`, `asked`, `skip_confirm`, `blocked`, `released`, `escalated`, `no_verify`, `review_recorded`), reason, branch, checks, source | kept |
 | `ledger.jsonl` | Stop hook `ledger-hook.mjs` | at, session, item, kind, title, branch, source, usage per model, subagents | kept |
 | `ledger-cursor.json` | Stop hook `ledger-hook.mjs` | byte offset and last message ids per transcript already charged | kept |
 | `pr/<owner>-<repo>-<n>.json` | `pr snapshot`, `pr mark` | threads, comments, checks handled, started_at, budget, last head | delete to start over |

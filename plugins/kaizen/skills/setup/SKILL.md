@@ -37,7 +37,9 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
    uses): `Read docs/learnings/ before planning; /kaizen:learn after a non-obvious fix.`
 6. **Next. One line per item of `status`'s `next`, the first one recommended. A repository without a
    spec → `/kaizen:spec <what to build>`; without `CONSTRAINTS.md` → mention
-   `/kaizen:constraints` once, as optional.
+   `/kaizen:constraints` once, as optional. When an item has a `launch` (`models.enabled`), give it
+   with the command, as advice: `claude --model sonnet --effort medium` in a fresh session for
+   `/kaizen:build` — the user keeps the choice of model; never switch it for them.
 
 ## Common Rationalizations
 
@@ -58,4 +60,4 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
 
 - [ ] `node "$K" doctor` shows no ⚠ the user did not choose to keep.
 - [ ] `node "$K" verify` runs every configured command.
-- [ ] The user knows the next command and why.
+- [ ] The user knows the next command and why — and, with `models.enabled`, the session to open for it.

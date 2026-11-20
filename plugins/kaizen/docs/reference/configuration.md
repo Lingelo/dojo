@@ -29,9 +29,14 @@ agent-skills has no configuration of its own: its quality bar is `CONSTRAINTS.md
     "enabled": true, "max_blocks": 3, "timeout_seconds": 600, "budget_seconds": 840, "max_age_hours": 24,
     "targeted": { "test": "pnpm vitest related --run {files}", "lint": "pnpm eslint {files}" }
   },
-  "review": { "require_before_push": true, "max_unreviewed_lines": 80, "cost_weights": { "opus": 5 } },
+  "review": { "require_before_push": true, "max_unreviewed_lines": 80 },
   "secrets": { "scan": true, "ignore": ["test/fixtures/**"] },
-  "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] }
+  "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] },
+  "cost": { "prices": { "opus": { "output": 20 } } },
+  "models": {
+    "enabled": true, "design": "opus", "build": "sonnet", "review": "opus",
+    "effort": { "plan": "high", "debug": "high", "build": "medium", "review": "high" }, "escalate_after": 2
+  }
 }
 ```
 
@@ -78,7 +83,7 @@ The quality gate (Stop hook). It turns itself on when a session edits a code fil
 |---|---|---|
 | `review.require_before_push` | `true` | `true`: an unreviewed push is stopped once, Claude asks you, and you can push without a review by confirming in Claude Code's prompt; `false`: no check |
 | `review.max_unreviewed_lines` | `80` | lines changed since the last review beyond which the push needs a new one |
-| `review.cost_weights` | `{}` | relative weight of a million tokens per model family for `kaizen cost` and metrics; defaults `haiku` 1, `sonnet` 3, `opus` 5 |
+| `review.cost_weights` | `{}` | **deprecated**, see [`cost`](#cost): one relative weight per model family, every token type alike. Still honoured while `cost.prices` is empty — `kaizen cost` and metrics then count in relative units (former defaults `haiku` 1, `sonnet` 3, `opus` 5) and say it is deprecated |
 
 ### `secrets`
 
@@ -93,3 +98,36 @@ The quality gate (Stop hook). It turns itself on when a session edits a code fil
 |---|---|---|
 | `pr.max_lines` | `400` | batch size threshold reported by `metrics` (`over_limit_share`) |
 | `pr.ignore` | lockfiles, `*.min.*`, `*.snap`, `*.generated.*`, `dist/**`, `vendor/**` | files not counted in batch size |
+
+### `cost`
+
+| Key | Default | Role |
+|---|---|---|
+| `cost.prices` | `{}` | $ per million tokens, per model family (`fable`, `opus`, `sonnet`, `haiku`, or another family name) and token type (`input`, `cache_write` for a 5-minute cache write, `cache_write_1h`, `cache_read`, `output`), for `kaizen cost` and metrics; each value overrides one of the built-in list prices |
+
+The built-in prices are Anthropic's API list prices (Fable 5.2, Opus 5.5, Sonnet 5.5, Haiku 5.5 up to
+100K tokens of prompt — [pricing](https://platform.claude.com/docs/en/about-claude/pricing)), in
+`scripts/ledger.mjs`. Override them for another provider or a negotiated price; a family with no price
+is not counted (`priced_share`). How the cost is computed: [Cost](../concepts/metrics.md#cost-work_items-kaizen-cost).
+
+### `models`
+
+Which model each phase of the cycle runs on — advice, never imposed: the session model stays yours
+(`claude --model`, `/model`). Why one session per phase, and what to measure before turning it on:
+[Models per phase](../concepts/the-loop.md#models-per-phase). The personas' models (`kaizen:code-reviewer`
+and `kaizen:security-auditor` on Opus, effort `high`; `kaizen:test-engineer` and
+`kaizen:web-performance-auditor` on Sonnet) are in their definitions and do not depend on this key.
+
+| Key | Default | Role |
+|---|---|---|
+| `models.enabled` | `false` | the switch: `true` turns on the recommendations below and the quality gate's escalation; `false` leaves Kaizen silent about models |
+| `models.design` | `"opus"` | model to open `/kaizen:ideate`, `spec`, `plan`, `adr`, `doubt`, `migrate`, `debug`, `constraints` on |
+| `models.build` | `"sonnet"` | model to open `/kaizen:build`, `test`, `code-simplify`, `webperf`, `watch`, `learn`, `metrics` on |
+| `models.review` | `"opus"` | model to open `/kaizen:review`, `security`, `ship` on |
+| `models.effort` | `{ "plan": "high", "debug": "high", "build": "medium", "review": "high" }` | effort level by command name (`plan`, `debug`…) or by phase (`design`, `build`, `review`), the command first; none → the model's default |
+| `models.escalate_after` | `2` | from this quality gate block on, the report asks Claude for a subagent on Opus to find the root cause (or `/advisor opus`), and the first one is logged as `escalated` in `friction.jsonl` |
+
+Values are Claude Code model aliases (`opus`, `sonnet`) or full model IDs (`claude-sonnet-5-5`), and
+effort levels `low`, `medium`, `high`, `xhigh`, `max`. With `enabled`, `node $K status` (and
+`/kaizen:setup`) adds, under the next command, the session to open for it:
+`in a fresh session: claude --model sonnet --effort medium`.

@@ -39,6 +39,33 @@ test('code edited and checks red: blocks (exit 2) up to max_blocks, then lets th
   cleanup(dir);
 });
 
+test('models.enabled: from block escalate_after on, the report asks for an Opus subagent; the first escalation is logged', () => {
+  const dir = repoWithTest(1, { gate: { max_blocks: 3 }, models: { enabled: true, escalate_after: 2 } });
+  const friction = () => readFileSync(join(dir, '.kaizen/state/friction.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  edit(dir, 'app.js');
+  const first = stop(dir);
+  assert.equal(first.status, 2);
+  assert.doesNotMatch(first.stderr, /Escalate/, 'not before escalate_after');
+  const second = stop(dir);
+  assert.equal(second.status, 2);
+  assert.match(second.stderr, /Escalate \(blocked 2 times\)/);
+  assert.match(second.stderr, /model: "opus"/);
+  assert.match(second.stderr, /\/advisor opus/);
+  assert.match(stop(dir).stderr, /Escalate \(blocked 3 times\)/, 'still said on the next block');
+  assert.deepEqual(friction().map((e) => e.kind), ['blocked', 'blocked', 'escalated', 'blocked'], 'escalated logged once');
+  assert.equal(friction()[2].blocks, 2);
+  assert.equal(stop(dir).status, 0, 'released after max_blocks, as before');
+  cleanup(dir);
+});
+
+test('models off (the default): no escalation, whatever the number of blocks', () => {
+  const dir = repoWithTest(1, { gate: { max_blocks: 3 }, models: { escalate_after: 1 } });
+  edit(dir, 'app.js');
+  for (let i = 0; i < 3; i++) assert.doesNotMatch(stop(dir).stderr, /Escalate/);
+  assert.ok(!readFileSync(join(dir, '.kaizen/state/friction.jsonl'), 'utf8').includes('escalated'));
+  cleanup(dir);
+});
+
 test('code edited and checks green: lets the turn end and turns itself off', () => {
   const dir = repoWithTest(0);
   edit(dir, 'src/a.ts', 'S1', 'Write');

@@ -36,11 +36,18 @@ export const DEFAULT_CONFIG = {
   verify: {},
   // Quality gate (Stop hook): on as soon as a session edits code, off when the checks are green.
   gate: { enabled: true, max_blocks: 3, timeout_seconds: 600, budget_seconds: 840, max_age_hours: 24, targeted: {} },
-  // cost_weights: relative weight of a million tokens per model family, for `kaizen cost` and metrics.
+  // cost_weights: deprecated (one weight per model family, every token type alike) — see `cost.prices`.
   review: { require_before_push: true, max_unreviewed_lines: 80, cost_weights: {} },
   // Secret scan before every commit Claude makes (secret-gate hook); ignore = path globs.
   secrets: { scan: true, ignore: [] },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
+  // Model per phase: the session `status` recommends opening for the next command, and the quality gate's
+  // escalation to Opus after `escalate_after` blocks. Advice only — the session model stays the user's
+  // choice. Off until measured on your features (docs/concepts/the-loop.md, Models per phase).
+  // Prices per million tokens, per model family and token type, for `kaizen cost` and metrics: overrides of
+  // ledger.mjs PRICES (Anthropic API list prices, $), family by family, type by type.
+  cost: { prices: {} },
+  models: { enabled: false, design: 'opus', build: 'sonnet', review: 'opus', effort: { plan: 'high', debug: 'high', build: 'medium', review: 'high' }, escalate_after: 2 },
 };
 
 // JSON state under .kaizen/state/ (ignored by git). Reading never creates the folder: hooks read it
@@ -86,8 +93,31 @@ export function loadConfig(root) {
   merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
   merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
   merged.secrets = { ...DEFAULT_CONFIG.secrets, ...(base.secrets || {}), ...(local.secrets || {}) };
+  merged.cost = { ...DEFAULT_CONFIG.cost, ...(base.cost || {}), ...(local.cost || {}) };
+  merged.models = { ...DEFAULT_CONFIG.models, ...(base.models || {}), ...(local.models || {}) };
+  merged.models.effort = { ...DEFAULT_CONFIG.models.effort, ...(base.models?.effort || {}), ...(local.models?.effort || {}) };
   if (base.docs_root) merged.docs_root = base.docs_root;
   return merged;
+}
+
+// The phase a /kaizen: command belongs to, for `models`: design decides, build executes, review controls.
+const PHASES = {
+  design: ['ideate', 'spec', 'plan', 'adr', 'doubt', 'migrate', 'debug', 'constraints'],
+  build: ['build', 'test', 'code-simplify', 'webperf', 'watch', 'learn', 'metrics'],
+  review: ['review', 'security', 'ship'],
+};
+
+// The session to open for a /kaizen: command when `models.enabled`: `claude --model <m> [--effort <e>]`
+// (effort per command first, then per phase). Null when off, or for a command outside the cycle.
+export function launchFor(command, config) {
+  const models = config?.models;
+  if (!models?.enabled) return null;
+  const name = /\/kaizen:([a-z][a-z-]*)/.exec(String(command || ''))?.[1];
+  const phase = Object.keys(PHASES).find((p) => PHASES[p].includes(name));
+  const model = phase && models[phase];
+  if (!model) return null;
+  const effort = models.effort?.[name] || models.effort?.[phase] || null;
+  return { phase, model, effort, command: `claude --model ${model}${effort ? ` --effort ${effort}` : ''}` };
 }
 
 // A file a tool names (absolute, or relative to the session's cwd), relative to the repository, POSIX
@@ -547,6 +577,10 @@ export function modelFamily(model) {
 
 function addUsage(into, usage) {
   for (const k of USAGE_KEYS) into[k] += Number(usage[k]) || 0;
+  // The part of the cache writes made for one hour (priced higher): Claude Code reports it in
+  // usage.cache_creation; kept apart, already counted in cache_creation_input_tokens.
+  const write1h = Number(usage.cache_creation_1h_input_tokens ?? usage.cache_creation?.ephemeral_1h_input_tokens) || 0;
+  if (write1h) into.cache_creation_1h_input_tokens = (into.cache_creation_1h_input_tokens || 0) + write1h;
   into.messages += usage.messages ?? 1;
   // Per model family, when known (cost dashboard): merged the same way.
   for (const [m, u] of Object.entries(usage.by_model || {})) {

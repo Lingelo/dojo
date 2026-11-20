@@ -26,6 +26,13 @@ the end of every turn, the Stop hook runs the verification:
 - red after `gate.max_blocks` (3) attempts → the turn ends anyway and Claude must tell you what is
   still red; the gate turns off.
 
+With [`models.enabled`](../reference/configuration.md#models), from block `models.escalate_after` (2)
+on, the report also asks Claude to escalate before the next attempt: a subagent on Opus (the Agent
+tool's `model` parameter) looks for the root cause, or you turn on an Opus advisor (`/advisor opus`).
+A hook cannot change the session's model, so this is how a Sonnet build gets Opus's help where it is
+stuck. The first escalation of a gate is logged as `escalated` (`friction.quality.escalated` in
+metrics).
+
 The commands are `verify` in `.kaizen/config.json` (or what `node $K detect` finds). Slow suites:
 `gate.targeted` runs a command on the files the branch touches only (`{files}`). The checks fit within
 `gate.budget_seconds`. A gate older than `gate.max_age_hours` expires. Another session open on the same

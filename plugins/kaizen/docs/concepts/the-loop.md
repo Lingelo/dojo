@@ -83,6 +83,49 @@ match wins:
    reviewed and committed → `/kaizen:ship`; reviewed and pushed → `/kaizen:watch`.
 5. Otherwise → `/kaizen:spec <what to build>`.
 
+## Models per phase
+
+Kaizen sets no model on the commands: without a choice, everything — subagents included — runs on the
+session's model. Not every phase needs the same one. Deciding (spec, plan, debug) and controlling
+(review, security) are where a weaker answer costs the most; executing a detailed plan (build, test,
+PR follow-up) is most of the tokens and needs less. The split Kaizen recommends:
+
+| Phase | Commands | Model | Effort | How |
+|---|---|---|---|---|
+| Design | `/kaizen:ideate`, `spec`, `plan`, `adr`, `doubt`, `migrate`, `debug` | Opus | `high` for `plan` and `debug` | a design session: `claude --model opus` |
+| Build | `/kaizen:build`, `test`, `code-simplify`, `webperf`, `watch`, `learn`, `metrics` | Sonnet | `medium` | a **fresh** session: `claude --model sonnet --effort medium` |
+| Review | `/kaizen:review`, `security`, `ship` | Opus | `high` | a review session: `claude --model opus --effort high` |
+| Personas | `kaizen:code-reviewer`, `kaizen:security-auditor` | Opus | `high` | set in their definitions (`agents/`), always |
+| Personas | `kaizen:test-engineer`, `kaizen:web-performance-auditor` | Sonnet | the session's | set in their definitions (`agents/`), always |
+
+**One session per phase**, the files carrying the context: `SPEC.md` and `tasks/plan.md` written in the
+design session are what the build session reads, the branch is what the review session reads. A fresh
+session also rereads less context than a long one. Effort can change mid-session (`/effort high` before
+`/kaizen:plan`) without losing the prompt cache; a model cannot.
+
+**Why not `model:` in the commands.** Claude Code supports it, but a command's model only lasts for the
+turn it was invoked in: the session model resumes with your next prompt — so the "approve" that starts
+`/kaizen:build auto` would build on the session's model anyway. Each model has its own prompt cache:
+switching for one command and back recomputes the whole context twice. And `opusplan` only routes plan
+mode, which only `/kaizen:plan` enters: spec, review and security would run on Sonnet, the opposite of
+the aim. So the commands stay as agent-skills writes them, and the choice is made where it holds — the
+session — while the personas, which start a context of their own anyway, carry theirs.
+
+**Guard rails for a Sonnet build:**
+
+- a plan Sonnet can execute: per task, the acceptance criteria, the files to touch, the command that
+  verifies it (`/kaizen:doubt` on the plan for risky features);
+- the quality gate escalates: from block `models.escalate_after` (2) on, it asks for an Opus subagent to
+  find the root cause ([The quality gate](gates.md#the-quality-gate));
+- the review before push stays on Opus — the review session, or the `code-reviewer` persona.
+
+**Turn it on with `models.enabled`** ([Configuration](../reference/configuration.md#models)): `node $K
+status` and `/kaizen:setup` then name, with the next command, the session to open for it, and the
+quality gate escalates. It is advice: Kaizen never changes your model. Off by default, until measured on
+your own features: the same feature built twice from the same spec and plan, once on Opus, once on
+Sonnet with an Opus review, compared with `/usage`, `node $K cost <item>`
+([Cost](metrics.md#cost-work_items-kaizen-cost)), the quality gate's blocks and the review's findings.
+
 ## Where everything lives
 
 ![What Kaizen writes in your repo, and who reads it](../media/diagrams/artifacts-map.svg)

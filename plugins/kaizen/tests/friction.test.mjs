@@ -64,6 +64,7 @@ test('metrics friction: time stopped on push, skip share, checks that block, sti
     { at: t(42), gate: 'push', kind: 'asked', reason: 'no_review', branch: 'c', source: 'claude' },
     { at: t(43), gate: 'quality', kind: 'blocked', checks: ['lint', 'test'] },
     { at: t(44), gate: 'quality', kind: 'blocked', checks: ['test'] },
+    { at: t(44), gate: 'quality', kind: 'escalated', checks: ['test'], blocks: 2 },
     { at: t(45), gate: 'quality', kind: 'released', checks: ['test'] },
     { at: t(46), gate: 'secrets', kind: 'refused', findings: 2 },
     { at: t(47), gate: 'state', kind: 'refused', source: 'claude' },
@@ -72,7 +73,7 @@ test('metrics friction: time stopped on push, skip share, checks that block, sti
   ];
   writeFiles(dir, { '.kaizen/state/friction.jsonl': `${log.map((e) => JSON.stringify(e)).join('\n')}\nnot json\n` });
   const f = friction(dir, new Date(Date.UTC(2026, 8, 1)));
-  assert.equal(f.events, 13);
+  assert.equal(f.events, 14);
   assert.equal(f.push.stopped, 5);
   assert.deepEqual(f.push.by_reason, { no_review: 4, stale: 1 });
   assert.equal(f.push.unblocked_median_minutes, 20, 'median of 30 (from the first stop) and 10');
@@ -80,7 +81,7 @@ test('metrics friction: time stopped on push, skip share, checks that block, sti
   assert.equal(f.push.pushed_without_review, 1);
   assert.equal(f.reviews_recorded, 2);
   assert.equal(f.push.skip_share, 0.33, 'push without a review / (reviews + those)');
-  assert.deepEqual(f.quality, { blocked: 2, released: 1, by_check: { lint: 1, test: 2 } });
+  assert.deepEqual(f.quality, { blocked: 2, released: 1, escalated: 1, by_check: { lint: 1, test: 2 } });
   assert.deepEqual(f.secrets, { refused: 1, no_verify: 0 });
   assert.deepEqual(f.other_refusals, { state: 1 });
   assert.equal(friction(dir, new Date(Date.UTC(2026, 10, 1))), null, 'nothing in the window');
