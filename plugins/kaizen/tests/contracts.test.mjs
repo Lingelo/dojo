@@ -38,6 +38,28 @@ test('four skills of its own, agent-skills embedded: its skills loaded, its pers
   assert.ok(want['code-reviewer.md'], 'the code-reviewer persona the review hook records');
 });
 
+test('every persona runs on a model Kaizen chose: Opus for the review and the security audit, Sonnet for the inventories', async () => {
+  const { PERSONA_RUNTIME, withFields } = await import('../scripts/aliases.mjs');
+  const agents = readdirSync(join(PLUGIN, 'agents')).filter((f) => f.endsWith('.md'));
+  assert.deepEqual(agents.map((f) => f.slice(0, -3)).sort(), Object.keys(PERSONA_RUNTIME).sort(), 'a new agent-skills persona needs its line in PERSONA_RUNTIME (scripts/aliases.mjs)');
+  for (const f of agents) {
+    const { data, error } = parseFrontmatter(readFileSync(join(PLUGIN, 'agents', f), 'utf8').replace(/\r\n/g, '\n'));
+    assert.equal(error, null, `agents/${f}: ${error}`);
+    assert.ok(['opus', 'sonnet'].includes(data.model), `agents/${f}: model ${data.model}`);
+    if (data.effort !== undefined) assert.ok(['low', 'medium', 'high', 'xhigh', 'max'].includes(data.effort), `agents/${f}: effort ${data.effort}`);
+    assert.equal(data.name, f.slice(0, -3));
+  }
+  assert.deepEqual(PERSONA_RUNTIME['code-reviewer'], { model: 'opus', effort: 'high' });
+  assert.deepEqual(PERSONA_RUNTIME['security-auditor'], { model: 'opus', effort: 'high' });
+  assert.equal(PERSONA_RUNTIME['test-engineer'].model, 'sonnet');
+  assert.equal(PERSONA_RUNTIME['web-performance-auditor'].model, 'sonnet');
+  // An upstream field of the same name is replaced, a new one goes last, the body is untouched.
+  assert.equal(withFields('---\nname: x\nmodel: inherit\n---\nbody\n', { model: 'opus', effort: 'high' }), '---\nname: x\nmodel: opus\neffort: high\n---\nbody\n');
+  assert.equal(withFields('no frontmatter\n', { model: 'opus' }), 'no frontmatter\n');
+  // Commands keep the session's model: a `model:` there would last one turn and break the cache twice.
+  for (const c of commands) assert.doesNotMatch(readFileSync(join(PLUGIN, 'commands', `${c}.md`), 'utf8').split(/\n---\r?\n/)[0], /^model:/m, `commands/${c}.md: no model in a command`);
+});
+
 test('agent-skills\' commands under Kaizen\'s prefix: exact copies, one per command, never shadowing a skill', async () => {
   const { expected } = await import('../scripts/aliases.mjs');
   const want = expected();
