@@ -41,6 +41,10 @@ export const DEFAULT_CONFIG = {
   // Secret scan before every commit Claude makes (secret-gate hook); ignore = path globs.
   secrets: { scan: true, ignore: [] },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
+  // Model per phase: the session `status` recommends opening for the next command, and the quality gate's
+  // escalation to Opus after `escalate_after` blocks. Advice only — the session model stays the user's
+  // choice. Off until measured on your features (docs/concepts/the-loop.md, Models per phase).
+  models: { enabled: false, design: 'opus', build: 'sonnet', review: 'opus', effort: { plan: 'high', debug: 'high', build: 'medium', review: 'high' }, escalate_after: 2 },
 };
 
 // JSON state under .kaizen/state/ (ignored by git). Reading never creates the folder: hooks read it
@@ -86,8 +90,30 @@ export function loadConfig(root) {
   merged.pr = { ...DEFAULT_CONFIG.pr, ...(base.pr || {}), ...(local.pr || {}) };
   merged.review = { ...DEFAULT_CONFIG.review, ...(base.review || {}), ...(local.review || {}) };
   merged.secrets = { ...DEFAULT_CONFIG.secrets, ...(base.secrets || {}), ...(local.secrets || {}) };
+  merged.models = { ...DEFAULT_CONFIG.models, ...(base.models || {}), ...(local.models || {}) };
+  merged.models.effort = { ...DEFAULT_CONFIG.models.effort, ...(base.models?.effort || {}), ...(local.models?.effort || {}) };
   if (base.docs_root) merged.docs_root = base.docs_root;
   return merged;
+}
+
+// The phase a /kaizen: command belongs to, for `models`: design decides, build executes, review controls.
+const PHASES = {
+  design: ['ideate', 'spec', 'plan', 'adr', 'doubt', 'migrate', 'debug', 'constraints'],
+  build: ['build', 'test', 'code-simplify', 'webperf', 'watch', 'learn', 'metrics'],
+  review: ['review', 'security', 'ship'],
+};
+
+// The session to open for a /kaizen: command when `models.enabled`: `claude --model <m> [--effort <e>]`
+// (effort per command first, then per phase). Null when off, or for a command outside the cycle.
+export function launchFor(command, config) {
+  const models = config?.models;
+  if (!models?.enabled) return null;
+  const name = /\/kaizen:([a-z][a-z-]*)/.exec(String(command || ''))?.[1];
+  const phase = Object.keys(PHASES).find((p) => PHASES[p].includes(name));
+  const model = phase && models[phase];
+  if (!model) return null;
+  const effort = models.effort?.[name] || models.effort?.[phase] || null;
+  return { phase, model, effort, command: `claude --model ${model}${effort ? ` --effort ${effort}` : ''}` };
 }
 
 // A file a tool names (absolute, or relative to the session's cwd), relative to the repository, POSIX

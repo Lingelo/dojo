@@ -31,7 +31,11 @@ agent-skills has no configuration of its own: its quality bar is `CONSTRAINTS.md
   },
   "review": { "require_before_push": true, "max_unreviewed_lines": 80, "cost_weights": { "opus": 5 } },
   "secrets": { "scan": true, "ignore": ["test/fixtures/**"] },
-  "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] }
+  "pr": { "max_lines": 400, "ignore": ["*.lock", "pnpm-lock.yaml", "dist/**", "*.snap"] },
+  "models": {
+    "enabled": true, "design": "opus", "build": "sonnet", "review": "opus",
+    "effort": { "plan": "high", "debug": "high", "build": "medium", "review": "high" }, "escalate_after": 2
+  }
 }
 ```
 
@@ -93,3 +97,25 @@ The quality gate (Stop hook). It turns itself on when a session edits a code fil
 |---|---|---|
 | `pr.max_lines` | `400` | batch size threshold reported by `metrics` (`over_limit_share`) |
 | `pr.ignore` | lockfiles, `*.min.*`, `*.snap`, `*.generated.*`, `dist/**`, `vendor/**` | files not counted in batch size |
+
+### `models`
+
+Which model each phase of the cycle runs on — advice, never imposed: the session model stays yours
+(`claude --model`, `/model`). Why one session per phase, and what to measure before turning it on:
+[Models per phase](../concepts/the-loop.md#models-per-phase). The personas' models (`kaizen:code-reviewer`
+and `kaizen:security-auditor` on Opus, effort `high`; `kaizen:test-engineer` and
+`kaizen:web-performance-auditor` on Sonnet) are in their definitions and do not depend on this key.
+
+| Key | Default | Role |
+|---|---|---|
+| `models.enabled` | `false` | the switch: `true` turns on the recommendations below and the quality gate's escalation; `false` leaves Kaizen silent about models |
+| `models.design` | `"opus"` | model to open `/kaizen:ideate`, `spec`, `plan`, `adr`, `doubt`, `migrate`, `debug`, `constraints` on |
+| `models.build` | `"sonnet"` | model to open `/kaizen:build`, `test`, `code-simplify`, `webperf`, `watch`, `learn`, `metrics` on |
+| `models.review` | `"opus"` | model to open `/kaizen:review`, `security`, `ship` on |
+| `models.effort` | `{ "plan": "high", "debug": "high", "build": "medium", "review": "high" }` | effort level by command name (`plan`, `debug`…) or by phase (`design`, `build`, `review`), the command first; none → the model's default |
+| `models.escalate_after` | `2` | from this quality gate block on, the report asks Claude for a subagent on Opus to find the root cause (or `/advisor opus`), and the first one is logged as `escalated` in `friction.jsonl` |
+
+Values are Claude Code model aliases (`opus`, `sonnet`) or full model IDs (`claude-sonnet-5-5`), and
+effort levels `low`, `medium`, `high`, `xhigh`, `max`. With `enabled`, `node $K status` (and
+`/kaizen:setup`) adds, under the next command, the session to open for it:
+`in a fresh session: claude --model sonnet --effort medium`.

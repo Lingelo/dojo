@@ -135,6 +135,22 @@ test('status: setup, then agent-skills\' commands, review and ship in order', ()
   cleanup(dir);
 });
 
+test('status with models.enabled: the session to open for the next command, advice only', () => {
+  const dir = tempRepo({ '.kaizen/config.json': {}, 'SPEC.md': '# Spec: X\n\n## Objective\nx\n', 'tasks/todo.md': '# Tasks\n\n## Task 1: A\n\n**Acceptance criteria:**\n- [ ] a\n' });
+  assert.equal(cli(dir, ['status', '--json']).json.next[0].launch, undefined, 'off by default');
+  assert.doesNotMatch(cli(dir, ['status']).stdout, /fresh session/);
+  writeFiles(dir, { '.kaizen/config.json': { models: { enabled: true } } });
+  assert.deepEqual(cli(dir, ['status', '--json']).json.next[0], {
+    command: '/kaizen:build',
+    why: '0/1 tasks done in tasks/todo.md, next: Task 1: A',
+    launch: { phase: 'build', model: 'sonnet', effort: 'medium', command: 'claude --model sonnet --effort medium' },
+  });
+  assert.match(cli(dir, ['status']).stdout, /→ \/kaizen:build — .*\n {4}in a fresh session: claude --model sonnet --effort medium \(models\.build;/);
+  gitc(dir, ['rm', '-q', 'tasks/todo.md']);
+  assert.equal(cli(dir, ['status', '--json']).json.next[0].launch.command, 'claude --model opus --effort high', '/kaizen:plan: Opus, effort high');
+  cleanup(dir);
+});
+
 test('install settings declares kaizen@dojo (agent-skills is embedded); gate status and off', () => {
   const dir = tempRepo({ '.kaizen/config.json': {} });
   const r = cli(dir, ['install', 'settings']).json;

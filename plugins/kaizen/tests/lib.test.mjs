@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { detectStack, docsRoot, loadConfig, parseFrontmatter, runBounded } from '../scripts/lib.mjs';
+import { detectStack, docsRoot, launchFor, loadConfig, parseFrontmatter, runBounded } from '../scripts/lib.mjs';
 import { cleanup, tempRepo } from './helpers.mjs';
 
 test('frontmatter: scalars, quotes, inline and dash lists, blocks, comments', () => {
@@ -75,6 +75,32 @@ test('configuration : config.local surcharge, sauf docs_root', () => {
   assert.equal(c.gate.timeout_seconds, 600, 'gate defaults are kept');
   assert.equal(c.pr.max_lines, 300);
   assert.ok(c.pr.ignore.length, 'default ignore patterns are kept');
+  cleanup(dir);
+});
+
+test('models: off by default, merged key by key, effort per command then per phase', () => {
+  const dir = tempRepo({
+    '.kaizen/config.json': { models: { enabled: true, build: 'opus', effort: { build: 'high' } } },
+    '.kaizen/config.local.json': { models: { effort: { review: 'xhigh' } } },
+  });
+  const c = loadConfig(dir);
+  assert.equal(c.models.enabled, true);
+  assert.equal(c.models.build, 'opus');
+  assert.equal(c.models.design, 'opus', 'defaults are kept');
+  assert.equal(c.models.escalate_after, 2);
+  assert.deepEqual(c.models.effort, { plan: 'high', debug: 'high', build: 'high', review: 'xhigh' });
+  const bare = tempRepo({});
+  assert.equal(loadConfig(bare).models.enabled, false, 'off until measured');
+  cleanup(bare);
+  const on = { models: { enabled: true, design: 'opus', build: 'sonnet', review: 'opus', effort: { plan: 'high', build: 'medium', review: 'high' } } };
+  assert.deepEqual(launchFor('/kaizen:build', on), { phase: 'build', model: 'sonnet', effort: 'medium', command: 'claude --model sonnet --effort medium' });
+  assert.equal(launchFor('/kaizen:plan', on).command, 'claude --model opus --effort high');
+  assert.equal(launchFor('/kaizen:spec <what to build>', on).command, 'claude --model opus', 'no effort set for the phase: the default');
+  assert.equal(launchFor('/kaizen:watch', on).model, 'sonnet');
+  assert.equal(launchFor('/kaizen:review', on).command, 'claude --model opus --effort high');
+  assert.equal(launchFor('/kaizen:setup', on), null, 'outside the cycle');
+  assert.equal(launchFor('make the checks green', on), null);
+  assert.equal(launchFor('/kaizen:build', { models: { ...on.models, enabled: false } }), null);
   cleanup(dir);
 });
 

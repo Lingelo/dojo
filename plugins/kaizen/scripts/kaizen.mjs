@@ -3,7 +3,8 @@
 // build, test, review, ship) is agent-skills': Kaizen holds the gates around it, keeps the learnings,
 // follows pull requests and measures.
 //
-//   node kaizen.mjs status [--json]              where the repo stands, and the next command
+//   node kaizen.mjs status [--json]              where the repo stands, and the next command (with models.enabled,
+//                                                 the session to open for it)
 //   node kaizen.mjs root                         deliverable paths (JSON)
 //   node kaizen.mjs init [--docs-root d] [--language en]   creates .kaizen/config.json and docs/learnings/
 //   node kaizen.mjs config                       effective configuration (JSON)
@@ -31,7 +32,7 @@ import { declarePlugin, doctor, formatDoctor } from './doctor.mjs';
 import { isEmpty, loadLearnings, searchLearnings, termsOf, validateLearning } from './learnings.mjs';
 import { formatFindings, scan as scanSecrets } from './secrets.mjs';
 import { checkPush, currentBranch, reviewStatus } from './review-state.mjs';
-import { DEFAULT_CONFIG, changedFiles, defaultBranch, detectStack, diffBase, docsRoot, git, loadConfig, readState, repoRoot, runVerify, verifyCommands, walkMarkdown } from './lib.mjs';
+import { DEFAULT_CONFIG, changedFiles, defaultBranch, detectStack, diffBase, docsRoot, git, launchFor, loadConfig, readState, repoRoot, runVerify, verifyCommands, walkMarkdown } from './lib.mjs';
 
 const argv = process.argv.slice(2);
 const flags = {};
@@ -214,6 +215,11 @@ function repoStatus(root) {
     else say('/kaizen:review', `branch ${branch}: ${review?.review ? review.push.reason : 'changes not reviewed yet'}${dirty ? ' (uncommitted included)' : ''}`);
   }
   if (initialized && !next.length) say('/kaizen:spec <what to build>', 'the next feature: spec, plan, build, review, ship (a bug → /kaizen:test with its reproduction)');
+  // models.enabled: the session to open for it — advice, the user keeps the choice of model.
+  for (const n of next) {
+    const launch = launchFor(n.command, config);
+    if (launch) n.launch = launch;
+  }
   return {
     repo: basename(root),
     branch,
@@ -240,7 +246,10 @@ function cmdStatus(root) {
   if (st.gate.active) out(`  ⚠ quality gate on since ${st.gate.since}${st.gate.blocks ? ` (${st.gate.blocks} block(s))` : ''}`);
   if (st.review) out(`  ${yes(st.review.push_allowed)} push: ${st.review.reason}`);
   out('\nNext:');
-  for (const n of st.next) out(`  → ${n.command} — ${n.why}`);
+  for (const n of st.next) {
+    out(`  → ${n.command} — ${n.why}`);
+    if (n.launch) out(`    in a fresh session: ${n.launch.command} (models.${n.launch.phase}; SPEC.md and tasks/ carry the context)`);
+  }
 }
 
 // ---------------------------------------------------------------------------
