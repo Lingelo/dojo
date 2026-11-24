@@ -170,13 +170,14 @@ function entryOf(name, { skills, text }) {
 // `model` and `effort`, supported for plugin agents: https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields).
 // agent-skills keeps its SKILL.md and personas portable and leaves the model to the harness: Kaizen is it.
 // Opus where a miss is expensive (the review the push gate records, the security audit), Sonnet for the
-// inventories. A persona of the same name in .claude/agents/ still wins, and the Agent tool's `model`
-// parameter overrides the frontmatter for one call.
+// inventories; effort high only where a miss costs the most later (security), low for a checklist audit.
+// A persona of the same name in .claude/agents/ still wins, and the Agent tool's `model` and `effort`
+// parameters override the frontmatter for one call.
 export const PERSONA_RUNTIME = {
-  'code-reviewer': { model: 'opus', effort: 'high' },
+  'code-reviewer': { model: 'opus', effort: 'medium' },
   'security-auditor': { model: 'opus', effort: 'high' },
-  'test-engineer': { model: 'sonnet' },
-  'web-performance-auditor': { model: 'sonnet' },
+  'test-engineer': { model: 'sonnet', effort: 'medium' },
+  'web-performance-auditor': { model: 'sonnet', effort: 'low' },
 };
 
 // `fields` set in the YAML frontmatter of `text`: an existing line of the same key is replaced, a new one

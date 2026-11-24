@@ -49,7 +49,7 @@ test('models.enabled: from block escalate_after on, the report asks for an Opus 
   const second = stop(dir);
   assert.equal(second.status, 2);
   assert.match(second.stderr, /Escalate \(blocked 2 times\)/);
-  assert.match(second.stderr, /model: "opus"/);
+  assert.match(second.stderr, /`model: "opus"` and `effort: "high"` parameters/);
   assert.match(second.stderr, /\/advisor opus/);
   assert.match(stop(dir).stderr, /Escalate \(blocked 3 times\)/, 'still said on the next block');
   assert.deepEqual(friction().map((e) => e.kind), ['blocked', 'blocked', 'escalated', 'blocked'], 'escalated logged once');

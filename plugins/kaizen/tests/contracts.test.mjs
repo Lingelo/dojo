@@ -49,10 +49,10 @@ test('every persona runs on a model Kaizen chose: Opus for the review and the se
     if (data.effort !== undefined) assert.ok(['low', 'medium', 'high', 'xhigh', 'max'].includes(data.effort), `agents/${f}: effort ${data.effort}`);
     assert.equal(data.name, f.slice(0, -3));
   }
-  assert.deepEqual(PERSONA_RUNTIME['code-reviewer'], { model: 'opus', effort: 'high' });
+  assert.deepEqual(PERSONA_RUNTIME['code-reviewer'], { model: 'opus', effort: 'medium' });
   assert.deepEqual(PERSONA_RUNTIME['security-auditor'], { model: 'opus', effort: 'high' });
-  assert.equal(PERSONA_RUNTIME['test-engineer'].model, 'sonnet');
-  assert.equal(PERSONA_RUNTIME['web-performance-auditor'].model, 'sonnet');
+  assert.deepEqual(PERSONA_RUNTIME['test-engineer'], { model: 'sonnet', effort: 'medium' });
+  assert.deepEqual(PERSONA_RUNTIME['web-performance-auditor'], { model: 'sonnet', effort: 'low' });
   // An upstream field of the same name is replaced, a new one goes last, the body is untouched.
   assert.equal(withFields('---\nname: x\nmodel: inherit\n---\nbody\n', { model: 'opus', effort: 'high' }), '---\nname: x\nmodel: opus\neffort: high\n---\nbody\n');
   assert.equal(withFields('no frontmatter\n', { model: 'opus' }), 'no frontmatter\n');
