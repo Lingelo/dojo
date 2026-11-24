@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-24
+
 ### Added
 - **Models per phase** ([the loop](docs/concepts/the-loop.md#models-per-phase)): Opus to decide and to
   review, Sonnet to build, one session per phase with `SPEC.md` and `tasks/` carrying the context.
