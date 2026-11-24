@@ -25,7 +25,10 @@ Where the repository stands and what to run next — the backend of [`/kaizen:se
 Reports branch, commits ahead of the base, uncommitted files, initialization, agent-skills' files
 (`SPEC.md`, `tasks/plan.md`, tasks done and left in `tasks/todo.md`, `CONSTRAINTS.md`), number of
 learnings, gate state, review state and push decision, and the ordered `next` list
-([decision order](../concepts/the-loop.md#knowing-where-you-are)).
+([decision order](../concepts/the-loop.md#knowing-where-you-are)). With
+[`models.enabled`](configuration.md#models), an item gains `launch` — the session to open for it,
+`{ phase, model, effort, command }`, printed as `in a fresh session: claude --model sonnet --effort
+medium` — and, for `/kaizen:build` with `models.build_fork`, `fork: "/kaizen:build-fork"`.
 
 ### `doctor [--in-skill] [--json] [--strict]`
 
@@ -166,6 +169,8 @@ refused):
 | Script | Registered as |
 |---|---|
 | `review-hooks.mjs --heartbeat` | SessionStart: records that Kaizen's hooks fire (`doctor`'s `hooks` check) |
+| `model-hooks.mjs --record` | SessionStart and PostModelSwitch: the session's model, for the build warning |
+| `model-hooks.mjs --command` | UserPromptExpansion on `/kaizen:build` and `/kaizen:build-fork`: the build-on-another-model warning; `/kaizen:build-fork` refused while off or for `auto` ([The model hooks](../concepts/gates.md#the-model-hooks)) |
 | `secret-gate.mjs` | PreToolUse on Bash: no `git commit` adding a secret |
 | `review-gate.mjs` | PreToolUse: no unreviewed `git push` without your confirmation in Claude Code's prompt; no direct write to the review state |
 | `post-edit.mjs` | PostToolUse on Write, Edit, MultiEdit, NotebookEdit: quality gate on, learnings brought back |
@@ -177,5 +182,6 @@ refused):
 
 The other scripts are modules the CLI loads: `lib.mjs`, `review-state.mjs`,
 `learnings.mjs`, `agentskills.mjs`, `secrets.mjs`, `doctor.mjs`,
-`metrics.mjs`, `ledger.mjs`, `pr.mjs`, and `aliases.mjs`, which generates `commands/`
-from agent-skills' commands (`--check` fails when they differ).
+`metrics.mjs`, `ledger.mjs`, `pr.mjs`, and `aliases.mjs`, which generates `commands/` and `agents/`
+from agent-skills' commands and personas, plus `/kaizen:build-fork` and its `kaizen:fork-builder` agent
+(`--check` fails when they differ).
