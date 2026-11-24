@@ -90,6 +90,7 @@ test('models: off by default, merged key by key, effort per command then per pha
   assert.equal(c.models.escalate_after, 2);
   assert.equal(c.models.escalate_to, 'opus');
   assert.equal(c.models.escalate_effort, 'high');
+  assert.equal(c.models.build_fork, false, 'the forked build is off by default');
   assert.deepEqual(c.models.effort, { design: 'medium', plan: 'high', build: 'high', watch: 'low', learn: 'low', metrics: 'low', review: 'xhigh', security: 'high' });
   const bare = tempRepo({});
   assert.equal(loadConfig(bare).models.enabled, false, 'off until measured');
@@ -111,7 +112,7 @@ test('models: the default split — Opus medium to decide, plan and security hig
   const run = (c) => launchFor(`/kaizen:${c}`, on).command;
   for (const c of ['ideate', 'spec', 'adr', 'doubt', 'migrate', 'constraints']) assert.equal(run(c), 'claude --model opus --effort medium', c);
   assert.equal(run('plan'), 'claude --model opus --effort high');
-  for (const c of ['build', 'test', 'code-simplify', 'webperf', 'debug']) assert.equal(run(c), 'claude --model sonnet --effort medium', c);
+  for (const c of ['build', 'build-fork', 'test', 'code-simplify', 'webperf', 'debug']) assert.equal(run(c), 'claude --model sonnet --effort medium', c);
   for (const c of ['watch', 'learn', 'metrics']) assert.equal(run(c), 'claude --model sonnet --effort low', c);
   for (const c of ['review', 'ship']) assert.equal(run(c), 'claude --model opus --effort medium', c);
   assert.equal(run('security'), 'claude --model opus --effort high');

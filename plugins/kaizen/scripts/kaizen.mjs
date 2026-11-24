@@ -4,7 +4,7 @@
 // follows pull requests and measures.
 //
 //   node kaizen.mjs status [--json]              where the repo stands, and the next command (with models.enabled,
-//                                                 the session to open for it)
+//                                                 the session to open for it, and /kaizen:build-fork with build_fork)
 //   node kaizen.mjs root                         deliverable paths (JSON)
 //   node kaizen.mjs init [--docs-root d] [--language en]   creates .kaizen/config.json and docs/learnings/
 //   node kaizen.mjs config                       effective configuration (JSON)
@@ -216,9 +216,11 @@ function repoStatus(root) {
   }
   if (initialized && !next.length) say('/kaizen:spec <what to build>', 'the next feature: spec, plan, build, review, ship (a bug → /kaizen:test with its reproduction)');
   // models.enabled: the session to open for it — advice, the user keeps the choice of model.
+  // With models.build_fork, /kaizen:build also has its forked variant: one task on Sonnet, in this session.
   for (const n of next) {
     const launch = launchFor(n.command, config);
     if (launch) n.launch = launch;
+    if (launch && n.command === '/kaizen:build' && config.models.build_fork === true) n.fork = '/kaizen:build-fork';
   }
   return {
     repo: basename(root),
@@ -249,6 +251,7 @@ function cmdStatus(root) {
   for (const n of st.next) {
     out(`  → ${n.command} — ${n.why}`);
     if (n.launch) out(`    in a fresh session: ${n.launch.command} (models.${n.launch.phase}; SPEC.md and tasks/ carry the context)`);
+    if (n.fork) out(`    or in this session: ${n.fork} (one task, forked on Sonnet; not for auto)`);
   }
 }
 

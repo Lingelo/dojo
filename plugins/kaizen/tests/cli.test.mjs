@@ -146,8 +146,13 @@ test('status with models.enabled: the session to open for the next command, advi
     launch: { phase: 'build', model: 'sonnet', effort: 'medium', command: 'claude --model sonnet --effort medium' },
   });
   assert.match(cli(dir, ['status']).stdout, /→ \/kaizen:build — .*\n {4}in a fresh session: claude --model sonnet --effort medium \(models\.build;/);
+  assert.doesNotMatch(cli(dir, ['status']).stdout, /build-fork/, 'the forked build only with models.build_fork');
+  writeFiles(dir, { '.kaizen/config.json': { models: { enabled: true, build_fork: true } } });
+  assert.equal(cli(dir, ['status', '--json']).json.next[0].fork, '/kaizen:build-fork');
+  assert.match(cli(dir, ['status']).stdout, /\n {4}or in this session: \/kaizen:build-fork \(one task, forked on Sonnet; not for auto\)/);
   gitc(dir, ['rm', '-q', 'tasks/todo.md']);
   assert.equal(cli(dir, ['status', '--json']).json.next[0].launch.command, 'claude --model opus --effort high', '/kaizen:plan: Opus, effort high');
+  assert.equal(cli(dir, ['status', '--json']).json.next[0].fork, undefined);
   cleanup(dir);
 });
 
