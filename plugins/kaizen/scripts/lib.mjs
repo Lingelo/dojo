@@ -44,8 +44,9 @@ export const DEFAULT_CONFIG = {
   // Prices per million tokens, per model family and token type, for `kaizen cost` and metrics: overrides of
   // ledger.mjs PRICES (Anthropic API list prices, $), family by family, type by type.
   cost: { prices: {} },
-  // Model per phase: the session `status` recommends opening for the next command, and the quality gate's
-  // escalation (`escalate_to`, `escalate_effort`) after `escalate_after` blocks. Advice only — the session model stays the user's
+  // Model per phase: the session `status` recommends opening for the next command, the warning when
+  // /kaizen:build starts on another model than `build`, and the quality gate's escalation (`escalate_to`,
+  // `escalate_effort`) after `escalate_after` blocks. Advice only — the session model stays the user's
   // choice. Off until measured on your features (docs/concepts/the-loop.md, Models per phase). Effort: high
   // only where a miss costs the most later (plan, security), low where the work is mechanical.
   // `build_fork`: /kaizen:build-fork (one task, forked on a Sonnet agent) allowed — off by default.

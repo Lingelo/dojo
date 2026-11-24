@@ -195,6 +195,8 @@ command: [CLI reference](docs/reference/cli.md).
 | Event | Script | Role |
 |---|---|---|
 | `SessionStart` | `scripts/review-hooks.mjs --heartbeat` | records that Kaizen's hooks run here, for `kaizen doctor` |
+| `SessionStart`, `PostModelSwitch` | `scripts/model-hooks.mjs --record` | records the session's model, for the build warning |
+| `UserPromptExpansion` (`/kaizen:build`, `/kaizen:build-fork`) | `scripts/model-hooks.mjs --command` | with `models.enabled`, warns when the build starts on another model than `models.build`; refuses `/kaizen:build-fork` while `models.build_fork` is off, or for `auto` |
 | `PreToolUse` (Bash) | `scripts/secret-gate.mjs` | refuses a `git commit` adding a key or token, and `--no-verify`; active in every git repo |
 | `PreToolUse` (Bash, Write, Edit…) | `scripts/review-gate.mjs` | refuses `git push` of an unreviewed branch and direct writes to Kaizen's review state; a push without a review goes through Claude Code's prompt |
 | `PostToolUse` (Write, Edit…) | `scripts/post-edit.mjs` | turns the quality gate on when code is edited; reads learnings back |
