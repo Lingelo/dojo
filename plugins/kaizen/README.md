@@ -49,9 +49,10 @@ in your language**, and the learnings and PR replies it writes follow `language`
 ## Documentation
 
 - **[Getting started](docs/getting-started.md)** — install, then a first feature from spec to merge
+- **[Features](docs/features.md)** — everything Kaizen adds, when it runs, how to turn it on or off
 - **[Guides](docs/README.md#guides)** — [setup](docs/guides/setup.md), [learn](docs/guides/learn.md), [metrics](docs/guides/metrics.md), [watch](docs/guides/watch.md)
 - **[How it works](docs/README.md#how-it-works)** — [Kaizen around agent-skills](docs/concepts/the-loop.md), [gates and hooks](docs/concepts/gates.md), [learnings](docs/concepts/learnings.md), [metrics](docs/concepts/metrics.md)
-- **Reference** — [CLI](docs/reference/cli.md) · [configuration](docs/reference/configuration.md) · [state and files](docs/reference/state-and-files.md)
+- **Reference** — [CLI](docs/reference/cli.md) · [configuration](docs/reference/configuration.md) · [state and files](docs/reference/state-and-files.md) (where every file lives)
 - [Troubleshooting](docs/troubleshooting.md) · [Positioning](docs/positioning.md) · [Changelog](CHANGELOG.md)
 
 ## Installation
@@ -81,15 +82,17 @@ dependency.
 
 Then **you merge**, and `/kaizen:learn` keeps what was not obvious. Lost? `/kaizen:setup` says where the
 repo stands and what to run next — with `models.enabled`, also the session to open for it (Opus to
-decide and review, Sonnet to build: [Models per phase](docs/concepts/the-loop.md#models-per-phase)).
+decide and review, Sonnet to build, effort `high` only for the plan and the security audit:
+[Models per phase](docs/concepts/the-loop.md#models-per-phase)), and `/kaizen:build` says when it starts
+on another model.
 
 ## The commands
 
 **agent-skills' commands, under Kaizen's prefix** (generated from
 `agent-skills/.claude/commands/` by `scripts/aliases.mjs`; they run its skills, embedded in Kaizen as
 `kaizen:<skill>`, and its personas as `kaizen:code-reviewer`, `kaizen:security-auditor`,
-`kaizen:test-engineer`, `kaizen:web-performance-auditor` — the first two on Opus with effort `high`, the
-other two on Sonnet; which model for which phase: [Models per phase](docs/concepts/the-loop.md#models-per-phase)):
+`kaizen:test-engineer`, `kaizen:web-performance-auditor` — on Opus `medium`, Opus `high`, Sonnet `medium`
+and Sonnet `low`; which model for which phase: [Models per phase](docs/concepts/the-loop.md#models-per-phase)):
 
 | Command | What it does |
 |---|---|
