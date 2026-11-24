@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-24
+
 ### Added
 - **Models per phase** ([the loop](docs/concepts/the-loop.md#models-per-phase)): Opus to decide and to
   review, Sonnet to build, one session per phase with `SPEC.md` and `tasks/` carrying the context.
@@ -18,8 +20,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
     on Opus to find the root cause (or `/advisor opus`); the first escalation is logged as `escalated`
     in `friction.jsonl` and counted by metrics (`friction.quality.escalated`).
 - **`evals/run.mjs --model <id> --effort <level>`**, passed to `claude -p`, for A/B runs on a pinned model.
+- **A warning when `/kaizen:build` starts on another model than `models.build`** (with `models.enabled`):
+  new `scripts/model-hooks.mjs`, registered on `SessionStart` and `PostModelSwitch` (`--record`: the
+  session's model in `.kaizen/state/session-model.json`) and on `UserPromptExpansion` for `/kaizen:build`
+  (`--command`: a `systemMessage`, never a block; the last answer's model in the transcript when none was
+  recorded; silent when unknown). Eleven hook registrations.
+- **`/kaizen:build-fork`**, off by default (`models.build_fork: false`): agent-skills' `/build`, one task,
+  run with `context: fork` on the new `kaizen:fork-builder` agent (Sonnet, effort `medium`), both generated
+  by `scripts/aliases.mjs`. Refused while off, and for `auto` (a fork cannot wait for an approval);
+  `status` offers it next to the fresh session.
+- **[Features](docs/features.md)**: every feature Kaizen adds, when it runs and how to turn it off; and
+  **where the workflow files live**, at the top of [State and files](docs/reference/state-and-files.md).
 
 ### Changed
+- **Models and efforts per phase revised** (`DEFAULT_CONFIG.models`, still off by default): effort `high`
+  only where a miss costs the most later. Opus `medium` for ideate, spec and the other design commands,
+  Opus `high` for plan; Sonnet `medium` for build, test, code-simplify, webperf and now debug (it moves to
+  the build phase; the quality gate escalates it); Sonnet `low` for watch, learn and metrics; Opus
+  `medium` for review and ship, Opus `high` for security. The escalation names its model and effort:
+  new `models.escalate_to` (`opus`) and `models.escalate_effort` (`high`), passed as the Agent tool's
+  `model` and `effort`. Personas: `kaizen:code-reviewer` Opus `medium` (was `high`),
+  `kaizen:security-auditor` Opus `high`, `kaizen:test-engineer` Sonnet `medium`,
+  `kaizen:web-performance-auditor` Sonnet `low`.
 - **`kaizen cost` and metrics price each token type at its own price**: input, cache write (5-minute and
   1-hour), cache read and output, per model family (`fable`, `opus`, `sonnet`, `haiku`), at Anthropic's
   API list prices in $ (`scripts/ledger.mjs` `PRICES`, overridable with the new `cost.prices` key). Items

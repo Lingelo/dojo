@@ -46,20 +46,22 @@ At any point, when the work calls for it (agent-skills' skills, through Kaizen's
 | A plan or a claim that must hold | `/kaizen:doubt` | an adversarial review and a verdict |
 | Something to remove or replace | `/kaizen:migrate` | a deprecation or migration plan with rollback |
 
-Around them: `/kaizen:code-simplify` and `/kaizen:webperf` (agent-skills). The `/kaizen:` commands of
+Around them: `/kaizen:code-simplify` and `/kaizen:webperf` (agent-skills), and `/kaizen:build-fork`
+(one build task forked on Sonnet, [off by default](#models-per-phase)). The `/kaizen:` commands of
 agent-skills are generated from its own (`commands/`, by `scripts/aliases.mjs`, refreshed with each
 agent-skills update), as are its personas (`agents/`: `kaizen:code-reviewer`…); its skills load as
 `kaizen:<skill>`.
 
 ## What runs without being asked
 
-Eight hook registrations ([Gates and hooks](gates.md)):
+Eleven hook registrations ([Gates and hooks](gates.md)):
 
 - editing a code file turns the **quality gate** on: no end of turn on red checks;
 - agent-skills' **review records itself**, and an unreviewed branch is not pushed without your say;
 - a **commit carrying a secret** is refused;
 - writing `SPEC.md` or `tasks/`, or editing a file a learning is about, **brings the learnings back**;
-- each turn's tokens are **charged to the work item** (`kaizen cost`).
+- each turn's tokens are **charged to the work item** (`kaizen cost`);
+- with `models.enabled`, `/kaizen:build` started on another model than `models.build` is **said**.
 
 ## Who decides what
 
@@ -86,17 +88,33 @@ match wins:
 ## Models per phase
 
 Kaizen sets no model on the commands: without a choice, everything — subagents included — runs on the
-session's model. Not every phase needs the same one. Deciding (spec, plan, debug) and controlling
-(review, security) are where a weaker answer costs the most; executing a detailed plan (build, test,
-PR follow-up) is most of the tokens and needs less. The split Kaizen recommends:
+session's model. Not every phase needs the same one, nor the same effort. The rule is tokenomics: **Opus
+where a weaker answer costs the most later** (deciding, controlling), **Sonnet for executing a detailed
+plan** (most of the tokens), and **effort `high` only where a miss is expensive downstream** — the plan
+every task follows, the security audit. Opus 5.5 and Sonnet 5.5 default to `medium`, which fits most
+work. No Haiku anywhere. The split Kaizen recommends (`DEFAULT_CONFIG.models`):
 
-| Phase | Commands | Model | Effort | How |
-|---|---|---|---|---|
-| Design | `/kaizen:ideate`, `spec`, `plan`, `adr`, `doubt`, `migrate`, `debug` | Opus | `high` for `plan` and `debug` | a design session: `claude --model opus` |
-| Build | `/kaizen:build`, `test`, `code-simplify`, `webperf`, `watch`, `learn`, `metrics` | Sonnet | `medium` | a **fresh** session: `claude --model sonnet --effort medium` |
-| Review | `/kaizen:review`, `security`, `ship` | Opus | `high` | a review session: `claude --model opus --effort high` |
-| Personas | `kaizen:code-reviewer`, `kaizen:security-auditor` | Opus | `high` | set in their definitions (`agents/`), always |
-| Personas | `kaizen:test-engineer`, `kaizen:web-performance-auditor` | Sonnet | the session's | set in their definitions (`agents/`), always |
+| Commands | Model | Effort | Why |
+|---|---|---|---|
+| `/kaizen:ideate`, `spec`, `adr`, `doubt`, `migrate`, `constraints` | Opus | `medium` | deciding; the interview does the work |
+| `/kaizen:plan` | Opus | `high` | every task inherits a mistake in the plan |
+| `/kaizen:build`, `build-fork` | Sonnet | `medium` (`low` advised for documentation or a mechanical refactor: `/effort low`) | executing a plan Sonnet can follow |
+| `/kaizen:test`, `code-simplify`, `webperf` | Sonnet | `medium` | |
+| `/kaizen:debug` | Sonnet | `medium`, then Opus `high` when the quality gate stays stuck | most failures are found on Sonnet; the escalation covers the rest |
+| `/kaizen:watch`, `learn`, `metrics` | Sonnet | `low` | follow-up, capture, reporting |
+| `/kaizen:review`, `ship` | Opus | `medium` | controlling |
+| `/kaizen:security` | Opus | `high` | a miss ships |
+| `kaizen:code-reviewer` (persona) | Opus | `medium` | set in its definition (`agents/`), always |
+| `kaizen:security-auditor` (persona) | Opus | `high` | set in its definition, always |
+| `kaizen:test-engineer` (persona) | Sonnet | `medium` | set in its definition, always |
+| `kaizen:web-performance-auditor` (persona) | Sonnet | `low` | set in its definition, always |
+
+The commands' models and efforts are what `node $K status` and `/kaizen:setup` print, with
+[`models.enabled`](../reference/configuration.md#models), as the session to open for the next command:
+`in a fresh session: claude --model sonnet --effort medium`. The personas' are written into `agents/` by
+`scripts/aliases.mjs` (`PERSONA_RUNTIME`), whatever the configuration. Effort levels: `low`, `medium`,
+`high`, `xhigh`, `max`, available per model
+([Claude Code: effort](https://code.claude.com/docs/en/model-config#adjust-effort-level)).
 
 **One session per phase**, the files carrying the context: `SPEC.md` and `tasks/plan.md` written in the
 design session are what the build session reads, the branch is what the review session reads. A fresh
@@ -111,24 +129,54 @@ mode, which only `/kaizen:plan` enters: spec, review and security would run on S
 the aim. So the commands stay as agent-skills writes them, and the choice is made where it holds — the
 session — while the personas, which start a context of their own anyway, carry theirs.
 
+**A build started on the wrong model is said.** With `models.enabled`, typing `/kaizen:build` in a
+session on another model family than `models.build` (Opus, by default) shows a warning — `/kaizen:build
+is running on claude-opus-5-5, models.build is sonnet: switch with /model sonnet` — and the build goes
+on. Claude Code gives a hook the session's model in two places only: `SessionStart`'s `model` (optional:
+absent in some sessions, `claude -p` included) and `PostModelSwitch`'s `to_model` (every `/model` switch,
+fallback and resume, Claude Code ≥ 2.1.251); `model-hooks.mjs` records them, and falls back on the last
+answer's model in the transcript. When none is known — a fresh session whose `SessionStart` carried no
+model, before its first answer — it says nothing rather than guess: `status` and `/kaizen:setup` remain
+the reminder ([hooks reference](https://code.claude.com/docs/en/hooks#common-input-fields)).
+
+**`/kaizen:build-fork`: one task on Sonnet without leaving the session** (off by default,
+`models.build_fork`). The same agent-skills `/build`, single-task mode, run as a forked subagent
+(`context: fork`) on Kaizen's `kaizen:fork-builder` agent, which is set to Sonnet, effort `medium`: the
+build's tokens go to Sonnet while the session stays on Opus for what comes next. Its limits are those of
+a fork ([Claude Code: run skills in a subagent](https://code.claude.com/docs/en/skills#run-skills-in-a-subagent)):
+
+- **one task, never `auto`**: a fork cannot stop for your approval mid-way, so `/kaizen:build-fork auto` is
+  refused (`/kaizen:build auto` in the session instead); a task that needs a decision stops and reports;
+- **the context is reloaded on every call**: the fork does not see the conversation, it rereads the plan,
+  the spec, `CLAUDE.md` and the code each time — cheaper per token, not free;
+- **only its final report comes back**: you see the summary, not the steps; its edits, the commit and the
+  quality gate (on for the session as soon as it edits code) happen as usual;
+- the model is the agent's (Sonnet), not `models.build`: the plugin's files cannot read your configuration.
+
+While `models.build_fork` is off, `/kaizen:build-fork` is refused with how to turn it on (a
+`UserPromptExpansion` hook); with it on, `status` offers it next to the fresh session.
+
 **Guard rails for a Sonnet build:**
 
 - a plan Sonnet can execute: per task, the acceptance criteria, the files to touch, the command that
   verifies it (`/kaizen:doubt` on the plan for risky features);
-- the quality gate escalates: from block `models.escalate_after` (2) on, it asks for an Opus subagent to
-  find the root cause ([The quality gate](gates.md#the-quality-gate));
+- the quality gate escalates: from block `models.escalate_after` (2) on, it asks for a subagent on
+  `models.escalate_to` (Opus) at `models.escalate_effort` (`high`) to find the root cause
+  ([The quality gate](gates.md#the-quality-gate)) — the same escalation covers `/kaizen:debug`;
 - the review before push stays on Opus — the review session, or the `code-reviewer` persona.
 
 **Turn it on with `models.enabled`** ([Configuration](../reference/configuration.md#models)): `node $K
-status` and `/kaizen:setup` then name, with the next command, the session to open for it, and the
-quality gate escalates. It is advice: Kaizen never changes your model. Off by default, until measured on
-your own features: the same feature built twice from the same spec and plan, once on Opus, once on
-Sonnet with an Opus review, compared with `/usage`, `node $K cost <item>`
-([Cost](metrics.md#cost-work_items-kaizen-cost)), the quality gate's blocks and the review's findings.
+status` and `/kaizen:setup` then name, with the next command, the session to open for it, `/kaizen:build`
+warns when it starts on another model, and the quality gate escalates. It is advice: Kaizen never
+changes your model. Off by default, until measured on your own features: the same feature built twice
+from the same spec and plan, once on Opus, once on Sonnet with an Opus review, compared with `/usage`,
+`node $K cost <item>` ([Cost](metrics.md#cost-work_items-kaizen-cost)), the quality gate's blocks and
+the review's findings.
 
 ## Where everything lives
 
 ![What Kaizen writes in your repo, and who reads it](../media/diagrams/artifacts-map.svg)
 
 No file carries a mutable "status": progress is read from git and from agent-skills' task checkboxes.
-Every file: [State and files](../reference/state-and-files.md).
+Every file: [State and files](../reference/state-and-files.md). Everything Kaizen adds, at a glance:
+[Features](../features.md).

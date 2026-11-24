@@ -41,13 +41,26 @@ export const DEFAULT_CONFIG = {
   // Secret scan before every commit Claude makes (secret-gate hook); ignore = path globs.
   secrets: { scan: true, ignore: [] },
   pr: { max_lines: 400, ignore: ['*.lock', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.min.*', '*.snap', '*.generated.*', 'dist/**', 'vendor/**'] },
-  // Model per phase: the session `status` recommends opening for the next command, and the quality gate's
-  // escalation to Opus after `escalate_after` blocks. Advice only — the session model stays the user's
-  // choice. Off until measured on your features (docs/concepts/the-loop.md, Models per phase).
   // Prices per million tokens, per model family and token type, for `kaizen cost` and metrics: overrides of
   // ledger.mjs PRICES (Anthropic API list prices, $), family by family, type by type.
   cost: { prices: {} },
-  models: { enabled: false, design: 'opus', build: 'sonnet', review: 'opus', effort: { plan: 'high', debug: 'high', build: 'medium', review: 'high' }, escalate_after: 2 },
+  // Model per phase: the session `status` recommends opening for the next command, the warning when
+  // /kaizen:build starts on another model than `build`, and the quality gate's escalation (`escalate_to`,
+  // `escalate_effort`) after `escalate_after` blocks. Advice only — the session model stays the user's
+  // choice. Off until measured on your features (docs/concepts/the-loop.md, Models per phase). Effort: high
+  // only where a miss costs the most later (plan, security), low where the work is mechanical.
+  // `build_fork`: /kaizen:build-fork (one task, forked on a Sonnet agent) allowed — off by default.
+  models: {
+    enabled: false,
+    design: 'opus',
+    build: 'sonnet',
+    review: 'opus',
+    effort: { design: 'medium', plan: 'high', build: 'medium', watch: 'low', learn: 'low', metrics: 'low', review: 'medium', security: 'high' },
+    escalate_after: 2,
+    escalate_to: 'opus',
+    escalate_effort: 'high',
+    build_fork: false,
+  },
 };
 
 // JSON state under .kaizen/state/ (ignored by git). Reading never creates the folder: hooks read it
@@ -101,9 +114,10 @@ export function loadConfig(root) {
 }
 
 // The phase a /kaizen: command belongs to, for `models`: design decides, build executes, review controls.
-const PHASES = {
-  design: ['ideate', 'spec', 'plan', 'adr', 'doubt', 'migrate', 'debug', 'constraints'],
-  build: ['build', 'test', 'code-simplify', 'webperf', 'watch', 'learn', 'metrics'],
+// debug starts on the build model: the quality gate escalates to `escalate_to` when it stays stuck.
+export const PHASES = {
+  design: ['ideate', 'spec', 'plan', 'adr', 'doubt', 'migrate', 'constraints'],
+  build: ['build', 'build-fork', 'test', 'code-simplify', 'webperf', 'debug', 'watch', 'learn', 'metrics'],
   review: ['review', 'security', 'ship'],
 };
 

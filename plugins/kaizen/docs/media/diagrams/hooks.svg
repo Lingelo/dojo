@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="580" viewBox="0 0 1100 580" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620" role="img" aria-labelledby="t d">
 <title id="t">Kaizen’s hooks in a Claude Code session</title>
-<desc id="d">Eight hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</desc>
+<desc id="d">Eleven hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</desc>
 <style>
   .bg { fill: #fbfaf7; stroke: #e4e0d8; }
   text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; }
@@ -62,58 +62,65 @@
   }
 </style>
 <defs><marker id="h-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-default" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head accent" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head bad" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head ok" d="M0,0 L10,5 L0,10 z"/></marker><marker id="h-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker><marker id="s-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head blue" d="M0,0 L10,5 L0,10 z"/></marker></defs>
-<rect class="bg" x="0.5" y="0.5" width="1099" height="579" rx="14"/>
+<rect class="bg" x="0.5" y="0.5" width="1099" height="619" rx="14"/>
 <text class="title" x="28" y="38">Kaizen’s hooks in a Claude Code session</text>
-<text class="desc" x="28" y="58">Eight hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</text>
-<text class="regionlabel" x="36" y="108" text-anchor="start">YOU</text>
-<path class="line" d="M150,104 L1064,104"/>
-<text class="regionlabel" x="36" y="258" text-anchor="start">CLAUDE</text>
-<path class="line" d="M150,254 L1064,254"/>
-<text class="regionlabel" x="36" y="434" text-anchor="start">END OF TURN</text>
-<path class="line" d="M150,430 L1064,430"/>
-<rect class="gate" x="170" y="76" width="230" height="56" rx="8" stroke-width="1.5"/>
-<text class="label" x="285" y="94" text-anchor="middle">SessionStart</text>
-<text class="sub" x="285" y="109" text-anchor="middle">review-hooks.mjs --heartbeat:</text>
-<text class="sub" x="285" y="123" text-anchor="middle">hooks-seen.json, read by doctor</text>
-<rect class="outside" x="440" y="84" width="270" height="40" rx="8" stroke-width="1.5"/>
-<text class="label" x="575" y="108" text-anchor="middle">you send a message</text>
-<rect class="plain" x="170" y="234" width="230" height="40" rx="8" stroke-width="1.5"/>
-<text class="label" x="285" y="258" text-anchor="middle">Claude calls a tool</text>
-<rect class="gate" x="440" y="152" width="270" height="82" rx="8" stroke-width="1.5"/>
-<text class="label" x="575" y="183" text-anchor="middle">PreToolUse (Bash)</text>
-<text class="sub" x="575" y="198" text-anchor="middle">secret-gate.mjs: commit carrying</text>
-<text class="sub" x="575" y="212" text-anchor="middle">a secret, --no-verify → 2</text>
-<rect class="gate" x="440" y="254" width="270" height="82" rx="8" stroke-width="1.5"/>
-<text class="label" x="575" y="285" text-anchor="middle" style="font-size:12.8px">PreToolUse (Bash, Write, Edit)</text>
-<text class="sub" x="575" y="300" text-anchor="middle">review-gate.mjs: push without</text>
-<text class="sub" x="575" y="314" text-anchor="middle">review, state writes → 2</text>
-<rect class="gate" x="740" y="152" width="324" height="82" rx="8" stroke-width="1.5"/>
-<text class="label" x="902" y="183" text-anchor="middle">PostToolUse (Write, Edit)</text>
-<text class="sub" x="902" y="198" text-anchor="middle">post-edit.mjs: quality gate on when</text>
-<text class="sub" x="902" y="212" text-anchor="middle">code is edited · learnings read back</text>
-<rect class="gate" x="740" y="254" width="324" height="82" rx="8" stroke-width="1.5"/>
-<text class="label" x="902" y="285" text-anchor="middle">PostToolUse (Agent, Task, Skill)</text>
-<text class="sub" x="902" y="300" text-anchor="middle">review-hooks.mjs --evidence:</text>
-<text class="sub" x="902" y="314" text-anchor="middle">agent-skills’ review recorded</text>
-<path class="line dashed" d="M575,124 L575,142 L285,142 L285,234" marker-end="url(#h-default)"/>
-<path class="line" d="M400,254 L420,254 L420,193 L440,193" marker-end="url(#h-default)"/>
-<path class="line" d="M400,254 L420,254 L420,295 L440,295" marker-end="url(#h-default)"/>
-<path class="line ok" d="M710,193 L740,193" marker-end="url(#h-ok)"/>
-<path class="line ok" d="M710,295 L740,295" marker-end="url(#h-ok)"/>
-<text class="edge" x="740" y="144" text-anchor="start">allowed → the tool runs, then:</text>
-<rect class="gate" x="170" y="392" width="270" height="76" rx="8" stroke-width="1.5"/>
-<text class="label" x="305" y="420" text-anchor="middle">Stop</text>
-<text class="sub" x="305" y="435" text-anchor="middle">quality-gate.mjs: verify while the</text>
-<text class="sub" x="305" y="449" text-anchor="middle">gate is on · blocks ≤ 3 times</text>
-<rect class="gate" x="460" y="392" width="280" height="76" rx="8" stroke-width="1.5"/>
-<text class="label" x="600" y="420" text-anchor="middle">Stop</text>
-<text class="sub" x="600" y="435" text-anchor="middle">review-hooks.mjs --stop: the turn</text>
-<text class="sub" x="600" y="449" text-anchor="middle">that ran a review → review recorded</text>
-<rect class="gate" x="760" y="392" width="304" height="76" rx="8" stroke-width="1.5"/>
-<text class="label" x="912" y="420" text-anchor="middle">Stop</text>
-<text class="sub" x="912" y="435" text-anchor="middle">ledger-hook.mjs: charges the turn’s</text>
-<text class="sub" x="912" y="449" text-anchor="middle">tokens to the work item · never blocks</text>
-<text class="small" x="36" y="506" text-anchor="start">Exit 0 = allow, exit 2 = block with the message on stderr (sent back to Claude). SessionStart, PostToolUse and the ledger only observe.</text>
-<text class="small" x="36" y="521" text-anchor="start">All registrations live in hooks/hooks.json and use ${CLAUDE_PLUGIN_ROOT}; timeouts: SessionStart 10 s, PreToolUse 30 s, PostToolUse 15 s,</text>
-<text class="small" x="36" y="536" text-anchor="start">Stop 900 s (gate), 15 s (review), 30 s (ledger).</text>
+<text class="desc" x="28" y="58">Eleven hook registrations make the rules deterministic. Only the secret scan runs outside a Kaizen repo, and none blocks on its own errors.</text>
+<text class="regionlabel" x="36" y="128" text-anchor="start">YOU</text>
+<path class="line" d="M150,124 L1064,124"/>
+<text class="regionlabel" x="36" y="298" text-anchor="start">CLAUDE</text>
+<path class="line" d="M150,294 L1064,294"/>
+<text class="regionlabel" x="36" y="474" text-anchor="start">END OF TURN</text>
+<path class="line" d="M150,470 L1064,470"/>
+<rect class="gate" x="164" y="80" width="262" height="84" rx="8" stroke-width="1.5"/>
+<text class="label" x="295" y="105" text-anchor="middle" style="font-size:12.4px">SessionStart · PostModelSwitch</text>
+<text class="sub" x="295" y="120" text-anchor="middle">review-hooks.mjs --heartbeat:</text>
+<text class="sub" x="295" y="134" text-anchor="middle">hooks-seen.json, read by doctor</text>
+<text class="sub" x="295" y="148" text-anchor="middle">model-hooks.mjs --record: the model</text>
+<rect class="outside" x="450" y="104" width="200" height="40" rx="8" stroke-width="1.5"/>
+<text class="label" x="550" y="128" text-anchor="middle">you send a message</text>
+<rect class="gate" x="680" y="80" width="384" height="84" rx="8" stroke-width="1.5"/>
+<text class="label" x="872" y="105" text-anchor="middle">UserPromptExpansion (/kaizen:build…)</text>
+<text class="sub" x="872" y="120" text-anchor="middle">model-hooks.mjs --command: build on another</text>
+<text class="sub" x="872" y="134" text-anchor="middle">model than models.build → a warning;</text>
+<text class="sub" x="872" y="148" text-anchor="middle">/kaizen:build-fork off, or auto → 2</text>
+<rect class="plain" x="170" y="274" width="230" height="40" rx="8" stroke-width="1.5"/>
+<text class="label" x="285" y="298" text-anchor="middle">Claude calls a tool</text>
+<rect class="gate" x="440" y="192" width="270" height="82" rx="8" stroke-width="1.5"/>
+<text class="label" x="575" y="223" text-anchor="middle">PreToolUse (Bash)</text>
+<text class="sub" x="575" y="238" text-anchor="middle">secret-gate.mjs: commit carrying</text>
+<text class="sub" x="575" y="252" text-anchor="middle">a secret, --no-verify → 2</text>
+<rect class="gate" x="440" y="294" width="270" height="82" rx="8" stroke-width="1.5"/>
+<text class="label" x="575" y="325" text-anchor="middle" style="font-size:12.8px">PreToolUse (Bash, Write, Edit)</text>
+<text class="sub" x="575" y="340" text-anchor="middle">review-gate.mjs: push without</text>
+<text class="sub" x="575" y="354" text-anchor="middle">review, state writes → 2</text>
+<rect class="gate" x="740" y="192" width="324" height="82" rx="8" stroke-width="1.5"/>
+<text class="label" x="902" y="223" text-anchor="middle">PostToolUse (Write, Edit)</text>
+<text class="sub" x="902" y="238" text-anchor="middle">post-edit.mjs: quality gate on when</text>
+<text class="sub" x="902" y="252" text-anchor="middle">code is edited · learnings read back</text>
+<rect class="gate" x="740" y="294" width="324" height="82" rx="8" stroke-width="1.5"/>
+<text class="label" x="902" y="325" text-anchor="middle">PostToolUse (Agent, Task, Skill)</text>
+<text class="sub" x="902" y="340" text-anchor="middle">review-hooks.mjs --evidence:</text>
+<text class="sub" x="902" y="354" text-anchor="middle">agent-skills’ review recorded</text>
+<path class="line dashed" d="M650,124 L680,122" marker-end="url(#h-default)"/>
+<path class="line dashed" d="M550,144 L550,182 L285,182 L285,274" marker-end="url(#h-default)"/>
+<path class="line" d="M400,294 L420,294 L420,233 L440,233" marker-end="url(#h-default)"/>
+<path class="line" d="M400,294 L420,294 L420,335 L440,335" marker-end="url(#h-default)"/>
+<path class="line ok" d="M710,233 L740,233" marker-end="url(#h-ok)"/>
+<path class="line ok" d="M710,335 L740,335" marker-end="url(#h-ok)"/>
+<text class="edge" x="740" y="184" text-anchor="start">allowed → the tool runs, then:</text>
+<rect class="gate" x="170" y="432" width="270" height="76" rx="8" stroke-width="1.5"/>
+<text class="label" x="305" y="460" text-anchor="middle">Stop</text>
+<text class="sub" x="305" y="475" text-anchor="middle">quality-gate.mjs: verify while the</text>
+<text class="sub" x="305" y="489" text-anchor="middle">gate is on · blocks ≤ 3 times</text>
+<rect class="gate" x="460" y="432" width="280" height="76" rx="8" stroke-width="1.5"/>
+<text class="label" x="600" y="460" text-anchor="middle">Stop</text>
+<text class="sub" x="600" y="475" text-anchor="middle">review-hooks.mjs --stop: the turn</text>
+<text class="sub" x="600" y="489" text-anchor="middle">that ran a review → review recorded</text>
+<rect class="gate" x="760" y="432" width="304" height="76" rx="8" stroke-width="1.5"/>
+<text class="label" x="912" y="460" text-anchor="middle">Stop</text>
+<text class="sub" x="912" y="475" text-anchor="middle">ledger-hook.mjs: charges the turn’s</text>
+<text class="sub" x="912" y="489" text-anchor="middle">tokens to the work item · never blocks</text>
+<text class="small" x="36" y="546" text-anchor="start">Exit 0 = allow, exit 2 = block with the message on stderr (sent back to Claude, or shown to you for a command). SessionStart, PostModelSwitch,</text>
+<text class="small" x="36" y="561" text-anchor="start">PostToolUse and the ledger only observe. All registrations live in hooks/hooks.json and use ${CLAUDE_PLUGIN_ROOT}; timeouts: SessionStart,</text>
+<text class="small" x="36" y="576" text-anchor="start">PostModelSwitch and UserPromptExpansion 10 s, PreToolUse 30 s, PostToolUse 15 s, Stop 900 s (gate), 15 s (review), 30 s (ledger).</text>
 </svg>

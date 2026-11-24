@@ -40,8 +40,9 @@ test('four skills of its own, agent-skills embedded: its skills loaded, its pers
 
 test('every persona runs on a model Kaizen chose: Opus for the review and the security audit, Sonnet for the inventories', async () => {
   const { PERSONA_RUNTIME, withFields } = await import('../scripts/aliases.mjs');
+  const { FORK } = await import('../scripts/aliases.mjs');
   const agents = readdirSync(join(PLUGIN, 'agents')).filter((f) => f.endsWith('.md'));
-  assert.deepEqual(agents.map((f) => f.slice(0, -3)).sort(), Object.keys(PERSONA_RUNTIME).sort(), 'a new agent-skills persona needs its line in PERSONA_RUNTIME (scripts/aliases.mjs)');
+  assert.deepEqual(agents.map((f) => f.slice(0, -3)).filter((a) => a !== FORK.agent).sort(), Object.keys(PERSONA_RUNTIME).sort(), 'a new agent-skills persona needs its line in PERSONA_RUNTIME (scripts/aliases.mjs)');
   for (const f of agents) {
     const { data, error } = parseFrontmatter(readFileSync(join(PLUGIN, 'agents', f), 'utf8').replace(/\r\n/g, '\n'));
     assert.equal(error, null, `agents/${f}: ${error}`);
@@ -49,15 +50,33 @@ test('every persona runs on a model Kaizen chose: Opus for the review and the se
     if (data.effort !== undefined) assert.ok(['low', 'medium', 'high', 'xhigh', 'max'].includes(data.effort), `agents/${f}: effort ${data.effort}`);
     assert.equal(data.name, f.slice(0, -3));
   }
-  assert.deepEqual(PERSONA_RUNTIME['code-reviewer'], { model: 'opus', effort: 'high' });
+  assert.deepEqual(PERSONA_RUNTIME['code-reviewer'], { model: 'opus', effort: 'medium' });
   assert.deepEqual(PERSONA_RUNTIME['security-auditor'], { model: 'opus', effort: 'high' });
-  assert.equal(PERSONA_RUNTIME['test-engineer'].model, 'sonnet');
-  assert.equal(PERSONA_RUNTIME['web-performance-auditor'].model, 'sonnet');
+  assert.deepEqual(PERSONA_RUNTIME['test-engineer'], { model: 'sonnet', effort: 'medium' });
+  assert.deepEqual(PERSONA_RUNTIME['web-performance-auditor'], { model: 'sonnet', effort: 'low' });
+  assert.deepEqual(FORK.runtime, { model: 'sonnet', effort: 'medium' });
   // An upstream field of the same name is replaced, a new one goes last, the body is untouched.
   assert.equal(withFields('---\nname: x\nmodel: inherit\n---\nbody\n', { model: 'opus', effort: 'high' }), '---\nname: x\nmodel: opus\neffort: high\n---\nbody\n');
   assert.equal(withFields('no frontmatter\n', { model: 'opus' }), 'no frontmatter\n');
   // Commands keep the session's model: a `model:` there would last one turn and break the cache twice.
   for (const c of commands) assert.doesNotMatch(readFileSync(join(PLUGIN, 'commands', `${c}.md`), 'utf8').split(/\n---\r?\n/)[0], /^model:/m, `commands/${c}.md: no model in a command`);
+});
+
+test('/kaizen:build-fork: agent-skills\' /build forked on Kaizen\'s Sonnet agent, in the foreground, no model in the command', () => {
+  const text = readFileSync(join(PLUGIN, 'commands', 'build-fork.md'), 'utf8').replace(/\r\n/g, '\n');
+  const { data, error } = parseFrontmatter(text);
+  assert.equal(error, null);
+  assert.equal(data.context, 'fork');
+  assert.equal(data.agent, 'kaizen:fork-builder');
+  assert.equal(String(data.background), 'false', 'waits for the result in the turn, with the full tool set');
+  assert.equal(String(data['disable-model-invocation']), 'true');
+  assert.equal(data.model, undefined);
+  assert.match(text, /default mode only: the next pending task/);
+  const upstream = readFileSync(join(AGENT_SKILLS, '.claude', 'commands', 'build.md'), 'utf8').replace(/\r\n/g, '\n');
+  const upstreamBody = upstream.slice(upstream.indexOf('\n---\n', 4) + 5).replace(/agent-skills:/g, 'kaizen:').trim();
+  assert.ok(text.includes(upstreamBody), 'agent-skills\' /build follows, unmodified but for the prefix');
+  const agent = parseFrontmatter(readFileSync(join(PLUGIN, 'agents', 'fork-builder.md'), 'utf8').replace(/\r\n/g, '\n')).data;
+  assert.deepEqual([agent.name, agent.model, agent.effort], ['fork-builder', 'sonnet', 'medium']);
 });
 
 test('agent-skills\' commands under Kaizen\'s prefix: exact copies, one per command, never shadowing a skill', async () => {

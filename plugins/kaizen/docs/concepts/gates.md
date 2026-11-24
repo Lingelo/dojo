@@ -27,11 +27,11 @@ the end of every turn, the Stop hook runs the verification:
   still red; the gate turns off.
 
 With [`models.enabled`](../reference/configuration.md#models), from block `models.escalate_after` (2)
-on, the report also asks Claude to escalate before the next attempt: a subagent on Opus (the Agent
-tool's `model` parameter) looks for the root cause, or you turn on an Opus advisor (`/advisor opus`).
-A hook cannot change the session's model, so this is how a Sonnet build gets Opus's help where it is
-stuck. The first escalation of a gate is logged as `escalated` (`friction.quality.escalated` in
-metrics).
+on, the report also asks Claude to escalate before the next attempt: a subagent on `models.escalate_to`
+(Opus) at `models.escalate_effort` (`high`) — the Agent tool's `model` and `effort` parameters — looks
+for the root cause, or you turn on an advisor (`/advisor opus`). A hook cannot change the session's
+model, so this is how a Sonnet build or debug gets Opus's help where it is stuck. The first escalation of
+a gate is logged as `escalated` (`friction.quality.escalated` in metrics).
 
 The commands are `verify` in `.kaizen/config.json` (or what `node $K detect` finds). Slow suites:
 `gate.targeted` runs a command on the files the branch touches only (`{files}`). The checks fit within
@@ -86,6 +86,19 @@ refuses the commit — and `--no-verify`. False positives: `secrets.ignore` (pat
 agent-skills' **floor guard** (from `/kaizen:constraints`) is the complement for the other ways a bar
 gets lowered — skipped or deleted tests, silenced checkers, stubs, thresholds edited down. It lives in
 your repository (pre-commit and CI); `kaizen doctor` reports whether it is wired.
+
+## The model hooks
+
+Around [`models`](../reference/configuration.md#models), advice rather than a gate on the work:
+
+- `model-hooks.mjs --record` (SessionStart, PostModelSwitch) keeps the session's model in
+  `.kaizen/state/session-model.json`;
+- `model-hooks.mjs --command` (UserPromptExpansion, on `/kaizen:build` and `/kaizen:build-fork` as you
+  type them) warns when the build starts on another model than `models.build` — the build goes on — and
+  refuses `/kaizen:build-fork` while `models.build_fork` is off, or for `auto`: its only exit 2, before
+  anything runs, with the reason shown to you.
+
+What they can and cannot see of the model: [Models per phase](the-loop.md#models-per-phase).
 
 ## Doctor
 

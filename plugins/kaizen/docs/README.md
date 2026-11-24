@@ -20,6 +20,8 @@ documented in `agent-skills/` (its README and `docs/`). This documentation cover
 | Know which command to run, right now | `/kaizen:setup` ([guide](guides/setup.md)) |
 | See Kaizen in one minute | [The presentation video](../../../media/kaizen/kaizen-presentation.mp4) |
 | Understand what Kaizen adds to agent-skills | [Kaizen around agent-skills](concepts/the-loop.md) |
+| See every feature, and how to turn it on or off | [Features](features.md) |
+| Find where a file lives | [State and files](reference/state-and-files.md) |
 | Tune Kaizen for my project | [Configuration](reference/configuration.md) |
 | Get unstuck | [Troubleshooting](troubleshooting.md) |
 | Compare Kaizen with other AI SDLCs | [Positioning](positioning.md) |
@@ -33,8 +35,9 @@ documented in `agent-skills/` (its README and `docs/`). This documentation cover
 
 ## How it works
 
-- [Kaizen around agent-skills](concepts/the-loop.md) — who does what, the commands, the loop
-- [Gates and hooks](concepts/gates.md) — quality gate, review before push, secrets, doctor
+- [Features](features.md) — everything Kaizen adds, when it runs, how to turn it off
+- [Kaizen around agent-skills](concepts/the-loop.md) — who does what, the commands, the loop, models per phase
+- [Gates and hooks](concepts/gates.md) — quality gate, review before push, secrets, model hooks, doctor
 - [Learnings](concepts/learnings.md) — the format, the durability test, how they come back
 - [Metrics](concepts/metrics.md) — every number and how it is computed
 
@@ -42,7 +45,7 @@ documented in `agent-skills/` (its README and `docs/`). This documentation cover
 
 - [CLI](reference/cli.md) — every `kaizen.mjs` command
 - [Configuration](reference/configuration.md) — every key of `.kaizen/config.json`
-- [State and files](reference/state-and-files.md) — what Kaizen writes, where, and for how long
+- [State and files](reference/state-and-files.md) — where the workflow files live, what Kaizen writes, and for how long
 
 ## Also
 

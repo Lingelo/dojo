@@ -35,7 +35,8 @@ agent-skills has no configuration of its own: its quality bar is `CONSTRAINTS.md
   "cost": { "prices": { "opus": { "output": 20 } } },
   "models": {
     "enabled": true, "design": "opus", "build": "sonnet", "review": "opus",
-    "effort": { "plan": "high", "debug": "high", "build": "medium", "review": "high" }, "escalate_after": 2
+    "effort": { "design": "medium", "plan": "high", "build": "medium", "watch": "low", "learn": "low", "metrics": "low", "review": "medium", "security": "high" },
+    "escalate_after": 2, "escalate_to": "opus", "escalate_effort": "high", "build_fork": false
   }
 }
 ```
@@ -112,22 +113,30 @@ is not counted (`priced_share`). How the cost is computed: [Cost](../concepts/me
 
 ### `models`
 
-Which model each phase of the cycle runs on — advice, never imposed: the session model stays yours
-(`claude --model`, `/model`). Why one session per phase, and what to measure before turning it on:
-[Models per phase](../concepts/the-loop.md#models-per-phase). The personas' models (`kaizen:code-reviewer`
-and `kaizen:security-auditor` on Opus, effort `high`; `kaizen:test-engineer` and
-`kaizen:web-performance-auditor` on Sonnet) are in their definitions and do not depend on this key.
+Which model and effort each phase of the cycle runs on — advice, never imposed: the session model stays
+yours (`claude --model`, `/model`). The split, why one session per phase, `/kaizen:build-fork`, and what
+to measure before turning it on: [Models per phase](../concepts/the-loop.md#models-per-phase). The
+personas' models and efforts (`kaizen:code-reviewer` Opus `medium`, `kaizen:security-auditor` Opus
+`high`, `kaizen:test-engineer` Sonnet `medium`, `kaizen:web-performance-auditor` Sonnet `low`) are in
+their definitions and do not depend on this key.
 
 | Key | Default | Role |
 |---|---|---|
-| `models.enabled` | `false` | the switch: `true` turns on the recommendations below and the quality gate's escalation; `false` leaves Kaizen silent about models |
-| `models.design` | `"opus"` | model to open `/kaizen:ideate`, `spec`, `plan`, `adr`, `doubt`, `migrate`, `debug`, `constraints` on |
-| `models.build` | `"sonnet"` | model to open `/kaizen:build`, `test`, `code-simplify`, `webperf`, `watch`, `learn`, `metrics` on |
+| `models.enabled` | `false` | the switch: `true` turns on the recommendations below, the warning when `/kaizen:build` starts on another model, and the quality gate's escalation; `false` leaves Kaizen silent about models |
+| `models.design` | `"opus"` | model to open `/kaizen:ideate`, `spec`, `plan`, `adr`, `doubt`, `migrate`, `constraints` on |
+| `models.build` | `"sonnet"` | model to open `/kaizen:build`, `build-fork`, `test`, `code-simplify`, `webperf`, `debug`, `watch`, `learn`, `metrics` on; `/kaizen:build` started on another model family is warned about |
 | `models.review` | `"opus"` | model to open `/kaizen:review`, `security`, `ship` on |
-| `models.effort` | `{ "plan": "high", "debug": "high", "build": "medium", "review": "high" }` | effort level by command name (`plan`, `debug`…) or by phase (`design`, `build`, `review`), the command first; none → the model's default |
-| `models.escalate_after` | `2` | from this quality gate block on, the report asks Claude for a subagent on Opus to find the root cause (or `/advisor opus`), and the first one is logged as `escalated` in `friction.jsonl` |
+| `models.effort` | `{ "design": "medium", "plan": "high", "build": "medium", "watch": "low", "learn": "low", "metrics": "low", "review": "medium", "security": "high" }` | effort level by command name (`plan`, `security`…) or by phase (`design`, `build`, `review`), the command first; none → the model's default. Merged key by key: setting one keeps the others |
+| `models.escalate_after` | `2` | from this quality gate block on, the report asks Claude for a subagent on `escalate_to` to find the root cause (or `/advisor`), and the first one is logged as `escalated` in `friction.jsonl` |
+| `models.escalate_to` | `"opus"` | model of that subagent (the Agent tool's `model` parameter: an alias) |
+| `models.escalate_effort` | `"high"` | its effort (the Agent tool's `effort` parameter, Claude Code ≥ 2.1.292; ignored before) |
+| `models.build_fork` | `false` | `true` allows `/kaizen:build-fork` (one task forked on a Sonnet agent), whether `enabled` is on or not, and with `enabled` `status` offers it; `false`: the command is refused with how to turn it on |
 
 Values are Claude Code model aliases (`opus`, `sonnet`) or full model IDs (`claude-sonnet-5-5`), and
-effort levels `low`, `medium`, `high`, `xhigh`, `max`. With `enabled`, `node $K status` (and
-`/kaizen:setup`) adds, under the next command, the session to open for it:
-`in a fresh session: claude --model sonnet --effort medium`.
+effort levels `low`, `medium`, `high`, `xhigh`, `max` — available levels depend on the model; an
+unsupported one runs at the highest level below it
+([Claude Code: effort](https://code.claude.com/docs/en/model-config#adjust-effort-level)). With `enabled`,
+`node $K status` (and `/kaizen:setup`) adds, under the next command, the session to open for it:
+`in a fresh session: claude --model sonnet --effort medium`; with `build_fork` too, `or in this session:
+/kaizen:build-fork`. For documentation or a mechanical refactor, `/effort low` before `/kaizen:build` is
+enough.

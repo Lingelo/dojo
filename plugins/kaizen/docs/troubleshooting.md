@@ -55,6 +55,17 @@ version. `/plugin marketplace update dojo`, then check `/plugin` shows `kaizen@d
 `node $K install settings` declares it for every clone. If `agent-skills@dojo` is also enabled,
 `kaizen doctor` says so (`agent_skills`): disable it, Kaizen already loads its skills.
 
+## `/kaizen:build` warns about the model, or `/kaizen:build-fork` is refused
+
+- **"/kaizen:build is running on claude-opus-…, models.build is sonnet"**: a warning, the build goes on.
+  Switch with `/model sonnet` (the prompt cache is rebuilt once), open a fresh session with the command
+  shown, or set `models.build` to what you want ([Models per phase](concepts/the-loop.md#models-per-phase)).
+  No warning when the session's model is unknown — Kaizen does not guess.
+- **"/kaizen:build-fork is off"**: set `"models": { "build_fork": true }` in `.kaizen/config.json` (or
+  `config.local.json` for yourself).
+- **"a forked build cannot stop for your approval"**: `/kaizen:build-fork` runs one task; for the whole
+  plan, `/kaizen:build auto` in the session.
+
 ## `gh` is not authenticated
 
 **Symptom**: `/kaizen:watch` stops at once with `gh … : Failed to log in` or `GitHub repository not found`.

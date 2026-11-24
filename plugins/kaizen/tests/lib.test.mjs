@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { detectStack, docsRoot, launchFor, loadConfig, parseFrontmatter, runBounded } from '../scripts/lib.mjs';
+import { DEFAULT_CONFIG, detectStack, docsRoot, launchFor, loadConfig, parseFrontmatter, runBounded } from '../scripts/lib.mjs';
 import { cleanup, tempRepo } from './helpers.mjs';
 
 test('frontmatter: scalars, quotes, inline and dash lists, blocks, comments', () => {
@@ -88,7 +88,10 @@ test('models: off by default, merged key by key, effort per command then per pha
   assert.equal(c.models.build, 'opus');
   assert.equal(c.models.design, 'opus', 'defaults are kept');
   assert.equal(c.models.escalate_after, 2);
-  assert.deepEqual(c.models.effort, { plan: 'high', debug: 'high', build: 'high', review: 'xhigh' });
+  assert.equal(c.models.escalate_to, 'opus');
+  assert.equal(c.models.escalate_effort, 'high');
+  assert.equal(c.models.build_fork, false, 'the forked build is off by default');
+  assert.deepEqual(c.models.effort, { design: 'medium', plan: 'high', build: 'high', watch: 'low', learn: 'low', metrics: 'low', review: 'xhigh', security: 'high' });
   const bare = tempRepo({});
   assert.equal(loadConfig(bare).models.enabled, false, 'off until measured');
   cleanup(bare);
@@ -102,6 +105,22 @@ test('models: off by default, merged key by key, effort per command then per pha
   assert.equal(launchFor('make the checks green', on), null);
   assert.equal(launchFor('/kaizen:build', { models: { ...on.models, enabled: false } }), null);
   cleanup(dir);
+});
+
+test('models: the default split — Opus medium to decide, plan and security high, Sonnet medium to build, low for the follow-up', () => {
+  const on = { models: { ...DEFAULT_CONFIG.models, enabled: true } };
+  const run = (c) => launchFor(`/kaizen:${c}`, on).command;
+  for (const c of ['ideate', 'spec', 'adr', 'doubt', 'migrate', 'constraints']) assert.equal(run(c), 'claude --model opus --effort medium', c);
+  assert.equal(run('plan'), 'claude --model opus --effort high');
+  for (const c of ['build', 'build-fork', 'test', 'code-simplify', 'webperf', 'debug']) assert.equal(run(c), 'claude --model sonnet --effort medium', c);
+  for (const c of ['watch', 'learn', 'metrics']) assert.equal(run(c), 'claude --model sonnet --effort low', c);
+  for (const c of ['review', 'ship']) assert.equal(run(c), 'claude --model opus --effort medium', c);
+  assert.equal(run('security'), 'claude --model opus --effort high');
+  assert.equal(launchFor('/kaizen:build', { models: DEFAULT_CONFIG.models }), null, 'off by default');
+  const levels = ['low', 'medium', 'high', 'xhigh', 'max'];
+  for (const [k, v] of Object.entries(DEFAULT_CONFIG.models.effort)) assert.ok(levels.includes(v), `effort.${k}: ${v}`);
+  assert.ok(levels.includes(DEFAULT_CONFIG.models.escalate_effort));
+  assert.doesNotMatch(JSON.stringify(DEFAULT_CONFIG.models), /haiku/, 'no Haiku anywhere');
 });
 
 test('docs_root must stay inside the repo', () => {

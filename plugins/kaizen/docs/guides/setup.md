@@ -26,7 +26,8 @@ Not for writing a spec, a plan or code: that is `/kaizen:spec`, `/kaizen:plan`, 
    `AGENTS.md`.
 6. **Names the next command**, in the [decision order](../concepts/the-loop.md#knowing-where-you-are).
    With [`models.enabled`](../reference/configuration.md#models), also the session to open for it
-   (`claude --model sonnet --effort medium` for `/kaizen:build`): advice, the model stays your choice.
+   (`claude --model sonnet --effort medium` for `/kaizen:build`, or `/kaizen:build-fork` with
+   `models.build_fork`): advice, the model stays your choice.
 
 ## What you get
 

@@ -39,7 +39,9 @@ Read `${CLAUDE_PLUGIN_ROOT}/references/conventions.md`. `K="${CLAUDE_PLUGIN_ROOT
    spec → `/kaizen:spec <what to build>`; without `CONSTRAINTS.md` → mention
    `/kaizen:constraints` once, as optional. When an item has a `launch` (`models.enabled`), give it
    with the command, as advice: `claude --model sonnet --effort medium` in a fresh session for
-   `/kaizen:build` — the user keeps the choice of model; never switch it for them.
+   `/kaizen:build` — the user keeps the choice of model; never switch it for them. When it also has a
+   `fork` (`models.build_fork`), offer `/kaizen:build-fork` as the in-session alternative: one task on
+   Sonnet, never `auto`.
 
 ## Common Rationalizations
 

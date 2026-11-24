@@ -9,7 +9,8 @@
 // The gate belongs to the session that edited: another session open on the same repo is not concerned.
 // Checks fit within `gate.budget_seconds`, under the hook timeout (900 s).
 // With `models.enabled`, from block `models.escalate_after` on, the report also asks Claude to escalate:
-// a subagent on Opus (the Agent tool's `model` parameter) finds the root cause before the next attempt.
+// a subagent on `models.escalate_to` (Opus) at `models.escalate_effort` (high) — the Agent tool's `model` and
+// `effort` parameters — finds the root cause before the next attempt.
 // A hook cannot change the session's model; it can only say so. The first escalation is logged
 // (`escalated` in friction.jsonl) to measure how often a cheaper build model needs help.
 
@@ -85,6 +86,8 @@ logFriction(root, { gate: 'quality', kind: 'blocked', checks });
 
 const escalateAfter = Number(config.models?.escalate_after);
 const escalate = config.models?.enabled === true && escalateAfter > 0 && blocks >= escalateAfter;
+const escalateTo = String(config.models?.escalate_to || 'opus');
+const escalateEffort = config.models?.escalate_effort || null;
 if (escalate && blocks === escalateAfter) logFriction(root, { gate: 'quality', kind: 'escalated', checks, blocks });
 
 const report = failed.map((r) => `✘ ${r.name} — \`${r.command}\` (exit ${r.exit})\n${r.output.split('\n').slice(-25).join('\n')}`).join('\n\n');
@@ -93,9 +96,10 @@ process.stderr.write(
     'Fix the root cause (never by skipping or weakening a test), then finish. If the failure is outside what ' +
     `you were asked to do, run \`node "${fileURLToPath(new URL('./kaizen.mjs', import.meta.url))}" gate off\` and explain why to the user.\n` +
     (escalate
-      ? `\nEscalate (blocked ${blocks} times): unless this session already runs on Opus, before the next attempt start a subagent with the Agent tool's \`model: "opus"\` parameter, ` +
+      ? `\nEscalate (blocked ${blocks} times): unless this session already runs on ${escalateTo}, before the next attempt start a subagent with the Agent tool's ` +
+        `\`model: "${escalateTo}"\`${escalateEffort ? ` and \`effort: "${escalateEffort}"\`` : ''} parameters, ` +
         'give it this report and the files you changed, and ask it for the root cause and the fix — then apply it here. ' +
-        'Or suggest the user turn on an Opus advisor (`/advisor opus`).\n'
+        `Or suggest the user turn on an advisor (\`/advisor ${escalateTo}\`).\n`
       : ''),
 );
 process.exit(2);

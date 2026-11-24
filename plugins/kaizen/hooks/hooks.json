@@ -3,7 +3,23 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/review-hooks.mjs\" --heartbeat", "timeout": 10 }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/review-hooks.mjs\" --heartbeat", "timeout": 10 },
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/model-hooks.mjs\" --record", "timeout": 10 }
+        ]
+      }
+    ],
+    "PostModelSwitch": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/model-hooks.mjs\" --record", "timeout": 10 }
+        ]
+      }
+    ],
+    "UserPromptExpansion": [
+      {
+        "matcher": "^kaizen:build(-fork)?$",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/model-hooks.mjs\" --command", "timeout": 10 }
         ]
       }
     ],
